@@ -6,12 +6,12 @@ export type Result<T> = { ok: true; data: T } | { ok: false; reason: Failure; me
 
 const base = () => process.env.API_INTERNAL_URL ?? "http://localhost:8000";
 
-async function get(path: string, params?: URLSearchParams): Promise<Response | null> {
+async function get(path: string, params?: URLSearchParams, revalidate?: number): Promise<Response | null> {
   const query = params && [...params.keys()].length > 0 ? `?${params.toString()}` : "";
   try {
     return await fetch(`${base()}/api/v1/${path}${query}`, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(4000),
+      ...(revalidate === undefined ? { cache: "no-store" as const } : { next: { revalidate } }),
+      signal: AbortSignal.timeout(revalidate === undefined ? 4000 : 20000),
       headers: { Accept: "application/json" },
     });
   } catch {
@@ -29,8 +29,8 @@ async function errorMessage(response: Response): Promise<string | undefined> {
   }
 }
 
-async function json<T>(path: string, params?: URLSearchParams): Promise<Result<T>> {
-  const response = await get(path, params);
+async function json<T>(path: string, params?: URLSearchParams, revalidate?: number): Promise<Result<T>> {
+  const response = await get(path, params, revalidate);
   if (response === null) return { ok: false, reason: "unreachable" };
   if (response.status === 400) {
     return { ok: false, reason: "invalid-query", message: await errorMessage(response) };
@@ -45,7 +45,8 @@ async function json<T>(path: string, params?: URLSearchParams): Promise<Result<T
 }
 
 export function getSitemapEntries() {
-  return json<{ data: { slug: string; updated_at: string }[] }>("sitemap");
+  // Large and slow-changing: crawlers may ask often, so the web tier keeps it for ten minutes.
+  return json<{ data: { slug: string; updated_at: string }[] }>("sitemap", undefined, 600);
 }
 
 export function listOpportunities(params: URLSearchParams) {

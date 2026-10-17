@@ -128,8 +128,11 @@ class Opportunity(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="opportunities")
     status = models.CharField(max_length=12, choices=ListingStatus.choices, default=ListingStatus.DRAFT)
     archive_reason = models.CharField(max_length=12, choices=ArchiveReason.choices, null=True, blank=True)
-    live_version = models.ForeignKey(
-        "OpportunityVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    # One-to-one: a revision is live for at most one listing. The reverse name lets the public queries join
+    # on `live_version_id` alone, which PostgreSQL estimates correctly (an extra `opportunity_id = id` join
+    # condition made it expect one row and pick a full sort; see PHASE4_REPORT).
+    live_version = models.OneToOneField(
+        "OpportunityVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="live_for"
     )
     pending_version = models.ForeignKey(
         "OpportunityVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
@@ -153,6 +156,12 @@ class Opportunity(models.Model):
             models.Index(fields=["status"], name="opp_status_idx"),
             models.Index(fields=["category", "status"], name="opp_category_status_idx"),
             models.Index(fields=["created_by"], name="opp_created_by_idx"),
+            # The default public list: newest first among live listings (see public.search).
+            models.Index(
+                fields=["-first_published_at", "-slug"],
+                condition=Q(status="published"),
+                name="opp_public_newest_idx",
+            ),
         ]
         constraints = [
             models.CheckConstraint(
@@ -264,6 +273,9 @@ class OpportunityVersion(models.Model):
             models.Index(fields=["opportunity", "-version_no"], name="ver_opp_no_idx"),
             GinIndex(fields=["search_vector"], name="ver_search_idx", condition=Q(state="published")),
             models.Index(fields=["deadline_at"], name="ver_deadline_idx", condition=Q(state="published")),
+            models.Index(
+                fields=["deadline_at", "id"], name="ver_deadline_id_idx", condition=Q(state="published")
+            ),
             models.Index(fields=["organisation"], name="ver_org_idx", condition=Q(state="published")),
             models.Index(
                 fields=["employment_type", "work_mode"],

@@ -1,0 +1,17 @@
+saved rows for the heaviest sampled user: 248
+200    158.9 ms  q=12     16.9 KiB  [anon] /api/v1/opportunities
+200    167.9 ms  q=12     42.1 KiB  [anon] /api/v1/opportunities?limit=50
+200     43.5 ms  q=12     17.6 KiB  [anon] /api/v1/opportunities?category=jobs
+200     71.4 ms  q=12     17.5 KiB  [anon] /api/v1/opportunities?category=jobs,tenders&work_mode=on_site
+200     83.5 ms  q=13     18.6 KiB  [anon] /api/v1/opportunities?location=harare&employment_type=permanent
+200     95.0 ms  q=13     18.6 KiB  [anon] /api/v1/opportunities?q=engineer
+200     89.9 ms  q=13     18.6 KiB  [anon] /api/v1/opportunities?q=engineer&sort=relevance
+200    160.5 ms  q=12     17.6 KiB  [anon] /api/v1/opportunities?sort=closing_soon
+200     35.7 ms  q=12     17.5 KiB  [anon] /api/v1/opportunities?deadline_state=closing_soon
+200     12.2 ms  q=12      2.1 KiB  [anon] /api/v1/opportunities/graduate-trainee-programme-finance-dq9htq-p1526
+200    390.1 ms  q= 7   2314.3 KiB  [anon] /api/v1/sitemap
+200     20.8 ms  q= 9     19.8 KiB  [signed] /api/v1/me/saved
+200     28.4 ms  q= 9     49.2 KiB  [signed] /api/v1/me/saved?limit=50
+200      5.5 ms  q= 4      0.1 KiB  [signed] /api/v1/me/saved?ids=37a97330-9648-415a-8aca-c84f6a8230fb,6a686e37-...
+200      4.6 ms  q= 3      0.3 KiB  [signed] /api/v1/me
+200    136.3 ms  q=11     16.8 KiB  [anon] /api/v1/opportunities?limit=20&cursor=.eJwNyrkNAkEMAMBenIJPXv92HWSI...

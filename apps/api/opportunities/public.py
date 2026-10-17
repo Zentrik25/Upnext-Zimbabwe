@@ -19,7 +19,7 @@ from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core import signing
-from django.db.models import Case, F, FloatField, IntegerField, Q, QuerySet, Value, When
+from django.db.models import F, FloatField, Q, QuerySet
 from django.db.models.functions import Cast
 from django.http import QueryDict
 from django.utils import timezone
@@ -173,8 +173,7 @@ def visible_versions(*, detail: bool = False, include_expired: bool = False) -> 
         statuses = [ListingStatus.PUBLISHED]
     return OpportunityVersion.objects.filter(
         state=VersionState.PUBLISHED,
-        opportunity__live_version_id=F("id"),
-        opportunity__status__in=statuses,
+        live_for__status__in=statuses,  # joins on live_version_id only: also means "is the live revision"
     ).select_related("opportunity", "opportunity__category", "organisation")
 
 
@@ -269,11 +268,15 @@ def _decode(query: Query) -> list[Any]:
 
 
 def _newest_key(row: Any) -> list[Any]:
-    return [row.k0.isoformat(), str(row.pk)]
+    return [row.k0.isoformat(), row.opportunity.slug]
 
 
 def _closing_key(row: Any) -> list[Any]:
-    return [row.k0, row.deadline_at.isoformat() if row.deadline_at else None, str(row.pk)]
+    return [
+        0 if row.deadline_at else 1,
+        row.deadline_at.isoformat() if row.deadline_at else None,
+        str(row.pk),
+    ]
 
 
 def _relevance_key(row: Any) -> list[Any]:
@@ -288,23 +291,26 @@ def search(query: Query, now: datetime | None = None) -> Page:
     total = qs.count() if after is None else None
 
     if query.sort == "newest":
-        qs = qs.annotate(k0=F("opportunity__first_published_at")).order_by("-k0", "-id")
+        # Ordered by columns of the listing row so PostgreSQL can walk `opp_public_newest_idx` and stop after
+        # one page instead of sorting every live listing (found with synthetic data, see PHASE4_REPORT).
+        qs = qs.annotate(k0=F("live_for__first_published_at")).order_by("-k0", "-live_for__slug")
         if after:
             cut = datetime.fromisoformat(after[0])
-            qs = qs.filter(Q(k0__lt=cut) | Q(k0=cut, id__lt=uuid.UUID(after[1])))
+            qs = qs.filter(Q(k0__lt=cut) | Q(k0=cut, live_for__slug__lt=str(after[1])))
         key_of = _newest_key
     elif query.sort == "closing_soon":
-        null_flag = Case(
-            When(deadline_at__isnull=True, then=Value(1)), default=Value(0), output_field=IntegerField()
-        )
-        qs = qs.annotate(k0=null_flag).order_by("k0", "deadline_at", "id")
+        # Earliest deadline first, listings without a deadline last. Ordering by the plain column (nulls last)
+        # lets PostgreSQL walk `ver_deadline_id_idx` instead of sorting every live listing.
+        qs = qs.order_by(F("deadline_at").asc(nulls_last=True), "id")
         if after:
             flag, deadline, ident = after[0], after[1], uuid.UUID(after[2])
             if flag == 1:
-                qs = qs.filter(k0=1, id__gt=ident)
+                qs = qs.filter(deadline_at__isnull=True, id__gt=ident)
             else:
                 cut = datetime.fromisoformat(deadline)
-                qs = qs.filter(Q(k0=1) | Q(deadline_at__gt=cut) | Q(deadline_at=cut, id__gt=ident))
+                qs = qs.filter(
+                    Q(deadline_at__isnull=True) | Q(deadline_at__gt=cut) | Q(deadline_at=cut, id__gt=ident)
+                )
         key_of = _closing_key
     else:  # relevance
         assert query.q

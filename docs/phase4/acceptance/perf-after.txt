@@ -1,0 +1,17 @@
+saved rows for the heaviest sampled user: 248
+200     45.8 ms  q=12     16.7 KiB  [anon] /api/v1/opportunities
+200     58.2 ms  q=12     42.1 KiB  [anon] /api/v1/opportunities?limit=50
+200     41.0 ms  q=12     17.5 KiB  [anon] /api/v1/opportunities?category=jobs
+200     44.7 ms  q=12     17.3 KiB  [anon] /api/v1/opportunities?category=jobs,tenders&work_mode=on_site
+200     77.1 ms  q=13     18.7 KiB  [anon] /api/v1/opportunities?location=harare&employment_type=permanent
+200    102.2 ms  q=13     18.6 KiB  [anon] /api/v1/opportunities?q=engineer
+200    107.9 ms  q=13     18.6 KiB  [anon] /api/v1/opportunities?q=engineer&sort=relevance
+200     44.3 ms  q=12     17.7 KiB  [anon] /api/v1/opportunities?sort=closing_soon
+200     30.9 ms  q=12     17.9 KiB  [anon] /api/v1/opportunities?deadline_state=closing_soon
+200     13.6 ms  q=12      1.6 KiB  [anon] /api/v1/opportunities/management-associate-programme-2kz3wc-p1974
+200    376.4 ms  q= 7   2314.3 KiB  [anon] /api/v1/sitemap
+200     23.2 ms  q= 9     19.6 KiB  [signed] /api/v1/me/saved
+200     30.2 ms  q= 9     49.0 KiB  [signed] /api/v1/me/saved?limit=50
+200      6.4 ms  q= 4      0.1 KiB  [signed] /api/v1/me/saved?ids=37a97330-9648-415a-8aca-c84f6a8230fb,6a686e37-...
+200      6.4 ms  q= 3      0.3 KiB  [signed] /api/v1/me
+200     26.2 ms  q=11     16.6 KiB  [anon] /api/v1/opportunities?limit=20&cursor=eyJmIjoiNjY5OGI4MDJiNWE0ZTg5N...
