@@ -289,9 +289,10 @@ paths:
         required: true
         content: { application/json: { schema: { type: object, required: [password], additionalProperties: false, properties: { password: { type: string, maxLength: 128 } } } } }
       responses:
-        '202': { description: 'Request recorded', content: { application/json: { schema: { type: object, required: [deletion_requested_at], properties: { deletion_requested_at: { type: string, format: date-time }, scheduled_for: { type: [string, 'null'], format: date-time, description: 'null until OQ-09 defines the cooling-off period' } } } } } }
+        '202': { description: 'Request recorded', content: { application/json: { schema: { type: object, required: [deletion_requested_at], properties: { deletion_requested_at: { type: string, format: date-time }, scheduled_for: { type: [string, 'null'], format: date-time, description: 'Request time plus the cooling-off period (14 days by provisional default P4-05)' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
     delete:
       tags: [me]
       operationId: cancelAccountDeletion
@@ -863,6 +864,7 @@ components:
         roles: { type: array, items: { $ref: '#/components/schemas/StaffRole' }, description: 'for UI navigation only; never trusted by the server' }
         created_at: { type: string, format: date-time }
         deletion_requested_at: { type: [string, 'null'], format: date-time, description: 'Set while an account-deletion request is pending (OQ-09). Added in Phase 3; additive.' }
+        deletion_scheduled_for: { type: [string, 'null'], format: date-time, description: 'When a pending deletion will be carried out (request plus the cooling-off period). Added in Phase 4; additive.' }
     AdminUser:
       allOf:
         - $ref: '#/components/schemas/User'

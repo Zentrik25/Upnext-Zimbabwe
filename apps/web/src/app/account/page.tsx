@@ -36,7 +36,11 @@ export default async function AccountPage() {
         <ProfilePanel displayName={user.display_name} email={user.email} />
         <PasswordPanel />
         <SessionsPanel sessions={sessions} />
-        <DeletionPanel requestedAt={user.deletion_requested_at} />
+        <DeletionPanel
+          requestedAt={user.deletion_requested_at}
+          scheduledFor={user.deletion_scheduled_for}
+          staff={staff}
+        />
       </div>
     </Container>
   );

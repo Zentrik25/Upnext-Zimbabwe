@@ -1,7 +1,9 @@
 Hello {{ display_name }},
 
-We received a request to delete your UPNEXT account. No retention or deletion schedule has been set yet, so your request has been recorded and a member of the team will follow up.
+We received a request to delete your UPNEXT account.
 
-If you did not make this request, change your password now: {{ base_url }}/forgot-password
+Nothing has been deleted yet. Your account will be deleted on or after {{ scheduled_date }}, {{ days }} days after the request. Until then you can change your mind: sign in and cancel the request on your account page ({{ base_url }}/account).
+
+If you did not make this request, cancel it and change your password now: {{ base_url }}/forgot-password
 
 UPNEXT never asks for your password by e-mail.

@@ -77,7 +77,7 @@ services:
     build:
       context: ../../apps/api
       target: dev
-    command: ["python", "manage.py", "process_email_outbox", "--loop"]
+    command: ["python", "manage.py", "run_worker"]
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}

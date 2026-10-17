@@ -402,7 +402,7 @@ def test_deletion_request_needs_the_password_is_idempotent_and_can_be_cancelled(
     first = client.post(url, {"password": PASSWORD}, format="json", HTTP_X_CSRFTOKEN=token)
     second = client.post(url, {"password": PASSWORD}, format="json", HTTP_X_CSRFTOKEN=token)
     assert first.status_code == second.status_code == 202
-    assert first.json() == second.json() and first.json()["scheduled_for"] is None
+    assert first.json() == second.json() and first.json()["scheduled_for"] is not None
     assert EmailOutbox.objects.filter(kind=EmailKind.ACCOUNT_DELETION_NOTICE).count() == 1
     user.refresh_from_db()
     assert user.deletion_requested_at is not None and user.status == AccountStatus.ACTIVE

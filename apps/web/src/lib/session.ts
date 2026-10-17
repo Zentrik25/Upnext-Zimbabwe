@@ -12,6 +12,7 @@ export type CurrentUser = {
   roles: string[];
   created_at: string;
   deletion_requested_at: string | null;
+  deletion_scheduled_for: string | null;
 };
 
 export type SavedItem = {

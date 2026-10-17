@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import make_password
 from django.contrib.sessions.models import Session
@@ -305,18 +306,38 @@ def revoke_session(user: User, session_id: Any) -> bool:
     return True
 
 
-def request_deletion(user: User) -> datetime:
-    """Records the request only. Cooling-off, retention and execution are undecided (OQ-09, P3-05)."""
+class StaffAccountError(Exception):
+    """Accounts holding staff roles are offboarded by an administrator before they can be deleted."""
+
+
+def scheduled_for(user: User) -> datetime | None:
+    if user.deletion_requested_at is None:
+        return None
+    return user.deletion_requested_at + timedelta(days=settings.UPNEXT_DELETION_COOLING_OFF_DAYS)
+
+
+def request_deletion(user: User) -> tuple[datetime, datetime]:
+    """Record the request and start the cooling-off period. Returns (requested, scheduled). Nothing is deleted
+    until the period ends and the worker runs `deletion.execute_due` (P4-05). Repeating the request changes
+    nothing."""
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
+        if locked.active_roles():
+            raise StaffAccountError
         if locked.deletion_requested_at is None:
             locked.deletion_requested_at = timezone.now()
             locked.save(update_fields=["deletion_requested_at", "updated_at"])
+            due = scheduled_for(locked)
+            assert due is not None
             outbox.enqueue(
                 EmailKind.ACCOUNT_DELETION_NOTICE,
                 locked,
                 locked.email,
-                context={"display_name": locked.display_name},
+                context={
+                    "display_name": locked.display_name,
+                    "scheduled_date": due.strftime("%d %B %Y"),
+                    "days": settings.UPNEXT_DELETION_COOLING_OFF_DAYS,
+                },
             )
             audit.record(
                 action="account.deletion_requested",
@@ -324,10 +345,13 @@ def request_deletion(user: User) -> datetime:
                 object_id=locked.pk,
                 actor_id=locked.pk,
                 severity=Severity.SECURITY,
+                changes={"scheduled_for": due.isoformat()},
             )
         user.deletion_requested_at = locked.deletion_requested_at
         assert locked.deletion_requested_at is not None
-        return locked.deletion_requested_at
+        due = scheduled_for(locked)
+        assert due is not None
+        return locked.deletion_requested_at, due
 
 
 def cancel_deletion(user: User) -> bool:
@@ -350,6 +374,7 @@ def cancel_deletion(user: User) -> bool:
 
 __all__ = [
     "AccountError",
+    "StaffAccountError",
     "cancel_deletion",
     "change_password",
     "confirm_password_reset",
@@ -364,5 +389,6 @@ __all__ = [
     "resend_verification",
     "revoke_session",
     "revoke_sessions",
+    "scheduled_for",
     "verify_email",
 ]

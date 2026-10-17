@@ -42,6 +42,7 @@ SUBJECTS = {
     EmailKind.PASSWORD_RESET: "Reset your UPNEXT password",
     EmailKind.PASSWORD_CHANGED_NOTICE: "Your UPNEXT password was changed",
     EmailKind.ACCOUNT_DELETION_NOTICE: "We received your UPNEXT account deletion request",
+    EmailKind.ACCOUNT_DELETION_COMPLETED: "Your UPNEXT account has been deleted",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",

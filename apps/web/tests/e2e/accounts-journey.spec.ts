@@ -193,6 +193,7 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   await page.getByLabel("Password").last().fill(NEW_PASSWORD);
   await page.getByRole("button", { name: "Request deletion" }).click();
   await expect(page.getByText(/Deletion requested on/)).toBeVisible();
+  await expect(page.getByText(/Nothing has been deleted yet/)).toBeVisible();
   await shot(page, "acct-13-deletion-requested");
   await axeClean(page);
   await page.getByRole("button", { name: "Cancel the request" }).click();

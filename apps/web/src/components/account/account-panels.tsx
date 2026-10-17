@@ -211,7 +211,15 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
   );
 }
 
-export function DeletionPanel({ requestedAt }: { requestedAt: string | null }) {
+export function DeletionPanel({
+  requestedAt,
+  scheduledFor,
+  staff,
+}: {
+  requestedAt: string | null;
+  scheduledFor: string | null;
+  staff: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -253,8 +261,14 @@ export function DeletionPanel({ requestedAt }: { requestedAt: string | null }) {
       {requestedAt ? (
         <div className="mt-3 grid gap-3">
           <FormSuccess>
-            Deletion requested on {formatWhen(requestedAt)}. No deletion date has been set yet; your request
-            is recorded and the team will follow up by e-mail.
+            <p className="font-strong">Deletion requested on {formatWhen(requestedAt)}</p>
+            <p className="mt-1">
+              Nothing has been deleted yet.{" "}
+              {scheduledFor
+                ? `Your account will be deleted on or after ${formatWhen(scheduledFor)}.`
+                : "A deletion date will be confirmed by e-mail."}{" "}
+              Until then you can cancel and keep everything as it is.
+            </p>
           </FormSuccess>
           <div>
             <Button variant="secondary" onClick={cancel} disabled={busy}>
@@ -262,10 +276,16 @@ export function DeletionPanel({ requestedAt }: { requestedAt: string | null }) {
             </Button>
           </div>
         </div>
+      ) : staff ? (
+        <p className="mt-3 text-base text-muted">
+          This account also has staff access. An administrator must remove that access before the account can
+          be deleted.
+        </p>
       ) : open ? (
         <form onSubmit={request} className="mt-3 grid gap-3">
           <p className="text-base">
-            This asks us to delete your account and saved listings. Enter your password to confirm.
+            You are asking us to delete your account, your saved listings and your sign-in records. We wait 14
+            days before doing it, and you can cancel in that time. Enter your password to confirm.
           </p>
           <Field id="delete_password" label="Password">
             <TextInput
@@ -289,7 +309,8 @@ export function DeletionPanel({ requestedAt }: { requestedAt: string | null }) {
       ) : (
         <div className="mt-3 grid gap-3">
           <p className="text-base text-muted">
-            You can ask us to delete your account and everything saved with it.
+            You can ask us to delete your account and everything saved with it. There is a 14-day wait first,
+            so you can change your mind.
           </p>
           <div>
             <Button variant="secondary" onClick={() => setOpen(true)}>

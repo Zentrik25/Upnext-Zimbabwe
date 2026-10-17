@@ -21,6 +21,7 @@ class EmailKind(models.TextChoices):
     PASSWORD_RESET = "password_reset"  # noqa: S105
     PASSWORD_CHANGED_NOTICE = "password_changed_notice"  # noqa: S105
     ACCOUNT_DELETION_NOTICE = "account_deletion_notice"
+    ACCOUNT_DELETION_COMPLETED = "account_deletion_completed"
 
 
 class OutboxStatus(models.TextChoices):

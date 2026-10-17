@@ -286,15 +286,23 @@ class DeletionRequestView(MeBaseView):
         operation_id="requestAccountDeletion",
         tags=["me"],
         request=PasswordOnlySerializer,
-        responses={202: DeletionRequestedSerializer, 403: None},
+        responses={202: DeletionRequestedSerializer, 403: None, 409: None},
     )
     def post(self, request: Request) -> Response:
         data = PasswordOnlySerializer(data=request.data)
         data.is_valid(raise_exception=True)
         self.reauthenticate(request, data.validated_data["password"])
-        when = services.request_deletion(self.user_of(request))
+        try:
+            requested, due = services.request_deletion(self.user_of(request))
+        except services.StaffAccountError:
+            return error_response(
+                "staff_account",
+                "An administrator must remove your staff access before the account can be deleted.",
+                status.HTTP_409_CONFLICT,
+            )
         return Response(
-            {"deletion_requested_at": _iso(when), "scheduled_for": None}, status=status.HTTP_202_ACCEPTED
+            {"deletion_requested_at": _iso(requested), "scheduled_for": _iso(due)},
+            status=status.HTTP_202_ACCEPTED,
         )
 
     @extend_schema(

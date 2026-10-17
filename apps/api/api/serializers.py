@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from drf_spectacular.utils import extend_schema_field
@@ -36,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer[User]):
     email_verified = serializers.SerializerMethodField()
     status = serializers.ChoiceField(choices=AccountStatus.choices, read_only=True)
     roles = serializers.SerializerMethodField()
+    deletion_scheduled_for = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -48,8 +50,15 @@ class UserSerializer(serializers.ModelSerializer[User]):
             "roles",
             "created_at",
             "deletion_requested_at",
+            "deletion_scheduled_for",
         ]
         read_only_fields = fields
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_deletion_scheduled_for(self, obj: User) -> datetime | None:
+        from accounts.services import scheduled_for
+
+        return scheduled_for(obj)
 
     @extend_schema_field(serializers.BooleanField())
     def get_email_verified(self, obj: User) -> bool:
