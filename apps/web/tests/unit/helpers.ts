@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import tokens from "../../src/design/tokens.json";
 
-export const repoRoot = resolve(__dirname, "../../../..");
+// Compose mounts the repository at /repo (UPNEXT_REPO_ROOT); on a host checkout it is four levels up.
+export const repoRoot = process.env.UPNEXT_REPO_ROOT ?? resolve(__dirname, "../../../..");
 export const readRepoFile = (rel: string) => readFileSync(resolve(repoRoot, rel), "utf8");
 
 export type TokenColor = { ref: string; prod?: string; dev?: string };
