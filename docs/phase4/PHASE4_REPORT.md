@@ -32,7 +32,7 @@ Provisional defaults P4-01…P4-11 are engineering defaults, not owner decisions
 | Web unit tests (Vitest) | **84 passed** |
 | Production-mode stack (`upnext-prod`), full Playwright run with `E2E_STRICT_CONSOLE=1 E2E_DEMO_DATA=1 E2E_ACCOUNTS=1 E2E_CMS=1`, one worker | **131 passed**, 0 failed, 0 skipped (includes the SEO, accessibility, control-radius, account and staff CMS journeys) |
 | Docs check, traceability generator (177 tests, 33 requirements), secret scan | pass (docs check, traceability regenerated with no diff, secret scan clean over 40 commits) |
-| GitHub Actions | not recorded here; see the hand-off message |
+| GitHub Actions (CI run 39064354219, head `cbc802c`) | **success** |
 
 A real bug was found by the production-mode build: the start-up safeguards added in this phase made the image's build-time `collectstatic` fail. The Dockerfile now sets `UPNEXT_ENVIRONMENT=local-prod-like` for that one command only.
 
