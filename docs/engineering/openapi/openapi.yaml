@@ -1,0 +1,1078 @@
+openapi: 3.1.0
+info:
+  title: UPNEXT API
+  version: 1.0.0-draft.1
+  summary: Contract for /api/v1 (DRAFT — documentation only, no implementation exists)
+  description: |
+    Status: DRAFT for review. Not an implementation. Items tagged `x-open: OQ-n` depend on an unresolved
+    decision in docs/governance/DECISION_REGISTER.md and are not defaulted.
+
+    Conventions
+    - Base path `/api/v1`, same origin as the web app (cookie session, no CORS).
+    - No trailing slashes. JSON only. Timestamps RFC 3339 UTC unless stated.
+    - Success: single resources are returned as the object itself; lists as `{data, page}`.
+    - Errors: `{error:{code,message,request_id,fields?}}`, see `Error`.
+    - Mutations require the session cookie plus `X-CSRFToken` (obtain from `GET /auth/csrf`).
+    - Public listing identity is the slug (stable, immutable); `id` is the internal immutable UUID.
+    - Editorial and administration tags are contract-level: they are used by the staff interface
+      (Django Admin initially; decision OQ-16) through the same services and are not required to be exposed publicly in Release 1.
+servers:
+  - url: /api/v1
+tags:
+  - name: public
+    description: Anonymous read access
+  - name: auth
+  - name: me
+    description: Authenticated seeker
+  - name: discovery
+  - name: editorial
+    description: Staff only. x-status reserved — exposure depends on the staff-UI decision.
+  - name: administration
+    description: Administrator only. x-status reserved.
+  - name: health
+security: []
+paths:
+  /opportunities:
+    get:
+      tags: [public]
+      operationId: listOpportunities
+      summary: Search and filter published opportunities
+      description: Anonymous access. Default ordering is deterministic (sort key then id). Expired/withdrawn visibility in lists is x-open OQ-20.
+      parameters:
+        - { name: q, in: query, schema: { type: string, minLength: 1, maxLength: 100 } }
+        - { name: category, in: query, description: 'comma-separated category codes (max 10)', schema: { type: string } }
+        - { name: location, in: query, description: 'comma-separated location slugs (max 10)', schema: { type: string } }
+        - { name: work_mode, in: query, schema: { $ref: '#/components/schemas/WorkMode' } }
+        - { name: employment_type, in: query, schema: { $ref: '#/components/schemas/EmploymentType' } }
+        - { name: experience_level, in: query, schema: { $ref: '#/components/schemas/ExperienceLevel' } }
+        - { name: deadline_state, in: query, schema: { $ref: '#/components/schemas/DeadlineState' } }
+        - { name: organisation_id, in: query, schema: { type: string, format: uuid }, x-open: OQ-24 }
+        - { name: posted_within_days, in: query, schema: { type: integer, minimum: 1, maximum: 365 } }
+        - { name: include_expired, in: query, schema: { type: boolean, default: false }, x-open: OQ-20 }
+        - { name: sort, in: query, description: '`relevance` only valid with `q`', schema: { type: string, enum: [relevance, newest, closing_soon] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Page of results (an empty `data` array is a valid, explicit empty state)
+          headers: { X-Request-ID: { $ref: '#/components/headers/RequestId' } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, page]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/OpportunitySummary' } }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /opportunities/{slug}:
+    get:
+      tags: [public]
+      operationId: getOpportunity
+      summary: Opportunity detail by public slug
+      description: Non-public listings (draft, in review, approved, rejected, takedown) return 404. Expired/withdrawn behaviour x-open OQ-20.
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '200':
+          description: Detail
+          content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /categories:
+    get:
+      tags: [public]
+      operationId: listCategories
+      responses:
+        '200': { description: 'Active categories', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/Category' } } } } } } }
+  /locations:
+    get:
+      tags: [public]
+      operationId: listLocations
+      responses:
+        '200': { description: 'Active locations (contents x-open OQ-21)', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/Location' } } } } } } }
+  /sectors:
+    get:
+      tags: [public]
+      operationId: listSectors
+      responses:
+        '200': { description: 'Active sectors (x-open OQ-21)', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/Sector' } } } } } } }
+  /skills:
+    get:
+      tags: [public]
+      operationId: searchSkills
+      summary: Type-ahead over approved skills
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 50 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 10 } }
+      responses:
+        '200': { description: 'Matching skills', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/Skill' } } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/csrf:
+    get:
+      tags: [auth]
+      operationId: getCsrfToken
+      summary: Issue/refresh the CSRF token (also sets the CSRF cookie)
+      responses:
+        '200': { description: 'Token', content: { application/json: { schema: { type: object, required: [csrf_token], properties: { csrf_token: { type: string } } } } } }
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      summary: Create an account
+      description: Always 202 with the same body, whether or not the email already exists (anti-enumeration). A verification (or "you already have an account") email is queued through the outbox.
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } }
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedGeneric' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/CsrfFailed' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/email/verify:
+    post:
+      tags: [auth]
+      operationId: verifyEmail
+      summary: Consume an email-verification token (also used for confirmed email change)
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/TokenRequest' } } }
+      responses:
+        '204': { description: 'Verified. No session is created.' }
+        '400': { description: 'Invalid, expired or used token (single generic code `invalid_token`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/email/resend:
+    post:
+      tags: [auth]
+      operationId: resendVerification
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [email], additionalProperties: false, properties: { email: { type: string, format: email, maxLength: 254 } } } } }
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedGeneric' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
+      responses:
+        '200':
+          description: Session cookie set (rotated); returns the user
+          headers: { Set-Cookie: { schema: { type: string }, description: '__Host-upnext_sid; HttpOnly; Secure; SameSite=Lax' } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+        '401': { description: 'Generic `invalid_credentials`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '403': { description: '`email_not_verified` or `account_unavailable` (only after correct credentials; x-open OQ-04/OQ-15)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Session destroyed' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /auth/password-reset/request:
+    post:
+      tags: [auth]
+      operationId: requestPasswordReset
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [email], additionalProperties: false, properties: { email: { type: string, format: email, maxLength: 254 } } } } }
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedGeneric' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/password-reset/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmPasswordReset
+      description: Sets the password, consumes the token, revokes all sessions.
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [token, new_password], additionalProperties: false, properties: { token: { type: string, maxLength: 200 }, new_password: { type: string, minLength: 10, maxLength: 128, format: password } } } } }
+      responses:
+        '204': { description: 'Password changed' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/password/change:
+    post:
+      tags: [auth]
+      operationId: changePassword
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [current_password, new_password], additionalProperties: false, properties: { current_password: { type: string, maxLength: 128 }, new_password: { type: string, minLength: 10, maxLength: 128 } } } } }
+      responses:
+        '204': { description: 'Changed; other sessions revoked' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+
+  /me:
+    get:
+      tags: [me]
+      operationId: getMe
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Current user', content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    patch:
+      tags: [me]
+      operationId: updateMe
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, properties: { display_name: { type: string, minLength: 1, maxLength: 80 } } } } }
+      responses:
+        '200': { description: 'Updated', content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/email-change:
+    post:
+      tags: [me]
+      operationId: requestEmailChange
+      description: Requires password re-entry. The new address is verified before it replaces the old; the old address is notified.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [new_email, password], additionalProperties: false, properties: { new_email: { type: string, format: email, maxLength: 254 }, password: { type: string, maxLength: 128 } } } } }
+      responses:
+        '202': { $ref: '#/components/responses/AcceptedGeneric' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+  /me/deletion-request:
+    post:
+      tags: [me]
+      operationId: requestAccountDeletion
+      description: Starts account deletion. Cooling-off period, retention and legal basis x-open OQ-09.
+      x-open: OQ-09
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password], additionalProperties: false, properties: { password: { type: string, maxLength: 128 } } } } }
+      responses:
+        '202': { description: 'Request recorded', content: { application/json: { schema: { type: object, required: [deletion_requested_at], properties: { deletion_requested_at: { type: string, format: date-time }, scheduled_for: { type: [string, 'null'], format: date-time, description: 'null until OQ-09 defines the cooling-off period' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+    delete:
+      tags: [me]
+      operationId: cancelAccountDeletion
+      x-open: OQ-09
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Cancelled (only if a cooling-off period exists)' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /me/profile:
+    get:
+      tags: [me]
+      operationId: getProfile
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    patch:
+      tags: [me]
+      operationId: updateProfile
+      description: Partial update. `null` clears an optional field; omitted fields are unchanged; arrays replace.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ProfileUpdate' } } }
+      responses:
+        '200': { description: 'Updated profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/sessions:
+    get:
+      tags: [me]
+      operationId: listSessions
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Sessions', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/SessionInfo' } } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/sessions/{session_id}:
+    delete:
+      tags: [me]
+      operationId: revokeSession
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { name: session_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: 'Revoked' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/saved:
+    get:
+      tags: [me]
+      operationId: listSaved
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Saved opportunities, newest first, with availability
+          content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/SavedItem' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/saved/{opportunity_id}:
+    put:
+      tags: [me]
+      operationId: saveOpportunity
+      summary: Idempotent save
+      description: 200 if already saved, 201 if newly saved. Cap per user and saveable states x-open OQ-31.
+      x-open: OQ-31
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/SavedOpportunityId' }]
+      responses:
+        '200': { description: 'Already saved', content: { application/json: { schema: { $ref: '#/components/schemas/SavedItem' } } } }
+        '201': { description: 'Saved', content: { application/json: { schema: { $ref: '#/components/schemas/SavedItem' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [me]
+      operationId: unsaveOpportunity
+      description: Idempotent; 204 whether or not it was saved.
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/SavedOpportunityId' }]
+      responses:
+        '204': { description: 'Not saved' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /discovery/for-you:
+    get:
+      tags: [discovery]
+      operationId: getForYou
+      summary: Rules-based personalised feed
+      description: |
+        Relevance estimates, not eligibility decisions. Returns useful results even for an incomplete profile
+        (departure from the reference lock panel, x-open OQ-23). Missing profile data never disqualifies;
+        unknown requirements are reported under `match.unknowns`, never treated as satisfied.
+      x-open: OQ-23
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: category, in: query, schema: { type: string } }
+        - { name: location, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200':
+          description: Ranked page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, page, meta]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ForYouItem' } }
+                  page: { $ref: '#/components/schemas/PageInfo' }
+                  meta:
+                    type: object
+                    required: [model_version, profile_complete]
+                    properties:
+                      model_version: { type: string, examples: ['rules-v1'] }
+                      profile_complete: { type: boolean }
+                      suggestions: { type: array, items: { type: object, required: [code, text], properties: { code: { type: string }, text: { type: string } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /editorial/opportunities:
+    get:
+      tags: [editorial]
+      operationId: listEditorialOpportunities
+      x-status: reserved
+      description: Queues exclude items the caller may not act on (matrix 3.3).
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: view, in: query, required: true, schema: { type: string, enum: [mine, review_queue, approval_queue, all_readonly] } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ListingStatus' } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200': { description: 'Page', content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/EditorialOpportunity' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [editorial]
+      operationId: createDraft
+      summary: T01 create_draft (Contributor)
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [category], properties: { category: { type: string, description: 'category code, immutable' } } } ] } } }
+      responses:
+        '201': { description: 'Created', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /editorial/opportunities/{id}:
+    get:
+      tags: [editorial]
+      operationId: getEditorialOpportunity
+      x-status: reserved
+      security: [{ cookieAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
+      responses:
+        '200': { description: 'Listing with live and pending versions', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /editorial/opportunities/{id}/draft:
+    patch:
+      tags: [editorial]
+      operationId: saveDraft
+      summary: T02 save_draft (author only)
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [expected_row_version], properties: { expected_row_version: { type: integer, minimum: 0 } } } ] } } }
+      responses:
+        '200': { description: 'Saved', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /editorial/opportunities/{id}/transitions:
+    post:
+      tags: [editorial]
+      operationId: transitionOpportunity
+      summary: Execute a workflow transition (T03–T15)
+      description: See docs/engineering/EDITORIAL_WORKFLOW.md. The server evaluates role and separation-of-duties guards; the response `allowed_actions` tells clients what is currently permitted.
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/TransitionRequest' } } }
+      responses:
+        '200': { description: 'Transition applied', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /editorial/opportunities/{id}/verification-records:
+    post:
+      tags: [editorial]
+      operationId: recordVerification
+      summary: V01 record verification (Editor ≠ author)
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/VerificationRecordInput' } } }
+      responses:
+        '201': { description: 'Recorded', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /editorial/opportunities/{id}/history:
+    get:
+      tags: [editorial]
+      operationId: getHistory
+      x-status: reserved
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/OpportunityId' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200': { description: 'Publishing events, newest first', content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/HistoryEvent' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /editorial/organisations:
+    get:
+      tags: [editorial]
+      operationId: searchOrganisations
+      x-status: reserved
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 100 } }
+      responses:
+        '200': { description: 'Matches (trigram)', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { $ref: '#/components/schemas/Organisation' } } } } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [editorial]
+      operationId: createOrganisation
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OrganisationInput' } } }
+      responses:
+        '201': { description: 'Created', content: { application/json: { schema: { $ref: '#/components/schemas/Organisation' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /editorial/organisations/{organisation_id}:
+    patch:
+      tags: [editorial]
+      operationId: updateOrganisation
+      description: Editor or Administrator only; audited.
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OrganisationInput' } } }
+      responses:
+        '200': { description: 'Updated', content: { application/json: { schema: { $ref: '#/components/schemas/Organisation' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/users:
+    get:
+      tags: [administration]
+      operationId: adminListUsers
+      x-status: reserved
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: role, in: query, schema: { $ref: '#/components/schemas/StaffRole' } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200': { description: 'Users (never includes secrets)', content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/AdminUser' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/users/{user_id}/roles:
+    post:
+      tags: [administration]
+      operationId: grantRole
+      description: Audited with severity `privileged`. Additional controls (second administrator, self-grant) x-open OQ-13.
+      x-status: reserved
+      x-open: OQ-13
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RoleChange' } } }
+      responses:
+        '201': { description: 'Granted', content: { application/json: { schema: { $ref: '#/components/schemas/AdminUser' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /admin/users/{user_id}/roles/{role}/revoke:
+    post:
+      tags: [administration]
+      operationId: revokeRole
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { name: role, in: path, required: true, schema: { $ref: '#/components/schemas/StaffRole' } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [reason], additionalProperties: false, properties: { reason: { type: string, minLength: 10, maxLength: 1000 } } } } }
+      responses:
+        '200': { description: 'Revoked', content: { application/json: { schema: { $ref: '#/components/schemas/AdminUser' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/users/{user_id}/status:
+    patch:
+      tags: [administration]
+      operationId: changeUserStatus
+      description: Semantics of restricted/suspended/deactivated x-open OQ-15.
+      x-status: reserved
+      x-open: OQ-15
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [status, reason], additionalProperties: false, properties: { status: { type: string, enum: [active, restricted, suspended, deactivated] }, reason: { type: string, minLength: 10, maxLength: 1000 } } } } }
+      responses:
+        '200': { description: 'Changed', content: { application/json: { schema: { $ref: '#/components/schemas/AdminUser' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/audit-events:
+    get:
+      tags: [administration]
+      operationId: adminListAuditEvents
+      x-status: reserved
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - { name: object_type, in: query, schema: { type: string } }
+        - { name: object_id, in: query, schema: { type: string, format: uuid } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string, enum: [info, privileged, security] } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Cursor' }
+      responses:
+        '200': { description: 'Read-only log', content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/AuditEvent' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/email-outbox/{outbox_id}/retry:
+    post:
+      tags: [administration]
+      operationId: retryOutbox
+      x-status: reserved
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters: [{ name: outbox_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '202': { description: 'Re-queued' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /health/live:
+    get:
+      tags: [health]
+      operationId: healthLive
+      servers: [{ url: / }]
+      responses:
+        '200': { description: 'Process is up', content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, const: ok } } } } } }
+  /health/ready:
+    get:
+      tags: [health]
+      operationId: healthReady
+      servers: [{ url: / }]
+      description: Checks database connectivity and pending-migration state. Returns no version or configuration detail.
+      responses:
+        '200': { description: 'Ready', content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, const: ok } } } } } }
+        '503': { description: 'Not ready' }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-upnext_sid
+      description: HttpOnly Secure SameSite=Lax session cookie (name depends on OQ-01 hostname topology).
+    csrf:
+      type: apiKey
+      in: header
+      name: X-CSRFToken
+  headers:
+    RequestId:
+      schema: { type: string }
+      description: Correlation id echoed in logs and error bodies.
+  parameters:
+    Limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+    Cursor: { name: cursor, in: query, description: 'Opaque signed cursor tied to sort and filters; tampering returns 400 `invalid_cursor`', schema: { type: string, maxLength: 512 } }
+    Slug: { name: slug, in: path, required: true, schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', minLength: 8, maxLength: 80 } }
+    OpportunityId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    SavedOpportunityId: { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+    UserId: { name: user_id, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    BadRequest: { description: 'Validation or parameter error (`validation_failed`, `invalid_filter`, `invalid_cursor`, `unknown_field`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unauthenticated: { description: 'No valid session (`unauthenticated`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: '`permission_denied` or `separation_of_duties`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    CsrfFailed: { description: '`csrf_failed`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    ReauthRequired: { description: '`reauth_required` — password re-entry needed', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: 'Not found or not visible to the caller (`not_found`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Conflict: { description: '`state_conflict`, `invalid_transition`, `amendment_already_open`, `duplicate_detected`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    RateLimited:
+      description: '`rate_limited`'
+      headers: { Retry-After: { schema: { type: integer }, description: 'Seconds' } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    AcceptedGeneric:
+      description: Accepted. Identical body regardless of account state.
+      content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, const: accepted } } } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code: { type: string, description: 'Stable machine code (VALIDATION_SPEC §11, EDITORIAL_WORKFLOW §6, auth codes)' }
+            message: { type: string }
+            request_id: { type: string }
+            fields:
+              type: object
+              description: Present for validation errors; keys are JSON paths.
+              additionalProperties:
+                type: array
+                items: { type: object, required: [code, message], properties: { code: { type: string }, message: { type: string } } }
+    PageInfo:
+      type: object
+      required: [limit, has_more, next_cursor]
+      properties:
+        limit: { type: integer }
+        has_more: { type: boolean }
+        next_cursor: { type: [string, 'null'] }
+        total: { type: [integer, 'null'], description: 'Exact count for filtered public lists when affordable, else null' }
+    WorkMode: { type: string, enum: [on_site, hybrid, remote] }
+    EmploymentType: { type: string, enum: [permanent, contract, temporary, part_time, internship, trainee] }
+    ExperienceLevel: { type: string, enum: [none, entry, mid, senior, executive], description: 'value set to confirm' }
+    DeadlineState: { type: string, enum: [open, closing_soon, unknown, expired] }
+    ListingStatus: { type: string, enum: [draft, in_review, approved, rejected, published, expired, withdrawn, archived] }
+    VerificationLevel: { type: string, enum: [not_verified, source_checked, issuer_verified] }
+    StaffRole: { type: string, enum: [contributor, editor, publisher, administrator] }
+    AccountStatus: { type: string, enum: [pending_verification, active, restricted, suspended, deactivated] }
+    Category:
+      type: object
+      required: [code, name]
+      properties: { code: { type: string }, name: { type: string } }
+    Location:
+      type: object
+      required: [id, slug, name, kind]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [country, province, city, remote] }
+        parent_slug: { type: [string, 'null'] }
+    Sector:
+      type: object
+      required: [id, slug, name]
+      properties: { id: { type: string, format: uuid }, slug: { type: string }, name: { type: string } }
+    Skill:
+      type: object
+      required: [id, name]
+      properties: { id: { type: string, format: uuid }, name: { type: string } }
+    Organisation:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        website_url: { type: [string, 'null'], format: uri }
+    OrganisationInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 200 }
+        website_url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+    Deadline:
+      type: object
+      required: [state]
+      properties:
+        at: { type: [string, 'null'], format: date-time, description: 'null = deadline not stated (never inferred)' }
+        timezone: { type: [string, 'null'], description: 'IANA name, for display' }
+        is_date_only: { type: boolean }
+        state: { $ref: '#/components/schemas/DeadlineState' }
+    Money:
+      type: [object, 'null']
+      description: null when not stated (never inferred)
+      properties:
+        min: { type: [string, 'null'], pattern: '^\d{1,12}(\.\d{1,2})?$', description: 'decimal string' }
+        max: { type: [string, 'null'], pattern: '^\d{1,12}(\.\d{1,2})?$' }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        period: { type: [string, 'null'], enum: [hour, day, month, year, once, null] }
+    Verification:
+      type: object
+      required: [level]
+      properties:
+        level: { $ref: '#/components/schemas/VerificationLevel' }
+        checked_at: { type: [string, 'null'], format: date-time }
+    Source:
+      type: object
+      required: [kind, name, observed_on, is_primary]
+      properties:
+        kind: { type: string, enum: [issuer_website, issuer_notice, government_gazette, newspaper, email_from_issuer, social_media, aggregator, other] }
+        name: { type: string }
+        url: { type: [string, 'null'], format: uri }
+        citation: { type: [string, 'null'] }
+        observed_on: { type: string, format: date, description: 'date the source was checked' }
+        is_primary: { type: boolean }
+    OpportunitySummary:
+      type: object
+      required: [id, slug, title, summary, category, organisation, locations, deadline, verification, status, published_at]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string } } }
+        locations:
+          type: array
+          items: { type: object, required: [slug, name, is_primary], properties: { slug: { type: string }, name: { type: string }, is_primary: { type: boolean } } }
+        work_mode: { oneOf: [ { $ref: '#/components/schemas/WorkMode' }, { type: 'null' } ] }
+        employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
+        deadline: { $ref: '#/components/schemas/Deadline' }
+        salary: { $ref: '#/components/schemas/Money' }
+        verification: { $ref: '#/components/schemas/Verification' }
+        primary_source_name: { type: [string, 'null'] }
+        status: { type: string, enum: [published, expired, withdrawn] }
+        published_at: { type: string, format: date-time }
+        is_saved: { type: [boolean, 'null'], description: 'null for anonymous callers' }
+    OpportunityDetail:
+      allOf:
+        - $ref: '#/components/schemas/OpportunitySummary'
+        - type: object
+          required: [description_html, application, sources, canonical_path, updated_at]
+          properties:
+            description_html: { type: string, description: 'Server-sanitised HTML from the Markdown subset' }
+            requirements_html: { type: [string, 'null'] }
+            geographic_eligibility: { type: [string, 'null'] }
+            location_text: { type: [string, 'null'] }
+            experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
+            funding: { $ref: '#/components/schemas/Money' }
+            skills: { type: array, items: { type: object, required: [name, is_required], properties: { name: { type: string }, is_required: { type: boolean } } } }
+            sectors: { type: array, items: { $ref: '#/components/schemas/Sector' } }
+            reference_number: { type: [string, 'null'] }
+            contact_details: { type: [string, 'null'] }
+            application:
+              type: object
+              required: [method]
+              description: UPNEXT never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
+              properties:
+                method: { type: string, enum: [external_url, email, instructions] }
+                url: { type: [string, 'null'], format: uri }
+                email: { type: [string, 'null'], format: email }
+                instructions: { type: [string, 'null'] }
+            sources: { type: array, items: { $ref: '#/components/schemas/Source' } }
+            detail: { type: object, additionalProperties: true, description: 'Category-specific attributes validated against the versioned schema' }
+            detail_schema_version: { type: integer }
+            canonical_path: { type: string, examples: ['/opportunities/graduate-electrical-engineer-k7m3qp'] }
+            updated_at: { type: string, format: date-time }
+    User:
+      type: object
+      required: [id, email, email_verified, display_name, status, roles]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        email_verified: { type: boolean }
+        display_name: { type: string }
+        status: { $ref: '#/components/schemas/AccountStatus' }
+        roles: { type: array, items: { $ref: '#/components/schemas/StaffRole' }, description: 'for UI navigation only; never trusted by the server' }
+        created_at: { type: string, format: date-time }
+    AdminUser:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            last_login_at: { type: [string, 'null'], format: date-time }
+            role_grants:
+              type: array
+              items: { type: object, required: [role, granted_by, granted_at], properties: { role: { $ref: '#/components/schemas/StaffRole' }, granted_by: { type: string, format: uuid }, granted_at: { type: string, format: date-time }, revoked_at: { type: [string, 'null'], format: date-time } } }
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, display_name]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 10, maxLength: 128, format: password }
+        display_name: { type: string, minLength: 1, maxLength: 80 }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, maxLength: 128, format: password }
+    TokenRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties: { token: { type: string, maxLength: 200 } }
+    Profile:
+      type: object
+      required: [country, category_interests, sector_interests, preferred_locations, skills, fields_of_study, work_arrangements]
+      properties:
+        country: { type: string, pattern: '^[A-Z]{2}$', default: ZW }
+        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
+        work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
+        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string, description: 'category code' } }
+        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
+        updated_at: { type: string, format: date-time }
+    ProfileUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        country: { type: string, pattern: '^[A-Z]{2}$' }
+        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
+        work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
+        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
+        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
+    SessionInfo:
+      type: object
+      required: [id, created_at, last_seen_at, current]
+      properties:
+        id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+        user_agent_summary: { type: [string, 'null'] }
+        current: { type: boolean }
+    SavedItem:
+      type: object
+      required: [opportunity_id, saved_at, availability]
+      properties:
+        opportunity_id: { type: string, format: uuid }
+        saved_at: { type: string, format: date-time }
+        availability: { type: string, enum: [open, expired, withdrawn, unavailable], description: '`unavailable` (e.g. takedown) carries no opportunity content' }
+        opportunity: { oneOf: [ { $ref: '#/components/schemas/OpportunitySummary' }, { type: 'null' } ] }
+    ForYouItem:
+      type: object
+      required: [opportunity, match]
+      properties:
+        opportunity: { $ref: '#/components/schemas/OpportunitySummary' }
+        match:
+          type: object
+          required: [reasons, unknowns]
+          description: Relevance estimate, not an eligibility decision. Reasons must be derived from the same deterministic factors that produced the ranking.
+          properties:
+            score: { type: [number, 'null'], minimum: 0, maximum: 100, description: 'x-open OQ-23: may be omitted or hidden by the UI' }
+            reasons:
+              type: array
+              items: { type: object, required: [signal, text], properties: { signal: { type: string, enum: [category_interest, sector_interest, location, skills, education, experience, deadline] }, text: { type: string } } }
+            unknowns:
+              type: array
+              description: Requirements or profile facts that could not be compared; never treated as satisfied
+              items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
+    DraftContent:
+      type: object
+      additionalProperties: false
+      description: Writable listing content (VALIDATION_SPEC §4). Draft saves enforce types/lengths only; submit enforces publish-grade rules.
+      properties:
+        organisation_id: { type: string, format: uuid }
+        title: { type: string, maxLength: 200 }
+        summary: { type: string, maxLength: 300 }
+        description_md: { type: string, maxLength: 20000 }
+        requirements_md: { type: [string, 'null'], maxLength: 10000 }
+        locations: { type: array, maxItems: 5, items: { type: object, required: [location_id, is_primary], additionalProperties: false, properties: { location_id: { type: string, format: uuid }, is_primary: { type: boolean } } } }
+        location_text: { type: [string, 'null'], maxLength: 200 }
+        geographic_eligibility: { type: [string, 'null'], maxLength: 500 }
+        work_mode: { oneOf: [ { $ref: '#/components/schemas/WorkMode' }, { type: 'null' } ] }
+        employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
+        experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
+        salary: { $ref: '#/components/schemas/Money' }
+        funding: { $ref: '#/components/schemas/Money' }
+        deadline_at: { type: [string, 'null'], format: date-time }
+        deadline_timezone: { type: [string, 'null'] }
+        deadline_is_date_only: { type: boolean, x-open: OQ-22 }
+        application_method: { type: string, enum: [external_url, email, instructions], x-open: OQ-05 }
+        application_url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+        application_email: { type: [string, 'null'], format: email }
+        application_instructions: { type: [string, 'null'], maxLength: 2000 }
+        reference_number: { type: [string, 'null'], maxLength: 100 }
+        contact_details: { type: [string, 'null'], maxLength: 500 }
+        skills: { type: array, maxItems: 30, items: { type: object, required: [skill_id, is_required], additionalProperties: false, properties: { skill_id: { type: string, format: uuid }, is_required: { type: boolean } } } }
+        sector_ids: { type: array, maxItems: 5, items: { type: string, format: uuid } }
+        sources:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, name, observed_on, is_primary]
+            properties:
+              kind: { type: string, enum: [issuer_website, issuer_notice, government_gazette, newspaper, email_from_issuer, social_media, aggregator, other] }
+              name: { type: string, minLength: 2, maxLength: 200 }
+              url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+              citation: { type: [string, 'null'], maxLength: 500 }
+              observed_on: { type: string, format: date }
+              is_primary: { type: boolean }
+        detail: { type: object, additionalProperties: true, description: 'Validated against the active category schema (x-open OQ-06)' }
+    EditorialVersion:
+      type: object
+      required: [version_no, state, author_id, content]
+      properties:
+        version_no: { type: integer }
+        state: { type: string, enum: [draft, in_review, approved, rejected, published, superseded, discarded] }
+        author_id: { type: string, format: uuid }
+        submitted_at: { type: [string, 'null'], format: date-time }
+        approved_by: { type: [string, 'null'], format: uuid }
+        approved_at: { type: [string, 'null'], format: date-time }
+        content_hash: { type: [string, 'null'] }
+        content: { $ref: '#/components/schemas/DraftContent' }
+        review_decisions:
+          type: array
+          items: { type: object, required: [decision, decided_by, decided_at], properties: { decision: { type: string, enum: [approved, rejected, returned] }, reason_code: { type: [string, 'null'] }, reason: { type: [string, 'null'] }, decided_by: { type: string, format: uuid }, decided_at: { type: string, format: date-time } } }
+        verification_records:
+          type: array
+          items: { $ref: '#/components/schemas/VerificationRecord' }
+    EditorialOpportunity:
+      type: object
+      required: [id, status, category, row_version, allowed_actions]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/ListingStatus' }
+        archive_reason: { type: [string, 'null'], enum: [housekeeping, takedown, abandoned, null] }
+        category: { $ref: '#/components/schemas/Category' }
+        row_version: { type: integer }
+        verification: { $ref: '#/components/schemas/Verification' }
+        live_version: { oneOf: [ { $ref: '#/components/schemas/EditorialVersion' }, { type: 'null' } ] }
+        pending_version: { oneOf: [ { $ref: '#/components/schemas/EditorialVersion' }, { type: 'null' } ] }
+        allowed_actions:
+          type: array
+          description: Transitions the caller may perform right now (computed server-side, including separation-of-duties); advisory for UI, re-checked on execution.
+          items: { $ref: '#/components/schemas/TransitionAction' }
+    TransitionAction:
+      type: string
+      enum: [submit, approve, reject, return, publish, schedule_publish, takedown, withdraw, expire, archive, discard, reopen, amend]
+    TransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [action, expected_row_version]
+      properties:
+        action: { $ref: '#/components/schemas/TransitionAction' }
+        expected_row_version: { type: integer, minimum: 0 }
+        reason_code: { type: [string, 'null'], maxLength: 50 }
+        reason: { type: [string, 'null'], minLength: 10, maxLength: 2000, description: 'Required for reject, return, takedown, withdraw, manual expire' }
+        checklist:
+          type: object
+          additionalProperties: false
+          description: Required for approve; all three must be true
+          properties: { source_reviewed: { type: boolean }, duplicates_reviewed: { type: boolean }, content_matches_source: { type: boolean } }
+        duplicate_acknowledgement:
+          type: [object, 'null']
+          description: Required on submit when a hard duplicate exists (x-open OQ-08)
+          properties: { duplicate_of: { type: string, format: uuid }, reason: { type: string, minLength: 10, maxLength: 1000 } }
+        publish_at: { type: [string, 'null'], format: date-time, description: 'schedule_publish only; x-open OQ-14' }
+    VerificationRecordInput:
+      type: object
+      additionalProperties: false
+      required: [version_no, level, method, outcome, evidence_note]
+      properties:
+        version_no: { type: integer }
+        level: { type: string, enum: [source_checked, issuer_verified] }
+        method: { type: string, enum: [source_page_review, document_review, issuer_contact] }
+        outcome: { type: string, enum: [confirmed, unable_to_confirm, discrepancy_found] }
+        evidence_note: { type: string, minLength: 20, maxLength: 2000 }
+    VerificationRecord:
+      allOf:
+        - $ref: '#/components/schemas/VerificationRecordInput'
+        - type: object
+          required: [id, checked_by, checked_at]
+          properties: { id: { type: string, format: uuid }, checked_by: { type: string, format: uuid }, checked_at: { type: string, format: date-time }, supersedes_id: { type: [string, 'null'], format: uuid } }
+    HistoryEvent:
+      type: object
+      required: [id, transition, from_status, to_status, actor_type, occurred_at]
+      properties:
+        id: { type: string, format: uuid }
+        transition: { type: string, examples: [T07] }
+        from_status: { type: [string, 'null'] }
+        to_status: { type: string }
+        version_no: { type: [integer, 'null'] }
+        actor_type: { type: string, enum: [user, system] }
+        actor_id: { type: [string, 'null'], format: uuid }
+        reason: { type: [string, 'null'] }
+        occurred_at: { type: string, format: date-time }
+    RoleChange:
+      type: object
+      additionalProperties: false
+      required: [role, reason]
+      properties:
+        role: { $ref: '#/components/schemas/StaffRole' }
+        reason: { type: string, minLength: 10, maxLength: 1000 }
+    AuditEvent:
+      type: object
+      required: [id, occurred_at, actor_type, action, severity]
+      properties:
+        id: { type: integer, format: int64 }
+        occurred_at: { type: string, format: date-time }
+        actor_type: { type: string, enum: [user, system, anonymous] }
+        actor_ref: { type: [string, 'null'], format: uuid }
+        action: { type: string }
+        object_type: { type: [string, 'null'] }
+        object_id: { type: [string, 'null'], format: uuid }
+        severity: { type: string, enum: [info, privileged, security] }
+        request_id: { type: [string, 'null'] }
+        changes: { type: [object, 'null'], additionalProperties: true }

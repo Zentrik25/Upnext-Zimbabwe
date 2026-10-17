@@ -4,7 +4,7 @@
 
 **Repository inspection:** the repository was empty (no commits, no files) when the design pack was added. There is no existing code, CI, or infrastructure to reconcile. The VPS, Traefik and Nginx configuration cannot be inspected from this environment, so every statement about them is an unverified assumption (§7).
 
-> **Update 17 Oct 2026:** the v1.0 specification was received afterwards. See `SPEC_V1_RECONCILIATION.md` §C — it changes ADR-002 (module names), ADR-004 (hybrid JSONB model), ADR-005 (verification levels, publish gate = provenance only, `rejected`/`withdrawn` states) and ADR-010 (Redis/Celery arrives with Phase 4). Where the two documents differ, the reconciliation is newer.
+> **Superseded in part (2026-10-17).** This was the first Phase 0 proposal. After the owner approved decisions D-08…D-17 the authoritative documents are in `docs/engineering/`, `docs/design/`, `docs/adr/` and `docs/governance/` — start from `PHASE0_REVIEW_PACKAGE.md`. Superseded here: the module names and ADR table (§8), the data model (§3.3 typed tables → hybrid, ADR-0005), lifecycle and verification axes (§3.2), the 12 px text-floor and muted-colour proposals (withdrawn, now OQ-25), Redis/Celery timing (ADR-0004), roles (ADR-0002), and the capacity table (still assumptions, OQ-11). Kept for history; where documents differ, the newer ones win.
 
 ---
 
@@ -183,7 +183,7 @@ Admin hardening: MFA for staff accounts (proposal — OPEN), admin route not ind
 | PR-08 search | Search | `GET /opportunities` | determinism, pagination, unknown deadlines |
 | PR-09 quality | all | — | axe, keyboard, perf, monitoring |
 
-Full row-level traceability to acceptance criteria will be maintained in `docs/phase0/TRACEABILITY.md` once the OPEN items below are resolved.
+Full row-level traceability to acceptance criteria will be maintained in `docs/governance/TRACEABILITY.md` once the OPEN items below are resolved.
 
 ## 7. Deployment and infrastructure assumptions (UNVERIFIED)
 

@@ -1,13 +1,21 @@
 # UPNEXT — Product design first
-Status: DRAFT for stakeholder review. **No application coding is authorised.**
+Status: DRAFT for stakeholder review. **No application coding, migrations, infrastructure change or deployment is authorised.**
+
+## Where things are
+| Area | Location |
+|---|---|
+| Decisions (authoritative) | `docs/governance/DECISION_REGISTER.md`, `docs/adr/` |
+| Phase 0 review package | `docs/phase0/PHASE0_REVIEW_PACKAGE.md` |
+| Product | `docs/product/` (vision, personas, PRD, journeys) |
+| Design | `docs/design/` (system, **tokens**, IA, screens) and `reference/approved-flat.html` |
+| Engineering | `docs/engineering/` (architecture, ERD, validation, OpenAPI, permissions, workflow, security, tests) |
+| Traceability | `docs/governance/TRACEABILITY.md` |
+| Legacy inputs (non-binding) | `docs/archive/legacy-docs/` |
 
 ## Order of review
-1. PRODUCT_VISION.md, USER_PERSONAS.md and PRD.md
-2. USER_JOURNEYS.md, INFORMATION_ARCHITECTURE.md, DESIGN_SYSTEM.md, SCREEN_SPECIFICATIONS.md
-3. DOMAIN_MODEL.md, TECHNICAL_ARCHITECTURE.md, API_CONTRACTS.md, SECURITY.md
-4. TEST_STRATEGY.md, ROADMAP.md, DECISION_REGISTER.md
-
-Read `reference/approved-flat.html` as the visual baseline. Older documents in `docs/` are reference inputs, not approval for conflicting requirements. `DECISION_REGISTER.md` is authoritative for confirmed vs unresolved decisions.
+1. Phase 0 review package (summary, blockers, approval checklist).
+2. Decision register (D-08…D-17 approved; OQ-01…OQ-31 open).
+3. Product and design documents, then engineering documents, then ADRs and traceability.
 
 ## Gate
-Before implementation, each document needs review, resolved contradictions, traceable acceptance criteria and explicit owner approval. Unresolved choices must remain `OPEN`, never silently defaulted.
+Before implementation, each document needs review, resolved contradictions, traceable acceptance criteria and explicit owner approval. Unresolved choices stay `OPEN`, never silently defaulted.
