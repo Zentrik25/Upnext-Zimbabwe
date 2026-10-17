@@ -144,6 +144,8 @@ jobs:
           } > .env
       - name: Build and start the stack (waits for health checks)
         working-directory: infrastructure/compose
+        env:
+          COMPOSE_BAKE: "false"
         run: docker compose -f compose.yaml -f compose.prod-like.yaml up -d --build --wait --wait-timeout 300
       - run: npm ci --ignore-scripts
         working-directory: apps/web
