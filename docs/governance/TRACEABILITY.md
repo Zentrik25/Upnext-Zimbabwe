@@ -40,6 +40,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-30 | Deferred scope is not exposed: eligibility decisions, public organisation pages, advanced related items, uploads, alerts, employer self-service, payments | D-15; ADR-0008; PRD exclusions | SC-01…SC-03 | — | SCOPE-01, SCOPE-02 | OQ-24 |
 | R-31 | Runtime versions are researched, pinned, patched and monitored for end of life | D-20; ADR-0013; VERSION_RECOMMENDATION | — | — | OPS-10…OPS-13 | OQ-28 |
 | R-32 | Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category | D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES | SC-12 | createDraft, saveDraft | CAT-01…CAT-08 | OQ-06, OQ-21, OQ-22, OQ-29 |
+| R-33 | Staff access protections: two-step verification, shorter staff sessions, staff CSP, audited authentication events (provisional default P3-07 for OQ-16) | P3 review; SECURITY_ARCHITECTURE §3, §5.1; OQ-16 | SC-12, SC-13 | login, getMe | AUTH-13…AUTH-15, SEC-11 | OQ-13, OQ-16, OQ-17 |
 
 ## 2. Screen register
 
@@ -49,7 +50,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | SC-02 | Explore / search results | /opportunities (+ category filters) | §19 Screen 2 | loading, zero results, invalid filter, rate limited |
 | SC-03 | Opportunity detail | /opportunities/{slug} | §19 Screen 3 | active, closing soon, expired, withdrawn, unknown deadline, unavailable source, not_verified/source_checked/issuer_verified |
 | SC-04 | Register | /register | §19 Screen 4 | empty, invalid, submitting, accepted (check email), rate limited |
-| SC-05 | Sign in | /login | §19 Screen 4 | incorrect credentials, email not verified, session expired, rate limited |
+| SC-05 | Sign in | /sign-in | §19 Screen 4 | incorrect credentials, email not verified, session expired, rate limited |
 | SC-06 | Verify email / pending verification | /verify-email | §19 Screen 4 | pending, success, invalid/expired token, resend throttled |
 | SC-07 | Forgot / reset password | /forgot-password, /reset-password | §19 Screen 4 | request accepted, token invalid, success |
 | SC-08 | Profile onboarding | /account/profile (stepper) | §19 Screen 5 | incomplete, saved, validation; optional steps skippable |
@@ -76,12 +77,12 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `register` | POST `/auth/register` | auth | R-04, R-17, R-18 |
 | `verifyEmail` | POST `/auth/email/verify` | auth | R-04 |
 | `resendVerification` | POST `/auth/email/resend` | auth | R-04, R-18 |
-| `login` | POST `/auth/login` | auth | R-04, R-06, R-17 |
+| `login` | POST `/auth/login` | auth | R-04, R-06, R-17, R-33 |
 | `logout` | POST `/auth/logout` | auth | R-04 |
 | `requestPasswordReset` | POST `/auth/password-reset/request` | auth | R-04, R-17, R-18 |
 | `confirmPasswordReset` | POST `/auth/password-reset/confirm` | auth | R-04 |
 | `changePassword` | POST `/auth/password/change` | auth | R-04 |
-| `getMe` | GET `/me` | me | R-04, R-06 |
+| `getMe` | GET `/me` | me | R-04, R-06, R-33 |
 | `updateMe` | PATCH `/me` | me | R-04 |
 | `requestEmailChange` | POST `/me/email-change` | me | R-04 |
 | `requestAccountDeletion` | POST `/me/deletion-request` | me | R-05, R-23 |
@@ -156,6 +157,9 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | AUTH-10 | List/revoke sessions; cannot see/revoke another user's |
 | AUTH-11 | Re-authentication window for sensitive actions |
 | AUTH-12 | Status enforcement: suspended/deactivated sessions invalidated at once |
+| AUTH-13 | Staff second step: every /staff/ page needs a verified TOTP or recovery code in the session; API sessions do not bypass it; codes are single-use per time step; failures limited and audited |
+| AUTH-14 | Staff second-step lifecycle: first-time enrolment, recovery codes shown once, audited reset (administrator or break-glass), secret not stored |
+| AUTH-15 | Session lifetimes: seeker 7 days idle / 30 days absolute; staff 30 minutes idle / 8 hours absolute; expired sessions are logged out |
 | WF-01 | Every legal transition T01–T15 succeeds for the permitted role |
 | WF-02 | Every illegal (state, action) pair returns invalid_transition |
 | WF-03 | Submit requires publish-grade validation, source, location, future deadline |
@@ -212,6 +216,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEC-08 | Open-redirect: login 'next' only same-origin allow-listed paths |
 | SEC-09 | Logs contain no passwords/tokens/emails (scrub test) |
 | SEC-10 | Mass-assignment: status/roles/email_verified_at not writable via public APIs |
+| SEC-11 | Staff site sends a Content-Security-Policy (scripts from this origin only), noindex, and no-store |
 | AUD-01 | Audit table rejects UPDATE/DELETE for the app role |
 | AUD-02 | Every catalogued action produces an audit row |
 | AUD-03 | Audit survives user deletion (pseudonymised actor_ref) |
@@ -297,7 +302,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 4. Whether a test exists and has been executed is recorded in §6; full results (commands and outputs) are recorded in phase reports and are never invented.
 5. This file is generated: edit `tools/traceability/generate.py` and run `python tools/traceability/generate.py`.
 
-## 6. Implementation status (Phases 1 and 2)
+## 6. Implementation status (Phases 1 to 3)
 
 Only the tests listed here exist. Everything else in §4 is still planned. "executed" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md`); it is not a CI claim.
 
@@ -403,3 +408,26 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | E2E-02 | `apps/web/tests/e2e/opportunities.spec.ts (detail page, sources, apply wording)` | executed |
 | E2E-03 | `apps/web/tests/e2e/opportunities.spec.ts (unknown address shows the not-found page); apps/api/tests/test_public_api.py` | executed |
 | E2E-09 | `apps/api/tests/test_admin.py (Contributor drafts, Editor approves, publish through the CMS)` | executed with the Django test client, not in a browser |
+| AUTH-01 | `apps/api/tests/test_accounts_api.py::test_registering_an_existing_address_looks_identical_and_creates_nothing; ::test_registration_is_accepted_and_queues_a_verification_email` | executed |
+| AUTH-02 | `apps/api/tests/test_accounts_api.py::test_verification_activates_the_account_without_signing_in; ::test_bad_tokens_all_fail_the_same_way; ::test_rotating_the_token_key_invalidates_outstanding_tokens` | executed |
+| AUTH-05 | `apps/api/tests/test_accounts_api.py::test_reset_request_is_uniform_and_only_queues_mail_for_active_accounts; ::test_reset_confirm_sets_the_password_revokes_every_session_and_notifies; ::test_a_newer_reset_request_invalidates_the_older_link` | executed |
+| AUTH-06 | `apps/api/tests/test_accounts_api.py::test_registration_validates_each_field; ::test_password_is_nfkc_normalised_and_argon2_is_the_production_hasher` | executed against the provisional values in P3-03 (OQ-17 still open) |
+| AUTH-10 | `apps/api/tests/test_accounts_api.py::test_sessions_are_listed_and_can_be_revoked_individually; apps/web/tests/e2e/accounts-journey.spec.ts` | executed |
+| AUTH-11 | `apps/api/tests/test_accounts_api.py::test_change_password_requires_the_current_password_and_keeps_only_this_session; ::test_failed_reauthentication_is_counted_against_the_login_limiter; ::test_deletion_request_needs_the_password_is_idempotent_and_can_be_cancelled` | executed (the password is required every time; there is no 10-minute freshness window) |
+| AUTH-13 | `apps/api/tests/test_staff_mfa.py; apps/web/tests/e2e/cms-journey.spec.ts (every staff sign-in)` | executed |
+| AUTH-14 | `apps/api/tests/test_staff_mfa.py::test_first_sign_in_enrols_shows_recovery_codes_once_then_opens_the_site; ::test_reset_command_is_audited_ends_sessions_and_forbids_self_reset; ::test_the_secret_is_derived_not_stored_and_a_key_change_resets_devices` | executed |
+| AUTH-15 | `apps/api/tests/test_saved.py::test_seeker_sessions_are_idle_7_days_and_absolute_30_days; ::test_staff_sessions_are_idle_30_minutes_and_absolute_8_hours` | executed against the provisional values in P3-03 |
+| MAIL-01 | `apps/api/tests/test_accounts_api.py::test_registration_is_accepted_and_queues_a_verification_email (row and token in one transaction)` | executed |
+| MAIL-02 | `apps/api/tests/test_outbox.py::test_two_workers_do_not_send_the_same_row_twice` | executed with sequential claims; a concurrent two-process claim test is not written |
+| MAIL-03 | `apps/api/tests/test_outbox.py::test_temporary_failures_back_off_and_become_dead_after_the_attempt_limit; ::test_permanent_failure_goes_straight_to_dead_and_retry_revives_it` | executed |
+| MAIL-04 | `apps/api/tests/test_outbox.py::test_a_row_stuck_in_sending_is_recovered` | executed |
+| MAIL-06 | `apps/api/tests/test_outbox.py (FakeSender, FileSender, disabled default)` | executed for the fake and file adapters; the provider adapter waits for OQ-03 |
+| API-06 | `apps/api/tests/test_saved.py::test_saving_is_idempotent_and_listed_with_the_listing; ::test_saved_items_report_availability_as_the_listing_changes; ::test_ids_mode_returns_states_only_and_validates` | executed |
+| DB-03 | `apps/api/tests/test_saved.py::test_a_listing_can_be_saved_once_per_user_in_the_database` | executed |
+| SEC-03 | `apps/api/tests/test_saved.py::test_saved_lists_are_private_and_filterable_and_paged; apps/api/tests/test_accounts_api.py::test_sessions_are_listed_and_can_be_revoked_individually` | executed for saved items and sessions (profile is not built) |
+| SEC-08 | `apps/web/tests/unit/accounts.test.tsx (safeNext); apps/web/tests/e2e/accounts-journey.spec.ts::sign-in only follows safe return addresses` | executed |
+| SEC-11 | `apps/api/tests/test_saved.py::test_the_staff_site_sends_a_content_security_policy_and_noindex` | executed |
+| E2E-04 | `apps/web/tests/e2e/accounts-journey.spec.ts (register, confirm by e-mail, sign in)` | executed on a throwaway stack with the file mail spool |
+| E2E-05 | `apps/web/tests/e2e/accounts-journey.spec.ts::account settings: name, password, sessions, deletion request` | executed (the request is recorded; execution of deletion is not built) |
+| E2E-08 | `apps/web/tests/e2e/accounts-journey.spec.ts::a signed-in person can save and unsave...` | executed in one browser session; retrieval from a second session is covered at API level only |
+| A11Y-01 | `apps/web/tests/e2e/accounts-journey.spec.ts (axe on register, sign-in, reset, saved, account)` | executed (account pages) |

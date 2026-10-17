@@ -112,3 +112,15 @@ Try the workflow: sign in as the Contributor, **Listings → Add**, choose a cat
 Role changes (audited, command line): `docker compose exec api python manage.py manage_staff_role grant --email someone@example.org --role editor --reason "Joins the editorial team" --by admin@demo.upnext.example`.
 
 Public pages: `http://localhost:8080/opportunities`. Backend tests need PostgreSQL and `DJANGO_SETTINGS_MODULE=config.settings.test` (CI sets it; inside the dev container pass `-e DJANGO_SETTINGS_MODULE=config.settings.test`): `docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test api pytest`. Browser tests against the seeded stack: `E2E_DEMO_DATA=1 BASE_URL=http://localhost:8080 npm run test:e2e` in `apps/web`.
+
+## Browser tests that need mail or staff codes (Phase 3)
+The seeker and staff journeys read the e-mail spool and demo two-step codes by running `manage.py` in the `worker` container. Point `E2E_EXEC` at it and enable the journeys:
+
+```
+export E2E_EXEC="docker compose -p upnext-dev -f infrastructure/compose/compose.yaml exec -T worker python manage.py"
+cd apps/web
+E2E_ACCOUNTS=1 npx playwright test tests/e2e/accounts-journey.spec.ts
+E2E_CMS=1 E2E_DEMO_PASSWORD=<the UPNEXT_DEMO_PASSWORD used with seed_demo> npx playwright test tests/e2e/cms-journey.spec.ts
+```
+
+The dev and prod-like stacks spool mail to files (`UPNEXT_EMAIL_BACKEND=file`), enable `UPNEXT_DEMO_TOOLS=1` and loosen the public-endpoint limits; none of that is for production. Staff two-step verification is on by default; `seed_demo` enrols the fictional staff accounts so tests can sign in.

@@ -163,12 +163,20 @@ jobs:
           E2E_STRICT_CONSOLE: "1"
           E2E_DEMO_DATA: "1"
         run: npm run test:e2e
+      - name: Seeker account journey (register, confirm by e-mail, sign in, save, reset)
+        working-directory: apps/web
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          E2E_ACCOUNTS: "1"
+          E2E_EXEC: docker compose -f ${{ github.workspace }}/infrastructure/compose/compose.yaml -f ${{ github.workspace }}/infrastructure/compose/compose.prod-like.yaml exec -T worker python manage.py
+        run: npx playwright test tests/e2e/accounts-journey.spec.ts
       - name: Editorial CMS browser journey (runs last, because it publishes and withdraws listings)
         working-directory: apps/web
         env:
           BASE_URL: http://127.0.0.1:8080
           E2E_CMS: "1"
           E2E_DEMO_PASSWORD: ${{ env.UPNEXT_DEMO_PASSWORD }}
+          E2E_EXEC: docker compose -f ${{ github.workspace }}/infrastructure/compose/compose.yaml -f ${{ github.workspace }}/infrastructure/compose/compose.prod-like.yaml exec -T worker python manage.py
         run: npx playwright test tests/e2e/cms-journey.spec.ts
       - name: Compose logs on failure
         if: failure()

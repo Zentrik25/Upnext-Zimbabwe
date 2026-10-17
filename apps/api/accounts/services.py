@@ -151,9 +151,32 @@ def verify_email(token_value: str) -> bool:
     return True
 
 
+class _Rollback(Exception):
+    pass
+
+
+def _decoy_work(kind: str) -> None:
+    """Do roughly the writes a real request would (then roll them back) so that unknown addresses do not
+    answer measurably faster. Comparable, not identical: the answer's content carries the guarantee."""
+    try:
+        with transaction.atomic():
+            outbox.enqueue(kind, None, "decoy@invalid.example")
+            audit.record(
+                action="account.decoy",
+                object_type="user",
+                object_id=None,
+                actor_id=None,
+                severity=Severity.INFO,
+            )
+            raise _Rollback
+    except _Rollback:
+        pass
+
+
 def resend_verification(email: str) -> None:
     user = User.objects.filter(email=normalise_email(email)).first()
     if user is None or user.status != AccountStatus.PENDING_VERIFICATION:
+        _decoy_work(EmailKind.EMAIL_VERIFICATION)
         return
     with transaction.atomic():
         token = tokens.issue(user, TokenPurpose.EMAIL_VERIFICATION)
@@ -169,7 +192,13 @@ def resend_verification(email: str) -> None:
 # --- passwords ---------------------------------------------------------------------------------------
 def request_password_reset(email: str) -> None:
     user = User.objects.filter(email=normalise_email(email)).first()
+    if user is not None and user.status == AccountStatus.PENDING_VERIFICATION:
+        # Someone may have registered this address before its owner: confirming it comes first, after which
+        # the owner can reset the password (otherwise a squatted address could never be recovered).
+        resend_verification(user.email)
+        return
     if user is None or user.status != AccountStatus.ACTIVE:
+        _decoy_work(EmailKind.PASSWORD_RESET)
         return
     with transaction.atomic():
         token = tokens.issue(user, TokenPurpose.PASSWORD_RESET)

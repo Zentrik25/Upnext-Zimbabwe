@@ -218,7 +218,7 @@ def test_resend_is_limited_to_three_per_hour_per_address(client: APIClient, sett
 
 
 # --- password reset ------------------------------------------------------------------------------------
-def test_reset_request_is_uniform_and_only_queues_mail_for_active_accounts(
+def test_reset_request_is_uniform_and_queues_the_right_mail_only_for_real_accounts(
     client: APIClient, make_user: Callable[..., User]
 ) -> None:
     make_user(email="active@example.org")
@@ -229,7 +229,13 @@ def test_reset_request_is_uniform_and_only_queues_mail_for_active_accounts(
         response = post_json(client, "/api/v1/auth/password-reset/request", {"email": email})
         bodies.append((response.status_code, response.json()))
     assert len(set(map(str, bodies))) == 1 and bodies[0][0] == 202
-    assert list(EmailOutbox.objects.values_list("to_address", flat=True)) == ["active@example.org"]
+    queued = {(r.to_address, r.kind) for r in EmailOutbox.objects.all()}
+    # an unconfirmed address gets the confirmation link (so a squatted address can be recovered); nothing for ghosts
+    assert queued == {
+        ("active@example.org", EmailKind.PASSWORD_RESET),
+        ("pending@example.org", EmailKind.EMAIL_VERIFICATION),
+    }
+    assert not AuditEvent.objects.filter(action="account.decoy").exists()  # decoy work is rolled back
 
 
 def test_reset_confirm_sets_the_password_revokes_every_session_and_notifies(

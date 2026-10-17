@@ -222,3 +222,16 @@ def test_the_staff_site_sends_a_content_security_policy_and_noindex(
     assert "'unsafe-inline'" not in csp.split("script-src")[1].split(";")[0]
     assert response["X-Robots-Tag"] == "noindex, nofollow"
     assert "Content-Security-Policy" not in Client().get("/api/v1/")
+
+
+def test_a_listing_can_be_saved_once_per_user_in_the_database(
+    world: World, people: dict[str, User], make_user: Callable[..., User]
+) -> None:
+    from django.db import IntegrityError, transaction
+
+    job = live(world, people, "jobs-1", "dup")
+    user = make_user()
+    SavedOpportunity.objects.create(user=user, opportunity=job)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        SavedOpportunity.objects.create(user=user, opportunity=job)
+    SavedOpportunity.objects.create(user=make_user(), opportunity=job)  # another person may save it

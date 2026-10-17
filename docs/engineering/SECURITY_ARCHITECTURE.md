@@ -174,3 +174,7 @@ Security events logged and alertable: repeated login failures, privileged role c
 
 ## 11. Security gates (in addition to QUALITY-GATES)
 No critical/high known defects; authorisation matrix tests green; SoD tests green; CSP and header tests green; dependency and secret scans clean; backup restore rehearsal passed; threat model reviewed against the built system before Phase 7.
+
+## 12. Implementation status (Phase 3)
+Built: §3 (identity, sessions with idle and absolute limits, CSRF, registration, verification, login, reset, token construction), §4 (outbox, port, retries, worker; provider adapter waits for OQ-03) and the §8 limits for the endpoints that exist, with the values in the decision register (P3-03). Differences from this draft: session records keep the session key instead of a hash (P3-08); the staff absolute limit is 8 hours; sensitive actions always ask for the password (no 10-minute freshness window); `job_run` is not built (the worker writes a heartbeat file that the Compose health check reads).
+Staff protections (OQ-16, P3-07): two-step verification (TOTP and recovery codes) in front of `/staff/`, a staff Content-Security-Policy, 30-minute idle sessions, audited sign-in and second-step events. Not built: network restriction, WebAuthn, second-administrator confirmation (OQ-13), per-IP lockout beyond the limiter.

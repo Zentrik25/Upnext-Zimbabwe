@@ -3,7 +3,7 @@ Hello,
 Someone asked to create a UPNEXT account with this e-mail address, but an account already exists.
 
 If it was you, sign in here: {{ base_url }}/sign-in
-If you forgot your password, you can reset it from the same page.
+If you forgot your password, you can reset it from the same page. If you never finished confirming this address, ask for the confirmation link again from the sign-in page.
 
 If it was not you, no action is needed.
 

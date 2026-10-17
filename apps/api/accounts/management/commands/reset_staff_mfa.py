@@ -1,7 +1,8 @@
 """Remove a staff member's two-step device so they can enrol again (audited, privileged).
 
-An Administrator resets someone else with `--by`. Without `--by` it is the break-glass route for a
-person with shell access to the server (recorded as a system action); an Administrator cannot reset themselves.
+An Administrator resets someone else with `--by`. Without `--by` it is the break-glass route for
+a person with shell access to the server (recorded as a system action). An Administrator
+cannot reset themselves.
 """
 
 from __future__ import annotations
