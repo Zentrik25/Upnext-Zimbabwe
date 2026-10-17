@@ -128,9 +128,9 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
         <Tabs label="Categories" items={tabs} />
       </Container>
       <Container className="grid grid-cols-[230px_1fr] gap-6 pt-[18px] pb-[65px] max-md:grid-cols-1">
-        <Panel aria-label="Filters" className="max-md:order-2">
-          <form action="/opportunities" method="get" className="grid gap-3">
-            <h2 className="text-title font-strong">Filters</h2>
+        <Panel aria-label="Filters" className="max-md:order-first">
+          <form action="/opportunities" method="get" className="grid gap-3 max-md:grid-cols-2">
+            <h2 className="text-title font-strong max-md:col-span-2">Filters</h2>
             {params.get("q") ? <input type="hidden" name="q" value={params.get("q") ?? ""} /> : null}
             {active ? <input type="hidden" name="category" value={active} /> : null}
             {params.get("limit") ? (
@@ -176,10 +176,12 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
                 ...(params.get("q") ? [["relevance", "Best match"] as const] : []),
               ]}
             />
-            <Button type="submit">Apply filters</Button>
+            <Button type="submit" className="max-md:col-span-2">
+              Apply filters
+            </Button>
             <Link
               href={href(new URLSearchParams(), { q: params.get("q"), category: active })}
-              className="text-ctl text-accent underline"
+              className="text-ctl text-accent underline max-md:col-span-2"
             >
               Clear filters
             </Link>
@@ -231,7 +233,7 @@ async function Results({
     const copy = {
       "invalid-query": [
         "Those filters could not be applied",
-        result.message ?? "Check the search words and filters, or clear the filters.",
+        "One of the search words or filters is not valid. Clear the filters and try again.",
       ],
       "rate-limited": ["Too many requests", "Wait a minute and try again."],
       unreachable: ["Opportunities are unavailable", "The service could not be reached. Try again shortly."],
@@ -242,7 +244,17 @@ async function Results({
     }[result.reason];
     return (
       <div role="alert">
-        <EmptyState title={copy[0]!}>{copy[1]}</EmptyState>
+        <EmptyState title={copy[0]!}>
+          {copy[1]}
+          {result.reason === "invalid-query" ? (
+            <>
+              {" "}
+              <Link href="/opportunities" className="text-accent underline">
+                Clear filters
+              </Link>
+            </>
+          ) : null}
+        </EmptyState>
       </div>
     );
   }

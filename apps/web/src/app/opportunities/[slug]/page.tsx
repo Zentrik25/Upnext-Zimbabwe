@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { VerificationTag } from "@/components/opportunities/parts";
-import { Callout, EmptyState, Notice, Panel, Tag } from "@/components/ui";
+import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
 import { getOpportunity } from "@/lib/catalog";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import {
@@ -59,14 +59,21 @@ export default async function OpportunityPage({ params }: Props) {
 
   return (
     <>
-      {listing.status !== "published" ? (
-        <Notice role="status" data-testid="status-banner">
-          {listing.status === "expired"
-            ? "This opportunity has closed. It is kept here so shared links keep working."
-            : "The issuer has withdrawn this opportunity. It is kept here so shared links keep working."}
-        </Notice>
-      ) : null}
       <Container className="pt-[18px] pb-[65px]">
+        {listing.status !== "published" ? (
+          <div
+            role="status"
+            data-testid="status-banner"
+            className="mb-4 border border-border-notice bg-surface-notice px-3 py-[10px] text-base"
+          >
+            <strong className="block text-title">
+              {listing.status === "expired" ? "Closed" : "Withdrawn by the issuer"}
+            </strong>
+            {listing.status === "expired"
+              ? "This opportunity has closed. It is kept here so shared links keep working."
+              : "The issuer has withdrawn this opportunity. It is kept here so shared links keep working."}
+          </div>
+        ) : null}
         <p className="text-ctl">
           <Link href="/opportunities" className="text-accent underline">
             ← All opportunities
@@ -105,6 +112,13 @@ export default async function OpportunityPage({ params }: Props) {
               </li>
             </ul>
             <p className="mt-2 text-base">{listing.summary}</p>
+            {listing.status === "published" ? (
+              <p className="mt-3 text-base md:hidden">
+                <a href="#apply" className="text-accent underline">
+                  How to apply
+                </a>
+              </p>
+            ) : null}
 
             <Section title="About this opportunity">
               <SafeHtml html={listing.description_html} />
@@ -178,7 +192,7 @@ export default async function OpportunityPage({ params }: Props) {
                     <p className="text-small text-muted">
                       {SOURCE_KIND[s.kind] ?? humanise(s.kind)} · checked {formatDate(s.observed_on)}
                     </p>
-                    {s.url ? (
+                    {s.url && isHttps(s.url) ? (
                       <a
                         href={s.url}
                         rel="noopener noreferrer nofollow ugc"
@@ -198,6 +212,15 @@ export default async function OpportunityPage({ params }: Props) {
       </Container>
     </>
   );
+}
+
+/** Outbound links are only ever rendered for https URLs (the API already enforces this; this is defence in depth). */
+function isHttps(url: string): boolean {
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -231,9 +254,9 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
     );
   }
   return (
-    <Callout data-testid="apply">
+    <Callout id="apply" data-testid="apply">
       <h2 className="text-title font-strong">How to apply</h2>
-      {application.method === "external_url" && application.url ? (
+      {application.method === "external_url" && application.url && isHttps(application.url) ? (
         <>
           <p className="mt-1 text-base">
             Applications are made on the issuer&apos;s website. You will leave UPNEXT; UPNEXT does not receive
@@ -307,9 +330,13 @@ function format(value: unknown, key: string): ReactNode {
   return String(value);
 }
 
+const LANGUAGES: Record<string, string> = { en: "English", sn: "Shona", nd: "Ndebele" };
+
 /** Enum-like values (`bachelors_degree`) read as words; free text is left untouched. */
 function humaniseValue(text: string): string {
-  return /^[a-z0-9]+(_[a-z0-9]+)+$/.test(text) ? humanise(text) : text;
+  if (LANGUAGES[text]) return LANGUAGES[text];
+  if (/^[a-z0-9]+(_[a-z0-9]+)+$/.test(text)) return humanise(text);
+  return /^[a-z]+$/.test(text) ? humanise(text) : text;
 }
 
 function DetailList({ detail }: { detail: Record<string, unknown> }) {

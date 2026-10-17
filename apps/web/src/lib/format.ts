@@ -101,6 +101,11 @@ export const VERIFICATION: Record<VerificationLevel, { label: string; explanatio
   },
 };
 
+/** Only a direct confirmation by the issuer is green; "source checked" is a weaker claim and stays neutral. */
+export function verificationTone(level: VerificationLevel): "default" | "good" {
+  return level === "issuer_verified" ? "good" : "default";
+}
+
 export function locationLabel(row: OpportunitySummary): string | null {
   if (row.locations.length === 0) return null;
   const primary = row.locations.find((l) => l.is_primary) ?? row.locations[0]!;

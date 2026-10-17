@@ -11,6 +11,7 @@ import {
   humanise,
   labelFor,
   locationLabel,
+  verificationTone,
 } from "@/lib/format";
 import { SafeHtml, buildTree, decodeEntities, tokenise } from "@/lib/safe-html";
 
@@ -136,5 +137,13 @@ describe("SafeHtml", () => {
     expect(decodeEntities("&lt;&amp;&#x27;&quot;")).toBe("<&'\"");
     expect(tokenise("a<br>b")).toHaveLength(3);
     expect(buildTree(tokenise("<p>x</p>"))).toHaveLength(1);
+  });
+});
+
+describe("verification wording", () => {
+  it("keeps source-checked visually distinct from verified with the issuer", () => {
+    expect(verificationTone("issuer_verified")).toBe("good");
+    expect(verificationTone("source_checked")).toBe("default");
+    expect(verificationTone("not_verified")).toBe("default");
   });
 });

@@ -2,6 +2,7 @@
 //   node tools/review/capture-screenshots.mjs <outDir>
 // Needs the Compose stack on BASE_URL (default http://localhost:8080) with `seed_demo` data and the
 // PLAYWRIGHT_CHROMIUM_EXECUTABLE environment variable if the bundled browser is not installed.
+// WITHDRAWN_SLUG and EXPIRED_SLUG name the listings the demo run withdrew and expired (slugs are random per seed).
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 const require = createRequire(new URL("../../apps/web/package.json", import.meta.url));
@@ -20,8 +21,8 @@ const slugs = {
   "detail-tender-unverified": find("Supply of Solar Water Heating Units"),
   "detail-citation-only-no-deadline": find("Public Health Programme Assistant"),
   "detail-scholarship": find("Postgraduate Engineering Scholarship"),
-  "detail-withdrawn": "education-support-internship-p4emun",
-  "detail-expired": "research-innovation-fund-3jfqdb",
+  "detail-withdrawn": process.env.WITHDRAWN_SLUG,
+  "detail-expired": process.env.EXPIRED_SLUG,
 };
 const pages = {
   "list-default": "/opportunities",

@@ -81,7 +81,7 @@ const state: { editUrl: string; listingUrl: string; slug: string } = {
   listingUrl: "",
   slug: "",
 };
-let contexts: BrowserContext[] = [];
+const contexts: BrowserContext[] = [];
 test.afterAll(async () => {
   await Promise.all(contexts.map((c) => c.close()));
 });

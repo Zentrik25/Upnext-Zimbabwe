@@ -1,9 +1,16 @@
 import type { OpportunitySummary, VerificationLevel } from "@/lib/catalog-types";
-import { deadlineView, labelFor, formatMoney, locationLabel, VERIFICATION } from "@/lib/format";
+import {
+  deadlineView,
+  labelFor,
+  formatMoney,
+  locationLabel,
+  VERIFICATION,
+  verificationTone,
+} from "@/lib/format";
 import { ListingRow, Tag } from "@/components/ui";
 
 export function VerificationTag({ level }: { level: VerificationLevel }) {
-  return <Tag tone={level === "not_verified" ? "default" : "good"}>{VERIFICATION[level].label}</Tag>;
+  return <Tag tone={verificationTone(level)}>{VERIFICATION[level].label}</Tag>;
 }
 
 /** One search result: plain facts are unboxed text, deadline and verification are labelled chips. */
@@ -26,7 +33,7 @@ export function OpportunityRow({ row }: { row: OpportunitySummary }) {
         { label: deadline.label, tone: deadline.tone },
         {
           label: VERIFICATION[row.verification.level].label,
-          tone: row.verification.level === "not_verified" ? "default" : "good",
+          tone: verificationTone(row.verification.level),
         },
       ]}
       sourceNote={row.primary_source_name ? `Source: ${row.primary_source_name}` : "Source not named"}

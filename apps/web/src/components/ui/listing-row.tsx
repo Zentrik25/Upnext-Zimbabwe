@@ -64,7 +64,12 @@ export function ListingRow({
       </ul>
       <div className="mt-[13px] flex items-center justify-between gap-2">
         <span className="text-small text-muted">{sourceNote}</span>
-        <ButtonLink variant="secondary" href={href} aria-label={`View details for ${title}`}>
+        <ButtonLink
+          variant="secondary"
+          href={href}
+          aria-label={`View details for ${title}`}
+          className="whitespace-nowrap"
+        >
           View details
         </ButtonLink>
       </div>
