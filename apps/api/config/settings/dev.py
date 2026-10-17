@@ -1,7 +1,7 @@
 """Local development: DEBUG-friendly, plain-HTTP cookies, schema endpoint enabled."""
 
 from .base import *
-from .env import get_list
+from .env import get_list, get_str
 
 DEBUG = True
 ALLOWED_HOSTS = get_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]", "api", "proxy"])
@@ -15,3 +15,4 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
+UPNEXT_EMAIL_BACKEND = get_str("UPNEXT_EMAIL_BACKEND", "file")

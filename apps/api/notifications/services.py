@@ -1,0 +1,173 @@
+"""Outbox: enqueue inside the caller's transaction, process in a worker (SECURITY_ARCHITECTURE §4).
+
+Delivery is at-least-once. Handlers never call the provider, so request latency and enumeration timing do
+not depend on it.
+"""
+
+from __future__ import annotations
+
+import logging
+import random
+import uuid
+from datetime import datetime, timedelta
+from typing import Any
+
+from django.conf import settings
+from django.db import transaction
+from django.db.models import F
+from django.template.loader import render_to_string
+from django.utils import timezone
+
+from accounts import tokens
+from accounts.models import AuthToken, TokenPurpose, User
+
+from .models import EmailKind, EmailOutbox, OutboxStatus
+from .sender import DeliveryResult, EmailMessage, EmailSender, get_sender
+
+logger = logging.getLogger("upnext.email")
+
+BACKOFF = [
+    timedelta(seconds=30),
+    timedelta(minutes=2),
+    timedelta(minutes=10),
+    timedelta(hours=1),
+    timedelta(hours=6),
+]
+MAX_ATTEMPTS = 6  # PROPOSED, OQ-17
+STUCK_AFTER = timedelta(minutes=5)
+
+SUBJECTS = {
+    EmailKind.EMAIL_VERIFICATION: "Confirm your UPNEXT e-mail address",
+    EmailKind.ACCOUNT_EXISTS: "You already have a UPNEXT account",
+    EmailKind.PASSWORD_RESET: "Reset your UPNEXT password",
+    EmailKind.PASSWORD_CHANGED_NOTICE: "Your UPNEXT password was changed",
+    EmailKind.ACCOUNT_DELETION_NOTICE: "We received your UPNEXT account deletion request",
+}
+_TOKEN_PATHS = {
+    EmailKind.EMAIL_VERIFICATION: "/verify-email",
+    EmailKind.PASSWORD_RESET: "/reset-password",
+}
+
+
+def enqueue(
+    kind: str,
+    user: User | None,
+    to_address: str,
+    *,
+    token: AuthToken | None = None,
+    idempotency_key: str | None = None,
+    context: dict[str, Any] | None = None,
+) -> EmailOutbox:
+    """Insert an outbox row. Call inside the transaction that changes state (all or nothing)."""
+    payload: dict[str, Any] = dict(context or {})
+    if token is not None:
+        payload["token_id"] = str(token.id)
+    return EmailOutbox.objects.create(
+        kind=kind,
+        user=user,
+        to_address=to_address,
+        template_key=str(kind),
+        payload=payload,
+        idempotency_key=idempotency_key or f"{kind}:{uuid.uuid4().hex}",
+    )
+
+
+def _link(row: EmailOutbox) -> str | None:
+    token_id = row.payload.get("token_id")
+    path = _TOKEN_PATHS.get(EmailKind(row.kind))
+    if not token_id or path is None:
+        return None
+    purpose = (
+        TokenPurpose.EMAIL_VERIFICATION
+        if row.kind == EmailKind.EMAIL_VERIFICATION
+        else TokenPurpose.PASSWORD_RESET
+    )
+    token = AuthToken.objects.filter(pk=token_id, purpose=purpose).first()
+    if token is None:
+        return None
+    return f"{settings.UPNEXT_PUBLIC_BASE_URL.rstrip('/')}{path}?token={tokens.render(token)}"
+
+
+def build_message(row: EmailOutbox) -> EmailMessage | None:
+    """Render at send time. Returns None when the link's token no longer exists (nothing to send)."""
+    link = _link(row)
+    if row.kind in _TOKEN_PATHS and link is None:
+        return None
+    body = render_to_string(
+        f"notifications/{row.template_key}_v{row.template_version}.txt",
+        {**row.payload, "link": link, "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/")},
+    )
+    return EmailMessage(
+        idempotency_key=row.idempotency_key,
+        to=row.to_address,
+        subject=SUBJECTS[EmailKind(row.kind)],
+        body=body,
+        kind=row.kind,
+    )
+
+
+def _claim(worker: str, now: datetime, batch: int) -> list[EmailOutbox]:
+    with transaction.atomic():
+        EmailOutbox.objects.filter(status=OutboxStatus.SENDING, locked_at__lt=now - STUCK_AFTER).update(
+            status=OutboxStatus.FAILED, locked_at=None, locked_by=None, next_attempt_at=now
+        )
+        rows = list(
+            EmailOutbox.objects.select_for_update(skip_locked=True)
+            .filter(status__in=[OutboxStatus.PENDING, OutboxStatus.FAILED], next_attempt_at__lte=now)
+            .order_by("next_attempt_at")[:batch]
+        )
+        ids = [r.pk for r in rows]
+        EmailOutbox.objects.filter(pk__in=ids).update(
+            status=OutboxStatus.SENDING, locked_at=now, locked_by=worker, attempts=F("attempts") + 1
+        )
+    return list(EmailOutbox.objects.filter(pk__in=ids))
+
+
+def _finish(row: EmailOutbox, result: DeliveryResult, now: datetime) -> None:
+    if result.outcome == "sent":
+        row.status, row.sent_at = OutboxStatus.SENT, now
+        row.provider_message_id = result.provider_message_id
+        row.payload = {}  # scrub variables after sending (ERD §3.9)
+        row.last_error = None
+    elif result.outcome == "permanent_failure" or row.attempts >= MAX_ATTEMPTS:
+        row.status, row.last_error = OutboxStatus.DEAD, (result.error_code or "failed")[:300]
+    else:
+        delay = BACKOFF[min(row.attempts - 1, len(BACKOFF) - 1)]
+        row.status, row.last_error = OutboxStatus.FAILED, (result.error_code or "failed")[:300]
+        row.next_attempt_at = now + delay * random.uniform(0.8, 1.2)  # noqa: S311 - jitter, not security
+    row.locked_at = row.locked_by = None
+    row.save()
+
+
+def process_batch(
+    *, worker: str = "worker", batch: int = 20, sender: EmailSender | None = None
+) -> dict[str, int]:
+    """Claim due rows, send them, record the outcome. Safe to run from several processes."""
+    sender = sender or get_sender()
+    now = timezone.now()
+    counts = {"sent": 0, "failed": 0, "dead": 0}
+    for row in _claim(worker, now, batch):
+        message = build_message(row)
+        if message is None:
+            _finish(row, DeliveryResult("permanent_failure", error_code="token_missing"), now)
+        else:
+            try:
+                result = sender.send(message)
+            except Exception:  # a sender bug must not poison the batch
+                logger.exception("sender raised", extra={"event": "email.sender_error"})
+                result = DeliveryResult("temporary_failure", error_code="sender_exception")
+            _finish(row, result, timezone.now())
+        counts[
+            "sent"
+            if row.status == OutboxStatus.SENT
+            else "dead"
+            if row.status == OutboxStatus.DEAD
+            else "failed"
+        ] += 1
+    return counts
+
+
+def retry(row: EmailOutbox) -> None:
+    """Administrator retry of a dead or failed row."""
+    row.status, row.attempts, row.next_attempt_at = OutboxStatus.PENDING, 0, timezone.now()
+    row.save(update_fields=["status", "attempts", "next_attempt_at"])

@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "audit",
     "catalog",
     "opportunities",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -90,7 +91,10 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",  # only to verify/upgrade legacy hashes
 ]
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "OPTIONS": {"user_attributes": ("email", "display_name")},
+    },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {"min_length": 10},  # PROPOSED value, OQ-17
@@ -108,7 +112,10 @@ SESSION_COOKIE_NAME = f"{_COOKIE_PREFIX}upnext_sid"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = SECURE_COOKIES
-UPNEXT_STAFF_SESSION_SECONDS = get_int("UPNEXT_STAFF_SESSION_SECONDS", 60 * 60 * 8)  # PROPOSED
+UPNEXT_STAFF_SESSION_SECONDS = get_int("UPNEXT_STAFF_SESSION_SECONDS", 60 * 60 * 8)  # absolute; PROPOSED
+UPNEXT_STAFF_IDLE_SECONDS = get_int("UPNEXT_STAFF_IDLE_SECONDS", 30 * 60)  # PROPOSED, OQ-17
+UPNEXT_SEEKER_IDLE_SECONDS = get_int("UPNEXT_SEEKER_IDLE_SECONDS", 7 * 24 * 3600)  # PROPOSED, OQ-17
+UPNEXT_SEEKER_ABSOLUTE_SECONDS = get_int("UPNEXT_SEEKER_ABSOLUTE_SECONDS", 30 * 24 * 3600)  # PROPOSED
 SESSION_COOKIE_AGE = get_int("UPNEXT_SESSION_MAX_AGE_SECONDS", 60 * 60 * 24 * 30)  # PROPOSED, OQ-17
 CSRF_COOKIE_NAME = f"{_COOKIE_PREFIX}upnext_csrf"
 CSRF_COOKIE_HTTPONLY = False  # the SPA echoes the token in X-CSRFToken
@@ -167,13 +174,33 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "login_ip": get_str("UPNEXT_THROTTLE_LOGIN_IP", "20/15m"),  # PROPOSED, OQ-17
         "public_read": get_str("UPNEXT_THROTTLE_PUBLIC_READ", "240/1m"),  # PROPOSED
+        "register_ip": get_str("UPNEXT_THROTTLE_REGISTER_IP", "5/1h"),  # PROPOSED
+        "email_request_ip": get_str("UPNEXT_THROTTLE_EMAIL_REQUEST_IP", "10/1h"),  # PROPOSED
+        "token_ip": get_str("UPNEXT_THROTTLE_TOKEN_IP", "10/1h"),  # PROPOSED
+        "me_write": get_str("UPNEXT_THROTTLE_ME_WRITE", "60/1m"),  # PROPOSED
     },
     "URL_FORMAT_OVERRIDE": None,
 }
 UPNEXT_LOGIN_FAILURES_PER_EMAIL = get_int("UPNEXT_LOGIN_FAILURES_PER_EMAIL", 5)  # per 15 min
 UPNEXT_LOGIN_FAILURE_WINDOW_SECONDS = 15 * 60
+UPNEXT_EMAIL_REQUEST_GAP_SECONDS = get_int("UPNEXT_EMAIL_REQUEST_GAP_SECONDS", 60)  # PROPOSED
+UPNEXT_EMAIL_REQUESTS_PER_HOUR = get_int("UPNEXT_EMAIL_REQUESTS_PER_HOUR", 3)  # PROPOSED
 # Peppers the hashed throttle keys so raw e-mail addresses never reach the cache table.
 UPNEXT_THROTTLE_PEPPER = get_str("UPNEXT_THROTTLE_PEPPER", SECRET_KEY)
+# Signs e-mail tokens and derives staff TOTP secrets. Rotating it invalidates outstanding tokens and resets
+# staff two-step devices (acceptable: short token lifetimes; devices can be re-enrolled).
+UPNEXT_TOKEN_KEY = get_str("UPNEXT_TOKEN_KEY", SECRET_KEY)
+
+# --- E-mail (provider not chosen: OQ-03). "none" sends nothing; "file"/"console" are development and CI only.
+UPNEXT_EMAIL_BACKEND = get_str("UPNEXT_EMAIL_BACKEND", "none")
+UPNEXT_EMAIL_FILE_DIR = get_str("UPNEXT_EMAIL_FILE_DIR", "/tmp/upnext-mail")  # noqa: S108
+UPNEXT_EMAIL_FROM = get_str("UPNEXT_EMAIL_FROM", "UPNEXT <no-reply@example.invalid>")
+UPNEXT_SMTP_HOST = get_str("UPNEXT_SMTP_HOST", "")
+UPNEXT_SMTP_PORT = get_int("UPNEXT_SMTP_PORT", 587)
+UPNEXT_SMTP_USER = get_str("UPNEXT_SMTP_USER", "")
+UPNEXT_SMTP_PASSWORD = get_str("UPNEXT_SMTP_PASSWORD", "")
+# Origin used in e-mailed links; the public site is path-routed on one hostname (OQ-01).
+UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "UPNEXT API",

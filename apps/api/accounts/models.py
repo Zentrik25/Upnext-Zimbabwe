@@ -135,3 +135,82 @@ class StaffRoleAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.role}"
+
+
+class TokenPurpose(models.TextChoices):
+    EMAIL_VERIFICATION = "email_verification"
+    PASSWORD_RESET = "password_reset"  # noqa: S105
+
+
+class AuthToken(models.Model):
+    """Single-use e-mail token (SECURITY_ARCHITECTURE §3.5). Only a selector is stored: the emailed value is
+    `base64url(id).base64url(HMAC(key, id|purpose|user|expiry))`, so a database leak yields no usable
+    token."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="auth_tokens")
+    purpose = models.CharField(max_length=24, choices=TokenPurpose.choices)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    invalidated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "purpose"], name="authtoken_user_purpose_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.purpose}:{self.pk}"
+
+
+class UserSession(models.Model):
+    """Metadata for "manage my sessions" (ERD §3.1). The payload stays in Django's session table. The key is
+    kept
+    so revocation is a keyed delete rather than a scan of every session; it is the same value Django's own
+    session table already stores as its primary key, so this adds no new exposure (deviation from the ERD's
+    hashed column, recorded in ADR-0019). Browser family and a truncated network prefix only (no raw IP)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="session_records")
+    session_key = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+    user_agent_summary = models.CharField(max_length=80, blank=True)
+    ip_prefix = models.CharField(max_length=64, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "revoked_at"], name="usersession_user_idx")]
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class StaffMfaDevice(models.Model):
+    """Time-based one-time-password device for staff (OQ-16 provisional default P3-07).
+
+    The shared secret is *derived* (HMAC of a server key and this row's random nonce), never stored, in the
+    same spirit as the e-mail tokens: a database leak alone does not reveal it. Rotating the key resets every
+    device."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="mfa_device")
+    nonce = models.CharField(max_length=64)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_step = models.BigIntegerField(default=0)  # replay protection: a code is accepted once
+
+    def __str__(self) -> str:
+        return str(self.user_id)
+
+
+class StaffRecoveryCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    device = models.ForeignKey(StaffMfaDevice, on_delete=models.CASCADE, related_name="recovery_codes")
+    code_hash = models.CharField(max_length=64)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["device", "code_hash"], name="recovery_code_unique")]
+
+    def __str__(self) -> str:
+        return str(self.pk)

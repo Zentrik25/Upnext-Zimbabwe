@@ -10,23 +10,26 @@ from rest_framework import serializers
 from accounts.models import AccountStatus, User
 
 
-class LoginSerializer(serializers.Serializer[None]):
-    email = serializers.EmailField(max_length=254)
-    password = serializers.CharField(max_length=128, trim_whitespace=False, style={"input_type": "password"})
+class StrictSerializer(serializers.Serializer[None]):
+    """Rejects unknown fields *and* reports ordinary field errors in the same response."""
 
-    def to_internal_value(self, data: object) -> dict[str, str]:
-        """Reject unknown fields *and* report ordinary field errors in the same response."""
+    def to_internal_value(self, data: object) -> dict[str, Any]:
         errors: dict[str, Any] = {}
         if isinstance(data, dict):
             errors.update({key: ["Unknown field."] for key in sorted(set(data) - set(self.fields))})
         try:
-            validated: dict[str, str] = super().to_internal_value(data)
+            validated: dict[str, Any] = super().to_internal_value(data)
         except serializers.ValidationError as exc:
             errors = {**dict(exc.detail), **errors} if isinstance(exc.detail, dict) else errors
             validated = {}
         if errors:
             raise serializers.ValidationError(errors)
         return validated
+
+
+class LoginSerializer(StrictSerializer):
+    email = serializers.EmailField(max_length=254)
+    password = serializers.CharField(max_length=128, trim_whitespace=False, style={"input_type": "password"})
 
 
 class UserSerializer(serializers.ModelSerializer[User]):

@@ -12,3 +12,5 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 LOGGING["root"]["level"] = "CRITICAL"  # type: ignore[index]
+UPNEXT_EMAIL_BACKEND = "file"
+UPNEXT_EMAIL_FILE_DIR = "/tmp/upnext-mail-test"  # noqa: S108

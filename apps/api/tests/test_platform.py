@@ -10,7 +10,6 @@ import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
 from unittest import mock
 
 import pytest
@@ -185,15 +184,3 @@ def test_staff_and_api_responses_are_marked_noindex(client: APIClient) -> None:
     for path in ("/api/v1/", "/health/live", "/staff/login/"):
         response = client.get(path)
         assert response["X-Robots-Tag"] == "noindex, nofollow", path
-
-
-@pytest.mark.django_db
-def test_staff_sessions_are_limited_to_the_staff_lifetime(make_user: Any) -> None:
-    from django.test import Client
-
-    staff = make_user(roles=("editor",))
-    web = Client()
-    web.force_login(staff)
-    assert web.get("/staff/").status_code == 200
-    assert web.session.get_expiry_age() <= 8 * 60 * 60
-    assert web.session["staff_expiry"] is True

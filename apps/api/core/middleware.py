@@ -7,8 +7,10 @@ import re
 import time
 import uuid
 from collections.abc import Callable
+from typing import Any
 
 from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 
 from .context import request_id_var
 
@@ -60,32 +62,64 @@ class RequestLogMiddleware:
 
 
 class StaffHardeningMiddleware:
-    """Keeps the staff interface and the API out of search indexes and limits staff session lifetime.
+    """Keeps the staff interface and the API out of search indexes, applies session lifetime limits and sends
+    the staff Content-Security-Policy.
 
     * `X-Robots-Tag: noindex, nofollow` on /staff/, /api/ and /health/ (the public pages live in Next.js).
-    * A signed-in staff session expires after `UPNEXT_STAFF_SESSION_SECONDS` (default 8 hours) instead of the
-      30-day seeker default; the limit is applied once, the first time the session is seen on /staff/.
+    * Idle and absolute session limits (SECURITY_ARCHITECTURE §3, PROPOSED values, OQ-17): seekers 7 days idle
+      and 30 days absolute; any account holding a staff role 30 minutes idle and 8 hours absolute. An expired
+      session is logged out and the request continues as anonymous.
+    * `Content-Security-Policy` on /staff/ (Django Admin): scripts only from this origin.
     """
 
     PREFIXES = ("/staff/", "/api/", "/health/")
+    TOUCH_EVERY = 60  # seconds between writes of the activity stamp
+    STAFF_CSP = (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; "
+        "object-src 'none'"
+    )
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
 
-    def __call__(self, request: HttpRequest) -> HttpResponse:
-        on_staff = request.path.startswith("/staff/")
-        user = getattr(request, "user", None)
-        if (
-            on_staff
-            and user is not None
-            and user.is_authenticated
-            and not request.session.get("staff_expiry")
-        ):
-            from django.conf import settings
+    def _limits(self, user: Any) -> tuple[int, int]:
+        from django.conf import settings
 
-            request.session.set_expiry(settings.UPNEXT_STAFF_SESSION_SECONDS)
-            request.session["staff_expiry"] = True
+        if user.active_roles():
+            return settings.UPNEXT_STAFF_IDLE_SECONDS, settings.UPNEXT_STAFF_SESSION_SECONDS
+        return settings.UPNEXT_SEEKER_IDLE_SECONDS, settings.UPNEXT_SEEKER_ABSOLUTE_SECONDS
+
+    def _enforce(self, request: HttpRequest) -> None:
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            return
+        from django.contrib.auth import logout
+
+        now = time.time()
+        idle, absolute = self._limits(user)
+        session = request.session
+        login_at = float(session.get("login_at", now))
+        last = float(session.get("last_activity", now))
+        if now - login_at > absolute or now - last > idle:
+            logout(request)
+            return
+        if "login_at" not in session:
+            session["login_at"] = login_at
+        if now - last >= self.TOUCH_EVERY or "last_activity" not in session:
+            session["last_activity"] = now
+            if now - last >= 300:
+                from accounts.models import UserSession
+
+                UserSession.objects.filter(session_key=session.session_key, revoked_at__isnull=True).update(
+                    last_seen_at=timezone.now()
+                )
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        self._enforce(request)
         response = self.get_response(request)
         if request.path.startswith(self.PREFIXES):
             response["X-Robots-Tag"] = "noindex, nofollow"
+        if request.path.startswith("/staff/"):
+            response["Content-Security-Policy"] = self.STAFF_CSP
         return response

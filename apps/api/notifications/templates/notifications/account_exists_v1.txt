@@ -1,0 +1,10 @@
+Hello,
+
+Someone asked to create a UPNEXT account with this e-mail address, but an account already exists.
+
+If it was you, sign in here: {{ base_url }}/sign-in
+If you forgot your password, you can reset it from the same page.
+
+If it was not you, no action is needed.
+
+UPNEXT never asks for your password by e-mail.

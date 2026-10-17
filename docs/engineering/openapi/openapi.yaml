@@ -337,9 +337,11 @@ paths:
       security: [{ cookieAuth: [] }]
       parameters:
         - { name: category, in: query, schema: { type: string } }
+        - { name: ids, in: query, description: 'Comma-separated opportunity ids (at most 50). Returns only the saved states among them, without listing content (used to mark save buttons). Added in Phase 3; additive.', schema: { type: string, maxLength: 2000 } }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
+        '400': { $ref: '#/components/responses/BadRequest' }
         '200':
           description: Saved opportunities, newest first, with availability
           content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/SavedItem' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } }

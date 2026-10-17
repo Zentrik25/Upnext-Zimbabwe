@@ -1,12 +1,9 @@
-"""Phase 1 endpoints: API root, CSRF bootstrap, login/logout, current user.
-
-Registration, e-mail verification, password reset and the rest of the account product are Phase 4.
-"""
+"""API root, CSRF bootstrap, login and logout (the rest of the account product is in account_views)."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 from django.conf import settings
 from django.contrib.auth import login, logout
@@ -23,9 +20,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.drf import HasRequiredPermission
-from access.registry import Permission
+from accounts import services
 from accounts.models import AccountStatus, User
+from accounts.sessions import client_ip
+from audit import services as audit
+from audit.models import Severity
 from core.context import get_request_id
 
 from . import schema as _schema  # noqa: F401  (registers the OpenAPI auth extension)
@@ -98,10 +97,18 @@ class LoginView(APIView):
         user = User.objects.filter(email=email).first()
         if user is None:
             _dummy_password_check(password)
-        credentials_ok = user is not None and user.check_password(password)
+        credentials_ok = user is not None and user.check_password(services.normalise_password(password))
         if not credentials_ok or user is None:
             EmailFailureLimiter.record_failure(email)
             logger.info("login failed", extra={"event": "auth.login.failure", "email_hash": email_hash})
+            audit.record(
+                action="auth.login_failed",
+                object_type="user",
+                object_id=user.pk if user else None,
+                actor_id=None,
+                severity=Severity.SECURITY,
+                changes={"email_hash": email_hash, "ip_hash": hash_key(client_ip(request._request) or "-")},
+            )
             return error_response(
                 "invalid_credentials", "Incorrect e-mail or password.", status.HTTP_401_UNAUTHORIZED
             )
@@ -115,6 +122,13 @@ class LoginView(APIView):
         login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
         EmailFailureLimiter.reset(email)
         logger.info("login succeeded", extra={"event": "auth.login.success", "user_id": str(user.pk)})
+        audit.record(
+            action="auth.login",
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            changes={"ip_hash": hash_key(client_ip(request._request) or "-")},
+        )
         return Response(UserSerializer(user).data)
 
 
@@ -130,16 +144,6 @@ class LogoutView(APIView):
         logout(request._request)
         logger.info("logout", extra={"event": "auth.logout", "user_id": user_id})
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@method_decorator(never_cache, name="dispatch")
-class MeView(APIView):
-    permission_classes = [HasRequiredPermission]
-    required_permission = Permission.ME_PROFILE
-
-    @extend_schema(operation_id="getMe", tags=["me"], responses=UserSerializer)
-    def get(self, request: Request) -> Response:
-        return Response(UserSerializer(cast(User, request.user)).data)
 
 
 def api_not_found(request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:

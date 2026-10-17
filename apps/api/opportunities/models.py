@@ -474,3 +474,22 @@ class PublishingEvent(models.Model):
 
     def __str__(self) -> str:
         return self.transition
+
+
+class SavedOpportunity(models.Model):
+    """A seeker's saved listing (ERD §3.5). Rows outlive the listing's public state; the API reports the
+    current availability. Unique per (user, opportunity); owned by one user and cascade-deleted with them."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="saved_opportunities")
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.PROTECT, related_name="saved_by")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "opportunity"], name="saved_unique_per_user_opportunity")
+        ]
+        indexes = [models.Index(fields=["user", "-created_at", "-id"], name="saved_user_recent_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.opportunity_id}"

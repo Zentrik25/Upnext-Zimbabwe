@@ -72,3 +72,49 @@ class EmailFailureLimiter:
     @classmethod
     def reset(cls, email: str) -> None:
         cache.delete(cls._key(email))
+
+
+class RegisterIpThrottle(IpRateThrottle):
+    scope = "register_ip"
+
+
+class EmailRequestIpThrottle(IpRateThrottle):
+    """Resend-verification and password-reset requests."""
+
+    scope = "email_request_ip"
+
+
+class TokenIpThrottle(IpRateThrottle):
+    """E-mail verification and password-reset confirmation."""
+
+    scope = "token_ip"
+
+
+class UserWriteThrottle(SimpleRateThrottle):
+    """Authenticated `/me/*` writes, keyed by user (SECURITY_ARCHITECTURE §8)."""
+
+    scope = "me_write"
+    parse_rate = IpRateThrottle.parse_rate
+
+    def get_cache_key(self, request: Request, view: Any) -> str | None:
+        user = request.user
+        if not user or not user.is_authenticated:
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": str(user.pk)}
+
+
+def email_request_gate(email: str) -> None:
+    """Per-address limits for e-mail-sending requests: 3 per hour and at least 60 s apart. Applies to every
+    address alike, registered or not, so it reveals nothing. Raises `Throttled` when exceeded."""
+    from rest_framework.exceptions import Throttled
+
+    ident = hash_key(email)
+    gap_key, count_key = f"email-gap:{ident}", f"email-count:{ident}"
+    if not cache.add(gap_key, 1, settings.UPNEXT_EMAIL_REQUEST_GAP_SECONDS):
+        raise Throttled(wait=settings.UPNEXT_EMAIL_REQUEST_GAP_SECONDS)
+    if not cache.add(count_key, 1, 3600):
+        try:
+            if cache.incr(count_key) > settings.UPNEXT_EMAIL_REQUESTS_PER_HOUR:
+                raise Throttled(wait=3600)
+        except ValueError:
+            cache.add(count_key, 1, 3600)
