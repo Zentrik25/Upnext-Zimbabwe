@@ -305,6 +305,8 @@ def _clean_relations(content: Mapping[str, Any], out: dict[str, Any], errors: Fi
                 else:
                     seen.add(location.pk)
                     rows.append((location, item["is_primary"]))
+            if sum(1 for _, primary in rows if primary) > 1:
+                _err(errors, "locations", "invalid_choice", "Only one location can be primary.")
             out["locations"] = rows
     if "skills" in content:
         skill_rows: list[tuple[Skill, bool]] = []
@@ -388,12 +390,32 @@ def _clean_sources(raw: Any, errors: FieldErrors) -> list[dict[str, Any]]:
             row["observed_on"] = date.fromisoformat(str(item.get("observed_on")))
         except ValueError:
             _err(errors, f"{path}.observed_on", "invalid_date", "Use YYYY-MM-DD.")
+        if not row["url"] and not row["citation"] and not any(e.startswith(path) for e in errors):
+            _err(errors, path, "required", "A source needs a URL or a citation.")
         if isinstance(item.get("is_primary"), bool):
             row["is_primary"] = item["is_primary"]
         else:
             _err(errors, f"{path}.is_primary", "invalid_format", "Must be true or false.")
         rows.append(row)
+    if sum(1 for r in rows if r.get("is_primary")) > 1:
+        _err(errors, "sources", "primary_source_required", "Only one source can be primary.")
     return rows
+
+
+def consistency_errors(version: OpportunityVersion) -> FieldErrors:
+    """Pairings the database also enforces; reported as validation errors instead of a failed INSERT."""
+    errors: FieldErrors = {}
+    if (version.salary_min is not None or version.salary_max is not None) and not (
+        version.salary_currency and version.salary_period
+    ):
+        _err(errors, "salary", "required", "A salary amount needs a currency and a period.")
+    if (version.funding_min is not None or version.funding_max is not None) and not version.funding_currency:
+        _err(errors, "funding", "required", "A funding amount needs a currency.")
+    if version.deadline_at is not None and not version.deadline_timezone:
+        _err(errors, "deadline_timezone", "required", "A deadline needs a time zone.")
+    if version.deadline_is_date_only and version.deadline_at is None:
+        _err(errors, "deadline_is_date_only", "invalid_choice", "A date-only deadline needs a deadline.")
+    return errors
 
 
 def apply_to_version(version: OpportunityVersion, cleaned: Mapping[str, Any], *, actor_id: uuid.UUID) -> None:
@@ -401,6 +423,7 @@ def apply_to_version(version: OpportunityVersion, cleaned: Mapping[str, Any], *,
     scalar = {k: v for k, v in cleaned.items() if k not in {"locations", "skills", "sectors", "sources"}}
     for key, value in scalar.items():
         setattr(version, key, value)
+    raise_if_errors(consistency_errors(version))
     version.save()
     if "locations" in cleaned:
         version.locations.all().delete()

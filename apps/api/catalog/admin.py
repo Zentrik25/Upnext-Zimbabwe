@@ -25,7 +25,8 @@ class TaxonomyAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         return _holds(request, Permission.TAXONOMY_MANAGE)
 
     def has_view_permission(self, request: HttpRequest, obj: Any = None) -> bool:
-        return _holds(request, Permission.TAXONOMY_MANAGE)
+        user: Any = request.user  # every staff member may read reference data (the pickers need it)
+        return bool(user.is_authenticated and user.is_staff)
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return _holds(request, Permission.TAXONOMY_MANAGE)

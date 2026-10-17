@@ -9,3 +9,9 @@ CSRF_TRUSTED_ORIGINS = get_list(
     "DJANGO_CSRF_TRUSTED_ORIGINS", ["http://localhost:8080", "http://127.0.0.1:8080"]
 )
 EXPOSE_OPENAPI_SCHEMA = True
+
+# Serve admin assets straight from the packages in development (no collectstatic/manifest step).
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}

@@ -162,7 +162,7 @@ for t in ID_TABLES:
             f"DROP TRIGGER IF EXISTS {t}_id_immutable ON {t};",
         )
     )
-for t in (OPP, VER, *CHILDREN):
+for t in (OPP, VER):
     TRIGGERS.append(
         (
             f"CREATE TRIGGER {t}_no_delete BEFORE DELETE ON {t} FOR EACH ROW EXECUTE FUNCTION upnext_no_delete();",
