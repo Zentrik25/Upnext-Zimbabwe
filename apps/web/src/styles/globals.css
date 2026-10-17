@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@import "./tokens.generated.css";
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+  }
+  /* Flat design guard (D-08): nothing is ever rounded or shadowed. */
+  *,
+  ::before,
+  ::after {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  /* One focus style for every focusable element (ACCESSIBILITY_DEVIATIONS.md). */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  ::placeholder {
+    color: #757575; /* browser default, 4.6:1 on white — set explicitly so it can never regress */
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

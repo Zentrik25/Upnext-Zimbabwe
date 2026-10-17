@@ -1,0 +1,8 @@
+.next
+node_modules
+coverage
+playwright-report
+test-results
+package-lock.json
+src/styles/tokens.generated.css
+next-env.d.ts
