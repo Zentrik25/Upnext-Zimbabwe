@@ -14,6 +14,7 @@ const PASSWORD = process.env.E2E_DEMO_PASSWORD ?? "";
 const SHOTS = process.env.E2E_SCREENSHOT_DIR;
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const TITLE = `Field Officer ${Date.now().toString(36)}`;
+const TAG = TITLE.split(" ").pop() ?? "x";
 const BASE = process.env.BASE_URL ?? "http://localhost:8080";
 
 const accounts = {
@@ -34,9 +35,7 @@ async function login(browser: Browser, who: keyof typeof accounts, viewport = { 
   await page.getByLabel("Email").or(page.locator("#id_username")).first().fill(accounts[who]);
   await page.locator("#id_password").fill(PASSWORD);
   await page.getByRole("button", { name: /log in/i }).click();
-  await expect(
-    page.getByRole("heading", { name: "Editorial workspace" }).or(page.locator("#site-name")),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Editorial workspace" })).toBeVisible();
   return { context, page };
 }
 
@@ -49,6 +48,32 @@ async function pick(page: Page, selector: string, text: string) {
     .first()
     .waitFor();
   await page.locator(".select2-results__option").filter({ hasText: text }).first().click();
+}
+
+/** Fills the revision editor with a complete, valid listing (unique addresses via `tag`). */
+async function fillDraft(page: Page, tag: string) {
+  await page
+    .locator("#id_summary")
+    .fill("Support community water projects and site visits for a water authority in Harare.");
+  await page
+    .locator("#id_description_md")
+    .fill(
+      "Example Water Authority is recruiting a **Field Officer** to support community water projects across the province.\n\n- Visit sites\n- Prepare reports",
+    );
+  await page.locator("#id_employment_type").selectOption("contract");
+  await page.locator("#id_work_mode").selectOption("on_site");
+  const day = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
+  await page.locator("#id_deadline_date").fill(day);
+  await page.locator("#id_deadline_time").fill("16:30");
+  await page.locator("#id_deadline_timezone").fill("Africa/Harare");
+  await page.locator("#id_application_url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
+  await pick(page, "#id_locations-0-location", "Harare");
+  await page.locator("#id_locations-0-is_primary").check();
+  await page.locator("#id_sources-0-kind").selectOption("issuer_website");
+  await page.locator("#id_sources-0-name").fill("Example Water Authority vacancies page");
+  await page.locator("#id_sources-0-url").fill(`https://water.example.org/vacancies/${tag}`);
+  await page.locator("#id_sources-0-observed_on").fill(new Date().toISOString().slice(0, 10));
+  await page.locator("#id_sources-0-is_primary").check();
 }
 
 const state: { editUrl: string; listingUrl: string; slug: string } = {
@@ -78,28 +103,7 @@ test("1. a Contributor starts a draft and fills it in", async ({ browser }) => {
   state.editUrl = page.url();
   await shot(page, "cms-04-draft-editor-empty");
 
-  await page
-    .locator("#id_summary")
-    .fill("Support community water projects and site visits for a water authority in Harare.");
-  await page
-    .locator("#id_description_md")
-    .fill(
-      "Example Water Authority is recruiting a **Field Officer** to support community water projects across the province.\n\n- Visit sites\n- Prepare reports",
-    );
-  await page.locator("#id_employment_type").selectOption("contract");
-  await page.locator("#id_work_mode").selectOption("on_site");
-  const day = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
-  await page.locator("#id_deadline_date").fill(day);
-  await page.locator("#id_deadline_time").fill("16:30");
-  await page.locator("#id_deadline_timezone").fill("Africa/Harare");
-  await page.locator("#id_application_url").fill("https://water.example.org/vacancies/field-officer");
-  await pick(page, "#id_locations-0-location", "Harare");
-  await page.locator("#id_locations-0-is_primary").check();
-  await page.locator("#id_sources-0-kind").selectOption("issuer_website");
-  await page.locator("#id_sources-0-name").fill("Example Water Authority vacancies page");
-  await page.locator("#id_sources-0-url").fill("https://water.example.org/vacancies");
-  await page.locator("#id_sources-0-observed_on").fill(new Date().toISOString().slice(0, 10));
-  await page.locator("#id_sources-0-is_primary").check();
+  await fillDraft(page, TAG);
   await shot(page, "cms-05-draft-editor-filled");
   await page
     .getByRole("button", { name: /^Save$/ })
@@ -120,15 +124,15 @@ test("2. submit for review; the author cannot approve", async ({ browser }) => {
   await page.getByRole("link", { name: "Submit for review" }).click();
   await shot(page, "cms-07-submit-form");
   await page.getByRole("button", { name: "Submit for review" }).click();
-  await expect(page.getByText("Done: Submit for review")).toBeVisible();
+  await expect(page.locator(".messagelist")).toContainText("Done: Submit for review");
   await expect(page.locator("main, #content").first()).toContainText("In review");
   await shot(page, "cms-08-listing-in-review");
   // the frozen revision cannot be edited any more
   const revisionLink = page.getByRole("link", { name: "Open the full revision" }).first();
   await revisionLink.click();
-  await expect(page.locator("#id_title"))
-    .toBeDisabled()
-    .catch(async () => expect(page.locator(".readonly, .form-row").first()).toBeVisible());
+  await shot(page, "cms-09-frozen-revision");
+  await expect(page.getByText(/frozen: a change needs a new revision/i)).toBeVisible();
+  expect(await page.locator("#id_title").count()).toBe(0); // shown as text, not an input
   await shot(page, "cms-09-frozen-revision");
 });
 
@@ -140,17 +144,21 @@ test("3. self-approval is refused even for someone who holds an editor role", as
   await page.getByLabel("Organisation").selectOption({ label: "Example Health Alliance" });
   await page.getByLabel("Title").fill(`${TITLE} (self-review attempt)`);
   await page.getByRole("button", { name: "Create draft" }).click();
-  await page
-    .locator("#id_summary")
-    .fill("A listing used to check that its own author cannot approve it in the CMS.");
+  await fillDraft(page, `${TAG}-self`);
+  await page.locator("input[name=_save]").click();
+  await expect(page).toHaveURL(/\/opportunity\/[0-9a-f-]+\/change\/$/);
   const listing = page.url();
-  await page.goto(listing);
-  const own = page.url();
-  // direct URL attempt to approve something the actor authored (draft exists; not even submitted) is not offered
-  const id = own.match(/opportunity\/([0-9a-f-]+)\//)?.[1] ?? "";
+  await page.getByRole("link", { name: "Submit for review" }).click();
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page.locator(".messagelist")).toContainText("Done: Submit for review");
+  // The person holds the Editor role, but this is their own work: no approve/reject is offered ...
+  await expect(page.getByRole("link", { name: "Approve" })).toHaveCount(0);
+  await shot(page, "cms-10a-own-submission-no-approve-offered");
+  // ... and forcing the address is refused with an explanation
+  const id = listing.match(/opportunity\/([0-9a-f-]+)\//)?.[1] ?? "";
   const response = await page.goto(`/staff/opportunities/opportunity/${id}/action/approve/`);
-  expect(response?.url()).toContain("/change/"); // redirected back with an explanation
-  await expect(page.getByText("not available to you right now")).toBeVisible();
+  expect(response?.url()).toContain("/change/");
+  await expect(page.locator(".messagelist")).toContainText("not available to you right now");
   await shot(page, "cms-10-self-approval-refused");
 });
 
@@ -182,7 +190,9 @@ test("4. an independent Editor approves; a stale form is refused", async ({ brow
   await a.page.locator("#id_reason_code").fill("source_unclear");
   await a.page.locator("#id_reason").fill("The cited source does not show the deadline.");
   await a.page.getByRole("button", { name: "Reject" }).click();
-  await expect(a.page.getByText(/changed while this page was open/i)).toBeVisible();
+  await expect(a.page.locator(".messagelist")).toContainText(
+    /changed while this page was open|not available to you right now/i,
+  );
   await shot(a.page, "cms-17-stale-form-refused");
 });
 

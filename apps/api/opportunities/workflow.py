@@ -341,10 +341,12 @@ def submit(
             ack = duplicate_acknowledgement or {}
             reason = str(ack.get("reason", "")).strip()
             if str(ack.get("duplicate_of", "")) not in {d.opportunity_id for d in hard} or len(reason) < 10:
+                named = "; ".join(f"{d.title or 'untitled'} ({d.opportunity_id}): {d.reason}" for d in hard)
                 errors.setdefault("duplicate_acknowledgement", []).append(
                     (
                         "duplicate_detected",
-                        "This looks like an existing listing; name it and explain why it is separate.",
+                        f"This looks like an existing listing: {named}. If it is a separate listing, give "
+                        "its id and explain why.",
                     )
                 )
             else:

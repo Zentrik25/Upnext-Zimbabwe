@@ -147,6 +147,8 @@ class Opportunity(models.Model):
     row_version = models.PositiveIntegerField(default=0)
 
     class Meta:
+        verbose_name = "listing"
+        verbose_name_plural = "listings"
         indexes = [
             models.Index(fields=["status"], name="opp_status_idx"),
             models.Index(fields=["category", "status"], name="opp_category_status_idx"),
@@ -176,7 +178,8 @@ class Opportunity(models.Model):
         ]
 
     def __str__(self) -> str:
-        return self.slug or str(self.pk)
+        version = self.live_version or self.pending_version
+        return version.title if version is not None and version.title else (self.slug or "Untitled draft")
 
 
 class OpportunityVersion(models.Model):
@@ -470,4 +473,4 @@ class PublishingEvent(models.Model):
         ordering = ["occurred_at"]
 
     def __str__(self) -> str:
-        return f"{self.transition} {self.opportunity_id}"
+        return self.transition

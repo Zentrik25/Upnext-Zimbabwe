@@ -539,3 +539,30 @@ def test_seed_demo_loads_every_category_and_respects_the_rules(people: dict[str,
     call_command("seed_demo", "--force")  # idempotent
     assert Opportunity.objects.count() == 16
     assert OpportunityVersion.objects.filter(state="published").count() == 12
+
+
+def test_frozen_revisions_open_read_only_for_every_role_that_may_see_them(
+    world: World, people: dict[str, User]
+) -> None:
+    """Regression: opening a submitted revision used to fail with a server error."""
+    opp = submitted(world, people["author"])
+    url = reverse("admin:opportunities_opportunityversion_change", args=[opp.pending_version_id])
+    for who in ("author", "editor", "admin"):
+        response = logged_in(people[who]).get(url)
+        assert response.status_code == 200, who
+        page = response.content.decode()
+        assert "frozen: a change needs a new revision" in page and 'id="id_title"' not in page
+        assert "Africa/Harare" in page  # the deadline is shown in its own time zone
+    live = published(world, people["author"], people["editor"], example="jobs-2")
+    assert (
+        logged_in(people["editor"])
+        .get(reverse("admin:opportunities_opportunityversion_change", args=[live.live_version_id]))
+        .status_code
+        == 200
+    )
+    assert (
+        "Not stated"
+        in logged_in(people["editor"])
+        .get(reverse("admin:opportunities_opportunityversion_change", args=[live.live_version_id]))
+        .content.decode()
+    )

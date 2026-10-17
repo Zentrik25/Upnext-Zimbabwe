@@ -19,6 +19,7 @@ class Duplicate:
     opportunity_id: str
     level: str  # "hard" | "soft"
     reason: str
+    title: str = ""
 
 
 def find_duplicates(version: OpportunityVersion) -> list[Duplicate]:
@@ -35,7 +36,9 @@ def find_duplicates(version: OpportunityVersion) -> list[Duplicate]:
         for source in urls.select_related("version"):
             found.setdefault(
                 str(source.opportunity_id),
-                Duplicate(str(source.opportunity_id), "hard", "Same primary source address."),
+                Duplicate(
+                    str(source.opportunity_id), "hard", "Same primary source address.", source.version.title
+                ),
             )
     if version.application_url:
         same_apply = others.filter(
@@ -44,7 +47,9 @@ def find_duplicates(version: OpportunityVersion) -> list[Duplicate]:
         for same in same_apply:
             found.setdefault(
                 str(same.opportunity_id),
-                Duplicate(str(same.opportunity_id), "hard", "Same application address and organisation."),
+                Duplicate(
+                    str(same.opportunity_id), "hard", "Same application address and organisation.", same.title
+                ),
             )
 
     since = timezone.now() - timedelta(days=90)

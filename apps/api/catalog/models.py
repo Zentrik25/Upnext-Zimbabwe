@@ -28,7 +28,7 @@ class Category(models.Model):
         verbose_name_plural = "categories"
 
     def __str__(self) -> str:
-        return self.code
+        return self.name
 
 
 class LocationKind(models.TextChoices):

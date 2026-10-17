@@ -86,6 +86,10 @@ def _sees_all_drafts(request: HttpRequest) -> bool:
     )  # Administrators only (matrix: drafts, read-only, audited)
 
 
+def _words(value: str | None) -> str:
+    return value.replace("_", " ") if value else "-"
+
+
 def badge(text: str, colour: str) -> SafeString:
     return format_html(
         '<span style="display:inline-block;padding:1px 6px;border:1px solid #1b2a3a;background:{};color:#1b2a3a">{}</span>',
@@ -201,20 +205,50 @@ class ReadOnlyInline(admin.TabularInline):  # type: ignore[type-arg]
         return _is_staff(request)
 
 
+_TRANSITION_LABELS = {
+    "T01": "Draft created",
+    "T02": "Draft saved",
+    "T03": "Submitted for review",
+    "T04": "Approved",
+    "T05": "Rejected",
+    "T06": "Returned for changes",
+    "T07": "Published",
+    "T09": "Taken down",
+    "T10": "Withdrawn",
+    "T11": "Expired",
+    "T12": "Archived",
+    "T13": "Draft discarded",
+    "T14": "Reopened for editing",
+    "T15": "Amendment started",
+}
+
+
 class PublishingEventInline(ReadOnlyInline):
     model = PublishingEvent
-    verbose_name_plural = "History (every transition, newest last)"
-    fields = ("occurred_at", "transition", "from_status", "to_status", "actor", "reason", "request_id")
+    verbose_name_plural = "History (every transition, oldest first)"
+    fields = ("occurred_at", "what", "from_status", "to_status", "actor_name", "reason", "request_id")
     readonly_fields = fields
     ordering = ("occurred_at",)
+
+    @admin.display(description="What happened")
+    def what(self, obj: PublishingEvent) -> str:
+        return _TRANSITION_LABELS.get(obj.transition, obj.transition)
+
+    @admin.display(description="Who")
+    def actor_name(self, obj: PublishingEvent) -> str:
+        return "System" if obj.actor_type == "system" or obj.actor is None else obj.actor.display_name
 
 
 class VerificationInline(ReadOnlyInline):
     model = VerificationRecord
     verbose_name_plural = "Verification records (separate from sources and publication)"
-    fields = ("checked_at", "version", "level", "method", "outcome", "checked_by", "evidence_note")
+    fields = ("checked_at", "version", "level", "method", "outcome", "checker", "evidence_note")
     readonly_fields = fields
     ordering = ("checked_at",)
+
+    @admin.display(description="Checked by")
+    def checker(self, obj: VerificationRecord) -> str:
+        return obj.checked_by.display_name
 
 
 @admin.register(Opportunity)
@@ -349,7 +383,10 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             if name in ACTIONS
         ]
         if not links:
-            return "Nothing for you to do here (the system checks separation of duties on every action)."
+            return (
+                "No actions are available to you on this listing right now. Review and approval need a different "
+                "person from whoever wrote or submitted it."
+            )
         return format_html_join(" ", '<a class="button" href="{}">{}</a>', links)
 
     def _preview(self, version: OpportunityVersion | None, request: HttpRequest | None) -> SafeString | str:
@@ -363,7 +400,7 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             ("Organisation", version.organisation.name),
             ("Summary", version.summary or "-"),
             ("Author", version.author.display_name),
-            ("Work mode / type", f"{version.work_mode or '-'} / {version.employment_type or '-'}"),
+            ("Work arrangement / type", f"{_words(version.work_mode)} / {_words(version.employment_type)}"),
             ("Locations", ", ".join(r.location.name + (" (primary)" if r.is_primary else "") for r in version.locations.select_related("location")) or "-"),
             ("Deadline", f"{version.deadline_at:%d %b %Y %H:%M} UTC ({version.deadline_timezone})" if version.deadline_at else "Not stated"),
             ("Application", f"{version.application_method}: {version.application_url or version.application_email or version.application_instructions or '-'}"),
@@ -672,14 +709,21 @@ class VersionForm(forms.ModelForm):  # type: ignore[type-arg]
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         instance = kwargs.get("instance")
-        if instance is not None and instance.deadline_at and instance.deadline_timezone:
+        if (
+            "deadline_date" in self.fields
+            and instance is not None
+            and instance.deadline_at
+            and instance.deadline_timezone
+        ):
             local = instance.deadline_at.astimezone(ZoneInfo(instance.deadline_timezone))
             self.fields["deadline_date"].initial = local.date()
             self.fields["deadline_time"].initial = local.time().replace(second=0, microsecond=0)
-        self.fields["detail"].required = False  # an empty object is valid when the schema allows it
-        self.fields[
-            "deadline_timezone"
-        ].help_text = "IANA name, e.g. Africa/Harare. The time below is in this zone."
+        if "detail" in self.fields:  # read-only revisions exclude their fields from the form
+            self.fields["detail"].required = False  # an empty object is valid when the schema allows it
+        if "deadline_timezone" in self.fields:
+            self.fields[
+                "deadline_timezone"
+            ].help_text = "IANA name, e.g. Africa/Harare. The time below is in this zone."
 
 
 @admin.register(OpportunityVersion)
@@ -741,11 +785,39 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     def fingerprint(self, obj: OpportunityVersion) -> str:
         return bytes(obj.content_hash).hex()[:16] if obj.content_hash else "Set when submitted"
 
+    def _read_only(self, request: HttpRequest, obj: OpportunityVersion | None) -> bool:
+        return obj is not None and not self.has_change_permission(request, obj)
+
     def get_readonly_fields(self, request: HttpRequest, obj: OpportunityVersion | None = None) -> Any:
         base = tuple(self.readonly_fields)
-        if obj is not None and not self.has_change_permission(request, obj):
-            return base + tuple(VersionForm.Meta.fields) + ("deadline_date", "deadline_time")
+        if self._read_only(request, obj):
+            fields = tuple(f for f in VersionForm.Meta.fields if f != "deadline_timezone")
+            return base + fields + ("deadline_display",)
         return base
+
+    def get_fieldsets(self, request: HttpRequest, obj: OpportunityVersion | None = None) -> Any:
+        if not self._read_only(request, obj):
+            return super().get_fieldsets(request, obj)
+        out = []
+        for title, options in self.fieldsets:
+            fields = [
+                f
+                for f in options["fields"]
+                if f not in ("deadline_date", "deadline_time", "deadline_timezone", "deadline_is_date_only")
+            ]
+            if title.startswith("Deadline"):
+                fields = ["deadline_display"]
+            out.append((title, {**options, "fields": fields}))
+        return out
+
+    @admin.display(description="Deadline")
+    def deadline_display(self, obj: OpportunityVersion) -> str:
+        if obj.deadline_at is None:
+            return "Not stated"
+        zone = obj.deadline_timezone or "UTC"
+        local = obj.deadline_at.astimezone(ZoneInfo(zone))
+        suffix = " (date only: end of day)" if obj.deadline_is_date_only else ""
+        return f"{local:%d %b %Y %H:%M} {zone}{suffix}"
 
     def changeform_view(
         self,
