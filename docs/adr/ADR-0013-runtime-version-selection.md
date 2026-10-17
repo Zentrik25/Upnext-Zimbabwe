@@ -1,6 +1,6 @@
 # ADR-0013: Runtime versions are selected by researched recommendation
 
-- **Status:** ACCEPTED as a method (owner approval 2026-10-17). The pins themselves are a recommendation awaiting approval (OQ-28).
+- **Status:** ACCEPTED (owner approval 2026-10-17); **D-25: Node.js 24 LTS selected, other pins provisionally accepted subject to pre-lock verification** (`PHASE1_VERSION_VERIFICATION.md`).
 - **Date:** 2026-10-17
 - **Decision register:** D-20
 

@@ -155,7 +155,7 @@ Responses: `429 rate_limited` with `Retry-After`; counters keyed with a server-s
 | TM-05 | XSS (stored/reflected/DOM) | users, staff | sanitised Markdown, CSP with nonces, escaping, no inline handlers | sanitiser corpus; CSP check; Playwright |
 | TM-06 | Malicious application/source URLs (phishing, `javascript:`) | seekers | https-only validation, editor review, destination domain shown, `rel` attrs | URL fuzz tests |
 | TM-07 | SSRF | infrastructure | no server-side fetching of editor/user URLs in Release 1 | architecture test (no HTTP client import in `publishing`/`verification`) |
-| TM-08 | Privilege escalation / SoD bypass (including one person using two accounts) | editorial integrity | matrix, policy service, DB triggers (author ≠ approver/verifier/publisher), read-only Admin state fields, audited role grants and transitions, author/approver-pair report, optional MFA | generated matrix tests; trigger tests |
+| TM-08 | Privilege escalation / SoD bypass (including one person using two accounts) | editorial integrity | matrix, policy service, DB triggers (author ≠ approver/verifier; publication requires another person's approval of the exact content hash), read-only Admin state fields, audited role grants and transitions, author/approver-pair report, optional MFA | generated matrix tests; trigger tests |
 | TM-09 | Insider tampering with audit/history | trust | append-only privileges, hash-bound approvals, immutable versions | privilege tests against DB |
 | TM-10 | Session theft / fixation | sessions | HttpOnly/Secure cookies, rotation, short staff lifetime, revoke on password change | session tests |
 | TM-11 | Email token abuse (reuse, forwarding, guess) | accounts | single use, HMAC tokens, short TTL, no auto-login | token tests |

@@ -1,6 +1,6 @@
 # ADR-0012: Accessibility takes precedence over exact visual fidelity
 
-- **Status:** ACCEPTED (owner approval 2026-10-17). Amends ADR-0001. Document status DRAFT until the Phase 0 package is approved.
+- **Status:** ACCEPTED (owner approval 2026-10-17); **DEV-01…DEV-04 approved by D-24**. Amends ADR-0001. Document status DRAFT until the Phase 0 package is approved.
 - **Date:** 2026-10-17
 - **Decision register:** D-19
 

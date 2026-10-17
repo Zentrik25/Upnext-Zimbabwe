@@ -2,7 +2,7 @@
 
 Format: Context · Decision · Consequences · Alternatives. Decisions are recorded in `docs/governance/DECISION_REGISTER.md` first; an ADR explains the reasoning. A change to an ACCEPTED ADR needs a new, dated ADR.
 
-## Accepted (owner-approved 2026-10-17; 0011–0014 in the second round)
+## Accepted (owner-approved 2026-10-17; 0011–0014 in the second round; 0015–0017 at Phase 1 authorisation)
 | ADR | Title | Register |
 |---|---|---|
 | [0001](ADR-0001-flat-reference-is-design-source.md) | Approved flat HTML reference is the definitive design source | D-08 |
@@ -19,6 +19,9 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0012](ADR-0012-accessibility-precedence.md) | Accessibility takes precedence over exact visual fidelity (amends 0001) | D-19 |
 | [0013](ADR-0013-runtime-version-selection.md) | Runtime versions are selected by researched recommendation | D-20 |
 | [0014](ADR-0014-category-schemas-remain-draft.md) | Category-specific schemas remain drafts | D-21 |
+| [0015](ADR-0015-author-may-publish-after-exact-revision-approval.md) | An author may publish their own listing only after another person approves the exact revision | D-22 |
+| [0016](ADR-0016-no-publisher-role-initially.md) | No Publisher role in the initial implementation | D-23 |
+| [0017](ADR-0017-phase-1-foundation-choices.md) | Phase 1 foundation choices and verified pins | D-25, D-26 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

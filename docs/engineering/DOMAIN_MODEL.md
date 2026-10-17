@@ -14,7 +14,7 @@ Authoritative detail: `ERD.md` (tables, constraints, relationships), `EDITORIAL_
 1. Immutable internal uuid ids; public listing slug assigned once at first publication and never changed (D-13).
 2. Source provenance is required to publish; verification is a separate label and is never implied by publication (D-14).
 3. No fabricated deadlines, salaries or requirements: unknown = NULL, displayed as not stated.
-4. The author never approves, verifies or publishes their own listing; a different Editor or Administrator may approve and publish it, and every transition is audited (D-18).
+4. Nobody approves or verifies their own listing. Publication requires approval of the exact revision by a different authorised person (D-22); an Editor or Administrator may then publish, including the author. Every transition is audited.
 5. Non-draft versions are immutable; changes are new versions; approval is bound to the content hash.
 6. Saved items unique per (user, opportunity); personal data is scoped to its owner.
 7. Every change to published data and every privileged or security action is audited, append-only.

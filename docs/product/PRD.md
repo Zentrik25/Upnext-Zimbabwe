@@ -5,10 +5,10 @@ Updated 2026-10-17 for decisions D-08…D-21. Traceability to screens, API and t
 - **Anonymous visitor:** browse, search, filter, view and leave via source/application URL.
 - **Registered seeker:** visitor capabilities plus profile, saved opportunities and personalised discovery.
 - **Contributor:** creates and edits own listing drafts, submits them, opens amendments.
-- **Editor:** approves or rejects submissions they did not author, records verification, and may publish what they approved (D-18).
-- **Administrator:** manages users, roles, taxonomies and settings; holds the same approval and publication authority as an Editor, bounded by the same rule that nobody approves or publishes their own work (D-18).
-- **Publisher (optional, OQ-32):** publication authority only.
-Two different people are sufficient for the normal publishing workflow; every transition is audited. Details: `docs/engineering/ROLE_PERMISSION_MATRIX.md`.
+- **Editor:** approves or rejects submissions they did not author, records verification, and publishes approved listings (D-18, D-22).
+- **Administrator:** manages users, roles, taxonomies and settings; holds the same approval and publication authority as an Editor, bounded by the same rules (D-18, D-22).
+No Publisher role exists in the initial implementation (D-23); the permission model is extensible for future roles.
+Nobody approves their own submission. An author may publish their own listing only after another authorised person approved the exact revision being published; any material change after approval requires a new review (D-22). Every transition is audited. Details: `docs/engineering/ROLE_PERMISSION_MATRIX.md`.
 
 ## Functional requirements and acceptance criteria
 **PR-01 Public discovery:** Search and category pages require no login. Given an anonymous visitor, when a filter is applied, matching results and an explicit empty state appear without an account prompt. (R-01)

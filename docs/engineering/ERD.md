@@ -83,7 +83,7 @@ CHECK: `status <> 'active' OR email_verified_at IS NOT NULL` (an active account 
 |---|---|---|
 | id | uuid | PK |
 | user_id | uuid | FK → app_user, PROTECT |
-| role | enum | `contributor, editor, publisher, administrator` (`publisher` optional, OQ-32) |
+| role | enum | `contributor, editor, administrator` (extensible: the role set is an enum plus a code-level permission registry; a `publisher` role is deliberately not part of the initial implementation, D-23) |
 | granted_by, granted_at | uuid, timestamptz | NOT NULL |
 | revoked_by, revoked_at | uuid, timestamptz | NULL while active |
 | reason | text | NOT NULL, ≥10 chars |
@@ -213,5 +213,5 @@ Action catalogue: `auth.register, auth.verify_email, auth.login.success, auth.lo
 
 1. State machine transitions only via the publishing service (no direct status writes; Django Admin status fields read-only).
 2. DB triggers/constraints for: id immutability, slug immutability, version content immutability, partial uniqueness of pipeline/live versions, audit append-only privileges.
-3. Separation of duties (D-18) checked in the service **and** re-asserted by DB triggers: `review_decision.decided_by`, `verification_record.checked_by` and `opportunity_version.published_by` must differ from the author of the version chain (`author_id` of any version, and `submitted_by`). There is deliberately **no** approver ≠ publisher constraint.
+3. Separation of duties (D-18, D-22) checked in the service **and** re-asserted by DB triggers: `review_decision.decided_by` and `verification_record.checked_by` must differ from the author of the version chain (`author_id` of any version, and `submitted_by`); a version may enter state `published` only if `approved_by IS NOT NULL`, `approved_by` differs from the chain's author and submitter, and `content_hash` equals the hash recorded at approval — all inside the publish transaction. There is deliberately **no** author ≠ publisher or approver ≠ publisher constraint: the exact-revision approval by another person is what authorises publication.
 4. Migrations: forward-only with rehearsal on a copy; destructive operations require explicit review.

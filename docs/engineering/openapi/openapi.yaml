@@ -701,7 +701,7 @@ components:
     DeadlineState: { type: string, enum: [open, closing_soon, unknown, expired] }
     ListingStatus: { type: string, enum: [draft, in_review, approved, rejected, published, expired, withdrawn, archived] }
     VerificationLevel: { type: string, enum: [not_verified, source_checked, issuer_verified] }
-    StaffRole: { type: string, enum: [contributor, editor, publisher, administrator] }
+    StaffRole: { type: string, enum: [contributor, editor, administrator], description: 'Initial role set (D-23). A publisher role is deliberately absent; the permission registry is extensible so future roles can be added in a later contract version.' }
     AccountStatus: { type: string, enum: [pending_verification, active, restricted, suspended, deactivated] }
     Category:
       type: object

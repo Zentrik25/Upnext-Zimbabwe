@@ -18,7 +18,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-08 | Rules-based For You feed with understandable reasons; no eligibility claims; missing data never disqualifies | PR-05; spec §12; D-15 | SC-09 | getForYou | UT-04, UT-05, API-05, E2E-07 | OQ-23 |
 | R-09 | Save/unsave; saved list persists across sessions; shows open/expired/unavailable; unique per user and listing | PR-06; spec §13 | SC-03, SC-10 | saveOpportunity, unsaveOpportunity, listSaved | API-06, DB-03, SEC-03, E2E-08 | OQ-31 |
 | R-10 | Editorial lifecycle: draft → in review → approved → published → expired/withdrawn/archived, with rejection reasons and history | PR-07; spec §15; EDITORIAL_WORKFLOW | SC-12 | createDraft, saveDraft, transitionOpportunity, getEditorialOpportunity, listEditorialOpportunities, getHistory, searchOrganisations, createOrganisation, updateOrganisation | WF-01…WF-15, E2E-09 | OQ-05, OQ-08, OQ-14 |
-| R-11 | Separation of duties: the author never approves, verifies or publishes their own listing; a different Editor or Administrator may approve and publish it (two people suffice); enforced on the backend; every transition audited; no role bypasses the workflow | D-18; ADR-0011 (supersedes parts of D-09/ADR-0002) | SC-12, SC-13 | transitionOpportunity, recordVerification, grantRole, revokeRole | SOD-01…SOD-14, WF-16, SEC-05 | OQ-13, OQ-32, OQ-33 |
+| R-11 | Separation of duties: nobody approves or verifies their own submission; publication needs another authorised person's approval of the exact revision (the author may then publish it); material changes invalidate approval; no Publisher role initially; permissions extensible; enforced transactionally on the backend; every transition audited; no role bypasses the workflow | D-18, D-22, D-23; ADR-0011, ADR-0015, ADR-0016 | SC-12, SC-13 | transitionOpportunity, recordVerification, grantRole, revokeRole | SOD-01…SOD-14, PERM-01…PERM-03, WF-16, SEC-05 | OQ-13, OQ-16 |
 | R-12 | Source provenance required to publish; verification is separate, evidence-based, auditable; publication never implies verification | D-14; spec §15; ADR-0007 | SC-03, SC-12 | recordVerification, getEditorialOpportunity, getOpportunity | VER-01…VER-05, UT-06, VIS-03 | OQ-07, OQ-29 |
 | R-13 | Search: keyword + filters + sort; deterministic cursor pagination; empty and invalid-filter states | PR-08; spec §11 | SC-02 | listOpportunities | API-01, API-07, API-08, DB-04, PERF-01 | OQ-20, OQ-24 |
 | R-14 | Quality: responsive 320/390/768/1440, keyboard accessible, WCAG 2.2 AA (accessibility precedes fidelity, D-19), loading/empty/error states | PR-09; spec §32 | all public screens | — | A11Y-01…A11Y-09, E2E-10 | OQ-11 |
@@ -165,7 +165,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | WF-08 | Takedown removes public visibility immediately; one-person action |
 | WF-09 | Optimistic locking: stale row_version → state_conflict |
 | WF-10 | Audit + publishing_event written in the same transaction; failure rolls back |
-| WF-11 | Expiry transition by system only at deadline; manual expire by Publisher |
+| WF-11 | Expiry transition by system only at deadline; manual expire by an Editor or Administrator |
 | WF-12 | Discard/reopen flows |
 | WF-13 | Scheduled publish (only if OQ-14 approved) |
 | WF-14 | Concurrent transition attempts: exactly one wins |
@@ -180,10 +180,13 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SOD-07 | Direct state write via Django Admin impossible; DB trigger blocks bypass |
 | SOD-08 | Role grant/revoke audited as privileged; non-admin cannot grant |
 | SOD-09 | Administrator approves and publishes another person's listing; denied for a listing they authored |
-| SOD-10 | Author who also holds approval/publication authority cannot publish their own listing even after another person approved it (OQ-33 interpretation) |
+| SOD-10 | Author with Editor/Administrator authority may publish their own listing only when another authorised person approved the exact revision (hash match); refused otherwise (D-22) |
 | SOD-11 | Author is notified when the submission is approved, rejected or published (proposed) |
 | SOD-12 | Guard failures are refused with separation_of_duties and audited as security events |
-| SOD-13 | If the Publisher role is kept (OQ-32): may publish, may not approve |
+| PERM-01 | Role registry contains exactly contributor, editor, administrator; no publisher role value, permission set, API enum or UI (D-23) |
+| PERM-02 | A role added to a test registry is honoured by has_permission and the policy guards with no guard change (extensibility) |
+| PERM-03 | Registry grants match ROLE_PERMISSION_MATRIX.md exactly for every role × permission code |
+| SOD-13 | Publication guard is evaluated inside the publish transaction after a row lock (no check-then-act race) |
 | SOD-14 | Report of author/approver pairs and same-person approve+publish events is generated from audit data |
 | VER-01 | Publishing an unverified listing shows not_verified |
 | VER-02 | Verification evidence note and method rules; supersession |
@@ -268,7 +271,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | E2E-06 | Profile onboarding with skippable steps |
 | E2E-07 | For You with incomplete and complete profile |
 | E2E-08 | Save on one session, sign in on another, retrieve saved |
-| E2E-09 | Contributor drafts → Editor approves → Publisher publishes; public sees it |
+| E2E-09 | Contributor drafts → Editor approves (a different person) → Editor or Administrator publishes; public sees it |
 | E2E-10 | Full public flows at 320/390/768/1440 without horizontal scroll |
 | A11Y-01 | axe-core: no serious/critical violations on public pages |
 | A11Y-02 | Keyboard-only completion of search, save, register, onboarding |

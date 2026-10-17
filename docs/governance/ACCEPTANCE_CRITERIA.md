@@ -1,6 +1,6 @@
-# Acceptance criteria — DRAFT (updated for D-18…D-21)
+# Acceptance criteria — approved baseline (updated for D-18…D-26)
 
-Status: DRAFT. These are the scenarios a phase must pass before its gate; they are planned, **not yet implemented or run** (no results are claimed). Each scenario names its requirement (`TRACEABILITY.md`) and planned tests. Replaces the legacy `docs/archive/legacy-docs/ACCEPTANCE.md` (kept for history). Scenarios touched by the second Phase 0 round are marked ★.
+Status: approved baseline. These are the scenarios a phase must pass before its gate; they are planned, **not yet implemented or run** (no results are claimed). Each scenario names its requirement (`TRACEABILITY.md`) and planned tests. Replaces the legacy `docs/archive/legacy-docs/ACCEPTANCE.md` (kept for history). Scenarios touched by the second Phase 0 round are marked ★.
 
 Conventions: "the API" = the contract in `docs/engineering/openapi/openapi.yaml`; "audited" = an `audit_event` and `publishing_event` row exist with actor, capacity, versions and request id.
 
@@ -24,22 +24,24 @@ Conventions: "the API" = the contract in `docs/engineering/openapi/openapi.yaml`
 | AC-AUTH-04 | **Given** a password reset **then** the token is single-use, all sessions are revoked on success and a notice email is queued | R-04 | AUTH-05 |
 | AC-MAIL-01 | **Given** the provider is down **then** emails stay `pending/failed`, retry with back-off, dead-letter after the cap, and an alert fires; no email is lost or sent twice for the same idempotency key | R-18 | MAIL-02…MAIL-07 |
 
-## C. Editorial workflow and separation of duties ★
+## C. Editorial workflow and separation of duties ★ (D-18, D-22, D-23)
 | ID | Scenario | Req | Tests |
 |---|---|---|---|
-| AC-EDIT-01 ★ | **Given** Alice (Contributor) submitted a listing **when** Alice tries to approve it (even if she also holds Editor or Administrator) **then** 403 `separation_of_duties`; the attempt is audited as a security event | R-11 | SOD-01, SOD-12 |
-| AC-EDIT-02 ★ | **Given** Alice's submission **when** Bob (Editor) approves it **then** it becomes `approved`, and Bob may then publish it **then** it becomes `published` with a slug — two people, no third required | R-10, R-11 | SOD-04, WF-01, WF-06, E2E-09 |
-| AC-EDIT-03 ★ | **Given** Carol (Administrator, not the author) **when** she approves and publishes Alice's submission **then** it succeeds and both transitions are audited with capacity `administrator`; **given** a listing Carol authored (she holds Contributor too) **then** she cannot approve or publish it | R-11 | SOD-09 |
-| AC-EDIT-04 ★ | **Given** an author who also holds Editor/Administrator authority, **when** another person has approved their listing **then** the author still cannot publish it (OQ-33 interpretation, pending owner confirmation) | R-11 | SOD-10 |
+| AC-EDIT-01 ★ | **Given** Alice (Contributor) submitted a listing **when** Alice tries to approve, reject, return or verify it (even if she also holds Editor or Administrator) **then** 403 `separation_of_duties` and the attempt is audited as a security event | R-11 | SOD-01, SOD-12 |
+| AC-EDIT-02 ★ | **Given** Alice's submission **when** Bob (Editor) approves it **then** it is `approved`; Bob may then publish it **then** it is `published` with a slug — two people, no third required | R-10, R-11 | SOD-04, WF-01, WF-06, E2E-09 |
+| AC-EDIT-03 ★ | **Given** Carol (Administrator, not the author) **when** she approves and publishes Alice's submission **then** it succeeds and both transitions are audited with capacity `administrator`; **given** a listing Carol authored **then** she cannot approve it | R-11 | SOD-09 |
+| AC-EDIT-04 ★ | **Given** an author who holds Editor/Administrator authority **when** another authorised person has approved the **exact revision** **then** the author may publish it; **given** the revision has not been approved by another person, or its content hash differs from the approved one, **then** publication is refused (`approval_stale` / `invalid_transition`) and audited | R-11 | SOD-10, WF-04 |
 | AC-EDIT-05 | **Given** an Editor **when** they try to edit content **then** refused; they can only reject with reasons and the author revises | R-10 | WF-05, SEC-05 |
-| AC-EDIT-06 | **Given** an approval **when** content is changed afterwards **then** it is a new version needing new approval; a stale approval fails with `approval_stale` | R-10 | WF-04, DB-05 |
+| AC-EDIT-06 ★ | **Given** an approval **when** content is changed afterwards **then** it is a new version needing a new review; the old approval cannot publish the new content | R-10, R-11 | WF-04, DB-05 |
 | AC-EDIT-07 | **Given** an Administrator **then** they cannot write status, content, verification or audit data directly (Django Admin fields read-only; DB triggers block) | R-11 | SOD-07, AUD-01 |
-| AC-EDIT-08 ★ | **Given** any transition **then** the author receives a notification of approve/reject/publish (proposed), and the audit row records actor, capacity, transition, versions, reason and request id | R-16 | SOD-11, WF-10, WF-16 |
-| AC-EDIT-09 ★ | **Given** audit data **then** a report lists author/approver pairs and listings approved and published by the same person, to detect one person operating several accounts | R-11 | SOD-14 |
+| AC-EDIT-08 ★ | **Given** any transition **then** the author is notified of approve/reject/publish (proposed) and the audit row records actor, capacity, transition, versions, reason and request id | R-16 | SOD-11, WF-10, WF-16 |
+| AC-EDIT-09 ★ | **Given** audit data **then** a report lists author/approver pairs and listings approved and published by related accounts, to detect one person operating several accounts | R-11 | SOD-14 |
 | AC-EDIT-10 | **Given** a publish **then** verification level is unchanged by publication and shows `not_verified` unless a different person recorded verification | R-12 | VER-01, VER-03 |
-| AC-EDIT-11 | **Given** concurrent transitions **then** exactly one succeeds; the other gets 409 `state_conflict` | R-10 | WF-09, WF-14 |
-| AC-EDIT-12 | **Given** a takedown **then** public visibility ends immediately and the action is available to publication authority alone | R-10 | WF-08 |
-| AC-EDIT-13 | **If the optional Publisher role is kept (OQ-32)** **then** Publishers can publish but not approve | R-11 | SOD-13 |
+| AC-EDIT-11 | **Given** concurrent transitions **then** exactly one succeeds; the other gets 409 `state_conflict`; the publish guards are re-checked inside the winning transaction | R-10 | WF-09, WF-14 |
+| AC-EDIT-12 | **Given** a takedown **then** public visibility ends immediately; it is an Editor/Administrator action | R-10 | WF-08 |
+| AC-ROLE-01 ★ | **Given** the role registry **then** only Contributor, Editor and Administrator exist; no `publisher` role value, permission set, API enum value or UI exists | R-11 | PERM-01 |
+| AC-ROLE-02 ★ | **Given** a new role added in a test registry **then** guards and `has_permission` honour it with no code change in the guards | R-11 | PERM-02 |
+| AC-ROLE-03 ★ | **Given** every role × permission code in the matrix **then** the registry grants exactly what `ROLE_PERMISSION_MATRIX.md` states | R-11 | PERM-03, SEC-05 |
 
 ## D. Design and accessibility ★
 | ID | Scenario | Req | Tests |

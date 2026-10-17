@@ -1,6 +1,6 @@
 # UPNEXT — Phase 0 review package (round 2)
 
-**Status: DRAFT — submitted for owner review. Nothing is approved until you say so in writing.**
+**Status: APPROVED as the development baseline on 2026-10-17 (D-26), subject to the decisions D-22…D-25 recorded afterwards. This file is kept as the historical round-2 package; the register and the `docs/phase1/` reports are current.**
 Date: 2026-10-17 · Scope: documentation only. No application code, no migrations, no deployment, no inspection or change of production infrastructure, no Phase 1 work.
 
 ## 1. What changed in this round

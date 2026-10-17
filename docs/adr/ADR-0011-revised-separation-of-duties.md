@@ -1,6 +1,6 @@
 # ADR-0011: Revised editorial separation of duties
 
-- **Status:** ACCEPTED (owner approval 2026-10-17). Supersedes parts of ADR-0002. Document status DRAFT until the Phase 0 package is approved.
+- **Status:** ACCEPTED (owner approval 2026-10-17); **refined by ADR-0015 (publication rule) and ADR-0016 (Publisher role removed)**. Supersedes parts of ADR-0002. Document status DRAFT until the Phase 0 package is approved.
 - **Date:** 2026-10-17
 - **Decision register:** D-18
 
