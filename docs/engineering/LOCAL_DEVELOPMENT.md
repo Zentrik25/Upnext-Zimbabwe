@@ -34,7 +34,8 @@ The custom user model (`accounts.User`, uuid primary key, `citext` e-mail) is cr
 
 Create a development staff account (bootstrap only; real role management arrives in Phase 2):
 ```bash
-docker compose exec -e UPNEXT_BOOTSTRAP_PASSWORD='choose-a-long-password' api \
+read -rs UPNEXT_BOOTSTRAP_PASSWORD && export UPNEXT_BOOTSTRAP_PASSWORD   # type a long password; it is not echoed
+docker compose exec -e UPNEXT_BOOTSTRAP_PASSWORD api \
   python manage.py create_staff_user --email you@example.org --display-name "You" --role administrator
 ```
 
