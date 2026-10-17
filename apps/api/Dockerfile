@@ -31,7 +31,9 @@ FROM base AS prod
 COPY --chown=upnext:upnext . .
 # Build-time placeholders only so `collectstatic` can import settings; no real secret is baked in.
 # It must use the production settings: the manifest it writes is what the production storage reads.
-RUN DJANGO_SETTINGS_MODULE=config.settings.prod \
+# UPNEXT_ENVIRONMENT is set for this one command only (the start-up safeguards need real https settings,
+# which do not exist at build time); it is not stored in the image environment.
+RUN DJANGO_SETTINGS_MODULE=config.settings.prod UPNEXT_ENVIRONMENT=local-prod-like \
     DJANGO_SECRET_KEY=build-only-placeholder-build-only-placeholder-build-only-placeholder \
     DJANGO_ALLOWED_HOSTS=build UPNEXT_SECURE_COOKIES=true \
     POSTGRES_DB=build POSTGRES_USER=build POSTGRES_PASSWORD=build \
