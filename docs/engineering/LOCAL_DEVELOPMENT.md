@@ -20,7 +20,7 @@ Open **http://localhost:8080/** (home page, shows live API status) and **http://
 
 Stop with `docker compose down` (keep data) or `docker compose down -v` (delete the database volume).
 
-If your source files are not owned by uid 1000, set `UPNEXT_UID` / `UPNEXT_GID` in `.env` to your own ids (Next.js dev rewrites `tsconfig.json` and `next-env.d.ts` in the bind-mounted source). If your network intercepts TLS, set `UPNEXT_CA_BUNDLE=/path/to/ca.pem` in `.env`; it is mounted as a build-time secret only.
+If your source files are not owned by uid 1000, set `UPNEXT_UID` / `UPNEXT_GID` in `.env` to your own ids (Next.js dev rewrites `tsconfig.json` and `next-env.d.ts` in the bind-mounted source). If your network intercepts TLS, set `COMPOSE_FILE=compose.yaml:compose.ca-bundle.yaml` and `UPNEXT_CA_BUNDLE=/path/to/ca.pem` in `.env`; the bundle is mounted as a build-time secret only. It is a separate override because a default secret path (`/dev/null`) makes Compose's Bake builder demand `--allow=fs.read=/dev/null` and fails CI.
 
 ## 2. Database and migrations
 Migrations are applied automatically when the `api` container starts in development (`UPNEXT_RUN_MIGRATIONS=1`). Manually:

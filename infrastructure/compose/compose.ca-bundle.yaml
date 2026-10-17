@@ -1,0 +1,18 @@
+# Optional override for networks that intercept TLS: exposes a PEM bundle to the image builds as the
+# BuildKit secret `ca_bundle` (build time only, never baked into an image; the Dockerfiles treat it as optional).
+# Not part of the default stack: a secret whose file path defaults to /dev/null makes Compose's Bake
+# builder demand `--allow=fs.read=/dev/null` and fails the build (CI run 39017011374).
+#
+#   UPNEXT_CA_BUNDLE=/path/to/ca.pem docker compose -f compose.yaml -f compose.ca-bundle.yaml up --build
+# or set COMPOSE_FILE=compose.yaml:compose.ca-bundle.yaml and UPNEXT_CA_BUNDLE in .env.
+services:
+  api:
+    build:
+      secrets: [ca_bundle]
+  web:
+    build:
+      secrets: [ca_bundle]
+
+secrets:
+  ca_bundle:
+    file: ${UPNEXT_CA_BUNDLE:?set UPNEXT_CA_BUNDLE to a PEM file}
