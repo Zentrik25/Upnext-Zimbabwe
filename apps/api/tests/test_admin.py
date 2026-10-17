@@ -566,3 +566,22 @@ def test_frozen_revisions_open_read_only_for_every_role_that_may_see_them(
         .get(reverse("admin:opportunities_opportunityversion_change", args=[live.live_version_id]))
         .content.decode()
     )
+
+
+def test_listing_queue_does_not_query_per_row(world: World, people: dict[str, User]) -> None:
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    published(world, people["author_editor"], people["editor"], example="grants-1")
+    client = logged_in(people["admin"])
+
+    def count() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert client.get(CHANGELIST).status_code == 200
+        return len(ctx.captured_queries)
+
+    count()  # warm per-process caches (content types, permissions)
+    one = count()
+    for example in ("jobs-1", "internships-1", "scholarships-1"):
+        published(world, people["author_editor"], people["editor"], example=example)
+    assert count() == one

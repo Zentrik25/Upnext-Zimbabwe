@@ -47,6 +47,24 @@ Phase 2 (Opportunity Catalog and Editorial CMS) was authorised on 2026-10-17 wit
 | P2-09 | OQ-08 duplicate rules | Hard duplicate = same normalised primary source URL, or same application URL and organisation, on a non-archived listing: blocks submit unless acknowledged with a reason. Soft duplicate = same organisation and similar title: warning only | `opportunities/duplicates.py` |
 | P2-10 | Markdown renderer ("library chosen at Phase 2") | An in-house, escape-first renderer for the approved subset (no HTML pass-through), so no new dependency; the sanitiser corpus is in the tests | `catalog/markdown.py` |
 
+### Owner direction on P2-01…P2-10 (Phase 2 acceptance review, 2026-10-17)
+
+The owner directed that all ten defaults are **retained provisionally for MVP development**. They are **not permanently approved**: each stays PROVISIONAL until the owner approves it in writing, and P2-07, P2-09 and P2-10 remain subject to validation and security testing.
+
+| ID | Owner direction | Still needs owner input |
+|---|---|---|
+| P2-01 | Expired listings must not appear in active listings or search results. Withdrawn listings must not appear as active; a direct URL may show a clearly labelled withdrawal notice. | Whether the API's `include_expired=true` and `deadline_state=expired` opt-ins should be removed (the default and the website never use them, but they are a way to list expired items). Whether withdrawn or expired pages stay `noindex`. Retention before a listing becomes `archived` (404). |
+| P2-02 | No direction beyond keeping the defaults. | Final location, sector and skill contents. |
+| P2-03 | Keep USD and ZWG. | Any other currency; whether a date-only deadline should mean end of day. |
+| P2-04 | Strict HTTPS for application URLs; properly attributed citation-only sources are allowed. | Whether non-HTTPS source URLs are ever acceptable, and the minimum attribution a citation-only source needs. |
+| P2-05 | Manual publishing; scheduled publishing deferred. | A later decision, if scheduling is wanted. |
+| P2-06 | Django Admin is the initial editorial interface. | MFA for staff, network restriction, and the launch policy for staff accounts (see PHASE2_ACCEPTANCE_REVIEW.md). |
+| P2-07 | Category-specific schemas retained provisionally, subject to validation. | Final field list per category. |
+| P2-08 | Clearly distinguish source-checked from directly issuer-verified (implemented in the public UI: only "Verified with the issuer" uses the green tone). | Final verification policy, and the re-verification period. |
+| P2-09 | Duplicate rules retained provisionally, subject to validation. | Whether hard duplicates should be blocked outright rather than acknowledged. |
+| P2-10 | Markdown renderer retained provisionally, subject to security testing. | Approval after the review's security findings. |
+
+
 ## RESOLVED (formerly open)
 | ID | Question | Resolution |
 |---|---|---|

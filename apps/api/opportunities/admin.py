@@ -272,6 +272,7 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "pending_version__organisation",
         "pending_version__author",
         "live_version__organisation",
+        "live_version__author",
     )
     ordering = ("-updated_at",)
     list_per_page = 25
@@ -312,7 +313,17 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Opportunity]:
         user = _user(request)
-        qs = super().get_queryset(request).select_related("category", "pending_version", "live_version")
+        qs = (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "category",
+                "pending_version__organisation",
+                "pending_version__author",
+                "live_version__organisation",
+                "live_version__author",
+            )
+        )
         if _sees_all_drafts(request):
             return qs
         if _can(request, Permission.OPP_REVIEW_APPROVE):
