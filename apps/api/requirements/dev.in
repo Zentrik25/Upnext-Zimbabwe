@@ -9,5 +9,4 @@ djangorestframework-stubs
 openapi-spec-validator
 PyYAML
 types-PyYAML
-jsonschema
 detect-secrets

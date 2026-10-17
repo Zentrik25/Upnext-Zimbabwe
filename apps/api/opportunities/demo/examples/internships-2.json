@@ -1,0 +1,29 @@
+{
+ "category": "internships",
+ "organisation_id": "00000000-0000-4000-8000-000000000004",
+ "title": "Education Support Internship",
+ "summary": "Support educational outreach activities and programme coordination at a learning trust in Gweru.",
+ "description_md": "Support outreach activities and programme coordination. Details on allowances were not stated in the notice.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a4",
+   "is_primary": true
+  }
+ ],
+ "employment_type": "internship",
+ "application_method": "instructions",
+ "application_instructions": "Submit your CV and a short motivation letter to the trust's Gweru office as described in the notice.",
+ "sources": [
+  {
+   "kind": "issuer_notice",
+   "name": "Example Learning Trust notice board",
+   "url": "https://trust.example.org/notices/support-internship",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "placement_type": "internship"
+ }
+}

@@ -414,7 +414,6 @@ jsonschema==4.26.0 \
     --hash=sha256:d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce
     # via
     #   -c runtime.txt
-    #   -r dev.in
     #   openapi-schema-validator
     #   openapi-spec-validator
 jsonschema-path==0.5.0 \

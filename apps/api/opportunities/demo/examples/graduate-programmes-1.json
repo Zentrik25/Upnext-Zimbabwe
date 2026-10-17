@@ -1,0 +1,64 @@
+{
+ "category": "graduate-programmes",
+ "organisation_id": "00000000-0000-4000-8000-000000000005",
+ "title": "Graduate Trainee Programme — Finance",
+ "summary": "Two-year rotational programme in finance operations and reporting, based in Harare or Bulawayo.",
+ "description_md": "Rotational graduate programme covering finance operations, management reporting and treasury support.",
+ "requirements_md": "- Degree in finance, accounting or a related field\n- Strong spreadsheet skills",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a1",
+   "is_primary": true
+  },
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a2",
+   "is_primary": false
+  }
+ ],
+ "work_mode": "on_site",
+ "employment_type": "trainee",
+ "experience_level": "none",
+ "deadline_at": "2026-12-11T17:00:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "external_url",
+ "application_url": "https://graduates.example.org/finance",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b3"
+ ],
+ "skills": [
+  {
+   "skill_id": "00000000-0000-4000-8000-0000000000c4",
+   "is_required": true
+  }
+ ],
+ "sources": [
+  {
+   "kind": "issuer_website",
+   "name": "Example Finance Group graduate page",
+   "url": "https://graduates.example.org/programmes/finance",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "programme_length_months": 24,
+  "intake_year": 2027,
+  "rotations": true,
+  "minimum_degree_class": "lower_second",
+  "eligible_fields_of_study": [
+   "Accounting",
+   "Finance",
+   "Economics"
+  ],
+  "max_years_since_graduation": 3,
+  "service_bond_stated": false,
+  "vacancies": 10,
+  "application_documents": [
+   "CV",
+   "Degree certificate or provisional results",
+   "National ID copy"
+  ]
+ }
+}

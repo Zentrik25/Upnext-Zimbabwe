@@ -23,6 +23,10 @@ strict = true
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 exclude = ["migrations/", "staticfiles/"]
 
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*"]
+ignore_missing_imports = true  # no bundled stubs; used in one module
+
 [tool.django-stubs]
 django_settings_module = "config.settings.test"
 

@@ -1,0 +1,32 @@
+{
+ "category": "grants",
+ "organisation_id": "00000000-0000-4000-8000-00000000000c",
+ "title": "Research Innovation Fund",
+ "summary": "Funding call for applied research projects; amount and closing date not published.",
+ "description_md": "A funding call for applied research projects. The announcement did not publish an amount or closing date.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a1",
+   "is_primary": true
+  }
+ ],
+ "application_method": "external_url",
+ "application_url": "https://research.example.org/innovation-fund",
+ "sources": [
+  {
+   "kind": "email_from_issuer",
+   "name": "Programme office circular",
+   "url": null,
+   "citation": "Circular received from the programme office, 8 October 2026",
+   "observed_on": "2026-10-08",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "funder": "Example Research Council",
+  "applicant_types": [
+   "research_institution",
+   "individual"
+  ]
+ }
+}

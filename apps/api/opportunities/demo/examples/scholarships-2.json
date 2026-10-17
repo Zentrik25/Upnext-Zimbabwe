@@ -1,0 +1,35 @@
+{
+ "category": "scholarships",
+ "organisation_id": "00000000-0000-4000-8000-000000000008",
+ "title": "Rural Girls Undergraduate Bursary",
+ "summary": "Bursary for female undergraduate students from rural districts; value and closing date not stated.",
+ "description_md": "A bursary programme for female undergraduate students from rural districts. The notice did not state the value or closing date.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a7",
+   "is_primary": true
+  }
+ ],
+ "application_method": "instructions",
+ "application_instructions": "Collect an application form from the trust's regional office or request it by email, as set out in the notice.",
+ "sources": [
+  {
+   "kind": "newspaper",
+   "name": "Example weekly, education supplement",
+   "url": null,
+   "citation": "Example weekly, education supplement, 9 October 2026, p. 6",
+   "observed_on": "2026-10-09",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "study_level": [
+   "bachelors_degree",
+   "diploma"
+  ],
+  "target_groups": [
+   "women",
+   "rural_applicants"
+  ]
+ }
+}

@@ -1,0 +1,62 @@
+{
+ "category": "grants",
+ "organisation_id": "00000000-0000-4000-8000-00000000000b",
+ "title": "Community Enterprise Growth Grant",
+ "summary": "Small grants for community-based enterprises in Gweru, with support for equipment and working capital.",
+ "description_md": "Small enterprise grant supporting community-based businesses and cooperatives.",
+ "requirements_md": "- Business concept note\n- Project budget\n- Implementation plan",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a4",
+   "is_primary": true
+  }
+ ],
+ "funding": {
+  "min": "2000.00",
+  "max": "10000.00",
+  "currency": "USD",
+  "period": "once"
+ },
+ "deadline_at": "2026-12-18T17:00:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "external_url",
+ "application_url": "https://enterprise.example.org/grants/community-growth",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b6"
+ ],
+ "sources": [
+  {
+   "kind": "issuer_website",
+   "name": "Example Enterprise Foundation grants page",
+   "url": "https://enterprise.example.org/grants/community-growth",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "funder": "Example Enterprise Foundation",
+  "applicant_types": [
+   "community_group",
+   "cooperative",
+   "registered_business"
+  ],
+  "thematic_areas": [
+   "Small enterprise development",
+   "Livelihoods"
+  ],
+  "cofunding_required": false,
+  "grant_duration_months": 12,
+  "application_stages": [
+   "concept_note",
+   "full_proposal"
+  ],
+  "reporting_requirements": "Quarterly narrative and financial reports",
+  "application_documents": [
+   "Concept note",
+   "Budget",
+   "Registration or constitution"
+  ]
+ }
+}

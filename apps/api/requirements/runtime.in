@@ -6,3 +6,4 @@ drf-spectacular
 argon2-cffi
 gunicorn
 whitenoise
+jsonschema
