@@ -318,6 +318,7 @@ def test_no_table_outside_the_known_set_holds_the_account_address(make_user: Cal
         ("accounts_user", "email"),
         ("accounts_user", "email_verified_at"),
         ("notifications_emailoutbox", "to_address"),
+        ("notifications_emailsuppression", "address_hash"),  # a keyed hash, not an address
         ("catalog_organisation", "website_url"),
         ("opportunities_opportunityversion", "application_email"),
         ("opportunities_opportunityversion", "location_text"),

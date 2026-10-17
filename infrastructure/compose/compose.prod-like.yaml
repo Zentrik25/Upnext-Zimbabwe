@@ -10,6 +10,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
       DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      UPNEXT_ENVIRONMENT: local-prod-like # lets the production images run with demo data; never set on a real deployment
       UPNEXT_SECURE_COOKIES: "true" # production refuses to start without it; Chromium accepts Secure cookies on localhost
       UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
       UPNEXT_RUN_MIGRATIONS: "1"
@@ -22,6 +23,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
+      UPNEXT_ENVIRONMENT: local-prod-like
       UPNEXT_SECURE_COOKIES: "true"
       UPNEXT_EMAIL_BACKEND: file
       UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat

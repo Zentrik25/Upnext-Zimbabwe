@@ -11,7 +11,7 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandParser
 
 from accounts import deletion, retention
-from notifications.services import process_batch
+from notifications.services import process_batch, status_summary
 
 logger = logging.getLogger("upnext.worker")
 HEARTBEAT = Path(os.environ.get("UPNEXT_WORKER_HEARTBEAT", "/tmp/upnext-worker-heartbeat"))  # noqa: S108
@@ -32,6 +32,10 @@ class Command(BaseCommand):
                 deleted = deletion.execute_due()
                 removed = retention.run()
                 last_housekeeping = time.monotonic()
+                if alerts := status_summary()["alerts"]:
+                    logger.warning(
+                        "outbox needs attention", extra={"event": "outbox.alert", "alerts": alerts}
+                    )
                 if deleted or any(removed.values()):
                     logger.info(
                         "housekeeping", extra={"event": "worker.housekeeping", "deleted": deleted, **removed}

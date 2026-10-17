@@ -64,3 +64,16 @@ class EmailOutbox(models.Model):
 
     def __str__(self) -> str:
         return f"{self.kind}:{self.status}"
+
+
+class EmailSuppression(models.Model):
+    """Addresses we must not send to (bounce, complaint, manual). Only a keyed hash is stored, so the
+    list itself holds no addresses. A provider's bounce and complaint feed will call `suppression.suppress`
+    once a provider is chosen (OQ-03)."""
+
+    address_hash = models.CharField(max_length=64, unique=True)
+    reason = models.CharField(max_length=32)  # bounce | complaint | manual
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.reason}:{self.address_hash[:8]}"

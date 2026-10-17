@@ -21,6 +21,7 @@ from django.utils import timezone
 from accounts import tokens
 from accounts.models import AuthToken, TokenPurpose, User
 
+from . import suppression
 from .models import EmailKind, EmailOutbox, OutboxStatus
 from .sender import DeliveryResult, EmailMessage, EmailSender, get_sender
 
@@ -132,6 +133,8 @@ def _finish(row: EmailOutbox, result: DeliveryResult, now: datetime) -> None:
         row.last_error = None
     elif result.outcome == "permanent_failure" or row.attempts >= MAX_ATTEMPTS:
         row.status, row.last_error = OutboxStatus.DEAD, (result.error_code or "failed")[:300]
+        if result.error_code == "recipient_refused":
+            suppression.suppress(row.to_address, "bounce")
     else:
         delay = BACKOFF[min(row.attempts - 1, len(BACKOFF) - 1)]
         row.status, row.last_error = OutboxStatus.FAILED, (result.error_code or "failed")[:300]
@@ -149,7 +152,9 @@ def process_batch(
     counts = {"sent": 0, "failed": 0, "dead": 0}
     for row in _claim(worker, now, batch):
         message = build_message(row)
-        if message is None:
+        if message is not None and suppression.is_suppressed(row.to_address):
+            _finish(row, DeliveryResult("permanent_failure", error_code="suppressed"), now)
+        elif message is None:
             _finish(row, DeliveryResult("permanent_failure", error_code="token_missing"), now)
         else:
             try:
@@ -172,3 +177,25 @@ def retry(row: EmailOutbox) -> None:
     """Administrator retry of a dead or failed row."""
     row.status, row.attempts, row.next_attempt_at = OutboxStatus.PENDING, 0, timezone.now()
     row.save(update_fields=["status", "attempts", "next_attempt_at"])
+
+
+ALERT_OLDEST_SECONDS = 10 * 60  # PROPOSED (SECURITY_ARCHITECTURE §4.3)
+
+
+def status_summary(now: datetime | None = None) -> dict[str, Any]:
+    """Counts per status, age of the oldest waiting message, and the conditions worth alerting on."""
+    from django.db.models import Count, Min
+
+    now = now or timezone.now()
+    counts = {s.value: 0 for s in OutboxStatus}
+    counts.update(dict(EmailOutbox.objects.values_list("status").annotate(n=Count("pk"))))
+    oldest = EmailOutbox.objects.filter(status__in=[OutboxStatus.PENDING, OutboxStatus.FAILED]).aggregate(
+        first=Min("created_at")
+    )["first"]
+    age = (now - oldest).total_seconds() if oldest else None
+    alerts = []
+    if age is not None and age > ALERT_OLDEST_SECONDS:
+        alerts.append(f"oldest waiting message is {int(age)} s old")
+    if counts[OutboxStatus.DEAD]:
+        alerts.append(f"{counts[OutboxStatus.DEAD]} dead message(s)")
+    return {"counts": counts, "oldest_waiting_seconds": age, "alerts": alerts}

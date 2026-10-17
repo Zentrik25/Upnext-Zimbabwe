@@ -151,7 +151,15 @@ def _run_prod(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-GOOD = {"DJANGO_SECRET_KEY": "k" * 64, "DJANGO_ALLOWED_HOSTS": "upnext.test", "UPNEXT_SECURE_COOKIES": "true"}
+GOOD = {
+    "DJANGO_SECRET_KEY": "k" * 64,
+    "DJANGO_ALLOWED_HOSTS": "upnext.test",
+    "UPNEXT_SECURE_COOKIES": "true",
+    "DJANGO_HSTS_SECONDS": "31536000",
+    "DJANGO_CSRF_TRUSTED_ORIGINS": "https://upnext.test",
+    "UPNEXT_PUBLIC_BASE_URL": "https://upnext.test",
+    "UPNEXT_TOKEN_KEY": "t" * 48,
+}
 
 
 def test_production_settings_accept_a_safe_configuration() -> None:
@@ -165,6 +173,38 @@ def test_production_settings_accept_a_safe_configuration() -> None:
         ({"DJANGO_SECRET_KEY": "django-insecure-" + "x" * 60}, "at least 50 characters"),
         ({"DJANGO_ALLOWED_HOSTS": ""}, "DJANGO_ALLOWED_HOSTS"),
         ({"UPNEXT_SECURE_COOKIES": "false"}, "UPNEXT_SECURE_COOKIES"),
+        ({"UPNEXT_STAFF_MFA_REQUIRED": "false"}, "UPNEXT_STAFF_MFA_REQUIRED must be true"),
+        ({"UPNEXT_DEMO_TOOLS": "1"}, "UPNEXT_DEMO_TOOLS must not be set"),
+        ({"DJANGO_HSTS_SECONDS": "0"}, "DJANGO_HSTS_SECONDS"),
+        ({"DJANGO_ALLOWED_HOSTS": "upnext.test,*"}, "must not contain"),
+        ({"DJANGO_CSRF_TRUSTED_ORIGINS": ""}, "DJANGO_CSRF_TRUSTED_ORIGINS"),
+        ({"DJANGO_CSRF_TRUSTED_ORIGINS": "http://upnext.test"}, "DJANGO_CSRF_TRUSTED_ORIGINS"),
+        ({"UPNEXT_PUBLIC_BASE_URL": "http://upnext.test"}, "UPNEXT_PUBLIC_BASE_URL"),
+        ({"UPNEXT_TOKEN_KEY": ""}, "UPNEXT_TOKEN_KEY"),
+        ({"UPNEXT_TOKEN_KEY": "short"}, "UPNEXT_TOKEN_KEY"),
+        ({"UPNEXT_EMAIL_BACKEND": "file"}, "development only"),
+        ({"UPNEXT_EMAIL_BACKEND": "console"}, "development only"),
+        ({"UPNEXT_EMAIL_BACKEND": "bogus"}, "UPNEXT_EMAIL_BACKEND must be one of"),
+        ({"UPNEXT_EMAIL_BACKEND": "smtp"}, "UPNEXT_SMTP_HOST is required"),
+        (
+            {
+                "UPNEXT_EMAIL_BACKEND": "smtp",
+                "UPNEXT_SMTP_HOST": "smtp.example.test",
+                "UPNEXT_EMAIL_FROM": "UPNEXT <hello@example.test>",
+                "UPNEXT_SMTP_SECURITY": "none",
+            },
+            "unencrypted",
+        ),
+        (
+            {
+                "UPNEXT_EMAIL_BACKEND": "smtp",
+                "UPNEXT_SMTP_HOST": "smtp.example.test",
+                "UPNEXT_EMAIL_FROM": "UPNEXT <hello@example.test>",
+                "UPNEXT_SMTP_USER": "someone",
+            },
+            "set together",
+        ),
+        ({"UPNEXT_ENVIRONMENT": "staging"}, "UPNEXT_ENVIRONMENT must be"),
     ],
 )
 def test_production_settings_fail_fast_on_unsafe_configuration(
@@ -172,6 +212,41 @@ def test_production_settings_fail_fast_on_unsafe_configuration(
 ) -> None:
     result = _run_prod({**GOOD, **override})
     assert result.returncode != 0 and message in result.stderr
+
+
+def test_production_accepts_a_complete_smtp_configuration() -> None:
+    env = {
+        **GOOD,
+        "UPNEXT_EMAIL_BACKEND": "smtp",
+        "UPNEXT_SMTP_HOST": "smtp.example.test",
+        "UPNEXT_EMAIL_FROM": "UPNEXT <hello@example.test>",
+        "UPNEXT_SMTP_USER": "someone",
+        "UPNEXT_SMTP_PASSWORD": "p" * 12,
+    }
+    assert _run_prod(env).returncode == 0
+
+
+def test_throwaway_stacks_may_relax_the_production_safeguards_only_by_naming_themselves() -> None:
+    relaxed = {
+        **GOOD,
+        "UPNEXT_ENVIRONMENT": "local-prod-like",
+        "UPNEXT_STAFF_MFA_REQUIRED": "false",
+        "UPNEXT_DEMO_TOOLS": "1",
+        "UPNEXT_EMAIL_BACKEND": "file",
+        "DJANGO_HSTS_SECONDS": "0",
+        "UPNEXT_PUBLIC_BASE_URL": "http://localhost:8080",
+        "DJANGO_CSRF_TRUSTED_ORIGINS": "http://localhost:8080",
+    }
+    assert _run_prod(relaxed).returncode == 0
+    assert (
+        _run_prod({**relaxed, "UPNEXT_EMAIL_BACKEND": "smtp"}).returncode != 0
+    )  # misconfigured smtp still fails
+
+
+def test_production_error_messages_never_contain_secret_values() -> None:
+    env = {**GOOD, "UPNEXT_TOKEN_KEY": "tiny", "UPNEXT_SMTP_PASSWORD": "super-secret-value"}
+    result = _run_prod(env)
+    assert result.returncode != 0 and "super-secret-value" not in result.stderr + result.stdout
 
 
 def test_missing_secret_key_is_a_startup_error() -> None:
