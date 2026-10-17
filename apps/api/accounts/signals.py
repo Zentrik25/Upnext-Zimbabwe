@@ -14,6 +14,7 @@ from .sessions import start_record
 @receiver(user_logged_in)
 def on_login(sender: Any, request: HttpRequest | None, user: User, **kwargs: Any) -> None:
     if request is not None and hasattr(request, "session"):
+        request.session.pop("mfa_ok", None)  # a new sign-in must pass the second step again
         request.session["login_at"] = timezone.now().timestamp()
         request.session["last_activity"] = timezone.now().timestamp()
         start_record(request, user)

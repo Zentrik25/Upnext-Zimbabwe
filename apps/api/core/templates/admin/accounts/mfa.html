@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}{% endblock %}
+{% block content %}
+<div id="content-main">
+  {% if recovery_codes %}
+    <h2>Two-step verification is on</h2>
+    <p>Save these recovery codes somewhere safe. Each works once if you lose your device, and they are not shown again.</p>
+    <ul id="recovery-codes">{% for c in recovery_codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>
+    <p><a class="button" id="continue" href="{{ next }}">Continue to the staff site</a></p>
+  {% else %}
+    {% if enrolling %}
+      <h2>Set up two-step verification</h2>
+      <p>Staff accounts need a second step. In an authenticator app, add an account with this setup key (time-based, 6 digits), then enter the code it shows.</p>
+      <p>Setup key: <code id="mfa-secret">{{ secret }}</code></p>
+      <p><small>Or open this link on the device that has your authenticator: <a href="{{ uri }}">{{ uri }}</a></small></p>
+    {% else %}
+      <h2>Enter your verification code</h2>
+      <p>Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+    {% endif %}
+    {% if error %}<p class="errornote" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="form-row">
+        <label for="id_code" class="required">Code</label>
+        <input type="text" name="code" id="id_code" inputmode="numeric" autocomplete="one-time-code" maxlength="32" required autofocus>
+      </div>
+      <div class="submit-row"><input type="submit" class="default" value="{% if enrolling %}Turn on two-step verification{% else %}Verify{% endif %}"></div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

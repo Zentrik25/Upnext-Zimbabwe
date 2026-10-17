@@ -13,7 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from access.registry import Role
-from accounts.models import AccountStatus, StaffRoleAssignment, User
+from accounts.models import AccountStatus, StaffMfaDevice, StaffRoleAssignment, User
 from catalog.models import Location, Organisation, Sector, Skill
 from catalog.seed import seed_taxonomies, slugify_skill
 from opportunities import demo, workflow
@@ -59,6 +59,10 @@ class Command(BaseCommand):
                 for role in roles:
                     StaffRoleAssignment.objects.create(user=user, role=role, reason="Demo data (seed_demo)")
                 passwords[email] = password
+                # Demo staff start with two-step verification already set up (see `demo_totp_code`).
+                StaffMfaDevice.objects.create(
+                    user=user, nonce=secrets.token_hex(16), confirmed_at=timezone.now()
+                )
             users[email.split("@")[0]] = user
         return users, passwords
 

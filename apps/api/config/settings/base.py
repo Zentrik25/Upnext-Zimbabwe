@@ -39,6 +39,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "core.middleware.StaffHardeningMiddleware",
+    "core.staff_mfa.StaffMfaMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.RequestLogMiddleware",
@@ -113,6 +114,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = SECURE_COOKIES
 UPNEXT_STAFF_SESSION_SECONDS = get_int("UPNEXT_STAFF_SESSION_SECONDS", 60 * 60 * 8)  # absolute; PROPOSED
+UPNEXT_STAFF_MFA_REQUIRED = get_bool("UPNEXT_STAFF_MFA_REQUIRED", True)  # P3-07 (OQ-16 provisional)
 UPNEXT_STAFF_IDLE_SECONDS = get_int("UPNEXT_STAFF_IDLE_SECONDS", 30 * 60)  # PROPOSED, OQ-17
 UPNEXT_SEEKER_IDLE_SECONDS = get_int("UPNEXT_SEEKER_IDLE_SECONDS", 7 * 24 * 3600)  # PROPOSED, OQ-17
 UPNEXT_SEEKER_ABSOLUTE_SECONDS = get_int("UPNEXT_SEEKER_ABSOLUTE_SECONDS", 30 * 24 * 3600)  # PROPOSED

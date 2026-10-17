@@ -41,6 +41,15 @@ services:
       POSTGRES_HOST: db
       UPNEXT_RUN_MIGRATIONS: "1" # development convenience; production runs migrations as a release step
       UPNEXT_REPO_ROOT: /repo
+      # Local/CI conveniences for the browser tests: mail is spooled to files (no provider yet, OQ-03),
+      # demo-account tooling is enabled, and the public-endpoint limits are loosened. Never copy to production.
+      UPNEXT_EMAIL_BACKEND: file
+      UPNEXT_DEMO_TOOLS: "1"
+      UPNEXT_THROTTLE_REGISTER_IP: 200/1h
+      UPNEXT_THROTTLE_EMAIL_REQUEST_IP: 200/1h
+      UPNEXT_THROTTLE_TOKEN_IP: 200/1h
+      UPNEXT_EMAIL_REQUEST_GAP_SECONDS: "1"
+      UPNEXT_EMAIL_REQUESTS_PER_HOUR: "100"
       COVERAGE_FILE: /tmp/.coverage
       RUFF_CACHE_DIR: /tmp/.ruff_cache
       MYPY_CACHE_DIR: /tmp/.mypy_cache
@@ -60,6 +69,39 @@ services:
     cap_drop: [ALL]
     mem_limit: 512m
     cpus: 1.0
+
+  worker:
+    # Sends the transactional e-mail outbox (ADR-0004). Same image and settings as the API; no ports.
+    <<: *hardening
+    build:
+      context: ../../apps/api
+      target: dev
+    command: ["python", "manage.py", "process_email_outbox", "--loop"]
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_HOST: db
+      UPNEXT_EMAIL_BACKEND: file
+      UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat
+    user: "${UPNEXT_UID:-10001}:${UPNEXT_GID:-10001}"
+    volumes:
+      - ../../apps/api:/app
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      # healthy while the loop has touched its heartbeat file in the last two minutes
+      test: ["CMD", "sh", "-c", "test -n \"$(find /tmp/worker-heartbeat -mmin -2 2>/dev/null)\""]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    cap_drop: [ALL]
+    mem_limit: 256m
+    cpus: 0.5
 
   web:
     <<: *hardening
