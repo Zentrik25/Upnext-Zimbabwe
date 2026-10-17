@@ -203,7 +203,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             </Button>
             <Link
               href={href(new URLSearchParams(), { q: params.get("q"), category: active })}
-              className="text-ctl text-accent underline max-md:col-span-2"
+              className="inline-flex min-h-[44px] items-center text-ctl text-accent underline max-md:col-span-2"
             >
               Clear filters
             </Link>
@@ -323,7 +323,10 @@ async function Results({
             Next page
           </ButtonLink>
           {params.get("cursor") ? (
-            <Link href={href(params, {})} className="text-ctl text-accent underline">
+            <Link
+              href={href(params, {})}
+              className="inline-flex min-h-[44px] items-center text-ctl text-accent underline"
+            >
               Back to the first page
             </Link>
           ) : null}

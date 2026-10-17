@@ -40,12 +40,12 @@ export function SaveToggle({
     return (
       <a
         href={`/sign-in?next=${encodeURIComponent(returnTo)}`}
-        className={cn("inline-flex items-center gap-1 px-1 text-ctl text-accent underline", className)}
+        className={cn("inline-flex min-h-[44px] items-center gap-1 px-1 text-ctl text-accent", className)}
       >
         <span aria-hidden="true" className="text-[20px] leading-[31px] text-save-idle">
           ♡
         </span>
-        <span className={showLabel ? undefined : "sr-only"}>Sign in to save {title}</span>
+        <span className={showLabel ? "underline" : "sr-only"}>Sign in to save {title}</span>
       </a>
     );
   }

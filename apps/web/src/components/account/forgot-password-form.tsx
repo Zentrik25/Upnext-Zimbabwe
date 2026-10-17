@@ -37,7 +37,7 @@ export function ForgotPasswordForm() {
           </p>
         </FormSuccess>
         <p className="text-ctl">
-          <Link href="/sign-in" className="text-accent underline">
+          <Link href="/sign-in" className="inline-flex min-h-[44px] items-center text-accent underline">
             Back to sign in
           </Link>
         </p>
@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
         {busy ? "Sending…" : "Send reset link"}
       </Button>
       <p className="text-ctl">
-        <Link href="/sign-in" className="text-accent underline">
+        <Link href="/sign-in" className="inline-flex min-h-[44px] items-center text-accent underline">
           Back to sign in
         </Link>
       </p>

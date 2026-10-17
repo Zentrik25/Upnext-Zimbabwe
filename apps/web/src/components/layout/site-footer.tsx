@@ -17,7 +17,7 @@ export function SiteFooter() {
           <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
             {LINKS.map(([href, label]) => (
               <li key={href}>
-                <Link href={href} className="underline">
+                <Link href={href} className="inline-flex min-h-[44px] items-center underline">
                   {label}
                 </Link>
               </li>

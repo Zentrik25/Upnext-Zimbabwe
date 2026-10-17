@@ -61,7 +61,7 @@ export function SignInForm({ next }: { next?: string }) {
         {busy ? "Signing in…" : "Sign in"}
       </Button>
       <p className="grid gap-1 text-ctl">
-        <Link href="/forgot-password" className="text-accent underline">
+        <Link href="/forgot-password" className="inline-flex min-h-[44px] items-center text-accent underline">
           Forgot your password?
         </Link>
         <span>
