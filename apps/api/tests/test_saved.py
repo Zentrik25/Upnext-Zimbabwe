@@ -235,3 +235,24 @@ def test_a_listing_can_be_saved_once_per_user_in_the_database(
     with pytest.raises(IntegrityError), transaction.atomic():
         SavedOpportunity.objects.create(user=user, opportunity=job)
     SavedOpportunity.objects.create(user=make_user(), opportunity=job)  # another person may save it
+
+
+def test_saved_list_does_not_query_per_item(
+    world: World, people: dict[str, User], make_user: Callable[..., User]
+) -> None:
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    client, _ = signed_in(make_user)
+    put(client, live(world, people, "jobs-1", "q0"))
+
+    def count() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert client.get("/api/v1/me/saved").status_code == 200
+        return len(ctx.captured_queries)
+
+    count()  # warm per-process caches
+    one = count()
+    for i, example in enumerate(("grants-1", "scholarships-1", "internships-1")):
+        put(client, live(world, people, example, f"q{i + 1}"))
+    assert count() == one

@@ -17,7 +17,7 @@ export async function SiteHeader() {
           </Link>
           {user ? (
             <>
-              <Link href="/saved" className="text-ctl text-nav-text">
+              <Link href="/saved" className="text-ctl whitespace-nowrap text-nav-text">
                 Saved
               </Link>
               <Link href="/account" className="text-ctl text-nav-text">
@@ -27,11 +27,11 @@ export async function SiteHeader() {
             </>
           ) : (
             <>
-              <Link href="/sign-in" className="text-ctl text-nav-text">
+              <Link href="/sign-in" className="text-ctl whitespace-nowrap text-nav-text">
                 Sign in
               </Link>
-              <Link href="/register" className="text-ctl font-medium text-accent">
-                Create account
+              <Link href="/register" className="text-ctl whitespace-nowrap font-medium text-accent">
+                Register
               </Link>
             </>
           )}

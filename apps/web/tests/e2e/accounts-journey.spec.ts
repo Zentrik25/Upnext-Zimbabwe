@@ -43,7 +43,7 @@ async function axeClean(page: Page) {
 test("1. a visitor sees sign-in prompts, and private pages send them to sign in", async ({ page }) => {
   await page.goto("/opportunities");
   await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Register" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Sign in to save/ }).first()).toHaveAttribute(
     "href",
     /\/sign-in\?next=/,
@@ -265,6 +265,7 @@ test("8. the account pages fit every width and are accessible", async ({ page })
   }
   await page.setViewportSize({ width: 390, height: 900 });
   await signIn(page, EMAIL, THIRD_PASSWORD);
+  await expect(page).toHaveURL(/\/account$/);
   await shot(page, "acct-16-account-390");
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
