@@ -30,6 +30,7 @@ from .public_serializers import (
     OpportunityDetailSerializer,
     OpportunityListSerializer,
     SectorListSerializer,
+    SitemapSerializer,
     SkillListSerializer,
 )
 from .throttles import PublicReadThrottle
@@ -225,6 +226,19 @@ class OpportunityDetailView(PublicView):
         if version is None:
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
         return Response(detail_of(version, timezone.now()))
+
+
+class SitemapView(PublicView):
+    """Slugs of the listings that belong in the XML sitemap (the web app renders the file)."""
+
+    @extend_schema(
+        operation_id="getSitemapEntries",
+        tags=["public"],
+        responses={200: SitemapSerializer, 429: OpenApiResponse(description="rate_limited")},
+    )
+    def get(self, request: Request) -> Response:
+        entries = public.sitemap_entries(timezone.now())
+        return Response({"data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries]})
 
 
 class CategoryListView(PublicView):

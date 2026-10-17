@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
+import { JsonLd } from "@/components/seo/json-ld";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
 import { getOpportunity } from "@/lib/catalog";
@@ -19,6 +20,8 @@ import {
   labelFor,
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
+import { absolute } from "@/lib/site";
+import { breadcrumbFor, jobPostingFor } from "@/lib/structured-data";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -61,8 +64,19 @@ export default async function OpportunityPage({ params }: Props) {
   const user = await getCurrentUser();
   const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
 
+  const pageUrl = absolute(`/opportunities/${listing.slug}`);
+  const posting = jobPostingFor(listing, pageUrl);
   return (
     <>
+      {posting ? <JsonLd data={posting} /> : null}
+      {listing.status === "published" ? (
+        <JsonLd
+          data={breadcrumbFor([
+            { name: "Opportunities", url: absolute("/opportunities") },
+            { name: listing.title, url: pageUrl },
+          ])}
+        />
+      ) : null}
       <Container className="pt-[18px] pb-[65px]">
         {listing.status !== "published" ? (
           <div

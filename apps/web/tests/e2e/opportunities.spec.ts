@@ -150,7 +150,7 @@ test.describe("detail page", () => {
 
   test("description is rendered as text and elements, never raw HTML", async ({ page }) => {
     await openFirst(page, "Graduate Electrical Engineer");
-    expect(await page.locator("main script").count()).toBe(0);
+    expect(await page.locator('main script:not([type="application/ld+json"])').count()).toBe(0);
     await expect(page.locator("main strong").first()).toBeVisible();
   });
 });

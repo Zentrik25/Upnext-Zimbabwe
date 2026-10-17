@@ -178,6 +178,22 @@ def visible_versions(*, detail: bool = False, include_expired: bool = False) -> 
     ).select_related("opportunity", "opportunity__category", "organisation")
 
 
+SITEMAP_LIMIT = 50000  # the protocol's per-file maximum
+
+
+def sitemap_entries(now: datetime) -> list[tuple[str, datetime]]:
+    """(slug, last published) for every listing that is open for browsing, in a stable order. Closed,
+    withdrawn and archived listings are left out (P4-03); a listing whose deadline passed is left out even
+    before the expiry job has run, as in the default list."""
+    rows = (
+        visible_versions()
+        .filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
+        .order_by("opportunity__slug")
+        .values_list("opportunity__slug", "opportunity__last_published_at")[:SITEMAP_LIMIT]
+    )
+    return [(slug, stamp) for slug, stamp in rows if slug and stamp]
+
+
 def derive_deadline_state(deadline_at: datetime | None, now: datetime) -> str:
     if deadline_at is None:
         return "unknown"

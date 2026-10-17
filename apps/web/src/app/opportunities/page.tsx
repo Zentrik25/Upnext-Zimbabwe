@@ -7,11 +7,28 @@ import { listCategories, listLocations, listOpportunities } from "@/lib/catalog"
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  title: "Opportunities",
-  description: "Search jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe.",
-  alternates: { canonical: "/opportunities" },
-};
+const BASE_DESCRIPTION =
+  "Search jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe.";
+
+/**
+ * Only the plain list is indexed. A filtered, searched, sorted or paged list is a view of the same listings, so
+ * it is not indexed (links are still followed) and points at the plain address as its canonical form. Category
+ * paths of their own are OPEN (P4-02).
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Search>;
+}): Promise<Metadata> {
+  const raw = await searchParams;
+  const refined = Object.values(raw).some((value) => value !== undefined && value !== "");
+  return {
+    title: "Opportunities",
+    description: BASE_DESCRIPTION,
+    alternates: { canonical: "/opportunities" },
+    ...(refined ? { robots: { index: false, follow: true } } : {}),
+  };
+}
 
 const FILTER_KEYS = [
   "q",

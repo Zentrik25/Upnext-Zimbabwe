@@ -143,6 +143,15 @@ class OpportunityListSerializer(serializers.Serializer[None]):
     page = PageInfoSerializer()
 
 
+class SitemapEntrySerializer(serializers.Serializer[None]):
+    slug = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+
+
+class SitemapSerializer(serializers.Serializer[None]):
+    data = SitemapEntrySerializer(many=True)  # type: ignore[assignment]
+
+
 class CategoryListSerializer(serializers.Serializer[None]):
     data = CategorySerializer(many=True)  # type: ignore[assignment]
 

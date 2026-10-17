@@ -24,7 +24,7 @@ async function collectViolations(page: Page) {
 }
 
 test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
-  test("home renders with landmarks and a live API status", async ({ page }) => {
+  test("home renders with landmarks, categories and the latest listings", async ({ page }) => {
     const errors = await collectViolations(page);
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
@@ -32,7 +32,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover what's next.");
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
-    await expect(page.getByTestId("service-status")).toContainText("Connected");
+    await expect(page.getByRole("navigation", { name: "Browse by category" })).toBeVisible();
     // In the Next.js dev server, HMR and un-nonced dev styles legitimately log CSP/WebSocket noise, so the
     // strict check runs against the production-mode stack (E2E_STRICT_CONSOLE=1, see LOCAL_DEVELOPMENT.md).
     if (process.env.E2E_STRICT_CONSOLE === "1")

@@ -37,6 +37,7 @@ urlpatterns = [
         public_views.OpportunityDetailView.as_view(),
         name="opportunity-detail",
     ),
+    path("sitemap", public_views.SitemapView.as_view(), name="sitemap"),
     path("categories", public_views.CategoryListView.as_view(), name="category-list"),
     path("locations", public_views.LocationListView.as_view(), name="location-list"),
     path("sectors", public_views.SectorListView.as_view(), name="sector-list"),

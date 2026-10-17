@@ -44,6 +44,10 @@ async function json<T>(path: string, params?: URLSearchParams): Promise<Result<T
   }
 }
 
+export function getSitemapEntries() {
+  return json<{ data: { slug: string; updated_at: string }[] }>("sitemap");
+}
+
 export function listOpportunities(params: URLSearchParams) {
   return json<{ data: OpportunitySummary[]; page: Page }>("opportunities", params);
 }

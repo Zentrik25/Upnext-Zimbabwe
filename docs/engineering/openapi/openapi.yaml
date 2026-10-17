@@ -98,6 +98,15 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /sitemap:
+    get:
+      tags: [public]
+      operationId: getSitemapEntries
+      summary: Slugs of the listings that belong in the XML sitemap
+      description: Published listings that are still open, in slug order, at most 50000. Added in Phase 4; additive.
+      responses:
+        '200': { description: 'Entries', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { type: object, required: [slug, updated_at], properties: { slug: { type: string }, updated_at: { type: string, format: date-time } } } } } } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /categories:
     get:
       tags: [public]
