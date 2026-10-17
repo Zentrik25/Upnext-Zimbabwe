@@ -7,6 +7,7 @@ import {
   VERIFICATION,
   verificationTone,
 } from "@/lib/format";
+import { SaveToggle } from "@/components/account/save-toggle";
 import { ListingRow, Tag } from "@/components/ui";
 
 export function VerificationTag({ level }: { level: VerificationLevel }) {
@@ -14,7 +15,16 @@ export function VerificationTag({ level }: { level: VerificationLevel }) {
 }
 
 /** One search result: plain facts are unboxed text, deadline and verification are labelled chips. */
-export function OpportunityRow({ row }: { row: OpportunitySummary }) {
+export function OpportunityRow({
+  row,
+  save,
+  refreshOnChange = false,
+}: {
+  row: OpportunitySummary;
+  /** Present on pages that know the session: the live save toggle. */
+  save?: { signedIn: boolean; saved: boolean; returnTo: string };
+  refreshOnChange?: boolean;
+}) {
   const deadline = deadlineView(row.deadline, row.status);
   const facts = [
     row.category.name,
@@ -37,6 +47,18 @@ export function OpportunityRow({ row }: { row: OpportunitySummary }) {
         },
       ]}
       sourceNote={row.primary_source_name ? `Source: ${row.primary_source_name}` : "Source not named"}
+      action={
+        save ? (
+          <SaveToggle
+            opportunityId={row.id}
+            title={row.title}
+            initialSaved={save.saved}
+            signedIn={save.signedIn}
+            returnTo={save.returnTo}
+            refreshOnChange={refreshOnChange}
+          />
+        ) : undefined
+      }
     />
   );
 }

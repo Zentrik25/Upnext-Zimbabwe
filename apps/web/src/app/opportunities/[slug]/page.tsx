@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
+import { SaveToggle } from "@/components/account/save-toggle";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
 import { getOpportunity } from "@/lib/catalog";
@@ -18,6 +19,7 @@ import {
   labelFor,
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
+import { getCurrentUser, getSavedIds } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,8 @@ export default async function OpportunityPage({ params }: Props) {
   const deadline = deadlineView(listing.deadline, listing.status);
   const salary = formatMoney(listing.salary);
   const funding = formatMoney(listing.funding);
+  const user = await getCurrentUser();
+  const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
 
   return (
     <>
@@ -91,6 +95,17 @@ export default async function OpportunityPage({ params }: Props) {
               {listing.title}
             </h1>
             <p className="mt-1 text-title text-company">{listing.organisation.name}</p>
+            {listing.status === "published" || isSaved ? (
+              <SaveToggle
+                className="mt-2"
+                opportunityId={listing.id}
+                title={listing.title}
+                initialSaved={isSaved}
+                signedIn={Boolean(user)}
+                returnTo={`/opportunities/${listing.slug}`}
+                showLabel
+              />
+            ) : null}
             <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
               {listing.locations.map((l) => (
                 <li key={l.slug}>{l.name}</li>

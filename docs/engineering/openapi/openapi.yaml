@@ -853,6 +853,7 @@ components:
         status: { $ref: '#/components/schemas/AccountStatus' }
         roles: { type: array, items: { $ref: '#/components/schemas/StaffRole' }, description: 'for UI navigation only; never trusted by the server' }
         created_at: { type: string, format: date-time }
+        deletion_requested_at: { type: [string, 'null'], format: date-time, description: 'Set while an account-deletion request is pending (OQ-09). Added in Phase 3; additive.' }
     AdminUser:
       allOf:
         - $ref: '#/components/schemas/User'

@@ -1,10 +1,12 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { demoCode } from "./exec";
 
 /**
  * Browser-level review of the Django Admin editorial CMS (/staff/) with the fictional demo staff accounts.
  * Needs `seed_demo --force` run with UPNEXT_DEMO_PASSWORD set to the same value as E2E_DEMO_PASSWORD
- * (throwaway local/CI stacks only; never real credentials). Run with E2E_CMS=1.
+ * (throwaway local/CI stacks only; never real credentials) and E2E_EXEC for the two-step demo codes (exec.ts).
+ * Run with E2E_CMS=1.
  * Set E2E_SCREENSHOT_DIR to keep screenshots as review evidence.
  */
 test.skip(process.env.E2E_CMS !== "1", "needs the demo staff accounts (E2E_CMS=1)");
@@ -35,6 +37,10 @@ async function login(browser: Browser, who: keyof typeof accounts, viewport = { 
   await page.getByLabel("Email").or(page.locator("#id_username")).first().fill(accounts[who]);
   await page.locator("#id_password").fill(PASSWORD);
   await page.getByRole("button", { name: /log in/i }).click();
+  // Staff must pass the second step (two-step verification) before any staff page.
+  await expect(page).toHaveURL(/\/staff\/mfa\//);
+  await page.locator("#id_code").fill(demoCode(accounts[who]));
+  await page.getByRole("button", { name: "Verify" }).click();
   await expect(page.getByRole("heading", { name: "Editorial workspace" })).toBeVisible();
   return { context, page };
 }

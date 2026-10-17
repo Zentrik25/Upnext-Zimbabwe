@@ -10,8 +10,10 @@ export type ListingRowProps = {
   facts: string[];
   tags?: { label: string; tone?: TagTone }[];
   sourceNote?: ReactNode;
-  /** Omit until saving exists (accounts arrive in a later phase): no inert control is rendered. */
+  /** Static save control for presentational use. Omit it when there is nothing to save. */
   saved?: boolean;
+  /** Replaces the save control (the live toggle comes from the page, since it needs the session). */
+  action?: ReactNode;
 };
 
 function initials(name: string): string {
@@ -34,6 +36,7 @@ export function ListingRow({
   tags = [],
   sourceNote,
   saved,
+  action,
 }: ListingRowProps) {
   return (
     <article className="border-b border-line px-[14px] py-[15px] hover:bg-row-hover">
@@ -50,7 +53,11 @@ export function ListingRow({
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
         </div>
-        {saved === undefined ? null : <SaveButton title={title} saved={saved} className="ml-auto" />}
+        {action ? (
+          <div className="ml-auto">{action}</div>
+        ) : saved === undefined ? null : (
+          <SaveButton title={title} saved={saved} className="ml-auto" />
+        )}
       </div>
       <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
         {facts.map((fact) => (

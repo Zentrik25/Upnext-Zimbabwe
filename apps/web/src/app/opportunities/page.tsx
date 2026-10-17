@@ -4,6 +4,7 @@ import { Container } from "@/components/layout";
 import { OpportunityRow } from "@/components/opportunities/parts";
 import { Button, ButtonLink, EmptyState, Notice, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
 import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
+import { getCurrentUser, getSavedIds } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -65,11 +66,15 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     const value = first(raw[key]);
     if (value !== undefined && value !== "") params.set(key, value);
   }
-  const [result, categories, locations] = await Promise.all([
+  const [result, categories, locations, user] = await Promise.all([
     listOpportunities(params),
     listCategories(),
     listLocations(),
+    getCurrentUser(),
   ]);
+  const savedIds =
+    user && result.ok ? await getSavedIds(result.data.data.map((row) => row.id)) : new Set<string>();
+  const returnTo = href(params, {});
   const active = params.get("category");
   const keepForSearch = [...params.entries()].filter(([k]) => !["q", "category", "cursor"].includes(k));
 
@@ -191,7 +196,13 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <h2 id="list-title" className="sr-only">
             Results
           </h2>
-          <Results result={result} params={params} />
+          <Results
+            result={result}
+            params={params}
+            signedIn={Boolean(user)}
+            savedIds={savedIds}
+            returnTo={returnTo}
+          />
         </section>
       </Container>
     </>
@@ -225,9 +236,15 @@ function FilterSelect(props: {
 async function Results({
   result,
   params,
+  signedIn,
+  savedIds,
+  returnTo,
 }: {
   result: Awaited<ReturnType<typeof listOpportunities>>;
   params: URLSearchParams;
+  signedIn: boolean;
+  savedIds: Set<string>;
+  returnTo: string;
 }) {
   if (!result.ok) {
     const copy = {
@@ -275,7 +292,11 @@ async function Results({
       ) : (
         <div className="border-t border-line" data-testid="results">
           {data.map((row) => (
-            <OpportunityRow key={row.id} row={row} />
+            <OpportunityRow
+              key={row.id}
+              row={row}
+              save={{ signedIn, saved: savedIds.has(row.id), returnTo }}
+            />
           ))}
         </div>
       )}

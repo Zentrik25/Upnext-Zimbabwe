@@ -39,7 +39,16 @@ class UserSerializer(serializers.ModelSerializer[User]):
 
     class Meta:
         model = User
-        fields = ["id", "email", "email_verified", "display_name", "status", "roles", "created_at"]
+        fields = [
+            "id",
+            "email",
+            "email_verified",
+            "display_name",
+            "status",
+            "roles",
+            "created_at",
+            "deletion_requested_at",
+        ]
         read_only_fields = fields
 
     @extend_schema_field(serializers.BooleanField())

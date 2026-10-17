@@ -1,6 +1,6 @@
 "use client";
 
-import { Container } from "@/components/layout";
+import { Container } from "@/components/layout/container";
 import { Button, EmptyState } from "@/components/ui";
 
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
