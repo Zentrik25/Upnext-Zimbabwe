@@ -1,5 +1,5 @@
 # CLAUDE.md — UPNEXT project rules
-**Current stage: PHASE 4 (as re-scoped by the owner, D-28: public launch readiness, SEO and account completion) implemented and awaiting review; Phases 1 to 3 approved. Not authorised: AI matching, profile and For You, employer self-service, payments, any deployment to the VPS, any change to The Granite Post or the existing Traefik/Nginx. Phase 5 and later start only on written approval.**
+**Current stage: PHASE 5 PLANNING ONLY. Phase 4 (D-28: public launch readiness, SEO and account completion) is technically accepted (commit ea54d91, CI 39065035043); Phases 1 to 3 approved. A Phase 5 proposal is awaiting review (`docs/phase5/PHASE5_PROPOSAL.md`); no Phase 5 implementation is authorised. Not authorised: AI matching, profile and For You, employer self-service, payments, any deployment to the VPS, any change to The Granite Post or the existing Traefik/Nginx. Phase 5 implementation and later start only on written approval.**
 
 1. Read `00-READ-ME-FIRST.md`, `docs/governance/DECISION_REGISTER.md`, the applicable documents under `docs/product/`, `docs/design/`, `docs/engineering/` and `reference/approved-flat.html` before proposing work.
 2. Treat confirmed decisions as binding. Never fill open questions with invented facts. Log questions and ask for approval.
