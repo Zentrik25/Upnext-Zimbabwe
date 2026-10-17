@@ -1,0 +1,44 @@
+{
+ "category": "tenders",
+ "organisation_id": "00000000-0000-4000-8000-00000000000a",
+ "title": "Consultancy: Water Network Assessment",
+ "summary": "Request for proposals for a condition assessment of a town water distribution network in Kwekwe.",
+ "description_md": "Request for proposals from consultancy firms for a technical assessment of the water distribution network.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a6",
+   "is_primary": true
+  }
+ ],
+ "deadline_at": "2026-12-02T12:00:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "email",
+ "application_email": "tenders@example.org",
+ "reference_number": "EX-WATER/RFP/2026/03",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b1"
+ ],
+ "sources": [
+  {
+   "kind": "issuer_website",
+   "name": "Example Water Authority tenders page",
+   "url": "https://water.example.org/tenders/rfp-2026-03",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "procuring_entity": "Example Water Authority",
+  "procurement_reference": "EX-WATER/RFP/2026/03",
+  "procurement_method": "request_for_proposals",
+  "procurement_category": "consultancy",
+  "tender_document_url": "https://water.example.org/tenders/rfp-2026-03/documents.pdf",
+  "mandatory_documents": [
+   "Technical proposal",
+   "Financial proposal",
+   "Company profile"
+  ]
+ }
+}

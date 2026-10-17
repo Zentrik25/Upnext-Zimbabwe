@@ -4,12 +4,12 @@
 1. Read `00-READ-ME-FIRST.md`, `docs/governance/DECISION_REGISTER.md`, the applicable documents under `docs/product/`, `docs/design/`, `docs/engineering/` and `reference/approved-flat.html` before proposing work.
 2. Treat confirmed decisions as binding. Never fill open questions with invented facts. Log questions and ask for approval.
 3. Maintain a requirement-to-screen-to-API-to-test traceability table (`docs/governance/TRACEABILITY.md`) before implementation and keep it current.
-4. No redesign of approved flat UI. No rounded cards, shadows, gradients, glass effects or arbitrary palette changes. Tokens come from `docs/design/DESIGN_TOKENS.md`, extracted from the reference.
+4. No redesign of approved flat UI. No rounded cards, shadows, gradients, glass effects or arbitrary palette changes. Tokens come from `docs/design/DESIGN_TOKENS.md`, extracted from the reference. Accessibility takes precedence over exact fidelity where the reference conflicts with WCAG 2.2 AA (D-19), but only through the minimum corrections listed in `docs/design/ACCESSIBILITY_DEVIATIONS.md`.
 5. Architecture: Next.js + TypeScript frontend (`apps/web`); Django/DRF modular monolith (`apps/api`); PostgreSQL; Docker Compose; shared VPS Traefik -> Nginx. Redis/Celery are deferred (ADR-0004). Keep The Granite Post untouched.
 6. Every document has status DRAFT until the user explicitly approves. Proposals are not approvals.
 7. When asked for Phase 0, produce document gap analysis, contradictions, open decisions and proposed revisions only. Stop before code.
 8. When later authorised to build, use small reviewable changes, tests, migrations, security review and per-phase approval gates. Never deploy without explicit permission.
-9. Editorial separation of duties (D-09) is a product invariant: never write code or admin shortcuts that let one person author, approve and publish the same listing, or that let any role bypass the workflow.
+9. Editorial separation of duties (D-18) is a product invariant: the author never approves, verifies or publishes their own listing; a different authorised Editor or Administrator may approve and publish it; every transition is audited. Never write code or admin shortcuts that bypass the workflow, and enforce the rules on the backend.
 10. Documents under `docs/archive/` are reference inputs only and do not override current documents.
 
 ## Repository layout (D-10)

@@ -6,14 +6,14 @@
 
 | # | Finding | Resolution | Where |
 |---|---|---|---|
-| S1 | Spec design tokens (green accent, Inter, larger sizes, 40px inputs) conflict with the reference | **RESOLVED** — the reference is the definitive source; tokens extracted exactly, spec tokens withdrawn. Accessibility conflicts inside the reference remain OPEN | D-08, ADR-0001, `DESIGN_TOKENS.md`; OQ-25 |
+| S1 | Spec design tokens (green accent, Inter, larger sizes, 40px inputs) conflict with the reference | **RESOLVED** — the reference is the definitive source; tokens extracted exactly, spec tokens withdrawn. The accessibility conflict inside the reference is resolved by D-19 (minimum corrections DEV-01…DEV-04) | D-08, D-19, ADR-0001, ADR-0012, `DESIGN_TOKENS.md`, `ACCESSIBILITY_DEVIATIONS.md` |
 | S2 | Redis + Celery in the base stack (and for transactional email) | **RESOLVED** — deferred; reliable email via a DB outbox behind an `EmailSender` interface; DB sessions and DB cache for throttling | D-11, ADR-0004, `SECURITY_ARCHITECTURE.md §4`; OQ-30 |
 | S3 | S3-compatible object storage | **RESOLVED** — deferred | D-15, ADR-0008 |
 | S4 | Repo layout conflict | **RESOLVED** — `apps/web`, `apps/api`, `docs/`, `reference/`, `infrastructure/`, optional `packages/` | D-10, ADR-0003 |
 | S5 | Three decision registers | **RESOLVED** — `docs/governance/DECISION_REGISTER.md` is authoritative; legacy `DECISIONS.md` archived at `docs/archive/legacy-docs/DECISIONS.md` | D-16, ADR-0009 |
 | S6 | Module names (three variants) | **OPEN (proposal P-01)** — the specification's names are the working names in the ERD (`accounts, profiles, organisations, opportunities, taxonomies, discovery, bookmarks, publishing, verification, notifications, audit`); not yet approved | `adr/README.md` P-01 |
 | S7 | Publish gate: provenance vs "source checked" | **RESOLVED** — provenance (≥1 source, one primary) is required; verification is a separate label and never implied by publication. Whether `source_checked` should be mandatory before approval stays OPEN | D-14, ADR-0007; OQ-07 |
-| S8 | "Administrators only" publishing / roles | **RESOLVED** — Contributor / Editor / Publisher / Administrator with identity-based separation of duties; administrators cannot bypass | D-09, ADR-0002, `ROLE_PERMISSION_MATRIX.md`; OQ-12, OQ-13 remain |
+| S8 | "Administrators only" publishing / roles | **RESOLVED, then revised** — Contributor / Editor / Publisher / Administrator with identity-based separation of duties (D-09), revised by D-18: author ≠ approver, and an Editor or Administrator may approve another person's work and publish it | D-09, ADR-0002, `ROLE_PERMISSION_MATRIX.md`; OQ-12, OQ-13 remain |
 | S9 | JSONB `OpportunityDetail` vs typed tables | **RESOLVED** — hybrid: relational searchable fields + versioned, validated JSONB. Category field lists remain OPEN | D-12, ADR-0005; OQ-06 |
 | S10 | API keyed by `{id}` vs slug; missing account endpoints | **RESOLVED** — public detail by slug; immutable uuid ids; missing endpoints added to the contract | D-13, ADR-0006, `openapi.yaml` |
 | S11 | For You for incomplete profiles / score exposure | **OPEN** — contract returns reasons, unknowns and an optional score; UI behaviour and departure from the reference lock panel await decision | OQ-23 |
@@ -32,7 +32,7 @@
 
 ## B. Changes made to earlier Phase 0 proposals
 - ADR-002/004/005/010 of the first proposal are superseded by ADR-0003/0005/0007/0004 respectively.
-- The proposed 12 px text floor and darker muted colour are **withdrawn** (they contradicted D-08); the underlying accessibility conflict is recorded as OQ-25 for the owner to decide.
+- The proposed 12 px text floor and darker muted colour were **withdrawn** (they contradicted D-08); the accessibility conflict was resolved in round 2 by D-19 with measured, minimal deviations (text size is not an AA failure and stays as in the reference).
 - The first proposal's typed child tables per category are replaced by the hybrid model.
 - The lifecycle gains `rejected` and `withdrawn`; `approved` and `published` remain separate; verification levels are `not_verified / source_checked / issuer_verified`.
 - `Contributor` replaces the single "editor drafts" role; `Publisher` is a distinct role.

@@ -1,0 +1,92 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://upnext.invalid/schemas/grants/v1",
+ "title": "Grants — detail",
+ "description": "Business, research, nonprofit, community and innovation funding. DRAFT v1 — NOT APPROVED (OQ-06). Not the implementation location (apps/api is created in Phase 1/2).",
+ "x-status": "DRAFT",
+ "x-open": "OQ-06",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "funder": {
+   "type": "string",
+   "minLength": 2,
+   "maxLength": 200
+  },
+  "applicant_types": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "individual",
+     "registered_business",
+     "cooperative",
+     "ngo_pvo",
+     "community_group",
+     "research_institution",
+     "other"
+    ]
+   },
+   "minItems": 1,
+   "maxItems": 7,
+   "uniqueItems": true
+  },
+  "thematic_areas": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 10,
+   "uniqueItems": true
+  },
+  "cofunding_required": {
+   "type": "boolean"
+  },
+  "cofunding_percent": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 100
+  },
+  "grant_duration_months": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 120
+  },
+  "application_stages": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "concept_note",
+     "full_proposal",
+     "interview",
+     "due_diligence"
+    ]
+   },
+   "minItems": 0,
+   "maxItems": 4,
+   "uniqueItems": true
+  },
+  "reporting_requirements": {
+   "type": "string",
+   "minLength": 2,
+   "maxLength": 500
+  },
+  "application_documents": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  }
+ },
+ "required": [
+  "funder",
+  "applicant_types"
+ ]
+}

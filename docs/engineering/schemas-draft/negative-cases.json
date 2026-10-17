@@ -1,0 +1,164 @@
+[
+ {
+  "category": "jobs",
+  "detail": {
+   "vacancies": 0
+  },
+  "expected": "invalid",
+  "reason": "vacancies below minimum"
+ },
+ {
+  "category": "jobs",
+  "detail": {
+   "vacancies": 2,
+   "unexpected": 1
+  },
+  "expected": "invalid",
+  "reason": "additional property rejected"
+ },
+ {
+  "category": "jobs",
+  "detail": {
+   "minimum_qualification": "phd"
+  },
+  "expected": "invalid",
+  "reason": "value outside enum"
+ },
+ {
+  "category": "jobs",
+  "detail": {
+   "languages_required": [
+    "English"
+   ]
+  },
+  "expected": "invalid",
+  "reason": "language code pattern"
+ },
+ {
+  "category": "jobs",
+  "detail": {
+   "benefits": [
+    "a"
+   ]
+  },
+  "expected": "invalid",
+  "reason": "item too short"
+ },
+ {
+  "category": "internships",
+  "detail": {},
+  "expected": "invalid",
+  "reason": "required placement_type missing"
+ },
+ {
+  "category": "internships",
+  "detail": {
+   "placement_type": "internship",
+   "duration_months": 48
+  },
+  "expected": "invalid",
+  "reason": "duration above maximum"
+ },
+ {
+  "category": "internships",
+  "detail": {
+   "placement_type": "internship",
+   "expected_start": "11/01/2027"
+  },
+  "expected": "invalid",
+  "reason": "date format"
+ },
+ {
+  "category": "graduate-programmes",
+  "detail": {
+   "intake_year": 1999
+  },
+  "expected": "invalid",
+  "reason": "intake year below minimum"
+ },
+ {
+  "category": "graduate-programmes",
+  "detail": {
+   "minimum_degree_class": "2.1"
+  },
+  "expected": "invalid",
+  "reason": "degree class outside enum"
+ },
+ {
+  "category": "scholarships",
+  "detail": {},
+  "expected": "invalid",
+  "reason": "required study_level missing"
+ },
+ {
+  "category": "scholarships",
+  "detail": {
+   "study_level": []
+  },
+  "expected": "invalid",
+  "reason": "empty study_level"
+ },
+ {
+  "category": "scholarships",
+  "detail": {
+   "study_level": [
+    "masters_degree"
+   ],
+   "eligible_countries": [
+    "ZWE"
+   ]
+  },
+  "expected": "invalid",
+  "reason": "country code must be ISO alpha-2"
+ },
+ {
+  "category": "tenders",
+  "detail": {
+   "procuring_entity": "X"
+  },
+  "expected": "invalid",
+  "reason": "entity too short and reference missing"
+ },
+ {
+  "category": "tenders",
+  "detail": {
+   "procuring_entity": "Example Entity",
+   "procurement_reference": "R1",
+   "tender_document_url": "http://insecure.example.org/doc"
+  },
+  "expected": "invalid",
+  "reason": "tender document URL must be https"
+ },
+ {
+  "category": "tenders",
+  "detail": {
+   "procuring_entity": "Example Entity",
+   "procurement_reference": "R1",
+   "tender_fee": {
+    "amount": "20"
+   }
+  },
+  "expected": "invalid",
+  "reason": "tender fee missing currency"
+ },
+ {
+  "category": "grants",
+  "detail": {
+   "funder": "Example Funder"
+  },
+  "expected": "invalid",
+  "reason": "required applicant_types missing"
+ },
+ {
+  "category": "grants",
+  "detail": {
+   "funder": "Example Funder",
+   "applicant_types": [
+    "individual"
+   ],
+   "cofunding_percent": 120
+  },
+  "expected": "invalid",
+  "reason": "percentage above 100"
+ }
+]

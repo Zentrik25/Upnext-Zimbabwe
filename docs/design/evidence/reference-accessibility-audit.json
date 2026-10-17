@@ -1,0 +1,369 @@
+{
+ "source": "reference/approved-flat.html (SHA-256 77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8)",
+ "date": "2026-10-17",
+ "tooling": "Chromium via Playwright; axe-core 4.10.2 (tags wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice); custom computed-style contrast probe (alpha-composited effective background; large text = >=24px or >=18.66px bold)",
+ "states": [
+  "default (signed out)",
+  "All feed with first card expanded",
+  "filtered",
+  "empty results",
+  "auth modal",
+  "signed-in For You",
+  "interests modal"
+ ],
+ "viewports": [
+  1440,
+  390
+ ],
+ "summary": {
+  "distinct_text_pairs_measured": 47,
+  "failing_text_pairs": 6
+ },
+ "failing_text_pairs": {
+  "#687481 on #f7f8f9 11px/400": {
+   "ratio": 4.48,
+   "required": 4.5,
+   "example": "Interactive concept \u00b7 All opportunities ",
+   "element": "div.notice",
+   "states": [
+    "desktop:default-logged-out",
+    "desktop:all-feed-expanded",
+    "desktop:filtered",
+    "desktop:empty",
+    "desktop:auth-modal",
+    "desktop:interests-modal",
+    "desktop:signed-in-foryou",
+    "mobile:default-logged-out",
+    "mobile:all-feed-expanded",
+    "mobile:filtered",
+    "mobile:empty",
+    "mobile:auth-modal",
+    "mobile:interests-modal",
+    "mobile:signed-in-foryou"
+   ]
+  },
+  "#697586 on #f9fafb 12px/400": {
+   "ratio": 4.48,
+   "required": 4.5,
+   "example": "Example Power Services",
+   "element": "div.company",
+   "states": [
+    "desktop:all-feed-expanded",
+    "desktop:filtered",
+    "mobile:filtered"
+   ]
+  },
+  "#7c8ba1 on #f9fafb 20px/400": {
+   "ratio": 3.31,
+   "required": 4.5,
+   "example": "\u2661",
+   "element": "button.bookmark",
+   "states": [
+    "desktop:all-feed-expanded",
+    "desktop:filtered",
+    "mobile:filtered"
+   ]
+  },
+  "#66768a on #f9fafb 11px/400": {
+   "ratio": 4.44,
+   "required": 4.5,
+   "example": "Harare",
+   "element": "span.span",
+   "states": [
+    "desktop:all-feed-expanded",
+    "desktop:filtered",
+    "mobile:filtered"
+   ]
+  },
+  "#7c8ba1 on #ffffff 20px/400": {
+   "ratio": 3.46,
+   "required": 4.5,
+   "example": "\u2661",
+   "element": "button.bookmark",
+   "states": [
+    "desktop:all-feed-expanded",
+    "desktop:filtered",
+    "desktop:auth-modal",
+    "desktop:interests-modal",
+    "desktop:signed-in-foryou",
+    "mobile:all-feed-expanded",
+    "mobile:filtered",
+    "mobile:auth-modal",
+    "mobile:interests-modal",
+    "mobile:signed-in-foryou"
+   ]
+  },
+  "#66768a on #f3f5f6 11px/400": {
+   "ratio": 4.25,
+   "required": 4.5,
+   "example": "Closes 29 Oct 2026",
+   "element": "span.tag",
+   "states": [
+    "desktop:all-feed-expanded",
+    "desktop:auth-modal",
+    "desktop:interests-modal",
+    "desktop:signed-in-foryou",
+    "mobile:all-feed-expanded",
+    "mobile:auth-modal",
+    "mobile:interests-modal",
+    "mobile:signed-in-foryou"
+   ]
+  }
+ },
+ "all_text_pairs": {
+  "#7c8ba1 on #f9fafb 20px/400": 3.31,
+  "#7c8ba1 on #ffffff 20px/400": 3.46,
+  "#66768a on #f3f5f6 11px/400": 4.25,
+  "#66768a on #f9fafb 11px/400": 4.44,
+  "#687481 on #f7f8f9 11px/400": 4.48,
+  "#697586 on #f9fafb 12px/400": 4.48,
+  "#687481 on #f8f9fa 13px/400": 4.52,
+  "#687481 on #f9fafb 11px/400": 4.56,
+  "#687481 on #f9fafb 12px/400": 4.56,
+  "#68778c on #ffffff 13px/400": 4.56,
+  "#68768b on #ffffff 12px/400": 4.61,
+  "#66768a on #ffffff 11px/400": 4.64,
+  "#697586 on #ffffff 12px/400": 4.68,
+  "#687481 on #ffffff 13px/400": 4.77,
+  "#687481 on #ffffff 11px/400": 4.77,
+  "#687481 on #ffffff 12px/400": 4.77,
+  "#647180 on #ffffff 12px/400": 4.98,
+  "#8d542c on #fff7f0 11px/400": 5.77,
+  "#556473 on #ffffff 10px/600": 6.08,
+  "#536276 on #ffffff 12px/400": 6.22,
+  "#176345 on #f1f6f3 11px/400": 6.61,
+  "#43566a on #eef1f4 13px/700": 6.67,
+  "#3658a4 on #ffffff 11px/400": 6.8,
+  "#3658a4 on #ffffff 12px/400": 6.8,
+  "#174c83 on #ffffff 25px/750": 8.76,
+  "#ffffff on #174c83 12px/500": 8.76,
+  "#174c83 on #ffffff 12px/600": 8.76,
+  "#354355 on #ffffff 12px/400": 10.07,
+  "#253d55 on #ffffff 12px/500": 11.19,
+  "#18232f on #f8f9fa 17px/650": 15.09,
+  "#18232f on #f8f9fa 15px/650": 15.09,
+  "#18232f on #f9fafb 14px/650": 15.22,
+  "#18232f on #f9fafb 12px/700": 15.22,
+  "#18232f on #f9fafb 12px/400": 15.22,
+  "#18232f on #ffffff 25px/750": 15.91,
+  "#18232f on #ffffff 39px/650": 15.91,
+  "#18232f on #ffffff 17px/650": 15.91,
+  "#18232f on #ffffff 11px/650": 15.91,
+  "#18232f on #ffffff 13px/680": 15.91,
+  "#18232f on #ffffff 14px/650": 15.91,
+  "#18232f on #ffffff 12px/700": 15.91,
+  "#18232f on #ffffff 12px/400": 15.91,
+  "#18232f on #ffffff 22px/700": 15.91,
+  "#18232f on #ffffff 22px/400": 15.91,
+  "#18232f on #ffffff 23px/400": 15.91,
+  "#18232f on #ffffff 12px/650": 15.91,
+  "#18232f on #ffffff 29px/650": 15.91
+ },
+ "control_boundaries": [
+  {
+   "element": "form#searchForm",
+   "border": "#cbd4de",
+   "surround": "#ffffff",
+   "border_contrast": 1.5
+  },
+  {
+   "element": "input#query",
+   "border": "#dce2e8",
+   "surround": "#ffffff",
+   "border_contrast": 1.31
+  },
+  {
+   "element": "select#searchLocation",
+   "border": "#dce2e8",
+   "surround": "#ffffff",
+   "border_contrast": 1.31
+  },
+  {
+   "element": "select#worktype",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "select#deadlineFilter",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "select#sort",
+   "border": "#dce2e8",
+   "surround": "#ffffff",
+   "border_contrast": 1.31
+  },
+  {
+   "element": "input#email",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "input#authName",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "input#authEmail",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "input#authPassword",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "select#qualification",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "select#preferredLocation",
+   "border": "#d9e1eb",
+   "surround": "#ffffff",
+   "border_contrast": 1.32
+  },
+  {
+   "element": "form#searchForm",
+   "border": null,
+   "surround": "#ffffff",
+   "border_contrast": null
+  },
+  {
+   "element": "input#query",
+   "border": "#cbd4de",
+   "surround": "#ffffff",
+   "border_contrast": 1.5
+  },
+  {
+   "element": "select#searchLocation",
+   "border": "#cbd4de",
+   "surround": "#ffffff",
+   "border_contrast": 1.5
+  }
+ ],
+ "axe_violations": {
+  "color-contrast": {
+   "impact": "serious",
+   "help": "Elements must meet minimum color contrast ratio thresholds",
+   "wcag": [
+    "wcag2aa",
+    "wcag143"
+   ],
+   "states": 14,
+   "example": [
+    ".notice"
+   ]
+  },
+  "heading-order": {
+   "impact": "moderate",
+   "help": "Heading levels should only increase by one",
+   "wcag": [],
+   "states": 14,
+   "example": [
+    ".auth-lock > h3"
+   ]
+  },
+  "landmark-unique": {
+   "impact": "moderate",
+   "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
+   "wcag": [],
+   "states": 14,
+   "example": [
+    ".filters"
+   ]
+  },
+  "region": {
+   "impact": "moderate",
+   "help": "All page content should be contained by landmarks",
+   "wcag": [],
+   "states": 14,
+   "example": [
+    ".notice",
+    ".eyebrow"
+   ]
+  }
+ },
+ "targets_under_24px": [
+  {
+   "el": "button#navExplore.",
+   "w": 52.7,
+   "h": 20.6,
+   "text": "Explore"
+  },
+  {
+   "el": "button#navSaved.",
+   "w": 56,
+   "h": 20.6,
+   "text": "Saved 0"
+  },
+  {
+   "el": "button#navProfile.",
+   "w": 80.7,
+   "h": 20.6,
+   "text": "Sign in / Join"
+  },
+  {
+   "el": "label.check",
+   "w": 160,
+   "h": 19,
+   "text": "Source checked"
+  },
+  {
+   "el": "input#verifiedOnly.",
+   "w": 13,
+   "h": 13,
+   "text": "on"
+  },
+  {
+   "el": "button#clear.",
+   "w": 67.6,
+   "h": 19,
+   "text": "Clear filters"
+  },
+  {
+   "el": "button#authSwitch.",
+   "w": 190.8,
+   "h": 20.6,
+   "text": "Already have an account?"
+  },
+  {
+   "el": "button#navProfile.",
+   "w": 73.4,
+   "h": 20.6,
+   "text": "My account"
+  },
+  {
+   "el": "button#signOut.",
+   "w": 52.4,
+   "h": 19,
+   "text": "Sign out"
+  },
+  {
+   "el": "input.",
+   "w": 13,
+   "h": 13,
+   "text": "NGO & Development"
+  },
+  {
+   "el": "button#clear.",
+   "w": 162,
+   "h": 19,
+   "text": "Clear filters"
+  }
+ ],
+ "focus_ring": {
+  "tag": "BUTTON",
+  "outline": "rgb(104, 134, 203) solid 2px",
+  "offset": "2px"
+ }
+}

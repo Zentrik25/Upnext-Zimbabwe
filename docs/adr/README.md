@@ -2,11 +2,11 @@
 
 Format: Context · Decision · Consequences · Alternatives. Decisions are recorded in `docs/governance/DECISION_REGISTER.md` first; an ADR explains the reasoning. A change to an ACCEPTED ADR needs a new, dated ADR.
 
-## Accepted (owner-approved 2026-10-17)
+## Accepted (owner-approved 2026-10-17; 0011–0014 in the second round)
 | ADR | Title | Register |
 |---|---|---|
 | [0001](ADR-0001-flat-reference-is-design-source.md) | Approved flat HTML reference is the definitive design source | D-08 |
-| [0002](ADR-0002-editorial-separation-of-duties.md) | Editorial separation of duties | D-09 |
+| [0002](ADR-0002-editorial-separation-of-duties.md) | Editorial separation of duties (superseded in part by 0011) | D-09 |
 | [0003](ADR-0003-monorepo-structure.md) | Monorepo structure | D-10 |
 | [0004](ADR-0004-defer-redis-celery-reliable-email-outbox.md) | Defer Redis and Celery; reliable email through a database outbox | D-11 |
 | [0005](ADR-0005-hybrid-opportunity-data-model.md) | Hybrid opportunity data model | D-12 |
@@ -15,6 +15,10 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0008](ADR-0008-deferred-capabilities.md) | Capabilities deferred until justified | D-15 |
 | [0009](ADR-0009-decision-register-authority.md) | DECISION_REGISTER.md is the authoritative register | D-16 |
 | [0010](ADR-0010-preserve-claude-md-rules.md) | Preserve CLAUDE.md traceability and unresolved-question rules | D-17 |
+| [0011](ADR-0011-revised-separation-of-duties.md) | Revised editorial separation of duties (supersedes parts of 0002) | D-18 |
+| [0012](ADR-0012-accessibility-precedence.md) | Accessibility takes precedence over exact visual fidelity (amends 0001) | D-19 |
+| [0013](ADR-0013-runtime-version-selection.md) | Runtime versions are selected by researched recommendation | D-20 |
+| [0014](ADR-0014-category-schemas-remain-draft.md) | Category-specific schemas remain drafts | D-21 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

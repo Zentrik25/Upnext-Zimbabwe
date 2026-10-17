@@ -410,7 +410,7 @@ paths:
       security: [{ cookieAuth: [], csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [category], properties: { category: { type: string, description: 'category code, immutable' } } } ] } } }
+        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [category], properties: { category: { type: string, description: 'category code, immutable' } } } ], unevaluatedProperties: false } } }
       responses:
         '201': { description: 'Created', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -436,7 +436,7 @@ paths:
       parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
       requestBody:
         required: true
-        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [expected_row_version], properties: { expected_row_version: { type: integer, minimum: 0 } } } ] } } }
+        content: { application/json: { schema: { allOf: [ { $ref: '#/components/schemas/DraftContent' }, { type: object, required: [expected_row_version], properties: { expected_row_version: { type: integer, minimum: 0 } } } ], unevaluatedProperties: false } } }
       responses:
         '200': { description: 'Saved', content: { application/json: { schema: { $ref: '#/components/schemas/EditorialOpportunity' } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -464,7 +464,7 @@ paths:
     post:
       tags: [editorial]
       operationId: recordVerification
-      summary: V01 record verification (Editor ≠ author)
+      summary: V01 record verification (Editor or Administrator, not the author)
       x-status: reserved
       security: [{ cookieAuth: [], csrf: [] }]
       parameters: [{ $ref: '#/components/parameters/OpportunityId' }]
@@ -737,7 +737,7 @@ components:
       required: [name]
       properties:
         name: { type: string, minLength: 2, maxLength: 200 }
-        website_url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+        website_url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
     Deadline:
       type: object
       required: [state]
@@ -927,8 +927,7 @@ components:
               items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
     DraftContent:
       type: object
-      additionalProperties: false
-      description: Writable listing content (VALIDATION_SPEC §4). Draft saves enforce types/lengths only; submit enforces publish-grade rules.
+      description: Writable listing content (VALIDATION_SPEC §4). Request bodies that embed it set `unevaluatedProperties false` so unknown fields are rejected. Draft saves enforce types/lengths only; submit enforces publish-grade rules.
       properties:
         organisation_id: { type: string, format: uuid }
         title: { type: string, maxLength: 200 }
@@ -947,7 +946,7 @@ components:
         deadline_timezone: { type: [string, 'null'] }
         deadline_is_date_only: { type: boolean, x-open: OQ-22 }
         application_method: { type: string, enum: [external_url, email, instructions], x-open: OQ-05 }
-        application_url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+        application_url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
         application_email: { type: [string, 'null'], format: email }
         application_instructions: { type: [string, 'null'], maxLength: 2000 }
         reference_number: { type: [string, 'null'], maxLength: 100 }
@@ -964,7 +963,7 @@ components:
             properties:
               kind: { type: string, enum: [issuer_website, issuer_notice, government_gazette, newspaper, email_from_issuer, social_media, aggregator, other] }
               name: { type: string, minLength: 2, maxLength: 200 }
-              url: { type: [string, 'null'], format: uri, maxLength: 2048 }
+              url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
               citation: { type: [string, 'null'], maxLength: 500 }
               observed_on: { type: string, format: date }
               is_primary: { type: boolean }

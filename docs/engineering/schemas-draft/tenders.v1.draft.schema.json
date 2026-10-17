@@ -1,0 +1,125 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://upnext.invalid/schemas/tenders/v1",
+ "title": "Tenders — detail",
+ "description": "Procurement notices, requests for quotations/proposals and expressions of interest. DRAFT v1 — NOT APPROVED (OQ-06). Not the implementation location (apps/api is created in Phase 1/2).",
+ "x-status": "DRAFT",
+ "x-open": "OQ-06",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "procuring_entity": {
+   "type": "string",
+   "minLength": 2,
+   "maxLength": 200
+  },
+  "procurement_reference": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 100
+  },
+  "procurement_method": {
+   "enum": [
+    "open_tender",
+    "restricted_tender",
+    "request_for_quotations",
+    "request_for_proposals",
+    "expression_of_interest",
+    "prequalification",
+    "other"
+   ]
+  },
+  "procurement_category": {
+   "enum": [
+    "goods",
+    "services",
+    "works",
+    "consultancy",
+    "other"
+   ]
+  },
+  "lots": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 500
+  },
+  "bidder_requirements": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 200
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  },
+  "mandatory_documents": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 200
+   },
+   "minItems": 0,
+   "maxItems": 25,
+   "uniqueItems": true
+  },
+  "submission_location": {
+   "type": "string",
+   "minLength": 2,
+   "maxLength": 300
+  },
+  "clarification_deadline_at": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "site_visit_at": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "site_visit_mandatory": {
+   "type": "boolean"
+  },
+  "bid_opening_at": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "tender_document_url": {
+   "type": "string",
+   "pattern": "^https://",
+   "maxLength": 2048,
+   "format": "uri"
+  },
+  "tender_fee": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "amount",
+    "currency"
+   ],
+   "properties": {
+    "amount": {
+     "type": "string",
+     "pattern": "^\\d{1,12}(\\.\\d{1,2})?$"
+    },
+    "currency": {
+     "type": "string",
+     "pattern": "^[A-Z]{3}$"
+    }
+   }
+  },
+  "bid_security_required": {
+   "type": "boolean"
+  },
+  "bid_security_note": {
+   "type": "string",
+   "minLength": 2,
+   "maxLength": 300
+  }
+ },
+ "required": [
+  "procuring_entity",
+  "procurement_reference"
+ ]
+}

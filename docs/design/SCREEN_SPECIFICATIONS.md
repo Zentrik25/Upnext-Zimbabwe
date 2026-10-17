@@ -23,4 +23,4 @@ Binding visual source: `reference/approved-flat.html` (D-08); tokens in `DESIGN_
 
 **Components absent from the reference** (pagination, loading/error/offline states, account forms, detail page, expired/withdrawn banners, verification badges, sessions list) must be derived from recorded tokens and approved before build (see `DESIGN_TOKENS.md §4`).
 
-**Design sign-off:** pixel/visual comparison with `reference/approved-flat.html` (VIS-01…VIS-04); deviations require an explicit design decision record. Pixel fidelity vs WCAG 2.2 AA where they conflict is OQ-25.
+**Design sign-off:** pixel/visual comparison with `reference/approved-flat.html` (VIS-01…VIS-05); the only permitted deviations are DEV-01…DEV-04 in `ACCESSIBILITY_DEVIATIONS.md` (accessibility prevails over fidelity, D-19); any other deviation requires an explicit design decision record.

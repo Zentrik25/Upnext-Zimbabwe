@@ -1,12 +1,12 @@
 # UPNEXT design tokens — extracted from the approved reference
 
-**Status: DRAFT for owner sign-off.** Source of truth: `reference/approved-flat.html` (SHA-256 `77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8`, unchanged). Authority: DECISION_REGISTER D-08 — the reference is the definitive design source; blue accent, Arial, sizing, spacing and square corners are preserved. Nothing here is invented.
+**Status: DRAFT for owner sign-off.** Source of truth: `reference/approved-flat.html` (SHA-256 `77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8`, unchanged). Authority: DECISION_REGISTER D-08 (the reference is the definitive design source; blue accent, Arial, sizing, spacing and square corners are preserved) as amended by D-19 (accessibility takes precedence over exact fidelity where the reference conflicts with WCAG 2.2 AA; minimum corrections only). Reference values are exact measurements; the four **production deviations** are listed in `ACCESSIBILITY_DEVIATIONS.md` and in §1a. Nothing else is invented.
 
 **Method.** Values were read from the *computed* styles of the rendered reference in Chromium (Playwright) at 1440, 390 and 320px, then cross-checked against the CSS source. Raw output: `docs/design/evidence/reference-computed-styles.json`. The reference contains two CSS layers; the later "strict flat editorial UI" layer wins and is what is recorded below. Where a value could only be read from CSS source (an element not rendered in the sampled state), it is marked **(css)**.
 
 ## 1. Colour
 
-All values exact. The reference uses many close greys; they are recorded as found. Consolidating them is a design change and needs approval (OQ-25).
+All values exact. The reference uses many close greys; they are recorded as found. They are not consolidated: under D-19 only the minimum accessibility corrections are applied (§1a).
 
 | Role | Value | Where used |
 |---|---|---|
@@ -43,6 +43,17 @@ All values exact. The reference uses many close greys; they are recorded as foun
 | empty-state border | `#cdd7e4` (1px **dashed**) | empty state |
 | focus ring | `#6886cb` | `outline: 2px solid; offset 2px` |
 | overlay scrim | `rgba(22,35,48,0.565)` (`#16233090`) | modal backdrop |
+
+### 1a. Production values that differ from the reference (D-19; full evidence in `ACCESSIBILITY_DEVIATIONS.md`)
+
+| Token role | Reference | Production | WCAG SC |
+|---|---|---|---|
+| metadata / tag text (DEV-01) | `#66768a` | `#627185` | 1.4.3 |
+| muted text (DEV-02) | `#687481` | `#687380` | 1.4.3 |
+| organisation name (DEV-03) | `#697586` | `#687485` | 1.4.3 |
+| control border: inputs, selects, search-group outline (DEV-04) | `#d9e1eb` / `#dce2e8` / `#cbd4de` | `#7693b7` (one token) | 1.4.11 |
+
+Every other value in this document is used exactly as measured. The theme must expose both the reference value (for the visual-regression baseline) and the production value (for the build).
 
 ## 2. Typography
 
@@ -102,15 +113,16 @@ Present in the reference (tokens above apply): header/nav, notice strip, hero se
 
 **Not present in the reference — must be derived from these tokens and approved before build:** pagination, loading skeletons, error and offline states, toast/inline status, account forms (validation/error text), email-verification pending screen, password reset screens, standalone opportunity detail page, expired/withdrawn banners, deadline-state badges for *unknown* and *expired*, source/verification badges (three levels), saved-list expired state, editorial tables (if a custom UI is ever built; Django Admin is currently expected), session-list UI.
 
-## 5. Reference quirks and conflicts (not resolved here)
+## 5. Reference quirks and conflicts
 
-1. **Off-palette blue:** `.bookmark.on` and `.accountbar button` use `#3658a4` **(css)** from the first layer; the accent is `#174c83`. Which wins for the "saved" state is a decision (OQ-25).
+1. **Off-palette blue:** `.bookmark.on` and `.accountbar button` use `#3658a4` **(css)** from the first layer; the accent is `#174c83`. `#3658a4` measures 6.8:1 on white, so it conforms; it is preserved as in the reference and flagged to the owner as a design inconsistency (no accessibility deviation).
 2. **Button hover:** background goes to `#103b69`, but the first layer's `filter: brightness(.94)` is still in force on `.btn:hover` (higher specificity than the override) **(css)**. Confirm visually before copying.
-3. **Control heights differ by context:** 33px (standard button), 36px (fields), 39px (search). DESIGN docs say "~34–36px".
-4. **Small text:** 10px (eyebrow) and 11px (metadata, tags, notice, footer, `.small`) are used throughout, and `#687481` on `#f8f9fa` measures 4.4:1 (below 4.5:1 for normal text). The register target is WCAG 2.2 AA; the register also says preserve sizing. These two decisions conflict — **owner must choose** (OQ-25). No change is made here.
-5. **Demo-only content** (fictional organisations, "% preference match", alerts form, "For employers" link, "Apply unavailable in demo", localStorage accounts) is not a token matter; see OQ-24.
-6. The first CSS layer contains rounded corners (5–10px) and a modal shadow; all are cancelled by `!important` on a fixed selector list. **Any new component must be added to the zero-radius/no-shadow rule explicitly.**
+3. **Control heights differ by context:** 33px (standard button), 36px (fields), 39px (search). The original DESIGN documents said "~34–36px". Preserved as measured.
+4. **Small text:** 10px (eyebrow) and 11px (metadata, tags, notice, footer, `.small`) are used throughout. WCAG 2.2 AA sets no minimum text size, so these are preserved (D-19). Measured contrast failures are corrected by DEV-01…DEV-03: `#66768a` on `#f3f5f6` 4.25:1, `#66768a` on `#f9fafb` 4.44:1, `#687481` on `#f7f8f9` 4.48:1, `#697586` on `#f9fafb` 4.48:1. (An earlier draft wrongly stated `#687481` on `#f8f9fa` = 4.4:1; it is 4.52:1.)
+5. **Form-control borders** are 1.3–1.5:1 against white and fail SC 1.4.11 (DEV-04).
+6. **Demo-only content** (fictional organisations, "% preference match", alerts form, "For employers" link, "Apply unavailable in demo", localStorage accounts) is not a token matter; see OQ-24.
+7. The first CSS layer contains rounded corners (5–10px) and a modal shadow; all are cancelled by `!important` on a fixed selector list. **Any new component must be added to the zero-radius/no-shadow rule explicitly.**
 
 ## 6. Process
 
-Implementation must read these tokens from a single source (Tailwind theme keys named after the roles above), not from copied literals. Visual sign-off compares built screens to `reference/approved-flat.html` at 1440, 768, 390 and 320px (R-13 in the traceability matrix). Any deviation requires a dated design decision record.
+Implementation must read these tokens from a single source (Tailwind theme keys named after the roles above), not from copied literals. Visual sign-off compares built screens to `reference/approved-flat.html` at 1440, 768, 390 and 320px (VIS-01…VIS-05 in the traceability matrix), allowing only the deviations in `ACCESSIBILITY_DEVIATIONS.md`. Any further deviation requires a dated design decision record approved by the owner.

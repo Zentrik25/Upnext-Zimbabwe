@@ -18,12 +18,12 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-08 | Rules-based For You feed with understandable reasons; no eligibility claims; missing data never disqualifies | PR-05; spec §12; D-15 | SC-09 | getForYou | UT-04, UT-05, API-05, E2E-07 | OQ-23 |
 | R-09 | Save/unsave; saved list persists across sessions; shows open/expired/unavailable; unique per user and listing | PR-06; spec §13 | SC-03, SC-10 | saveOpportunity, unsaveOpportunity, listSaved | API-06, DB-03, SEC-03, E2E-08 | OQ-31 |
 | R-10 | Editorial lifecycle: draft → in review → approved → published → expired/withdrawn/archived, with rejection reasons and history | PR-07; spec §15; EDITORIAL_WORKFLOW | SC-12 | createDraft, saveDraft, transitionOpportunity, getEditorialOpportunity, listEditorialOpportunities, getHistory, searchOrganisations, createOrganisation, updateOrganisation | WF-01…WF-15, E2E-09 | OQ-05, OQ-08, OQ-14 |
-| R-11 | Separation of duties: author ≠ approver/verifier/publisher; approver ≠ publisher; no role bypasses the workflow | D-09; ADR-0002 | SC-12, SC-13 | transitionOpportunity, recordVerification, grantRole, revokeRole | SOD-01…SOD-08, SEC-05 | OQ-12, OQ-13 |
+| R-11 | Separation of duties: the author never approves, verifies or publishes their own listing; a different Editor or Administrator may approve and publish it (two people suffice); enforced on the backend; every transition audited; no role bypasses the workflow | D-18; ADR-0011 (supersedes parts of D-09/ADR-0002) | SC-12, SC-13 | transitionOpportunity, recordVerification, grantRole, revokeRole | SOD-01…SOD-14, WF-16, SEC-05 | OQ-13, OQ-32, OQ-33 |
 | R-12 | Source provenance required to publish; verification is separate, evidence-based, auditable; publication never implies verification | D-14; spec §15; ADR-0007 | SC-03, SC-12 | recordVerification, getEditorialOpportunity, getOpportunity | VER-01…VER-05, UT-06, VIS-03 | OQ-07, OQ-29 |
 | R-13 | Search: keyword + filters + sort; deterministic cursor pagination; empty and invalid-filter states | PR-08; spec §11 | SC-02 | listOpportunities | API-01, API-07, API-08, DB-04, PERF-01 | OQ-20, OQ-24 |
-| R-14 | Quality: responsive 320/390/768/1440, keyboard accessible, WCAG 2.2 AA target, loading/empty/error states | PR-09; spec §32 | all public screens | — | A11Y-01…A11Y-05, E2E-10 | OQ-25, OQ-11 |
-| R-15 | Visual fidelity to the approved reference (tokens, square corners, no shadows/gradients) | D-08; ADR-0001 | SC-01…SC-11, SC-14, SC-15 | — | VIS-01…VIS-04 | OQ-24, OQ-25 |
-| R-16 | Immutable audit trail of security-relevant and editorial actions; append-only | spec §15, §33; PR-07 | SC-12, SC-13 | adminListAuditEvents, getHistory | AUD-01…AUD-04 | OQ-09 |
+| R-14 | Quality: responsive 320/390/768/1440, keyboard accessible, WCAG 2.2 AA (accessibility precedes fidelity, D-19), loading/empty/error states | PR-09; spec §32 | all public screens | — | A11Y-01…A11Y-09, E2E-10 | OQ-11 |
+| R-15 | Visual fidelity to the approved reference (tokens, square corners, no shadows/gradients) | D-08; D-19; ADR-0001; ADR-0012 | SC-01…SC-11, SC-14, SC-15 | — | VIS-01…VIS-05, A11Y-08 | OQ-24 |
+| R-16 | Immutable audit trail of security-relevant and editorial actions; append-only | spec §15, §33; PR-07 | SC-12, SC-13 | adminListAuditEvents, getHistory | AUD-01…AUD-04, WF-16 | OQ-09 |
 | R-17 | Security controls: CSRF, rate limits, headers/CSP, uniform auth responses, XSS/URL validation | SECURITY_ARCHITECTURE | all | getCsrfToken, register, login, requestPasswordReset | SEC-01…SEC-10 | OQ-16, OQ-17 |
 | R-18 | Reliable verification/reset email through the outbox (retry, dead-letter, idempotency) | D-11; ADR-0004 | SC-04, SC-06, SC-07 | register, resendVerification, requestPasswordReset, retryOutbox | MAIL-01…MAIL-07 | OQ-03, OQ-30 |
 | R-19 | Hybrid data model integrity: relational constraints and versioned category JSONB validation | D-12; ADR-0005; VALIDATION_SPEC | SC-12 | createDraft, saveDraft, transitionOpportunity | VAL-01…VAL-08, DB-05 | OQ-06, OQ-21, OQ-22 |
@@ -38,6 +38,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-28 | Unpublished content (draft, in review, approved, rejected, takedown) is never public or indexed; 404 not 403 | ACCEPTANCE; spec §6 | SC-03 | getOpportunity | API-09, SEC-04, E2E-03 | OQ-20 |
 | R-29 | Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex | IA; spec §6 | SC-01…SC-03, SC-12, SC-13 | getOpportunity | SEO-01…SEO-04 | OQ-01, OQ-20 |
 | R-30 | Deferred scope is not exposed: eligibility decisions, public organisation pages, advanced related items, uploads, alerts, employer self-service, payments | D-15; ADR-0008; PRD exclusions | SC-01…SC-03 | — | SCOPE-01, SCOPE-02 | OQ-24 |
+| R-31 | Runtime versions are researched, pinned, patched and monitored for end of life | D-20; ADR-0013; VERSION_RECOMMENDATION | — | — | OPS-10…OPS-13 | OQ-28 |
+| R-32 | Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category | D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES | SC-12 | createDraft, saveDraft | CAT-01…CAT-08 | OQ-06, OQ-21, OQ-22, OQ-29 |
 
 ## 2. Screen register
 
@@ -92,9 +94,9 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `unsaveOpportunity` | DELETE `/me/saved/{opportunity_id}` | me | R-09 |
 | `getForYou` | GET `/discovery/for-you` | discovery | R-08 |
 | `listEditorialOpportunities` | GET `/editorial/opportunities` | editorial | R-10 |
-| `createDraft` | POST `/editorial/opportunities` | editorial | R-10, R-19 |
+| `createDraft` | POST `/editorial/opportunities` | editorial | R-10, R-19, R-32 |
 | `getEditorialOpportunity` | GET `/editorial/opportunities/{id}` | editorial | R-10, R-12 |
-| `saveDraft` | PATCH `/editorial/opportunities/{id}/draft` | editorial | R-10, R-19 |
+| `saveDraft` | PATCH `/editorial/opportunities/{id}/draft` | editorial | R-10, R-19, R-32 |
 | `transitionOpportunity` | POST `/editorial/opportunities/{id}/transitions` | editorial | R-10, R-11, R-19 |
 | `recordVerification` | POST `/editorial/opportunities/{id}/verification-records` | editorial | R-11, R-12 |
 | `getHistory` | GET `/editorial/opportunities/{id}/history` | editorial | R-10, R-16 |
@@ -167,15 +169,22 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | WF-12 | Discard/reopen flows |
 | WF-13 | Scheduled publish (only if OQ-14 approved) |
 | WF-14 | Concurrent transition attempts: exactly one wins |
+| WF-16 | Every transition audit row records actor, capacity (role exercised), from/to status, version and request id; tampering attempts fail |
 | WF-15 | Organisation search/create/edit: permissions (Contributor/Editor create; Editor/Administrator edit), duplicate suggestions, audit |
 | SOD-01 | Author cannot approve/reject own submission |
 | SOD-02 | Author cannot record verification |
 | SOD-03 | Author cannot publish |
-| SOD-04 | Approver cannot publish (strict reading; OQ-12) |
+| SOD-04 | Two-person path: the approving Editor/Administrator may publish the same listing (D-18) |
 | SOD-05 | Person holding several roles still blocked on own chain (identity-based) |
 | SOD-06 | Administrator without editorial role has no transition |
 | SOD-07 | Direct state write via Django Admin impossible; DB trigger blocks bypass |
 | SOD-08 | Role grant/revoke audited as privileged; non-admin cannot grant |
+| SOD-09 | Administrator approves and publishes another person's listing; denied for a listing they authored |
+| SOD-10 | Author who also holds approval/publication authority cannot publish their own listing even after another person approved it (OQ-33 interpretation) |
+| SOD-11 | Author is notified when the submission is approved, rejected or published (proposed) |
+| SOD-12 | Guard failures are refused with separation_of_duties and audited as security events |
+| SOD-13 | If the Publisher role is kept (OQ-32): may publish, may not approve |
+| SOD-14 | Report of author/approver pairs and same-person approve+publish events is generated from audit data |
 | VER-01 | Publishing an unverified listing shows not_verified |
 | VER-02 | Verification evidence note and method rules; supersession |
 | VER-03 | New version does not inherit verification |
@@ -228,6 +237,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | OPS-06 | Migration rehearsal on a copy; forward-only |
 | OPS-07 | Rollback procedure rehearsed |
 | OPS-08 | Phase 7 pre-deploy checklist: Granite config read-only inspection recorded |
+| OPS-10 | Lockfiles and container images match the approved version pins (VERSION_RECOMMENDATION); build fails on drift |
+| OPS-11 | Dependency and image advisory scan: no known high/critical vulnerabilities in pinned versions, on every build and weekly |
+| OPS-12 | End-of-life watch fails the build within 90 days of a pinned runtime's end of life |
+| OPS-13 | Django migrations and test-suite pass on the pinned PostgreSQL major with the pinned Python and psycopg (task V-01) |
 | OPS-09 | Resource limits and network isolation verified |
 | PERF-01 | Search benchmark on realistic data volume (documented hardware) |
 | PERF-02 | Public page Core Web Vitals on mid-range mobile profile |
@@ -237,6 +250,14 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-02 | Sitemap lists only public listings |
 | SEO-03 | noindex on staff, account, auth pages |
 | SEO-04 | robots.txt; expired/withdrawn policy once OQ-20 decided |
+| CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
+| CAT-02 | Every example detail validates against its category schema |
+| CAT-03 | Every example validates against the OpenAPI createDraft request body |
+| CAT-04 | Negative cases are rejected by the schemas (extra property, bad enum, missing required, bad date/URL/country code) |
+| CAT-05 | Common-field applicability matrix enforced by the service (e.g. employment_type only for jobs/internships/graduate programmes) |
+| CAT-06 | Cross-field date ordering and conditional rules (clarification < closing ≤ bid opening; cofunding percent only when required; expected start window) |
+| CAT-07 | Applicant-payment lint flags fee/deposit wording for non-tender categories and requires reviewer acknowledgement |
+| CAT-08 | Currency allow-list and money pairing rules (after OQ-22) |
 | SCOPE-01 | No UI/API for deferred capabilities (eligibility, org pages, uploads, alerts, employer, payments) |
 | SCOPE-02 | Copy lint: no 'you qualify', 'guaranteed', 'verified' misuse |
 | E2E-01 | Anonymous visitor searches, filters, sees empty state, opens a listing |
@@ -254,10 +275,15 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | A11Y-03 | Visible focus on every interactive element |
 | A11Y-04 | Screen-reader semantics: landmarks, headings, labelled forms, error association |
 | A11Y-05 | Reduced-motion and zoom/reflow at 200–400% |
+| A11Y-06 | Computed contrast of every token text/background pair meets 4.5:1 (3:1 large text) using production token values |
+| A11Y-07 | Control borders reach 3:1 and the focus ring reaches 3:1 on every surface; every focusable element shows the focus style |
+| A11Y-08 | Computed styles of built pages equal the reference except the documented deviations DEV-01…DEV-04 |
+| A11Y-09 | Manual: dialogs (role, name, focus trap/return, Escape), form errors association, live-region announcements, skip link, lang, page titles |
 | VIS-01 | Home vs reference at 1440/768/390/320 |
 | VIS-02 | Listing row/detail vs reference tokens |
 | VIS-03 | Badges/states derived from tokens reviewed and approved |
 | VIS-04 | Computed-style check: radius 0, no shadows/gradients anywhere |
+| VIS-05 | Visual-regression baseline is the reference; the allow-list contains only the documented accessibility deviations |
 
 ## 5. Rules for maintaining this file
 

@@ -1,13 +1,14 @@
 # Product requirements document — DRAFT v0.2
-Updated 2026-10-17 for decisions D-08…D-17. Traceability to screens, API and tests: `docs/governance/TRACEABILITY.md` (R-01…R-30).
+Updated 2026-10-17 for decisions D-08…D-21. Traceability to screens, API and tests: `docs/governance/TRACEABILITY.md` (R-01…R-32).
 
 ## Roles
 - **Anonymous visitor:** browse, search, filter, view and leave via source/application URL.
 - **Registered seeker:** visitor capabilities plus profile, saved opportunities and personalised discovery.
 - **Contributor:** creates and edits own listing drafts, submits them, opens amendments.
-- **Editor:** approves or rejects submissions they did not author; records source verification.
-- **Publisher:** publishes approved listings; withdraws, expires, archives, takes down.
-- **Administrator:** manages users, roles, taxonomies and settings; has no editorial authority by role and cannot bypass the approval policy (D-09). Details: `docs/engineering/ROLE_PERMISSION_MATRIX.md`.
+- **Editor:** approves or rejects submissions they did not author, records verification, and may publish what they approved (D-18).
+- **Administrator:** manages users, roles, taxonomies and settings; holds the same approval and publication authority as an Editor, bounded by the same rule that nobody approves or publishes their own work (D-18).
+- **Publisher (optional, OQ-32):** publication authority only.
+Two different people are sufficient for the normal publishing workflow; every transition is audited. Details: `docs/engineering/ROLE_PERMISSION_MATRIX.md`.
 
 ## Functional requirements and acceptance criteria
 **PR-01 Public discovery:** Search and category pages require no login. Given an anonymous visitor, when a filter is applied, matching results and an explicit empty state appear without an account prompt. (R-01)
@@ -22,7 +23,7 @@ Updated 2026-10-17 for decisions D-08…D-17. Traceability to screens, API and t
 
 **PR-06 Saved listings:** Authenticated users can save/unsave, view saved items and distinguish expired or unavailable opportunities. (R-09)
 
-**PR-07 Editorial lifecycle:** Draft → in review → approved → published → expired/withdrawn/archived, with rejection, server-side role permissions, separation of duties, provenance and audit history. Scheduled publishing is OPEN (OQ-14). (R-10, R-11, R-16)
+**PR-07 Editorial lifecycle:** Draft → in review → approved → published → expired/withdrawn/archived, with rejection, server-side role permissions, separation of duties (author ≠ approver), provenance and audit history of every transition. Scheduled publishing is OPEN (OQ-14). (R-10, R-11, R-16)
 
 **PR-08 Search:** Filter by category, location, deadline state and keyword (plus work mode, employment type, experience level, publication date); deterministic cursor pagination; stable URLs; handle no matches and unknown deadlines. (R-13, R-21)
 

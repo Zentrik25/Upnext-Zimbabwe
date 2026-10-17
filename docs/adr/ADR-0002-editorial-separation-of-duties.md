@@ -1,6 +1,6 @@
 # ADR-0002: Editorial separation of duties
 
-- **Status:** ACCEPTED (owner approval recorded as D-09 on 2026-10-17). Document status of this record: DRAFT until the Phase 0 package is approved.
+- **Status:** ACCEPTED; **superseded in part by ADR-0011 (D-18)** — the approver ≠ publisher rule, the three-person minimum and the 'Administrators have no editorial authority by role' elements no longer apply. ACCEPTED (owner approval recorded as D-09 on 2026-10-17). Document status of this record: DRAFT until the Phase 0 package is approved.
 - **Date:** 2026-10-17
 - **Decision register:** D-09
 

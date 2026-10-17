@@ -1,6 +1,6 @@
 # ADR-0001: Approved flat HTML reference is the definitive design source
 
-- **Status:** ACCEPTED (owner approval recorded as D-08 on 2026-10-17). Document status of this record: DRAFT until the Phase 0 package is approved.
+- **Status:** ACCEPTED; **amended by ADR-0012 (D-19)** — accessibility takes precedence over exact fidelity where they conflict. ACCEPTED (owner approval recorded as D-08 on 2026-10-17). Document status of this record: DRAFT until the Phase 0 package is approved.
 - **Date:** 2026-10-17
 - **Decision register:** D-08
 
@@ -15,7 +15,7 @@ The pack's design documents, the legacy docs and the v1.0 specification each des
 5. Deviation requires a dated design decision record approved by the owner.
 
 ## Consequences
-- Accessibility observations in the reference (10–11 px text; muted-on-pale contrast 4.4:1; off-palette `#3658a4` for the saved state; residual hover filter) are **not** silently fixed. The conflict between pixel fidelity and the WCAG 2.2 AA target is recorded as OQ-25 and awaits an owner decision.
+- Accessibility observations in the reference (10–11 px text; muted-on-pale contrast 4.4:1; off-palette `#3658a4` for the saved state; residual hover filter) are **not** silently fixed. The conflict between pixel fidelity and the WCAG 2.2 AA target was recorded as OQ-25 and **resolved by D-19/ADR-0012** (accessibility prevails; four documented deviations; the 4.4:1 figure quoted here was wrong — see `ACCESSIBILITY_DEVIATIONS.md`).
 - Tailwind theme keys must be generated from the token roles, not copied literals.
 - Visual sign-off compares built screens to the reference at 1440, 768, 390 and 320 px.
 

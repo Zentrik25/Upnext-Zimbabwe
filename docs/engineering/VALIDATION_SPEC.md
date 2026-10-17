@@ -75,6 +75,7 @@ Status: DRAFT. Limits and patterns are **PROPOSED** engineering values for revie
 | detail (JSONB) | yes (may be `{}` if the schema allows) | validated against the active category schema (§7); `detail_schema_version` recorded; additional properties rejected |
 
 ### 4.1 URL validation (`application_url`, `source.url`, `organisation.website_url`)
+- Defence in depth: the OpenAPI request schemas already restrict URL fields to `^https?://` so dangerous schemes never reach the service; the service then applies the stricter rules below.
 - ≤2,048 chars; parseable; scheme must be `https` (`http` rejected `[OQ-29]`); `javascript:`, `data:`, `file:`, `ftp:`, `mailto:` and others are always rejected.
 - Host required; IDN converted to punycode for storage and shown in Unicode with the punycode form available; no userinfo (`user:pass@`); no IP-literal hosts; no `localhost`/internal suffixes; port only 443.
 - Normalised: lowercase scheme/host, drop fragment, strip default port, remove tracking parameters on a maintained deny-list (`utm_*`, `fbclid`, `gclid`).
@@ -93,20 +94,11 @@ At T03 (submit) and again at T07 (publish) the service verifies, returning all f
 - *Soft duplicate (warning shown to author and Editor):* same organisation and trigram title similarity ≥ 0.8 within 90 days; same reference number + organisation.
 - The result is recorded in the review checklist; the Editor makes the final call.
 
-## 7. Category detail schemas (versioned JSON Schema, draft 2020-12) — **candidate v1, OQ-06**
+## 7. Category detail schemas (versioned JSON Schema, draft 2020-12) — **DRAFT, not approved (D-21, OQ-06)**
 
-Rules for all categories: `additionalProperties: false`; integer `schema_version` mirrored in the row; a published version keeps the schema version it was validated with; schema changes create a new version (never edit an active one); old versions stay readable. Fields below are **candidate** and require owner approval before Phase 2; `*` = required by the candidate schema.
+Rules for all categories: `additionalProperties: false`; the schema version is stored with the row; a published version keeps the schema version it was validated with; schema changes create a new version (never edit an active one); old versions stay readable. Searchable attributes (location, deadline, employment type, work mode, experience level, salary/funding, sector, skills, organisation) remain relational columns; nothing a filter needs lives only inside JSONB.
 
-| Category | Candidate `detail` properties |
-|---|---|
-| jobs | `seniority` enum, `contract_duration_months` int 1–120, `vacancies` int 1–1000, `qualification_required` enum (as profile), `application_documents` string[] ≤10 |
-| internships | `duration_months` int 1–36, `stipend_stated` bool, `eligible_study_levels` enum[], `placement_type` enum (`industrial_attachment, internship, practicum`), `accepts_current_students` bool |
-| graduate-programmes | `programme_length_months` int 1–60, `intake_year` int, `rotations` bool, `minimum_degree_class` string ≤50, `graduation_window` string ≤100 |
-| scholarships | `study_level`* enum[], `institution` string ≤200, `eligible_countries` ISO-2[] ≤60, `coverage` enum[] (`tuition, living, travel, research, other`), `award_count` int, `renewable` bool |
-| tenders | `procuring_entity`* string ≤200, `procurement_reference`* string ≤100, `procurement_category` enum, `mandatory_documents` string[] ≤20, `submission_location` string ≤300, `bid_security_required` bool, `site_visit_at` timestamptz |
-| grants | `funder`* string ≤200, `applicant_types`* enum[] (`individual, registered_business, ngo, research_institution, community_group`), `thematic_areas` string[] ≤10, `cofunding_required` bool |
-
-Example fragment (shape only, jobs v1): `{ "$schema": "https://json-schema.org/draft/2020-12/schema", "type":"object", "additionalProperties": false, "properties": { "seniority": {"enum":["entry","mid","senior","executive"]}, "vacancies": {"type":"integer","minimum":1,"maximum":1000} } }`. Searchable attributes (location, deadline, employment type, work mode, experience level, salary/funding, sector, skills, organisation) remain relational columns; nothing the filters need lives only inside JSONB.
+The six draft schemas, twelve Zimbabwean-style examples, negative cases, per-field validation recommendations, the common-field applicability matrix and the domain points still to verify are in **`CATEGORY_SCHEMA_EXAMPLES.md`** and `schemas-draft/`. Summary of the proposed required fields only: internships `placement_type`; scholarships `study_level`; tenders `procuring_entity` + `procurement_reference`; grants `funder` + `applicant_types`; jobs and graduate programmes none (their key facts are common fields). Everything else is optional or an editorial warning. These requirements are proposals until the owner approves them.
 
 ## 8. Sources, verification and review records
 

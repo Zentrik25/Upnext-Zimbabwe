@@ -1,0 +1,213 @@
+{
+ "retrieved_on": "2026-10-17",
+ "method": "Primary-source metadata fetched with curl from PyPI JSON API, npm registry, nodejs.org dist index, nodejs/Release schedule.json, python/peps, django/django docs on GitHub, postgres/postgres release notes on GitHub, Docker Hub library tags. www.postgresql.org, docs.djangoproject.com, devguide.python.org, nextjs.org and endoflife.date were unreachable from this environment (egress policy / DNS), so dates that normally come from those pages are marked derived.",
+ "django": {
+  "5.2.18": {
+   "uploaded": "2026-10-06",
+   "requires_python": ">=3.10",
+   "python_classifiers": [
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+    "3.14"
+   ],
+   "requires_dist": [
+    "asgiref>=3.8.1",
+    "sqlparse>=0.3.1",
+    "tzdata; sys_platform == \"win32\"",
+    "argon2-cffi>=19.1.0; extra == \"argon2\"",
+    "bcrypt; extra == \"bcrypt\""
+   ],
+   "known_vulnerabilities": []
+  },
+  "6.0.9": {
+   "uploaded": "2026-10-06",
+   "requires_python": ">=3.12",
+   "python_classifiers": [
+    "3.12",
+    "3.13",
+    "3.14"
+   ],
+   "requires_dist": [
+    "asgiref>=3.9.1",
+    "sqlparse>=0.5.0",
+    "tzdata; sys_platform == \"win32\"",
+    "argon2-cffi>=23.1.0; extra == \"argon2\"",
+    "bcrypt>=4.1.1; extra == \"bcrypt\""
+   ],
+   "known_vulnerabilities": []
+  },
+  "6.1.2": {
+   "uploaded": "2026-10-06",
+   "requires_python": ">=3.12",
+   "python_classifiers": [
+    "3.12",
+    "3.13",
+    "3.14"
+   ],
+   "requires_dist": [
+    "asgiref>=3.9.1",
+    "sqlparse>=0.5.0",
+    "tzdata; sys_platform == \"win32\"",
+    "argon2-cffi>=23.1.0; extra == \"argon2\"",
+    "bcrypt>=4.1.1; extra == \"bcrypt\""
+   ],
+   "known_vulnerabilities": []
+  }
+ },
+ "djangorestframework": {
+  "version": "3.18.3",
+  "uploaded": "2026-10-06",
+  "requires_python": ">=3.10",
+  "django_classifiers": [
+   "5.2",
+   "6.0",
+   "6.1"
+  ],
+  "readme_requirements": "Python 3.10+; Django 5.2, 6.0, 6.1",
+  "known_vulnerabilities": []
+ },
+ "psycopg": {
+  "version": "3.3.6",
+  "uploaded": "2026-09-18",
+  "requires_python": ">=3.10",
+  "django_docs": {
+   "5.2": "PostgreSQL 14+; psycopg 3.1.8+ or psycopg2 2.8.4+",
+   "6.1": "PostgreSQL 15+; psycopg 3.1.12+ or psycopg2 2.9.9+"
+  },
+  "known_vulnerabilities": []
+ },
+ "node": {
+  "latest": {
+   "v24": {
+    "latest": "v24.22.0",
+    "date": "2026-10-14",
+    "lts": "Krypton",
+    "npm": "11.19.1"
+   },
+   "v26": {
+    "latest": "v26.12.0",
+    "date": "2026-10-14",
+    "lts": false,
+    "npm": "11.20.0"
+   },
+   "v22": {
+    "latest": "v22.23.3",
+    "date": "2026-09-23",
+    "lts": "Jod",
+    "npm": "10.9.9"
+   }
+  },
+  "schedule": {
+   "v22": {
+    "start": "2024-04-24",
+    "lts": "2024-10-29",
+    "maintenance": "2025-10-21",
+    "end": "2027-04-30",
+    "codename": "Jod"
+   },
+   "v24": {
+    "start": "2025-05-06",
+    "lts": "2025-10-28",
+    "maintenance": "2026-10-20",
+    "end": "2028-04-30",
+    "codename": "Krypton"
+   },
+   "v26": {
+    "start": "2026-05-05",
+    "lts": "2026-10-28",
+    "maintenance": "2027-10-20",
+    "end": "2029-04-30",
+    "codename": ""
+   },
+   "v27": {
+    "alpha": "2026-10-28",
+    "start": "2027-04-22",
+    "maintenance": "2027-10-20",
+    "end": "2030-04-30",
+    "codename": ""
+   }
+  }
+ },
+ "next": {
+  "latest": "16.4.2",
+  "published": "2026-10-15",
+  "engines": {
+   "node": ">=20.9.0"
+  },
+  "peer_react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0",
+  "v15_latest": "15.5.28",
+  "v15_published": "2026-10-14",
+  "v15_engines": {
+   "node": "^18.18.0 || ^19.8.0 || >= 20.0.0"
+  },
+  "npm_advisories_for_pins": "none returned by registry bulk advisory API on 2026-10-17"
+ },
+ "react": {
+  "latest": "19.3.1"
+ },
+ "python": {
+  "3.14": {
+   "latest_patch_seen": "3.14.8",
+   "image_tag_updated": "2026-10-14",
+   "final": "2025-10-07 (PEP 745)",
+   "bugfix_until": "~2027-10 (24 months)",
+   "security_until": "2030-10 (PEP 745)"
+  },
+  "3.13": {
+   "latest_patch_seen": "3.13.16",
+   "final": "2024-10-07 (PEP 719)",
+   "security_until": "2029-10 (PEP 719); final bugfix release around 3.15.0 final"
+  },
+  "3.12": {
+   "latest_patch_seen": "3.12.15",
+   "security_until": "2028-10 (PEP 693)"
+  },
+  "3.15": {
+   "latest": "3.15.0",
+   "final_scheduled": "2026-10-09 (PEP 790)",
+   "docker_image_updated": "2026-10-17",
+   "security_until": "~2031-10 (PEP 790)",
+   "django_classifier_support": "not listed for Django 5.2.18/6.0.9/6.1.2"
+  }
+ },
+ "postgresql": {
+  "majors": {
+   "18": {
+    "initial": "2025-09-25",
+    "latest_minor": "18.6",
+    "minor_date": "2026-08-13",
+    "eol_derived": "2030-11 (5 years from initial release, project policy)"
+   },
+   "17": {
+    "initial": "2024-09-26",
+    "latest_minor": "17.11",
+    "minor_date": "2026-08-13",
+    "eol_derived": "2029-11"
+   },
+   "16": {
+    "initial": "2023-09-14",
+    "latest_minor": "16.15",
+    "eol_derived": "2028-11"
+   },
+   "15": {
+    "initial": "2022-10-13",
+    "latest_minor": "15.19",
+    "eol_derived": "2027-11"
+   },
+   "14": {
+    "initial": "2021-09-30",
+    "latest_minor": "14.24",
+    "eol_derived": "2026-11 (final release)"
+   }
+  },
+  "19": "not yet released: REL_19_STABLE release notes read 'Release date: 2026-??-??, AS OF 2026-10-09'",
+  "docker_official_image_tags": [
+   "18.6",
+   "18-trixie",
+   "17.11"
+  ],
+  "cves_referenced_in_18.6_notes": 19
+ }
+}

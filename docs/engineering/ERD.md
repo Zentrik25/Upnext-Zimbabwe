@@ -83,7 +83,7 @@ CHECK: `status <> 'active' OR email_verified_at IS NOT NULL` (an active account 
 |---|---|---|
 | id | uuid | PK |
 | user_id | uuid | FK → app_user, PROTECT |
-| role | enum | `contributor, editor, publisher, administrator` |
+| role | enum | `contributor, editor, publisher, administrator` (`publisher` optional, OQ-32) |
 | granted_by, granted_at | uuid, timestamptz | NOT NULL |
 | revoked_by, revoked_at | uuid, timestamptz | NULL while active |
 | reason | text | NOT NULL, ≥10 chars |
@@ -148,7 +148,7 @@ Indexes: `(status)`, `(category_id, status)`, `(slug)` unique, `(created_by)`.
 | application | `application_method` enum (`external_url, email, instructions`) NOT NULL; `application_url` text NULL; `application_email` citext NULL; `application_instructions` text NULL; `reference_number` text NULL; `contact_details` text NULL |
 | category detail | `detail` jsonb NOT NULL default `{}`; `detail_schema_version` int NOT NULL (FK-ish to `detail_schema(category, version)` via service); validated against the versioned JSON Schema |
 | search | `search_vector` tsvector GENERATED/maintained from title (weight A), organisation name & summary (B), description/requirements/location_text (C) |
-| workflow | `author_id` FK PROTECT; `submitted_by`, `submitted_at`; `approved_by`, `approved_at`; `content_hash` bytea (SHA-256 of canonical content, set at submit); `published_at`; `created_at` |
+| workflow | `author_id` FK PROTECT; `submitted_by`, `submitted_at`; `approved_by`, `approved_at`; `content_hash` bytea (SHA-256 of canonical content, set at submit); `published_by`, `published_at`; `created_at` |
 
 CHECKs: `salary_min <= salary_max`; `(salary_min IS NOT NULL OR salary_max IS NOT NULL) ⇒ salary_currency IS NOT NULL AND salary_period IS NOT NULL`; same pairing for funding; `deadline_at IS NOT NULL ⇒ deadline_timezone IS NOT NULL`; `deadline_is_date_only ⇒ deadline_at IS NOT NULL`; `application_method='external_url' ⇒ application_url IS NOT NULL` (and analogous for email/instructions).
 Constraints: partial UNIQUE `(opportunity_id) WHERE state IN ('draft','in_review','approved')` (one open pipeline version); partial UNIQUE `(opportunity_id) WHERE state='published'` (one live version); category of the version = category of the opportunity (enforced by a trigger comparing to `opportunity.category_id` for the JSON schema).
@@ -213,5 +213,5 @@ Action catalogue: `auth.register, auth.verify_email, auth.login.success, auth.lo
 
 1. State machine transitions only via the publishing service (no direct status writes; Django Admin status fields read-only).
 2. DB triggers/constraints for: id immutability, slug immutability, version content immutability, partial uniqueness of pipeline/live versions, audit append-only privileges.
-3. Separation of duties checked in the service **and** re-asserted by DB triggers for `review_decision.decided_by` and `verification_record.checked_by` vs `version.author_id`.
+3. Separation of duties (D-18) checked in the service **and** re-asserted by DB triggers: `review_decision.decided_by`, `verification_record.checked_by` and `opportunity_version.published_by` must differ from the author of the version chain (`author_id` of any version, and `submitted_by`). There is deliberately **no** approver ≠ publisher constraint.
 4. Migrations: forward-only with rehearsal on a copy; destructive operations require explicit review.

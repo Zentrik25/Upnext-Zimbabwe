@@ -1,6 +1,6 @@
-# Editorial workflow state machine — DRAFT
+# Editorial workflow state machine — DRAFT (revised for D-18)
 
-Status: DRAFT. Implements D-09 (separation of duties), D-12, D-14. Values depending on OPEN decisions are tagged `[OQ-n]`. The machine is enforced in one place — the `publishing` service — and by DB constraints (ERD §7). Django Admin, any future editorial UI and the editorial API all call the same service functions; none may write state columns directly.
+Status: DRAFT. Implements D-18 / ADR-0011 (separation of duties: author ≠ approver, and an authorised Editor or Administrator may approve another person's submission and then publish it), D-12, D-14. Values depending on OPEN decisions are tagged `[OQ-n]`. The machine is enforced in one place — the `publishing` service — and by DB constraints (ERD §7). Django Admin, any future editorial UI and the editorial API all call the same service functions; none may write state columns directly.
 
 ## 1. Two linked state machines
 
@@ -32,20 +32,20 @@ stateDiagram-v2
     [*] --> draft: T01 create_draft (Contributor)
     draft --> draft: T02 save_draft (author)
     draft --> in_review: T03 submit (author)
-    in_review --> approved: T04 approve (Editor ≠ author)
-    in_review --> rejected: T05 reject (Editor ≠ author)
-    approved --> rejected: T06 return (Publisher ≠ author)
-    approved --> published: T07 publish (Publisher ≠ author, ≠ approver)
+    in_review --> approved: T04 approve (Editor or Administrator ≠ author)
+    in_review --> rejected: T05 reject (Editor or Administrator ≠ author)
+    approved --> rejected: T06 return (publication authority ≠ author)
+    approved --> published: T07 publish (publication authority ≠ author; approver may publish)
     rejected --> draft: T14 reopen (author; new draft version)
     draft --> archived: T13 discard (author) [abandoned]
     rejected --> archived: T13 discard (author) [abandoned]
-    published --> expired: T11 expire (system at deadline, or Publisher)
-    published --> withdrawn: T10 withdraw (Publisher)
-    published --> archived: T09 takedown (Publisher) [takedown]
-    expired --> archived: T12 archive (Publisher) [housekeeping]
-    withdrawn --> archived: T12 archive (Publisher) [housekeeping]
-    expired --> archived: T09 takedown (Publisher) [takedown]
-    withdrawn --> archived: T09 takedown (Publisher) [takedown]
+    published --> expired: T11 expire (system at deadline, or publication authority)
+    published --> withdrawn: T10 withdraw (publication authority)
+    published --> archived: T09 takedown (publication authority) [takedown]
+    expired --> archived: T12 archive (publication authority) [housekeeping]
+    withdrawn --> archived: T12 archive (publication authority) [housekeeping]
+    expired --> archived: T09 takedown (publication authority) [takedown]
+    withdrawn --> archived: T09 takedown (publication authority) [takedown]
     published --> published: T15 amend → T03…T07 on a new version
     expired --> published: T15 amend, approved and published (new deadline)
     withdrawn --> published: T15 amend, approved and published (reinstated)
@@ -63,29 +63,29 @@ Actor roles are defined in `ROLE_PERMISSION_MATRIX.md`. "Author" means the user 
 | T01 | create_draft | ∅ → draft | Contributor | category chosen; organisation chosen or created | listing + version 1 created; `created_by`, `author_id` = actor | `opportunity.create` |
 | T02 | save_draft | draft → draft | author | actor is the version's author; draft-level validation (types, lengths) | content updated; `row_version++` | `opportunity.save` |
 | T03 | submit | draft → in_review | author | **publish-grade validation passes** (VALIDATION_SPEC §6): required fields, category schema valid, ≥1 source with one primary, ≥1 location, deadline not in the past if present, duplicate check run and any strong duplicate acknowledged | version frozen; `content_hash`, `submitted_by/at` set; becomes the `pending_version` | `opportunity.submit` |
-| T04 | approve | in_review → approved | Editor | actor ≠ author (every version in the chain) ≠ submitter; review checklist complete (source reviewed, duplicates reviewed, content matches source) | `review_decision(approved)`; `approved_by/at` set | `opportunity.approve` |
-| T05 | reject | in_review → rejected | Editor | actor ≠ author; `reason_code` and `reason` (≥10 chars) | `review_decision(rejected)` | `opportunity.reject` |
-| T06 | return | approved → rejected | Publisher | actor ≠ author; reason required | `review_decision(returned)`; approval void | `opportunity.return` |
-| T07 | publish | approved → published | Publisher | actor ≠ author; actor ≠ approver `[OQ-12: strict reading specified until decided]`; `content_hash` equals the approved hash; source provenance present; deadline (if any) still in the future; category schema version still valid; first publication assigns the slug | version → `published`, previous live → `superseded`; `live_version_id` set; `published_at`, `first_published_at`/`last_published_at`; listing status `published`; search index and sitemap refreshed | `opportunity.publish` |
-| T08 | schedule_publish `[OQ-14]` | approved → approved(+`publish_at`) | Publisher | same as T07; `publish_at` in the future | the scheduler executes T07 as actor `system` on behalf of the scheduling Publisher; guards re-checked at execution | `opportunity.schedule` |
-| T09 | takedown | published, expired, withdrawn → archived | Publisher | reason required (`legal`, `error`, `fraud`, `other` + text) | public visibility removed immediately; `archive_reason=takedown`; **one-person action by design** (taking content down is the safe direction) | `opportunity.takedown` |
-| T10 | withdraw | published → withdrawn | Publisher | reason required (issuer withdrew) | listing flagged withdrawn; `closed_at` | `opportunity.withdraw` |
-| T11 | expire | published → expired | system or Publisher | system: live `deadline_at` < now (listings with unknown deadline are never auto-expired); Publisher: manual with reason | `closed_at`; derived `deadline_state=expired` always correct at read time even if the job has not run | `opportunity.expire` |
-| T12 | archive | expired, withdrawn → archived | Publisher | — | `archive_reason=housekeeping` | `opportunity.archive` |
+| T04 | approve | in_review → approved | Editor or Administrator | actor ≠ author (every version in the chain) ≠ submitter; review checklist complete (source reviewed, duplicates reviewed, content matches source) | `review_decision(approved)`; `approved_by/at` set | `opportunity.approve` |
+| T05 | reject | in_review → rejected | Editor or Administrator | actor ≠ author; `reason_code` and `reason` (≥10 chars) | `review_decision(rejected)` | `opportunity.reject` |
+| T06 | return | approved → rejected | Editor, Administrator or Publisher | actor ≠ author; reason required | `review_decision(returned)`; approval void | `opportunity.return` |
+| T07 | publish | approved → published | Editor, Administrator or Publisher | actor ≠ author (every version in the chain, and the submitter) — **the approver may publish** (D-18); an author who holds publication authority may not publish their own listing `[OQ-33]`; `content_hash` equals the approved hash; source provenance present; deadline (if any) still in the future; category schema version still valid; first publication assigns the slug | version → `published`, previous live → `superseded`; `live_version_id` set; `published_at`, `first_published_at`/`last_published_at`; listing status `published`; search index and sitemap refreshed | `opportunity.publish` |
+| T08 | schedule_publish `[OQ-14]` | approved → approved(+`publish_at`) | Editor, Administrator or Publisher | same as T07; `publish_at` in the future | the scheduler executes T07 as actor `system` on behalf of the scheduling user; guards re-checked at execution | `opportunity.schedule` |
+| T09 | takedown | published, expired, withdrawn → archived | Editor, Administrator or Publisher | reason required (`legal`, `error`, `fraud`, `other` + text) | public visibility removed immediately; `archive_reason=takedown`; **one-person action by design** (taking content down is the safe direction) | `opportunity.takedown` |
+| T10 | withdraw | published → withdrawn | Editor, Administrator or Publisher | reason required (issuer withdrew) | listing flagged withdrawn; `closed_at` | `opportunity.withdraw` |
+| T11 | expire | published → expired | system, or Editor / Administrator / Publisher | system: live `deadline_at` < now (listings with unknown deadline are never auto-expired); manual by publication authority with reason | `closed_at`; derived `deadline_state=expired` always correct at read time even if the job has not run | `opportunity.expire` |
+| T12 | archive | expired, withdrawn → archived | Editor, Administrator or Publisher | — | `archive_reason=housekeeping` | `opportunity.archive` |
 | T13 | discard | draft, rejected → archived | author | never published; or discards a pending amendment (version → `discarded`, listing status unchanged) | `archive_reason=abandoned` (new listing) | `opportunity.discard` |
 | T14 | reopen | rejected → draft | author | — | new draft version `n+1` copied from the rejected one; old stays `rejected` | `opportunity.reopen` |
 | T15 | amend | published, expired, withdrawn (no open amendment) | Contributor (any; becomes the amendment's author) | at most one open pipeline version per listing | new draft version copied from the live one (`based_on_version_id`); listing status unchanged; then T03→T07 apply to the amendment | `opportunity.amend` |
-| V01 | record_verification (not a status change) | version in_review/approved/published | Editor | actor ≠ author of that version; evidence note ≥20 chars | `verification_record`; recompute `opportunity.verification_level` if live | `verification.record` |
+| V01 | record_verification (not a status change) | version in_review/approved/published | Editor or Administrator | actor ≠ author of that version; evidence note ≥20 chars | `verification_record`; recompute `opportunity.verification_level` if live | `verification.record` |
 
 ## 4. Invariants (tested)
 
-1. **Four-eyes minimum:** no user may both author and approve, reject, return, verify or publish the same chain.
-2. **No self-publication path:** approver ≠ publisher is the specified default until OQ-12 is decided; relaxing it is a configuration change that needs a decision-register entry.
+1. **Two-person minimum:** the author of a listing never approves, rejects, returns, verifies or publishes it. One other person with the right authority is enough to approve **and** publish.
+2. **Approver may publish:** there is no approver ≠ publisher rule (D-18; OQ-12 resolved). Whether an author who also holds approval/publication authority may publish their own listing after someone else approved it is OQ-33; it is **denied** until decided.
 3. **Approval binds content:** any content change after approval is impossible (versions are immutable); a changed listing is a new version and needs a fresh approval.
-4. **Administrator has no editorial transition by virtue of the role.** An administrator who is also granted Contributor/Editor/Publisher through audited grants is subject to the same guards as anyone else.
+4. **Administrators hold approval and publication authority by role, bounded by the same guards:** they cannot approve or publish what they authored, cannot skip states, cannot edit content, and every use of the authority is audited with the capacity exercised.
 5. **Publishing ≠ verifying:** T07 never writes `verification_level`; publication of an unverified listing displays `not_verified`.
 6. **At most one live version and one pipeline version per listing** (partial unique indexes).
-7. **Every transition writes `publishing_event` + `audit_event` in the same DB transaction** as the state change; if the audit write fails the transition fails.
+7. **Every transition is audited:** a `publishing_event` and an `audit_event` (actor, capacity, transition, versions, reason, request id) are written in the same DB transaction as the state change; if the audit write fails the transition fails. Rejected attempts (guard failures) are audited as `security` events.
 8. **Slug assigned once**, at first publication; never changed afterward (ADR-0006).
 9. **Deadlines are never invented:** unknown deadline = `NULL`; the state machine never infers one.
 10. **System actor limits:** the only system-initiated transition in Release 1 is T11 (and T08 execution if OQ-14 is approved).
@@ -101,4 +101,4 @@ Actor roles are defined in `ROLE_PERMISSION_MATRIX.md`. "Author" means the user 
 
 ## 7. Queues and views (for the staff interface)
 
-Contributor: own drafts and rejected items. Editor: `in_review` queue excluding items they authored. Publisher: `approved` queue excluding items they authored or approved. Everyone with a staff role sees the history (`publishing_event`) of items they may view. These are views over the same tables, not separate states.
+Contributor: own drafts and rejected items. Editor and Administrator: `in_review` queue and `approved` queue excluding items they authored. Publisher (if the role is kept): `approved` queue excluding items they authored. Everyone with a staff role sees the history (`publishing_event`) of items they may view. These are views over the same tables, not separate states.
