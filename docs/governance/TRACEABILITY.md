@@ -297,9 +297,9 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 4. Whether a test exists and has been executed is recorded in §6; full results (commands and outputs) are recorded in phase reports and are never invented.
 5. This file is generated: edit `tools/traceability/generate.py` and run `python tools/traceability/generate.py`.
 
-## 6. Implementation status (Phase 1)
+## 6. Implementation status (Phases 1 and 2)
 
-Only the tests listed here exist. Everything else in §4 is still planned. "executed" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md`); it is not a CI claim.
+Only the tests listed here exist. Everything else in §4 is still planned. "executed" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md`); it is not a CI claim.
 
 | Test id | Implemented by | Status |
 |---|---|---|
@@ -331,7 +331,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | VIS-02 | `apps/web/tests/e2e/foundation.spec.ts (reference parity: listing row, tags, tabs)` | executed (computed-style parity, not pixel diff) |
 | VIS-04 | `apps/web/tests/e2e/foundation.spec.ts (nothing rounded/shadowed/gradient); apps/web/tests/unit/design-guard.test.ts` | executed |
 | VIS-05 | `apps/web/tests/unit/tokens.test.ts::the only production deviations are DEV-01…DEV-04` | executed |
-| E2E-10 | `apps/web/tests/e2e/foundation.spec.ts (no horizontal scroll)` | executed (foundation pages only) |
+| E2E-10 | `apps/web/tests/e2e/foundation.spec.ts; apps/web/tests/e2e/opportunities.spec.ts (no horizontal scroll)` | executed (foundation and catalogue pages) |
 | CAT-01 | `tools/check_docs.py (category schemas are valid JSON Schema 2020-12)` | executed |
 | CAT-02 | `tools/check_docs.py (examples validate against schemas)` | executed |
 | CAT-03 | `tools/check_docs.py (examples validate against the OpenAPI createDraft body)` | executed |
@@ -339,3 +339,67 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | OPS-10 | `apps/api/Dockerfile (pip --require-hashes) and apps/web/Dockerfile (npm ci); .github/workflows/ci.yml` | authored; the GitHub Actions run has not been executed in this environment |
 | OPS-11 | `npm audit --omit=dev (executed locally: 0 advisories); .github/workflows/ci.yml` | partly executed; pip advisory scan authored for CI |
 | OPS-13 | `docker compose run api pytest on PostgreSQL 18.6 + Python 3.14.8 + Django 5.2.18 + psycopg 3.3.6` | executed (task V-01) |
+| UT-01 | `apps/web/tests/unit/catalog.test.tsx (formatting never invents facts); apps/api/tests/test_public_api.py::test_detail_has_sanitised_html_sources_and_unknowns_stay_null` | executed |
+| UT-02 | `apps/api/tests/test_catalog_units.py::test_slug_format_and_alphabet; apps/api/tests/test_db_invariants.py::test_slug_and_category_are_immutable` | executed |
+| UT-06 | `apps/api/tests/test_workflow.py::test_verification_levels_and_methods` | executed |
+| UT-07 | `apps/web/tests/unit/catalog.test.tsx (deadline wording); apps/api/tests/test_public_api.py::test_past_deadline_listings_leave_the_default_list_even_before_the_expiry_job` | executed |
+| UT-08 | `apps/api/tests/test_catalog_units.py::test_deadline_rules_and_date_only_semantics` | executed against the provisional default P2-03 (OQ-22 still open) |
+| UT-09 | `apps/web/tests/e2e/opportunities.spec.ts::the apply link leaves UPNEXT safely and says so` | executed |
+| API-01 | `apps/api/tests/test_public_api.py (filters, sort, empty result, anonymous access)` | executed |
+| API-02 | `apps/api/tests/test_public_api.py::test_reference_lists` | executed |
+| API-03 | `apps/api/tests/test_public_api.py (detail fields, unknowns, contract validation)` | executed |
+| API-07 | `apps/api/tests/test_public_api.py::test_paging_through_every_sort_returns_each_listing_once; ::test_tampered_or_foreign_cursors_are_rejected` | executed (stability under inserts is not separately tested) |
+| API-08 | `apps/api/tests/test_public_api.py::test_category_filter_and_unknown_category; ::test_unknown_duplicate_and_overlong_parameters_are_rejected` | executed |
+| API-09 | `apps/api/tests/test_public_api.py::test_non_public_listings_return_404_by_slug_and_by_guessing` | executed |
+| DB-01 | `apps/api/tests/test_db_invariants.py::test_slug_and_category_are_immutable (ids); apps/api/tests/test_models.py` | executed |
+| DB-02 | `apps/api/tests/test_db_invariants.py::test_slug_and_category_are_immutable` | executed |
+| DB-05 | `apps/api/tests/test_db_invariants.py::test_frozen_revision_content_cannot_be_updated_or_deleted; ::test_only_one_open_revision_and_one_live_revision` | executed |
+| IT-01 | `apps/api/tests/test_workflow.py::test_expiry_job_expires_only_past_deadlines_and_is_idempotent; apps/api/tests/test_concurrency.py` | executed |
+| WF-01 | `apps/api/tests/test_workflow.py (T01-T07, T09-T15 and V01; T08 is absent by default P2-05)` | executed |
+| WF-02 | `apps/api/tests/test_workflow.py::test_unavailable_actions_are_invalid_transitions` | executed (representative pairs, not the full matrix) |
+| WF-03 | `apps/api/tests/test_workflow.py::test_submit_returns_every_publish_grade_failure_at_once; apps/api/tests/test_content_validation.py` | executed |
+| WF-04 | `apps/api/tests/test_workflow.py::test_tampered_content_after_approval_blocks_publication; ::test_approved_content_cannot_be_edited_and_a_change_needs_a_new_review` | executed |
+| WF-05 | `apps/api/tests/test_workflow.py::test_reject_reopen_resubmit_and_approve_by_a_different_person; ::test_return_voids_the_approval` | executed |
+| WF-06 | `apps/api/tests/test_workflow.py::test_two_people_are_enough_to_publish; apps/api/tests/test_db_invariants.py` | executed |
+| WF-07 | `apps/api/tests/test_workflow.py (amendments); apps/api/tests/test_public_api.py::test_amendment_is_invisible_until_published_and_takedown_is_immediate` | executed |
+| WF-08 | `apps/api/tests/test_workflow.py::test_takedown_is_a_single_person_action_with_a_reason; apps/api/tests/test_public_api.py` | executed |
+| WF-09 | `apps/api/tests/test_workflow.py::test_stale_row_version_is_a_conflict` | executed |
+| WF-10 | `apps/api/tests/test_workflow.py::test_every_transition_writes_history_and_audit_in_the_same_transaction` | executed |
+| WF-11 | `apps/api/tests/test_workflow.py (expiry job and manual expire)` | executed |
+| WF-12 | `apps/api/tests/test_workflow.py::test_discard_archives_a_never_published_listing; ::test_reject_reopen_resubmit_and_approve_by_a_different_person` | executed |
+| WF-14 | `apps/api/tests/test_concurrency.py` | executed (real threads on PostgreSQL 18.6) |
+| WF-15 | `apps/api/tests/test_admin.py::test_organisations_can_be_created_by_contributors_but_edited_only_by_editors` | executed (organisation merge is not implemented) |
+| WF-16 | `apps/api/tests/test_admin.py::test_every_cms_action_is_audited_with_the_acting_role; apps/api/tests/test_workflow.py` | executed |
+| SOD-01 | `apps/api/tests/test_workflow.py::test_author_cannot_approve_reject_or_verify_their_own_submission` | executed |
+| SOD-02 | `apps/api/tests/test_workflow.py::test_author_cannot_approve_reject_or_verify_their_own_submission` | executed |
+| SOD-04 | `apps/api/tests/test_workflow.py::test_two_people_are_enough_to_publish` | executed |
+| SOD-05 | `apps/api/tests/test_workflow.py (author_editor and author_admin cases)` | executed |
+| SOD-07 | `apps/api/tests/test_db_invariants.py; apps/api/tests/test_admin.py::test_listing_page_is_read_only_and_state_cannot_be_posted` | executed |
+| SOD-08 | `apps/api/tests/test_admin.py::test_manage_staff_role_is_audited_and_requires_an_administrator` | executed (command-line route; no role UI by default P2-06) |
+| SOD-09 | `apps/api/tests/test_workflow.py::test_administrator_may_approve_and_publish_someone_elses_listing; ::test_author_cannot_approve_reject_or_verify_their_own_submission` | executed |
+| SOD-10 | `apps/api/tests/test_workflow.py::test_author_with_publish_authority_publishes_after_another_persons_approval; ::test_author_cannot_publish_an_unapproved_revision` | executed |
+| SOD-12 | `apps/api/tests/test_workflow.py::test_author_cannot_approve_reject_or_verify_their_own_submission (security audit events)` | executed |
+| SOD-13 | `apps/api/tests/test_concurrency.py; apps/api/opportunities/workflow.py (guards run after the row lock)` | executed |
+| VER-01 | `apps/api/tests/test_workflow.py::test_two_people_are_enough_to_publish; apps/web/tests/e2e/opportunities.spec.ts` | executed |
+| VER-02 | `apps/api/tests/test_workflow.py::test_verification_levels_and_methods; ::test_verification_needs_an_evidence_note_and_a_staff_role` | executed |
+| VER-03 | `apps/api/tests/test_workflow.py::test_approved_content_cannot_be_edited_and_a_change_needs_a_new_review` | executed |
+| VER-04 | `apps/api/tests/test_content_validation.py::test_source_rules` | executed |
+| VAL-02 | `apps/api/tests/test_catalog_units.py (text normalisation)` | executed |
+| VAL-03 | `apps/api/tests/test_catalog_units.py::test_unsafe_urls_are_rejected` | executed |
+| VAL-04 | `apps/api/tests/test_catalog_units.py (Markdown XSS corpus); apps/web/tests/unit/catalog.test.tsx::SafeHtml` | executed |
+| VAL-05 | `apps/api/tests/test_catalog_units.py (schemas, examples, negative cases)` | executed |
+| VAL-06 | `apps/api/tests/test_content_validation.py::test_pairings_are_reported_as_validation_errors_not_database_errors; apps/api/tests/test_db_invariants.py` | executed |
+| VAL-07 | `apps/api/tests/test_workflow.py::test_hard_duplicates_block_submit_unless_acknowledged` | executed against the provisional default P2-09 (OQ-08 still open) |
+| VAL-08 | `apps/api/tests/test_public_api.py::test_websearch_syntax_and_injection_strings_are_treated_as_text` | executed |
+| SEC-04 | `apps/api/tests/test_public_api.py; apps/web/tests/e2e/opportunities.spec.ts` | executed |
+| SEC-06 | `apps/api/tests/test_public_api.py::PublicThrottleTests; apps/api/tests/test_admin.py::test_staff_login_is_throttled_and_does_not_reveal_which_part_was_wrong; apps/api/tests/test_auth_api.py` | executed (every throttled endpoint implemented so far) |
+| SEC-10 | `apps/api/tests/test_admin.py::test_listing_page_is_read_only_and_state_cannot_be_posted` | executed (no public write endpoints exist yet) |
+| AUD-01 | `apps/api/tests/test_db_invariants.py::test_audit_log_is_append_only` | executed (trigger for every role; privilege revocation is a deployment step) |
+| CAT-05 | `apps/api/tests/test_content_validation.py::test_category_applicability_matrix` | executed |
+| CAT-06 | `apps/api/tests/test_content_validation.py::test_tender_dates_must_be_in_order; apps/api/tests/test_catalog_units.py::test_cross_field_rules` | executed |
+| CAT-07 | `apps/api/tests/test_workflow.py::test_applicant_payment_text_needs_an_explicit_reviewer_acknowledgement; ::test_tender_document_fees_are_not_flagged` | executed |
+| CAT-08 | `apps/api/tests/test_catalog_units.py::test_email_timezone_currency_and_amounts` | executed against the provisional default P2-03 (OQ-22 still open) |
+| E2E-01 | `apps/web/tests/e2e/opportunities.spec.ts (browse, category tabs, search, filters, empty and invalid states, pagination)` | executed (dev stack and production-mode stack in CI) |
+| E2E-02 | `apps/web/tests/e2e/opportunities.spec.ts (detail page, sources, apply wording)` | executed |
+| E2E-03 | `apps/web/tests/e2e/opportunities.spec.ts (unknown address shows the not-found page); apps/api/tests/test_public_api.py` | executed |
+| E2E-09 | `apps/api/tests/test_admin.py (Contributor drafts, Editor approves, publish through the CMS)` | executed with the Django test client, not in a browser |

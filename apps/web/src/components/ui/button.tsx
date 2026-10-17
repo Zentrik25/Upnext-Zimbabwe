@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 export type ButtonVariant = "primary" | "secondary";
@@ -29,4 +29,14 @@ export function Button({
   ...props
 }: ButtonProps) {
   return <button type={type} className={cn(base, variants[variant], sizes[size], className)} {...props} />;
+}
+
+export type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+  variant?: ButtonVariant;
+  href: string;
+};
+
+/** A link that looks exactly like a `Button` (navigation, not an action). */
+export function ButtonLink({ variant = "primary", className, ...props }: ButtonLinkProps) {
+  return <a className={cn(base, variants[variant], sizes.standard, className)} {...props} />;
 }

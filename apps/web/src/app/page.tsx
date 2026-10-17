@@ -1,5 +1,5 @@
 import { Container } from "@/components/layout";
-import { Notice, Panel, Tag } from "@/components/ui";
+import { Button, Notice, Panel, SearchGroup, Tag } from "@/components/ui";
 import { getApiRoot } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,9 @@ export default async function HomePage() {
   const api = await getApiRoot();
   return (
     <>
-      <Notice>Application foundation: public discovery pages arrive in a later phase.</Notice>
+      <Notice>
+        Every listing names its source. Accounts, saved items and alerts arrive in a later phase.
+      </Notice>
       <section aria-labelledby="home-title" className="border-b border-line py-[30px] max-sm:py-6">
         <Container>
           <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
@@ -20,6 +22,26 @@ export default async function HomePage() {
           <p className="text-base text-muted">
             Jobs, internships, graduate programmes, scholarships, tenders and grants in one place.
           </p>
+          <SearchGroup
+            action="/opportunities"
+            method="get"
+            aria-label="Search opportunities"
+            className="mt-4"
+          >
+            <label htmlFor="home-q" className="sr-only">
+              Search by title, organisation or keyword
+            </label>
+            <SearchGroup.Input
+              id="home-q"
+              name="q"
+              type="search"
+              maxLength={100}
+              placeholder="Title, organisation or keyword"
+            />
+            <Button type="submit" size="search">
+              Search
+            </Button>
+          </SearchGroup>
         </Container>
       </section>
       <Container className="pt-[22px] pb-[65px]">

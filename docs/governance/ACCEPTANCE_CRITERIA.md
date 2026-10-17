@@ -80,3 +80,6 @@ Conventions: "the API" = the contract in `docs/engineering/openapi/openapi.yaml`
 
 ## G. Gate rule
 A phase passes only when its scenarios pass in CI or are demonstrated with recorded commands and outputs, no critical/high security defects remain, accessibility evidence is attached, and the owner approves in writing. Failures are recorded, never summarised away.
+
+## H. Status after Phase 2
+Scenarios exercised by automated tests are listed per test id in `TRACEABILITY.md` §6 (AC-PUB-01/03/04 and AC-EDIT-01…08, 10…12 in full or in part; AC-ROLE-01…03 from Phase 1; AC-CAT-01…07; AC-DS and AC-A11Y for the catalogue pages). Not yet implemented: AC-SAVE-01, AC-FY-01, AC-AUTH-*, AC-MAIL-01 (later phases), AC-EDIT-09 (the author/approver pair report) and the author notification of AC-EDIT-08 (no notification system yet). AC-OPS-02/03 and AC-VER-03 remain open.

@@ -2,7 +2,7 @@
 
 Zimbabwe-first opportunity discovery: jobs, internships, graduate programmes, scholarships, tenders and grants.
 
-**Status: Phase 1 (application foundation) — implemented and awaiting review.** The Phase 0 documentation package is the approved baseline; see `docs/governance/DECISION_REGISTER.md` (source of truth for decisions) and `docs/phase1/PHASE1_REPORT.md` (what was built and verified). Nothing is deployed, and nothing touches The Granite Post or the existing Traefik/Nginx.
+**Status: Phase 2 (opportunity catalogue and editorial CMS) — implemented and awaiting review.** Phase 1 (application foundation) was approved. The Phase 0 documentation package is the approved baseline; see `docs/governance/DECISION_REGISTER.md` (source of truth for decisions) and `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md` (what was built and verified). Nothing is deployed, and nothing touches The Granite Post or the existing Traefik/Nginx.
 
 ## Repository layout
 | Path | Contents |

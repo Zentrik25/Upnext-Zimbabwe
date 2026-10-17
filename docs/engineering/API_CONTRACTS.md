@@ -22,3 +22,7 @@ The generated schema from the API must equal this file (contract test API-*); ch
 
 ## Implementation status (Phase 1)
 Implemented and checked against this contract by `apps/api/tests/test_openapi.py`: `getApiRoot`, `getCsrfToken`, `login`, `logout`, `getMe`. Everything else in `openapi.yaml` is specified but not implemented. The `StaffRole` enum has no `publisher` (D-23).
+
+## Implementation status (Phase 2)
+Implemented and checked against this contract by `apps/api/tests/test_openapi.py` and `test_public_api.py` (real responses are validated against the contract schemas): `listOpportunities`, `getOpportunity`, `listCategories`, `listLocations`, `listSectors`, `searchSkills`. Behaviour recorded as provisional defaults: expired listings only with `include_expired=true` or `deadline_state=expired`, withdrawn and archived never listed, `expired`/`withdrawn` readable by slug, archived 404 (P2-01); list `total` is returned on the first page only (later pages return `null`, which the contract allows); `organisation_id` filter is implemented (OQ-24 still open); unknown or repeated parameters are `400 invalid_filter` naming the parameter; cursors are signed, expire after 24 hours and are bound to the sort and filters (`invalid_cursor`).
+Contract change made in Phase 2 (additive, reserved editorial API): `TransitionRequest.checklist` accepts the optional `applicant_payment_reviewed` flag. The editorial and administration operations remain **specified but not exposed**: the staff interface is the Django Admin (P2-06).

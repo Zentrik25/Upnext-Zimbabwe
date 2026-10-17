@@ -95,3 +95,20 @@ Production settings **refuse to start** with a short or default secret key, an e
 
 ## 6. What is not here yet
 Registration/verification/reset flows, the opportunity workflow and CMS, search, matching, notifications, deployment. See `docs/phase1/PHASE1_SCOPE_AND_GATES.md`.
+
+
+## 5. Running and trying the editorial CMS (Phase 2)
+
+```bash
+cd infrastructure/compose
+docker compose up --build            # as in §1
+docker compose exec api python manage.py seed_demo --force   # fictional demo data, development only
+```
+
+`seed_demo` creates four staff accounts (`contributor@`, `editor@`, `second-editor@`, `admin@demo.upnext.example`) with **random passwords printed once** (never stored in the repository), 12 published fictional listings covering all six categories and four non-public items (draft, in review, approved, rejected). Open `http://localhost:8080/staff/`, sign in with an e-mail address and the printed password.
+
+Try the workflow: sign in as the Contributor, **Listings → Add**, choose a category and organisation, fill in the draft (including a source), **Submit for review**; sign in as the Editor, open **Listings** and filter *Awaiting my review*, **Approve** it; the Contributor-only author cannot publish, the Editor can. A person who holds both Contributor and Editor roles can publish their own listing only after someone else approved it, and can never approve it. Everything is recorded under **Audit events** (Administrator) and in each listing's history.
+
+Role changes (audited, command line): `docker compose exec api python manage.py manage_staff_role grant --email someone@example.org --role editor --reason "Joins the editorial team" --by admin@demo.upnext.example`.
+
+Public pages: `http://localhost:8080/opportunities`. Backend tests need PostgreSQL and `DJANGO_SETTINGS_MODULE=config.settings.test` (CI sets it; inside the dev container pass `-e DJANGO_SETTINGS_MODULE=config.settings.test`): `docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test api pytest`. Browser tests against the seeded stack: `E2E_DEMO_DATA=1 BASE_URL=http://localhost:8080 npm run test:e2e` in `apps/web`.

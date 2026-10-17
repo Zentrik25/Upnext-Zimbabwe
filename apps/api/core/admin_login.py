@@ -11,6 +11,7 @@ from typing import Any
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from rest_framework.throttling import BaseThrottle
 
 from api.throttles import EmailFailureLimiter, hash_key
 
@@ -18,7 +19,8 @@ IP_LIMIT, IP_WINDOW = 30, 15 * 60  # PROPOSED values, like the public login thro
 
 
 def _ip(request: Any) -> str:
-    return str(request.META.get("REMOTE_ADDR", "-")) if request is not None else "-"
+    """Same client identification as the API throttles (X-Forwarded-For aware), not the proxy's address."""
+    return str(BaseThrottle().get_ident(request)) if request is not None else "-"
 
 
 class ThrottledAdminAuthenticationForm(AdminAuthenticationForm):

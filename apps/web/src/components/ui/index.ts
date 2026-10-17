@@ -1,4 +1,11 @@
-export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./button";
+export {
+  Button,
+  ButtonLink,
+  type ButtonLinkProps,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+} from "./button";
 export {
   Checkbox,
   Field,

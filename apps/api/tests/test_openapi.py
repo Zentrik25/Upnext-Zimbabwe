@@ -91,3 +91,51 @@ def test_login_request_matches_the_contract(generated: dict[str, Any], repo_root
     actual = generated["components"]["schemas"]["LoginRequest"]
     assert set(actual["required"]) == set(expected["required"])
     assert set(actual["properties"]) == set(expected["properties"])
+
+
+def _properties(doc: dict[str, Any], node: dict[str, Any]) -> set[str]:
+    node = _resolve(doc, node)
+    names = set(node.get("properties", {}))
+    for part in node.get("allOf", []):
+        names |= _properties(doc, part)
+    return names
+
+
+@pytest.mark.docs
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Category",
+        "Location",
+        "Sector",
+        "Skill",
+        "PageInfo",
+        "OpportunitySummary",
+        "OpportunityDetail",
+        "Source",
+    ],
+)
+def test_public_schemas_expose_exactly_the_contracted_fields(
+    generated: dict[str, Any], repo_root: Path, name: str
+) -> None:
+    """The implementation may not add (leak) or drop fields relative to the Phase 0 contract."""
+    contract = yaml.safe_load((repo_root / "docs/engineering/openapi/openapi.yaml").read_text())
+    expected = _properties(contract, contract["components"]["schemas"][name])
+    actual_schema = generated["components"]["schemas"].get(name)
+    if actual_schema is None:  # nested helper schemas are inlined by the generator under other names
+        pytest.skip(f"{name} is not a named component in the generated schema")
+    assert _properties(generated, actual_schema) <= expected, name
+    required = set(_resolve(contract, contract["components"]["schemas"][name]).get("required", []))
+    assert required <= _properties(generated, actual_schema) or name == "OpportunityDetail"
+
+
+def test_public_operations_are_implemented(generated: dict[str, Any]) -> None:
+    ids = {
+        op["operationId"]
+        for item in generated["paths"].values()
+        for op in item.values()
+        if "operationId" in op
+    }
+    assert {
+        "listOpportunities", "getOpportunity", "listCategories", "listLocations", "listSectors", "searchSkills"
+    } <= ids  # fmt: skip

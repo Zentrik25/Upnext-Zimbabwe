@@ -147,6 +147,9 @@ jobs:
         env:
           COMPOSE_BAKE: "false"
         run: docker compose -f compose.yaml -f compose.prod-like.yaml up -d --build --wait --wait-timeout 300
+      - name: Load the fictional demonstration listings (every category, plus non-public items)
+        working-directory: infrastructure/compose
+        run: docker compose -f compose.yaml -f compose.prod-like.yaml exec -T api python manage.py seed_demo --force > /dev/null
       - run: npm ci --ignore-scripts
         working-directory: apps/web
       - run: npx playwright install --with-deps chromium
@@ -156,6 +159,7 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:8080
           E2E_STRICT_CONSOLE: "1"
+          E2E_DEMO_DATA: "1"
         run: npm run test:e2e
       - name: Compose logs on failure
         if: failure()

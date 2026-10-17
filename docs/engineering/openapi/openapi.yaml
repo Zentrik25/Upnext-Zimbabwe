@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: UPNEXT API
   version: 1.0.0-draft.1
-  summary: Contract for /api/v1 (DRAFT — documentation only, no implementation exists)
+  summary: Contract for /api/v1 (DRAFT; Phase 1 and Phase 2 implement the operations listed in API_CONTRACTS.md)
   description: |
     Status: DRAFT for review. Not an implementation. Items tagged `x-open: OQ-n` depend on an unresolved
     decision in docs/governance/DECISION_REGISTER.md and are not defaulted.
@@ -1037,7 +1037,7 @@ components:
           type: object
           additionalProperties: false
           description: Required for approve; all three must be true
-          properties: { source_reviewed: { type: boolean }, duplicates_reviewed: { type: boolean }, content_matches_source: { type: boolean } }
+          properties: { source_reviewed: { type: boolean }, duplicates_reviewed: { type: boolean }, content_matches_source: { type: boolean }, applicant_payment_reviewed: { type: boolean, description: 'Required (true) only when the text of a non-tender listing mentions payments by applicants (Phase 2, AC-CAT-05)' } }
         duplicate_acknowledgement:
           type: [object, 'null']
           description: Required on submit when a hard duplicate exists (x-open OQ-08)

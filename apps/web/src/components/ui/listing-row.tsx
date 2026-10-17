@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "./button";
+import { ButtonLink } from "./button";
 import { SaveButton } from "./save-button";
 import { Tag, type TagTone } from "./tag";
 
@@ -10,7 +10,8 @@ export type ListingRowProps = {
   facts: string[];
   tags?: { label: string; tone?: TagTone }[];
   sourceNote?: ReactNode;
-  saved: boolean;
+  /** Omit until saving exists (accounts arrive in a later phase): no inert control is rendered. */
+  saved?: boolean;
 };
 
 function initials(name: string): string {
@@ -49,7 +50,7 @@ export function ListingRow({
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
         </div>
-        <SaveButton title={title} saved={saved} className="ml-auto" />
+        {saved === undefined ? null : <SaveButton title={title} saved={saved} className="ml-auto" />}
       </div>
       <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
         {facts.map((fact) => (
@@ -63,9 +64,9 @@ export function ListingRow({
       </ul>
       <div className="mt-[13px] flex items-center justify-between gap-2">
         <span className="text-small text-muted">{sourceNote}</span>
-        <Button variant="secondary" type="button" aria-label={`View details for ${title}`}>
+        <ButtonLink variant="secondary" href={href} aria-label={`View details for ${title}`}>
           View details
-        </Button>
+        </ButtonLink>
       </div>
     </article>
   );
