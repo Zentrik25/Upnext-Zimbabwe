@@ -37,6 +37,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.StaffHardeningMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.RequestLogMiddleware",
@@ -107,6 +108,7 @@ SESSION_COOKIE_NAME = f"{_COOKIE_PREFIX}upnext_sid"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = SECURE_COOKIES
+UPNEXT_STAFF_SESSION_SECONDS = get_int("UPNEXT_STAFF_SESSION_SECONDS", 60 * 60 * 8)  # PROPOSED
 SESSION_COOKIE_AGE = get_int("UPNEXT_SESSION_MAX_AGE_SECONDS", 60 * 60 * 24 * 30)  # PROPOSED, OQ-17
 CSRF_COOKIE_NAME = f"{_COOKIE_PREFIX}upnext_csrf"
 CSRF_COOKIE_HTTPONLY = False  # the SPA echoes the token in X-CSRFToken

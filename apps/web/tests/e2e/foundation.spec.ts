@@ -50,6 +50,17 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     expect((await missing.json()).error.code).toBe("not_found");
   });
 
+  test("the staff sign-in page renders with its stylesheet through the proxy", async ({ page, request }) => {
+    const response = await page.goto("/staff/login/");
+    expect(response?.status()).toBe(200);
+    await expect(page.locator("#id_username")).toBeVisible();
+    const css = page.locator('link[rel="stylesheet"]').first();
+    const href = await css.getAttribute("href");
+    expect(href).toMatch(/^\/static\/admin\/css\//);
+    expect((await request.get(href ?? "")).status()).toBe(200);
+    expect(response?.headers()["x-robots-tag"]).toContain("noindex");
+  });
+
   test("unknown pages show the designed not-found state", async ({ page }) => {
     const response = await page.goto("/no-such-page");
     expect(response?.status()).toBe(404);

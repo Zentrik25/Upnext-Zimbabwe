@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import secrets
 from datetime import date
 from typing import Any
@@ -50,7 +51,8 @@ class Command(BaseCommand):
         for email, name, roles in USERS:
             user = User.objects.filter(email=email).first()
             if user is None:
-                password = secrets.token_urlsafe(16)
+                # A shared password is for throwaway local/CI stacks only (set UPNEXT_DEMO_PASSWORD yourself).
+                password = os.environ.get("UPNEXT_DEMO_PASSWORD") or secrets.token_urlsafe(16)
                 user = User.objects.create_user(
                     email, password, name, status=AccountStatus.ACTIVE, email_verified_at=timezone.now()
                 )

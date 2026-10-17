@@ -30,7 +30,10 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM base AS prod
 COPY --chown=upnext:upnext . .
 # Build-time placeholders only so `collectstatic` can import settings; no real secret is baked in.
-RUN DJANGO_SETTINGS_MODULE=config.settings.dev DJANGO_SECRET_KEY=build-only-placeholder \
+# It must use the production settings: the manifest it writes is what the production storage reads.
+RUN DJANGO_SETTINGS_MODULE=config.settings.prod \
+    DJANGO_SECRET_KEY=build-only-placeholder-build-only-placeholder-build-only-placeholder \
+    DJANGO_ALLOWED_HOSTS=build UPNEXT_SECURE_COOKIES=true \
     POSTGRES_DB=build POSTGRES_USER=build POSTGRES_PASSWORD=build \
     python manage.py collectstatic --noinput \
  && chown -R upnext:upnext /app/staticfiles
