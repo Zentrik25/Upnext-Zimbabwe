@@ -142,6 +142,8 @@ jobs:
             echo "POSTGRES_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
             echo "DJANGO_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
           } > .env
+          # Throwaway password for the fictional demo staff accounts, used by the CMS browser journey.
+          echo "UPNEXT_DEMO_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(18))')" >> "$GITHUB_ENV"
       - name: Build and start the stack (waits for health checks)
         working-directory: infrastructure/compose
         env:
@@ -149,7 +151,7 @@ jobs:
         run: docker compose -f compose.yaml -f compose.prod-like.yaml up -d --build --wait --wait-timeout 300
       - name: Load the fictional demonstration listings (every category, plus non-public items)
         working-directory: infrastructure/compose
-        run: docker compose -f compose.yaml -f compose.prod-like.yaml exec -T api python manage.py seed_demo --force > /dev/null
+        run: docker compose -f compose.yaml -f compose.prod-like.yaml exec -T -e UPNEXT_DEMO_PASSWORD api python manage.py seed_demo --force > /dev/null
       - run: npm ci --ignore-scripts
         working-directory: apps/web
       - run: npx playwright install --with-deps chromium
@@ -161,6 +163,13 @@ jobs:
           E2E_STRICT_CONSOLE: "1"
           E2E_DEMO_DATA: "1"
         run: npm run test:e2e
+      - name: Editorial CMS browser journey (runs last, because it publishes and withdraws listings)
+        working-directory: apps/web
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          E2E_CMS: "1"
+          E2E_DEMO_PASSWORD: ${{ env.UPNEXT_DEMO_PASSWORD }}
+        run: npx playwright test tests/e2e/cms-journey.spec.ts
       - name: Compose logs on failure
         if: failure()
         working-directory: infrastructure/compose
