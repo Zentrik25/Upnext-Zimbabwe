@@ -67,7 +67,7 @@ export default async function HomePage() {
                   <li key={category.code}>
                     <Link
                       href={`/opportunities?category=${category.code}`}
-                      className="inline-block border border-border-strong px-3 py-[7px] text-ctl text-secondary-text"
+                      className="inline-block rounded-control border border-border-strong px-3 py-[7px] text-ctl text-secondary-text"
                     >
                       {category.name}
                     </Link>

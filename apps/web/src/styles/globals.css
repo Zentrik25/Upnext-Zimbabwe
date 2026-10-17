@@ -20,6 +20,13 @@
     border-radius: 0;
     box-shadow: none;
   }
+  /* The one approved exception (D-29): form controls and buttons share a 4px radius. */
+  button,
+  input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="file"]),
+  select,
+  textarea {
+    border-radius: var(--radius-control);
+  }
   h1,
   h2,
   h3,
@@ -28,7 +35,8 @@
   }
   button,
   input,
-  select {
+  select,
+  textarea {
     font: inherit;
   }
   button {

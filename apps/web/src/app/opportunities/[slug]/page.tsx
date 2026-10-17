@@ -295,7 +295,7 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
             href={application.url}
             rel="noopener noreferrer nofollow ugc"
             target="_blank"
-            className="mt-3 inline-flex min-h-control items-center justify-center border border-accent bg-accent px-3 py-[7px] text-ctl font-medium text-white hover:bg-accent-hover"
+            className="mt-3 inline-flex rounded-control min-h-control items-center justify-center border border-accent bg-accent px-3 py-[7px] text-ctl font-medium text-white hover:bg-accent-hover"
           >
             Go to {domainOf(application.url)} (new tab)
           </a>

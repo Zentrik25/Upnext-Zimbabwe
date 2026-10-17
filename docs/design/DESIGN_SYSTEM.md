@@ -2,7 +2,7 @@
 **Binding reference:** `reference/approved-flat.html` (D-08). **Tokens:** `DESIGN_TOKENS.md` (exact values measured from the reference; none invented).
 
 ## Non-negotiable
-- Flat visual language: square corners (`border-radius: 0`), no shadows, gradients, glassmorphism or glow.
+- Flat visual language: square corners (`border-radius: 0`) except buttons, inputs, selects and textareas, which are 4px (D-29, `--radius-control`); no shadows, gradients, glassmorphism or glow.
 - Thin 1px dividers and borders; Arial; restrained palette; blue accent `#174c83`.
 - Compact controls as measured (33px standard button, 36px fields, 39px search), preserving the reference's spacing and sizing. Targets under 24px conform only through the WCAG 2.5.8 spacing exemption: keep at least the reference spacing.
 - No decorative hero clutter, oversized buttons or generic marketing blocks.

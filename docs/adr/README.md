@@ -24,6 +24,7 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0017](ADR-0017-phase-1-foundation-choices.md) | Phase 1 foundation choices and verified pins | D-25, D-26 |
 | [0018](ADR-0018-phase-2-catalog-and-editorial-cms.md) | Phase 2 catalog and editorial CMS approach | D-12, D-18, D-22, D-23; P2-01…P2-10 |
 | [0019](ADR-0019-phase-3-accounts-saved-and-staff-security.md) | Phase 3 accounts, saved opportunities and staff security approach | D-11, D-27; P3-01…P3-08 |
+| [0020](ADR-0020-phase-4-launch-readiness.md) | Phase 4 launch readiness: SEO, deletion lifecycle, e-mail provider architecture, safeguards | D-28; P4-01…P4-11 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

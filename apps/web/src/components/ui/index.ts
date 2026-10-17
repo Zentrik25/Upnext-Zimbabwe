@@ -10,9 +10,11 @@ export {
   Checkbox,
   Field,
   Select,
+  Textarea,
   TextInput,
   type CheckboxProps,
   type SelectProps,
+  type TextareaProps,
   type TextInputProps,
 } from "./field";
 export { EmptyState } from "./empty-state";

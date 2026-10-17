@@ -11,14 +11,14 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const base =
-  "inline-flex items-center justify-center border text-ctl font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex rounded-control items-center justify-center border text-ctl font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
 const variants: Record<ButtonVariant, string> = {
   primary: "border-accent bg-accent text-white hover:bg-accent-hover",
   secondary: "border-border-strong bg-surface text-secondary-text",
 };
 const sizes: Record<ButtonSize, string> = {
   standard: "min-h-control px-3 py-[7px]",
-  search: "min-h-search border-0 px-[15px] py-2 max-sm:min-h-field",
+  search: "min-h-search sm:rounded-l-none border-0 px-[15px] py-2 max-sm:min-h-field",
 };
 
 export function Button({

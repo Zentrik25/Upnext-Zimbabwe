@@ -162,6 +162,7 @@ jobs:
           BASE_URL: http://127.0.0.1:8080
           E2E_STRICT_CONSOLE: "1"
           E2E_DEMO_DATA: "1"
+          E2E_DEMO_PASSWORD: ${{ env.UPNEXT_DEMO_PASSWORD }}
         run: npm run test:e2e
       - name: Seeker account journey (register, confirm by e-mail, sign in, save, reset)
         working-directory: apps/web

@@ -88,7 +88,7 @@ Every other value in this document is used exactly as measured. The theme must e
 | 3-column layout | 190px · fluid · 215px, gap 22px |
 | ≤990px | 175px · fluid; aside moves under feed |
 | ≤650px | single column, gap 15px; filters become 2-column grid, gap 8px |
-| radius | **0** everywhere (`!important` in reference) |
+| radius | **0** everywhere in the reference (`!important`); **4px on buttons, inputs, selects and textareas** by owner decision D-29 (`--radius-control`); everything else stays 0 |
 | shadow / gradient / filter | none |
 | button (standard) | padding 7px 12px, min-height 33px, 1px border |
 | search controls | min-height 39px, padding 8px 11px (36px button ≤650px) |

@@ -45,8 +45,15 @@ async function json<T>(path: string, params?: URLSearchParams, revalidate?: numb
 }
 
 export function getSitemapEntries() {
-  // Large and slow-changing: crawlers may ask often, so the web tier keeps it for ten minutes.
-  return json<{ data: { slug: string; updated_at: string }[] }>("sitemap", undefined, 600);
+  // Large and slow-changing: crawlers may ask often, so the web tier keeps it for a few minutes (0 turns the cache
+  // off, as in the test stacks). A withdrawn listing can therefore stay in the file for that long; its page already
+  // says it is withdrawn and is not indexed.
+  const seconds = Number(process.env.UPNEXT_SITEMAP_CACHE_SECONDS ?? 300);
+  return json<{ data: { slug: string; updated_at: string }[] }>(
+    "sitemap",
+    undefined,
+    seconds > 0 ? seconds : undefined,
+  );
 }
 
 export function listOpportunities(params: URLSearchParams) {

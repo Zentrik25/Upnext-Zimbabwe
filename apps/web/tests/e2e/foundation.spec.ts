@@ -158,15 +158,18 @@ test.describe("flat design (gate 9: VIS-04, A11Y-08)", () => {
       await page.goto(path);
       const offenders = await page.evaluate(() => {
         const bad: string[] = [];
+        const controlSel =
+          "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
+          const allowed = el.matches(controlSel) ? ["0px", "4px"] : ["0px"]; // D-29
           const radii = [
             cs.borderTopLeftRadius,
             cs.borderTopRightRadius,
             cs.borderBottomLeftRadius,
             cs.borderBottomRightRadius,
           ];
-          if (radii.some((r) => r !== "0px")) bad.push(`radius ${el.tagName}.${el.className}`);
+          if (radii.some((r) => !allowed.includes(r))) bad.push(`radius ${el.tagName}.${el.className}`);
           if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}.${el.className}`);
           if (cs.backgroundImage !== "none") bad.push(`bg-image ${el.tagName}.${el.className}`);
           if (cs.textShadow !== "none") bad.push(`text-shadow ${el.tagName}.${el.className}`);
@@ -237,6 +240,7 @@ test.describe("reference parity of the primitives (1440px) — only DEV-01…DEV
       page.getByTestId("btn-secondary"),
       reference("header_and_chrome", "btnSecondary"),
       [...ALL, ...BORDER_COLORS],
+      { borderTopLeftRadius: "4px" }, // D-29
     );
     const primary = page.getByTestId("btn-primary");
     await expect(primary).toHaveCSS("background-color", refRgb("accent"));
@@ -261,6 +265,7 @@ test.describe("reference parity of the primitives (1440px) — only DEV-01…DEV
         [...ALL],
         {
           fontSize: "13px",
+          borderTopLeftRadius: "4px", // D-29
         },
       );
       // DEV-04: reference #d9e1eb → approved #7693b7 on all four sides.

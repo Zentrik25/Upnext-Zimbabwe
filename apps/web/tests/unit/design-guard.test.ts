@@ -14,7 +14,8 @@ const sources = files(src).filter((f) => /\.(tsx?|css)$/.test(f) && !f.endsWith(
 
 describe("flat design guard (VIS-04, D-08)", () => {
   const banned = [
-    /\brounded(?:-[\w[\]./]+)?\b/,
+    // D-29: only the control radius token and its square resets are allowed.
+    /\brounded(?!-(?:control|none|[rl]-none)(?![\w-]))(?:-[\w[\]./]+)?\b/,
     /\b(?:drop-)?shadow(?:-[\w[\]./]+)?\b/,
     /\bblur(?:-[\w[\]./]+)?\b/,
     /\bbackdrop-[\w-]+\b/,
@@ -34,7 +35,8 @@ describe("flat design guard (VIS-04, D-08)", () => {
   it("global CSS never sets a non-zero radius, a shadow or a gradient", () => {
     const css = readFileSync(join(src, "styles/globals.css"), "utf8");
     expect(css).not.toMatch(/gradient\(/);
-    for (const m of css.matchAll(/border-radius:\s*([^;]+);/g)) expect(m[1]?.trim()).toBe("0");
+    for (const m of css.matchAll(/border-radius:\s*([^;]+);/g))
+      expect(["0", "var(--radius-control)"]).toContain(m[1]?.trim());
     for (const m of css.matchAll(/box-shadow:\s*([^;]+);/g)) expect(m[1]?.trim()).toBe("none");
   });
 

@@ -1,8 +1,8 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "block w-full min-h-field border border-control-border bg-surface px-[11px] py-[9px] text-base text-ink";
+  "block w-full rounded-control min-h-field border border-control-border bg-surface px-[11px] py-[9px] text-base text-ink";
 
 type FieldProps = {
   /** Required: every control has a visible label (placeholders are never labels). */
@@ -61,6 +61,19 @@ export function Select({ invalid, className, children, ...props }: SelectProps) 
     >
       {children}
     </select>
+  );
+}
+
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; invalid?: boolean };
+
+export function Textarea({ invalid, className, ...props }: TextareaProps) {
+  return (
+    <textarea
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${props.id}-error` : undefined}
+      className={cn(control, className)}
+      {...props}
+    />
   );
 }
 

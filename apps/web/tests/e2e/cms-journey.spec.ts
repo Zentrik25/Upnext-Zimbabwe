@@ -223,6 +223,14 @@ test("5. an author cannot publish before approval; the approver publishes; it be
   state.slug = new URL(publicPage.url()).pathname.split("/").pop() ?? "";
   await expect(publicPage.getByRole("heading", { level: 1, name: TITLE })).toBeVisible();
   await shot(publicPage, "cms-20-public-page-after-publish");
+  // a published listing is indexable, carries a JobPosting and is in the sitemap
+  expect(await publicPage.locator('meta[name="robots"]').count()).toBe(0);
+  const posting = (await publicPage.locator('script[type="application/ld+json"]').allTextContents())
+    .map((t) => JSON.parse(t) as { "@type": string })
+    .find((b) => b["@type"] === "JobPosting");
+  expect(posting).toBeTruthy();
+  const sitemap = await publicPage.request.get("/sitemap.xml");
+  expect(await sitemap.text()).toContain(`/opportunities/${state.slug}`);
 });
 
 test("6. amend, re-approve and publish: the public sees the live revision until then", async ({
@@ -276,6 +284,15 @@ test("7. withdraw: gone from active lists, direct link shows a clear notice", as
   await visitor.goto(`/opportunities/${state.slug}`);
   await expect(visitor.getByText(/withdrawn/i).first()).toBeVisible();
   await shot(visitor, "cms-24-withdrawn-public-direct-link");
+  // withdrawn: readable by address, but not indexed, no JobPosting, and gone from the sitemap
+  expect(await visitor.locator('meta[name="robots"]').first().getAttribute("content")).toContain("noindex");
+  const types = (await visitor.locator('script[type="application/ld+json"]').allTextContents()).map(
+    (t) => (JSON.parse(t) as { "@type": string })["@type"],
+  );
+  expect(types).not.toContain("JobPosting");
+  expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(
+    `/opportunities/${state.slug}`,
+  );
 });
 
 test("8. administrators see the audit trail; mobile layout of the staff pages", async ({ browser }) => {

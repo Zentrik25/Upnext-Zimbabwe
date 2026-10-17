@@ -112,6 +112,7 @@ services:
       target: dev
     environment:
       API_INTERNAL_URL: http://api:8000
+      UPNEXT_SITEMAP_CACHE_SECONDS: "0" # tests read the sitemap right after publishing and withdrawing
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_DIST_DIR: .next-dev
       UPNEXT_REPO_ROOT: /repo # unit tests compare tokens with docs/design evidence

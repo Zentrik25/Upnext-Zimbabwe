@@ -24,19 +24,19 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-14 | Quality: responsive 320/390/768/1440, keyboard accessible, WCAG 2.2 AA (accessibility precedes fidelity, D-19), loading/empty/error states | PR-09; spec §32 | all public screens | — | A11Y-01…A11Y-09, E2E-10 | OQ-11 |
 | R-15 | Visual fidelity to the approved reference (tokens, square corners, no shadows/gradients) | D-08; D-19; ADR-0001; ADR-0012 | SC-01…SC-11, SC-14, SC-15 | — | VIS-01…VIS-05, A11Y-08 | OQ-24 |
 | R-16 | Immutable audit trail of security-relevant and editorial actions; append-only | spec §15, §33; PR-07 | SC-12, SC-13 | adminListAuditEvents, getHistory | AUD-01…AUD-04, WF-16 | OQ-09 |
-| R-17 | Security controls: CSRF, rate limits, headers/CSP, uniform auth responses, XSS/URL validation | SECURITY_ARCHITECTURE | all | getCsrfToken, register, login, requestPasswordReset | SEC-01…SEC-10 | OQ-16, OQ-17 |
-| R-18 | Reliable verification/reset email through the outbox (retry, dead-letter, idempotency) | D-11; ADR-0004 | SC-04, SC-06, SC-07 | register, resendVerification, requestPasswordReset, retryOutbox | MAIL-01…MAIL-07 | OQ-03, OQ-30 |
+| R-17 | Security controls: CSRF, rate limits, headers/CSP, uniform auth responses, XSS/URL validation | SECURITY_ARCHITECTURE | all | getCsrfToken, register, login, requestPasswordReset | SEC-01…SEC-12 | OQ-16, OQ-17 |
+| R-18 | Reliable verification/reset email through the outbox (retry, dead-letter, idempotency) | D-11; ADR-0004 | SC-04, SC-06, SC-07 | register, resendVerification, requestPasswordReset, retryOutbox | MAIL-01…MAIL-08 | OQ-03, OQ-30 |
 | R-19 | Hybrid data model integrity: relational constraints and versioned category JSONB validation | D-12; ADR-0005; VALIDATION_SPEC | SC-12 | createDraft, saveDraft, transitionOpportunity | VAL-01…VAL-08, DB-05 | OQ-06, OQ-21, OQ-22 |
 | R-20 | Administration: staff roles, account status, taxonomies, audit visibility, outbox retry | spec §17 admin nav; D-09 | SC-13 | adminListUsers, grantRole, revokeRole, changeUserStatus, adminListAuditEvents, retryOutbox | ADM-01…ADM-05 | OQ-13, OQ-16 |
 | R-21 | Deadline and expiry: derived deadline state always correct at read time; unknown deadlines never auto-expire; timezone retained | PR-02/08; QUALITY-GATES | SC-02, SC-03, SC-10 | listOpportunities, getOpportunity, listSaved | UT-07, UT-08, IT-01, JOB-01 | OQ-14, OQ-20, OQ-22 |
 | R-22 | Application handoff wording is accurate; UPNEXT never claims an application was submitted | spec §14; PRODUCT | SC-03 | getOpportunity | E2E-02, VIS-02, UT-09 | OQ-05 |
-| R-23 | Privacy: data minimisation, notice, retention, deletion, no PII in logs | spec §25; SECURITY | SC-11, SC-14 | requestAccountDeletion, getProfile | PRIV-01…PRIV-05 | OQ-09 |
+| R-23 | Privacy: data minimisation, notice, retention, deletion, no PII in logs | spec §25; SECURITY | SC-11, SC-14 | requestAccountDeletion, getProfile | PRIV-01…PRIV-06 | OQ-09 |
 | R-24 | Observability and health: structured logs, request ids, health/readiness, job heartbeat, alerts | spec §33; QUALITY-GATES | — | healthLive, healthReady, getApiRoot | OPS-01…OPS-04 | OQ-26 |
 | R-25 | Backups and tested restoration; migration rehearsal; rollback plan | spec §34; QUALITY-GATES | — | — | OPS-05…OPS-07 | OQ-27 |
 | R-26 | Performance targets (LCP, INP, CLS, API latency) measured on realistic data | spec §31; QUALITY-GATES | SC-01…SC-03 | listOpportunities, getOpportunity | PERF-01…PERF-03 | OQ-11 |
 | R-27 | Isolation from The Granite Post (no shared secrets, DB, networks; no changes without approval) | D-06; CLAUDE.md | — | — | OPS-08, OPS-09 (Phase 7 checklist) | OQ-10 |
 | R-28 | Unpublished content (draft, in review, approved, rejected, takedown) is never public or indexed; 404 not 403 | ACCEPTANCE; spec §6 | SC-03 | getOpportunity | API-09, SEC-04, E2E-03 | OQ-20 |
-| R-29 | Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex | IA; spec §6 | SC-01…SC-03, SC-12, SC-13 | getOpportunity | SEO-01…SEO-04 | OQ-01, OQ-20 |
+| R-29 | Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex | IA; spec §6 | SC-01…SC-03, SC-12, SC-13, SC-14 | getOpportunity, getSitemapEntries | SEO-01…SEO-05 | OQ-01, OQ-20 |
 | R-30 | Deferred scope is not exposed: eligibility decisions, public organisation pages, advanced related items, uploads, alerts, employer self-service, payments | D-15; ADR-0008; PRD exclusions | SC-01…SC-03 | — | SCOPE-01, SCOPE-02 | OQ-24 |
 | R-31 | Runtime versions are researched, pinned, patched and monitored for end of life | D-20; ADR-0013; VERSION_RECOMMENDATION | — | — | OPS-10…OPS-13 | OQ-28 |
 | R-32 | Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category | D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES | SC-12 | createDraft, saveDraft | CAT-01…CAT-08 | OQ-06, OQ-21, OQ-22, OQ-29 |
@@ -69,6 +69,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getApiRoot` | GET `/` | health | R-24 |
 | `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26 |
 | `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29 |
+| `getSitemapEntries` | GET `/sitemap` | public | R-29 |
 | `listCategories` | GET `/categories` | public | R-01 |
 | `listLocations` | GET `/locations` | public | R-01 |
 | `listSectors` | GET `/sectors` | public | R-01 |
@@ -217,6 +218,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEC-09 | Logs contain no passwords/tokens/emails (scrub test) |
 | SEC-10 | Mass-assignment: status/roles/email_verified_at not writable via public APIs |
 | SEC-11 | Staff site sends a Content-Security-Policy (scripts from this origin only), noindex, and no-store |
+| SEC-12 | Production start-up refuses unsafe configuration (staff two-step off, demo tools, short HSTS, wildcard hosts, non-https origins, shared token key, development e-mail backends) |
 | AUD-01 | Audit table rejects UPDATE/DELETE for the app role |
 | AUD-02 | Every catalogued action produces an audit row |
 | AUD-03 | Audit survives user deletion (pseudonymised actor_ref) |
@@ -228,6 +230,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | MAIL-05 | Idempotency key prevents duplicate enqueue |
 | MAIL-06 | Fake/console sender contract test; provider adapter contract test (after OQ-03) |
 | MAIL-07 | Heartbeat and dead-letter alerting |
+| MAIL-08 | Suppression list: a permanently refused recipient is not retried and the list holds no addresses |
 | ADM-01 | User list never exposes hashes/tokens |
 | ADM-02 | Role grant/revoke endpoints and audit |
 | ADM-03 | Status change effects and audit |
@@ -238,6 +241,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | PRIV-03 | No PII beyond policy in API responses |
 | PRIV-04 | Privacy notice and terms pages exist and are linked (content OQ-09) |
 | PRIV-05 | Retention jobs purge expired tokens/sessions/outbox payloads |
+| PRIV-06 | Deletion is cancellable during the cooling-off period, idempotent, refused for staff accounts until offboarded, and leaves no personal data in account, outbox, session or audit rows |
 | OPS-01 | Health live/ready behave; ready fails on DB outage; no config leakage |
 | OPS-02 | Structured logs include request id |
 | OPS-03 | Job runs recorded and monitored |
@@ -259,6 +263,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-02 | Sitemap lists only public listings |
 | SEO-03 | noindex on staff, account, auth pages |
 | SEO-04 | robots.txt; expired/withdrawn policy once OQ-20 decided |
+| SEO-05 | JobPosting states only facts the listing states; JSON-LD output cannot break out of its element |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -291,7 +296,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | VIS-01 | Home vs reference at 1440/768/390/320 |
 | VIS-02 | Listing row/detail vs reference tokens |
 | VIS-03 | Badges/states derived from tokens reviewed and approved |
-| VIS-04 | Computed-style check: radius 0, no shadows/gradients anywhere |
+| VIS-04 | Computed-style check: radius 0 (4px only on buttons, inputs, selects, textareas, D-29), no shadows/gradients anywhere |
 | VIS-05 | Visual-regression baseline is the reference; the allow-list contains only the documented accessibility deviations |
 
 ## 5. Rules for maintaining this file
@@ -302,7 +307,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 4. Whether a test exists and has been executed is recorded in §6; full results (commands and outputs) are recorded in phase reports and are never invented.
 5. This file is generated: edit `tools/traceability/generate.py` and run `python tools/traceability/generate.py`.
 
-## 6. Implementation status (Phases 1 to 3)
+## 6. Implementation status (Phases 1 to 4)
 
 Only the tests listed here exist. Everything else in §4 is still planned. "executed" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md`); it is not a CI claim.
 
@@ -334,7 +339,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | A11Y-07 | `apps/web/tests/unit/tokens.test.ts::non-text pairs meet 3:1` | executed |
 | A11Y-08 | `apps/web/tests/e2e/foundation.spec.ts (reference parity of the primitives)` | executed |
 | VIS-02 | `apps/web/tests/e2e/foundation.spec.ts (reference parity: listing row, tags, tabs)` | executed (computed-style parity, not pixel diff) |
-| VIS-04 | `apps/web/tests/e2e/foundation.spec.ts (nothing rounded/shadowed/gradient); apps/web/tests/unit/design-guard.test.ts` | executed |
+| VIS-04 | `apps/web/tests/e2e/foundation.spec.ts (nothing rounded/shadowed/gradient); apps/web/tests/e2e/controls.spec.ts (4px controls at 320/390/768/1440); apps/web/tests/unit/design-guard.test.ts` | executed |
 | VIS-05 | `apps/web/tests/unit/tokens.test.ts::the only production deviations are DEV-01…DEV-04` | executed |
 | E2E-10 | `apps/web/tests/e2e/foundation.spec.ts; apps/web/tests/e2e/opportunities.spec.ts (no horizontal scroll)` | executed (foundation and catalogue pages) |
 | CAT-01 | `tools/check_docs.py (category schemas are valid JSON Schema 2020-12)` | executed |
@@ -431,3 +436,23 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | E2E-05 | `apps/web/tests/e2e/accounts-journey.spec.ts::account settings: name, password, sessions, deletion request` | executed (the request is recorded; execution of deletion is not built) |
 | E2E-08 | `apps/web/tests/e2e/accounts-journey.spec.ts::a signed-in person can save and unsave...` | executed in one browser session; retrieval from a second session is covered at API level only |
 | A11Y-01 | `apps/web/tests/e2e/accounts-journey.spec.ts (axe on register, sign-in, reset, saved, account)` | executed (account pages) |
+| SEO-01 | `apps/web/tests/e2e/seo.spec.ts (canonical, JobPosting, breadcrumb, home site data); apps/web/tests/unit/seo.test.tsx` | executed (Google's rich-result validator was not run: no external access) |
+| SEO-02 | `apps/web/tests/e2e/seo.spec.ts::sitemap.xml lists the static pages and exactly the open public listings; apps/api/tests/test_sitemap.py; apps/web/tests/e2e/cms-journey.spec.ts (published listing appears, withdrawn one leaves)` | executed |
+| SEO-03 | `apps/web/tests/e2e/seo.spec.ts (robots.txt, noindex on filtered lists, account and one-time-link pages, draft legal pages)` | executed |
+| SEO-04 | `apps/web/tests/e2e/cms-journey.spec.ts (withdrawn listing: readable, noindex, no structured data, not in the sitemap); apps/web/tests/e2e/seo.spec.ts` | executed against the provisional defaults P4-02 and P4-03 (OQ-20 still open) |
+| SEO-05 | `apps/web/tests/unit/seo.test.tsx` | executed |
+| PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
+| PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |
+| PRIV-05 | `apps/api/tests/test_deletion.py (retention tests)` | executed against the provisional windows P4-06 |
+| PRIV-06 | `apps/api/tests/test_deletion.py` | executed |
+| SEC-12 | `apps/api/tests/test_platform.py (production settings refusals, 24 cases)` | executed |
+| MAIL-07 | `apps/api/tests/test_email_provider.py::test_outbox_status_counts_and_alerts; apps/api/notifications/management/commands/run_worker.py (warning log)` | executed for the commands; no alert is delivered to anyone (Phase 6) |
+| MAIL-08 | `apps/api/tests/test_email_provider.py (suppression tests)` | executed |
+| MAIL-06 | `apps/api/tests/test_email_provider.py (SMTP adapter against a local stub; registry)` | executed against a stub only; no provider adapter exists (OQ-03) |
+| A11Y-01 | `apps/web/tests/e2e/a11y.spec.ts (axe on every public and account page at 320, 390, 768 and 1440)` | executed |
+| A11Y-02 | `apps/web/tests/e2e/a11y.spec.ts (keyboard: skip link, focus indicators, search, form submission)` | executed for the flows listed; a full keyboard-only walk of every flow was not done |
+| A11Y-03 | `apps/web/tests/e2e/a11y.spec.ts::the skip link is first and every tab stop shows a focus indicator` | executed |
+| A11Y-04 | `apps/web/tests/e2e/a11y.spec.ts (structure, labels, error association, autocomplete); no screen reader was used` | partly executed |
+| A11Y-05 | `apps/web/tests/e2e/a11y.spec.ts (no horizontal scroll at four widths; 400% reflow)` | executed |
+| PERF-01 | `tools/perf/synthetic_load.sql and tools/perf/measure.py (24,012 listings, 72,000 saved rows); results in docs/phase4/acceptance/perf-before.txt and perf-after.txt` | executed on a scratch database in the development container (not representative hardware) |
+| E2E-10 | `apps/web/tests/e2e/a11y.spec.ts (all public and account pages at four widths)` | executed |

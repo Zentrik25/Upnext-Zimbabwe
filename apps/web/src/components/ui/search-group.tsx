@@ -15,7 +15,7 @@ export function SearchGroup({
     <form
       role="search"
       className={cn(
-        "flex max-w-[790px] border border-control-border max-sm:flex-wrap max-sm:gap-[7px] max-sm:border-0",
+        "flex max-w-[790px] sm:rounded-control border border-control-border max-sm:flex-wrap max-sm:gap-[7px] max-sm:border-0",
         className,
       )}
       {...props}
@@ -32,7 +32,9 @@ SearchGroup.Input = function SearchInput({
   className,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { id: string }) {
-  return <input className={cn(part, "min-w-0 flex-1 max-sm:basis-full", className)} {...props} />;
+  return (
+    <input className={cn(part, "min-w-0 flex-1 sm:rounded-r-none max-sm:basis-full", className)} {...props} />
+  );
 };
 
 SearchGroup.Select = function SearchSelect({
@@ -41,7 +43,7 @@ SearchGroup.Select = function SearchSelect({
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { id: string }) {
   return (
-    <select className={cn(part, "w-[155px] max-sm:flex-1", className)} {...props}>
+    <select className={cn(part, "w-[155px] sm:rounded-none max-sm:flex-1", className)} {...props}>
       {children}
     </select>
   );

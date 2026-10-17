@@ -38,6 +38,8 @@ for (const [k, v] of Object.entries(tokens.fontSizes)) lines.push(`  --text-${k}
 for (const [k, v] of Object.entries(tokens.fontWeights)) lines.push(`  --font-weight-${k}: ${v};`);
 for (const [k, v] of Object.entries(tokens.tracking)) lines.push(`  --tracking-${k}: ${v};`);
 for (const [k, v] of Object.entries(tokens.leading)) lines.push(`  --leading-${k}: ${v};`);
+for (const [k, v] of Object.entries(tokens.radii))
+  if (!k.startsWith("$")) lines.push(`  --radius-${k}: ${v};`);
 for (const [k, v] of Object.entries(tokens.containers)) lines.push(`  --container-${k}: ${v};`);
 for (const [k, v] of Object.entries(tokens.heights)) lines.push(`  --spacing-${k}: ${v};`);
 for (const [k, v] of Object.entries(tokens.breakpoints))

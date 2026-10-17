@@ -201,15 +201,18 @@ test.describe("accessibility and design of the catalogue pages", () => {
       await page.goto(path);
       const offenders = await page.evaluate(() => {
         const bad: string[] = [];
+        const controlSel =
+          "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
+          const allowed = el.matches(controlSel) ? ["0px", "4px"] : ["0px"]; // D-29
           if (
             [
               cs.borderTopLeftRadius,
               cs.borderTopRightRadius,
               cs.borderBottomLeftRadius,
               cs.borderBottomRightRadius,
-            ].some((r) => r !== "0px")
+            ].some((r) => !allowed.includes(r))
           )
             bad.push(`radius ${el.tagName}`);
           if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}`);
