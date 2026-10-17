@@ -22,6 +22,7 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0015](ADR-0015-author-may-publish-after-exact-revision-approval.md) | An author may publish their own listing only after another person approves the exact revision | D-22 |
 | [0016](ADR-0016-no-publisher-role-initially.md) | No Publisher role in the initial implementation | D-23 |
 | [0017](ADR-0017-phase-1-foundation-choices.md) | Phase 1 foundation choices and verified pins | D-25, D-26 |
+| [0018](ADR-0018-phase-2-catalog-and-editorial-cms.md) | Phase 2 catalog and editorial CMS approach | D-12, D-18, D-22, D-23; P2-01…P2-10 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

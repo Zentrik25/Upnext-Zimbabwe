@@ -1,5 +1,5 @@
 # Decision register — SOURCE OF TRUTH
-Authoritative per D-16. Status of every other document is DRAFT until the owner approves it. Proposals are not approvals; unresolved items stay **OPEN** and are never defaulted. Last updated 2026-10-17 (Phase 0 approved as baseline; Phase 1 implemented, awaiting review).
+Authoritative per D-16. Status of every other document is DRAFT until the owner approves it. Proposals are not approvals; unresolved items stay **OPEN** and are never defaulted. Last updated 2026-10-17 (Phase 2 provisional defaults added; Phase 0 approved as baseline; Phase 1 implemented, awaiting review).
 
 ## CONFIRMED
 | ID | Decision | Date |
@@ -30,6 +30,22 @@ Authoritative per D-16. Status of every other document is DRAFT until the owner 
 | D-24 | **Accessibility corrections approved:** DEV-04 (`#7693b7` borders for inputs, selects and the search group) and the minimum text-colour corrections DEV-01…DEV-03. Flat design, Arial, blue accent, compact layout and square corners are preserved. The save-heart glyph stays classified as a conforming graphical object (DEV-05 not applied). (ADR-0012) | 2026-10-17 |
 | D-25 | **Runtime versions (resolves the choice in OQ-28):** Node.js **24 LTS** is selected (not 26). The other recommended versions are provisionally accepted; before dependencies are locked the pins are verified for availability, compatibility, advisories and runtime behaviour, and any unavailable or incompatible pin is reported with evidence and replaced by a compatible maintained version without changing major architectural decisions. Verification record: `docs/engineering/PHASE1_VERSION_VERIFICATION.md`. (ADR-0013) | 2026-10-17 |
 | D-26 | **Phase 0 package approved as the development baseline; Phase 1 authorised** (application foundation only — not the opportunity CMS, matching, employer portal, payments or notifications; no deployment; no change to The Granite Post or the existing Traefik/Nginx). Quality gates and delivery rules are in `docs/phase1/PHASE1_SCOPE_AND_GATES.md`. Unresolved Phase 2+ decisions are not Phase 1 blockers unless they materially affect the foundation. (ADR-0017) | 2026-10-17 |
+
+## PROVISIONAL — Phase 2 implementation defaults (NOT owner decisions)
+Phase 2 (Opportunity Catalog and Editorial CMS) was authorised on 2026-10-17 without answers to every open question. To build without inventing facts, the implementation uses the defaults below. They are **engineering defaults, easy to change, and remain OPEN** until the owner decides; each is isolated in one place (named in the last column) so reversing it does not need a migration unless stated. Rationale: ADR-0018.
+
+| ID | Open question | Default used in Phase 2 | Where |
+|---|---|---|---|
+| P2-01 | OQ-20 visibility of expired/withdrawn/archived | Lists show `published` only (`include_expired=true` adds `expired`); detail pages of `published`, `expired` and `withdrawn` listings stay readable and show their status; `archived` is never public (404) | `opportunities/public.py` |
+| P2-02 | OQ-21 taxonomy contents | Locations: Zimbabwe, its 10 provinces, 8 principal cities/towns, and `remote`; sectors and skills: small starter sets. All editable by Administrators | `catalog/management/commands/seed_taxonomies.py` |
+| P2-03 | OQ-22 currencies and date-only deadlines | Allowed currencies USD and ZWG; a date-only deadline is the end of that calendar day in the stated time zone, evaluated as a UTC instant | `catalog/validators.py` |
+| P2-04 | OQ-29 source/URL rules | A source needs a URL or a citation; every URL is `https` only (VALIDATION_SPEC §4.1); no server-side fetching | `catalog/validators.py` |
+| P2-05 | OQ-14 scheduled publishing | Not implemented (T08 absent); publication is an explicit action | workflow service |
+| P2-06 | OQ-16 staff interface | Django Admin only, role-scoped; no editorial or administration API is exposed; MFA and network restriction are deferred | `opportunities/admin.py` |
+| P2-07 | OQ-06 category field lists | The six draft v1 JSON Schemas are loaded unchanged as version 1 and are marked "pending owner approval"; a change after approval requires a new version | `catalog/schemas/` |
+| P2-08 | OQ-07 verification policy | `source_checked` needs method `source_page_review` or `document_review`, `issuer_verified` needs `issuer_contact` or `document_review`, each with outcome `confirmed`; a verifier is never the author; verification does not carry over to amendments | `opportunities/workflow.py` |
+| P2-09 | OQ-08 duplicate rules | Hard duplicate = same normalised primary source URL, or same application URL and organisation, on a non-archived listing: blocks submit unless acknowledged with a reason. Soft duplicate = same organisation and similar title: warning only | `opportunities/duplicates.py` |
+| P2-10 | Markdown renderer ("library chosen at Phase 2") | An in-house, escape-first renderer for the approved subset (no HTML pass-through), so no new dependency; the sanitiser corpus is in the tests | `catalog/markdown.py` |
 
 ## RESOLVED (formerly open)
 | ID | Question | Resolution |
