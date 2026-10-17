@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import views
+from api import public_views, views
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -12,6 +12,16 @@ urlpatterns = [
     path("auth/login", views.LoginView.as_view(), name="auth-login"),
     path("auth/logout", views.LogoutView.as_view(), name="auth-logout"),
     path("me", views.MeView.as_view(), name="me"),
+    path("opportunities", public_views.OpportunityListView.as_view(), name="opportunity-list"),
+    re_path(
+        r"^opportunities/(?P<slug>[^/]{1,200})$",
+        public_views.OpportunityDetailView.as_view(),
+        name="opportunity-detail",
+    ),
+    path("categories", public_views.CategoryListView.as_view(), name="category-list"),
+    path("locations", public_views.LocationListView.as_view(), name="location-list"),
+    path("sectors", public_views.SectorListView.as_view(), name="sector-list"),
+    path("skills", public_views.SkillSearchView.as_view(), name="skill-search"),
 ]
 if getattr(settings, "EXPOSE_OPENAPI_SCHEMA", False):
     urlpatterns.append(path("schema", SpectacularAPIView.as_view(), name="schema"))

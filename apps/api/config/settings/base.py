@@ -164,6 +164,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [],
     "DEFAULT_THROTTLE_RATES": {
         "login_ip": get_str("UPNEXT_THROTTLE_LOGIN_IP", "20/15m"),  # PROPOSED, OQ-17
+        "public_read": get_str("UPNEXT_THROTTLE_PUBLIC_READ", "240/1m"),  # PROPOSED
     },
     "URL_FORMAT_OVERRIDE": None,
 }
@@ -181,6 +182,10 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SORT_OPERATIONS": False,
     "OAS_VERSION": "3.1.0",
+    "ENUM_NAME_OVERRIDES": {
+        "AccountStatusEnum": "accounts.models.AccountStatus",
+        "PublicListingStatusEnum": ["published", "expired", "withdrawn"],
+    },
 }
 
 # --- Logging --------------------------------------------------------------------

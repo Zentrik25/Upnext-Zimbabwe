@@ -22,10 +22,8 @@ def hash_key(value: str) -> str:
     return hmac.new(pepper, value.strip().lower().encode(), hashlib.sha256).hexdigest()[:32]
 
 
-class LoginIpThrottle(SimpleRateThrottle):
-    """Per-IP limit on login attempts. Rate syntax: `<count>/<n><s|m|h|d>`, e.g. `20/15m`."""
-
-    scope = "login_ip"
+class IpRateThrottle(SimpleRateThrottle):
+    """Per-IP limit. Rate syntax: `<count>/<n><s|m|h|d>`, e.g. `20/15m`."""
 
     def parse_rate(self, rate: str | None) -> tuple[int | None, int | None]:
         if rate is None:
@@ -37,6 +35,16 @@ class LoginIpThrottle(SimpleRateThrottle):
 
     def get_cache_key(self, request: Request, view: Any) -> str:
         return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+class LoginIpThrottle(IpRateThrottle):
+    scope = "login_ip"
+
+
+class PublicReadThrottle(IpRateThrottle):
+    """Anonymous read endpoints (SECURITY_ARCHITECTURE §8, PROPOSED values)."""
+
+    scope = "public_read"
 
 
 class EmailFailureLimiter:

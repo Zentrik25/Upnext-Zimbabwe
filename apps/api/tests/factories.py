@@ -105,3 +105,16 @@ def published(
 
 def today() -> date:
     return timezone.now().date()
+
+
+def varied(world: World, example: str, tag: str, **extra: Any) -> dict[str, Any]:
+    """Overrides that make a copy of an example distinct (no hard-duplicate match) with a new title."""
+    _, content = world.content(example)
+    overrides: dict[str, Any] = {"title": f"{content['title']} {tag}"}
+    overrides["sources"] = [
+        {**s, "url": f"{s['url'].rstrip('/')}/{tag}" if s.get("url") else None} for s in content["sources"]
+    ]
+    if content.get("application_url"):
+        overrides["application_url"] = f"{content['application_url'].rstrip('/')}/{tag}"
+    overrides.update(extra)
+    return overrides
