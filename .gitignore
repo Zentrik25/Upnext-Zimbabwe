@@ -20,6 +20,7 @@ apps/api/staticfiles/
 # Node / Next.js
 node_modules/
 .next/
+.next-dev/
 out/
 coverage/
 test-results/

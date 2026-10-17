@@ -1,0 +1,124 @@
+# Local development stack: PostgreSQL 18.6 + Django API + Next.js + dev proxy.
+# Separate Compose project name and network from anything else on the machine (Granite Post isolation).
+# Usage: see docs/engineering/LOCAL_DEVELOPMENT.md
+name: upnext-dev
+
+x-hardening: &hardening
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  db:
+    <<: *hardening
+    image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in infrastructure/compose/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in infrastructure/compose/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infrastructure/compose/.env}
+    volumes:
+      # PostgreSQL 18 images keep the cluster in a versioned subdirectory of /var/lib/postgresql.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    mem_limit: 1g
+    cpus: 1.0
+
+  api:
+    <<: *hardening
+    build:
+      context: ../../apps/api
+      target: dev
+      secrets: [ca_bundle]
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY in infrastructure/compose/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_HOST: db
+      UPNEXT_RUN_MIGRATIONS: "1" # development convenience; production runs migrations as a release step
+      UPNEXT_REPO_ROOT: /repo
+      COVERAGE_FILE: /tmp/.coverage
+    user: "${UPNEXT_UID:-10001}:${UPNEXT_GID:-10001}"
+    volumes:
+      - ../../apps/api:/app
+      - ../..:/repo:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2).status == 200 else 1)"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+      start_period: 15s
+    cap_drop: [ALL]
+    mem_limit: 512m
+    cpus: 1.0
+
+  web:
+    <<: *hardening
+    build:
+      context: ../../apps/web
+      target: dev
+      secrets: [ca_bundle]
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_DIST_DIR: .next-dev
+    # Build cache on a tmpfs owned by the run uid: no host-file ownership problems, nothing persisted.
+    tmpfs:
+      - /tmp
+      - /app/.next-dev:uid=${UPNEXT_UID:-1000},gid=${UPNEXT_GID:-1000},mode=0755
+    # Next.js dev rewrites tsconfig.json/next-env.d.ts in the bind-mounted source, so run as your own uid.
+    user: "${UPNEXT_UID:-1000}:${UPNEXT_GID:-1000}"
+    volumes:
+      - ../../apps/web:/app
+      - web_node_modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/design-system').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 40
+      start_period: 20s
+    cap_drop: [ALL]
+    mem_limit: 1g
+    cpus: 1.5
+
+  proxy:
+    <<: *hardening
+    image: nginx:1.31.2-alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa
+    ports:
+      - "127.0.0.1:${UPNEXT_HTTP_PORT:-8080}:80" # loopback only; nothing else is published
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID, NET_BIND_SERVICE]
+    mem_limit: 128m
+    cpus: 0.5
+
+volumes:
+  pgdata:
+  web_node_modules:
+
+secrets:
+  # Optional PEM bundle for networks that intercept TLS (build-time only). Unset = empty file = ignored.
+  ca_bundle:
+    file: ${UPNEXT_CA_BUNDLE:-/dev/null}

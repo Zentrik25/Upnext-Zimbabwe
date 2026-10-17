@@ -1,0 +1,26 @@
+# Production-mode override: builds the `prod` image targets (gunicorn + collectstatic, Next.js standalone)
+# and runs Django with config.settings.prod. For local verification of the production images only —
+# it is NOT a deployment configuration and never touches shared infrastructure.
+#   docker compose -f compose.yaml -f compose.prod-like.yaml up --build
+services:
+  api:
+    build:
+      target: prod
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      UPNEXT_SECURE_COOKIES: "true" # production refuses to start without it; Chromium accepts Secure cookies on localhost
+      UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
+      UPNEXT_RUN_MIGRATIONS: "1"
+    volumes: !override []
+    user: "10001:10001"
+  web:
+    build:
+      target: prod
+    environment: !override
+      API_INTERNAL_URL: http://api:8000
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes: !override []
+    tmpfs: !override []
+    user: "1000:1000"

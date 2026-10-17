@@ -177,6 +177,7 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
     "SORT_OPERATIONS": False,
+    "OAS_VERSION": "3.1.0",
 }
 
 # --- Logging --------------------------------------------------------------------
