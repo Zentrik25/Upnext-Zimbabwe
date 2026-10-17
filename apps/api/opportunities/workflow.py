@@ -602,8 +602,9 @@ def refresh_search_vectors_for_organisation(organisation: Any) -> int:
 
 def effective_level(version: OpportunityVersion) -> tuple[str, datetime | None]:
     """Highest confirmed, non-superseded verification level of a revision (D-14); publication adds none."""
-    records = list(VerificationRecord.objects.filter(version=version, outcome=VerificationOutcome.CONFIRMED))
-    superseded = {r.supersedes_id for r in records if r.supersedes_id}
+    every = list(VerificationRecord.objects.filter(version=version))
+    superseded = {r.supersedes_id for r in every if r.supersedes_id}
+    records = [r for r in every if r.outcome == VerificationOutcome.CONFIRMED]
     best, checked_at = VerificationLevel.NOT_VERIFIED, None
     for record in records:
         level = VerificationLevel(record.level)
@@ -729,7 +730,9 @@ def expire_due(now: datetime | None = None) -> int:
     ctx = Context("T11", "opportunity.expire", Permission.OPP_EXPIRE)
     for pk in due:
         with transaction.atomic():
-            opportunity = Opportunity.objects.select_for_update().select_related("live_version").get(pk=pk)
+            opportunity = (
+                Opportunity.objects.select_for_update(of=("self",)).select_related("live_version").get(pk=pk)
+            )
             live = opportunity.live_version
             if (
                 opportunity.status != ListingStatus.PUBLISHED
