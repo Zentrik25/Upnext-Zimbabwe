@@ -70,7 +70,9 @@ test.describe("browse and search", () => {
   test("an invalid filter shows a designed message, not an error page", async ({ page }) => {
     const response = await page.goto("/opportunities?employment_type=bogus");
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole("alert")).toContainText("Those filters could not be applied");
+    await expect(page.getByRole("alert").filter({ hasText: "could not be applied" })).toContainText(
+      "Those filters could not be applied",
+    );
   });
 
   test("pagination follows the cursor and does not repeat or lose listings", async ({ page }) => {
@@ -93,7 +95,7 @@ test.describe("browse and search", () => {
 
   test("a tampered cursor is handled gracefully", async ({ page }) => {
     await page.goto("/opportunities?cursor=not-a-real-cursor");
-    await expect(page.getByRole("alert")).toContainText("could not be applied");
+    await expect(page.getByRole("alert").filter({ hasText: "could not be applied" })).toBeVisible();
   });
 });
 
