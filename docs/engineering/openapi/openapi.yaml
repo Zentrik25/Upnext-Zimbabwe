@@ -32,6 +32,24 @@ tags:
   - name: health
 security: []
 paths:
+  /:
+    get:
+      tags: [health]
+      operationId: getApiRoot
+      summary: API index (name, version, status) — implemented in Phase 1
+      security: []
+      responses:
+        '200':
+          description: The API is reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [name, version, status]
+                properties:
+                  name: { type: string }
+                  version: { type: string, examples: [v1] }
+                  status: { type: string, examples: [ok] }
   /opportunities:
     get:
       tags: [public]

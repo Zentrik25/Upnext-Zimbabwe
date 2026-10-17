@@ -1,0 +1,37 @@
+[project]
+name = "upnext-api"
+version = "0.1.0"
+description = "UPNEXT API (Django + DRF modular monolith) — Phase 1 foundation"
+requires-python = ">=3.14,<3.15"
+
+[tool.ruff]
+line-length = 110
+target-version = "py314"
+extend-exclude = ["migrations", "staticfiles"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "DJ", "PT", "RUF"]
+ignore = ["S101", "RUF012", "DJ001"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S311", "PT018", "E501", "S603"]
+"config/settings/*" = ["F403", "F405"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["migrations/", "staticfiles/"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --cov=. --cov-report=term-missing:skip-covered --cov-fail-under=85"
+markers = ["docs: tests that read the repository documentation (need the repo root)"]
+
+[tool.coverage.run]
+data_file = "${COVERAGE_FILE-.coverage}"
+omit = ["*/migrations/*", "manage.py", "config/wsgi.py", "config/asgi.py", "tests/*"]
