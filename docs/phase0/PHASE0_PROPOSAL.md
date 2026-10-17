@@ -4,6 +4,8 @@
 
 **Repository inspection:** the repository was empty (no commits, no files) when the design pack was added. There is no existing code, CI, or infrastructure to reconcile. The VPS, Traefik and Nginx configuration cannot be inspected from this environment, so every statement about them is an unverified assumption (§7).
 
+> **Update 17 Oct 2026:** the v1.0 specification was received afterwards. See `SPEC_V1_RECONCILIATION.md` §C — it changes ADR-002 (module names), ADR-004 (hybrid JSONB model), ADR-005 (verification levels, publish gate = provenance only, `rejected`/`withdrawn` states) and ADR-010 (Redis/Celery arrives with Phase 4). Where the two documents differ, the reconciliation is newer.
+
 ---
 
 ## 1. Document gap analysis
