@@ -19,3 +19,6 @@ Category `detail` fields (OQ-06); expired/withdrawn visibility in lists (OQ-20);
 
 ## Contract governance
 The generated schema from the API must equal this file (contract test API-*); changes to the contract and to `TRACEABILITY.md` are made in the same change.
+
+## Implementation status (Phase 1)
+Implemented and checked against this contract by `apps/api/tests/test_openapi.py`: `getApiRoot`, `getCsrfToken`, `login`, `logout`, `getMe`. Everything else in `openapi.yaml` is specified but not implemented. The `StaffRole` enum has no `publisher` (D-23).

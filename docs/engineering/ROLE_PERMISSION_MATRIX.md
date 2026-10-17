@@ -1,6 +1,6 @@
 # Role–permission matrix — APPROVED BASELINE (D-18, D-22, D-23)
 
-Status: approved baseline for implementation. Phase 1 implements the role/permission **registry** and pure **policy functions** (`apps/api/upnext/permissions/`); Phase 2 wires them into the workflow. This matrix is the single source for authorisation tests (SOD-*, SEC-05, ADM-*, PERM-*).
+Status: approved baseline for implementation. Phase 1 implements the role/permission **registry** and pure **policy functions** (`apps/api/access/`); Phase 2 wires them into the workflow. This matrix is the single source for authorisation tests (SOD-*, SEC-05, ADM-*, PERM-*).
 
 ## 1. Roles (initial implementation)
 
@@ -91,7 +91,7 @@ One person controlling two accounts can satisfy the "another person" rule alone.
 `system` may only expire listings past their deadline (re-checked under lock), send queued emails, purge expired tokens/sessions, and execute scheduled publication if OQ-14 is approved. It has a dedicated DB role.
 
 ## 4. Extensibility (D-23)
-Permissions are **codes**; roles are **sets of codes** in one registry (`upnext/permissions/registry.py`); guards (`policy.py`) ask "does the actor hold code X, and do the identity rules allow it?" — they never test role names. Adding a role later means adding an enum value, a code set and tests; no guard changes. Test PERM-02 proves this by registering a throw-away role in a test.
+Permissions are **codes**; roles are **sets of codes** in one registry (`apps/api/access/registry.py`); guards (`policy.py`) ask "does the actor hold code X, and do the identity rules allow it?" — they never test role names. Adding a role later means adding an enum value, a code set and tests; no guard changes. Test PERM-02 proves this by registering a throw-away role in a test.
 
 ## 5. Enforcement points
 | Layer | Mechanism |

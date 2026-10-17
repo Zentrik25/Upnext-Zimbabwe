@@ -29,7 +29,7 @@ django_settings_module = "config.settings.test"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
-addopts = "-ra --strict-markers --cov=. --cov-report=term-missing:skip-covered --cov-fail-under=85"
+addopts = "-ra -p no:cacheprovider --strict-markers --cov=. --cov-report=term-missing:skip-covered --cov-fail-under=85"
 markers = ["docs: tests that read the repository documentation (need the repo root)"]
 
 [tool.coverage.run]

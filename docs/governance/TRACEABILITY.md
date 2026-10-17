@@ -31,7 +31,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-21 | Deadline and expiry: derived deadline state always correct at read time; unknown deadlines never auto-expire; timezone retained | PR-02/08; QUALITY-GATES | SC-02, SC-03, SC-10 | listOpportunities, getOpportunity, listSaved | UT-07, UT-08, IT-01, JOB-01 | OQ-14, OQ-20, OQ-22 |
 | R-22 | Application handoff wording is accurate; UPNEXT never claims an application was submitted | spec §14; PRODUCT | SC-03 | getOpportunity | E2E-02, VIS-02, UT-09 | OQ-05 |
 | R-23 | Privacy: data minimisation, notice, retention, deletion, no PII in logs | spec §25; SECURITY | SC-11, SC-14 | requestAccountDeletion, getProfile | PRIV-01…PRIV-05 | OQ-09 |
-| R-24 | Observability and health: structured logs, request ids, health/readiness, job heartbeat, alerts | spec §33; QUALITY-GATES | — | healthLive, healthReady | OPS-01…OPS-04 | OQ-26 |
+| R-24 | Observability and health: structured logs, request ids, health/readiness, job heartbeat, alerts | spec §33; QUALITY-GATES | — | healthLive, healthReady, getApiRoot | OPS-01…OPS-04 | OQ-26 |
 | R-25 | Backups and tested restoration; migration rehearsal; rollback plan | spec §34; QUALITY-GATES | — | — | OPS-05…OPS-07 | OQ-27 |
 | R-26 | Performance targets (LCP, INP, CLS, API latency) measured on realistic data | spec §31; QUALITY-GATES | SC-01…SC-03 | listOpportunities, getOpportunity | PERF-01…PERF-03 | OQ-11 |
 | R-27 | Isolation from The Granite Post (no shared secrets, DB, networks; no changes without approval) | D-06; CLAUDE.md | — | — | OPS-08, OPS-09 (Phase 7 checklist) | OQ-10 |
@@ -65,6 +65,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 
 | Operation | Method path | Tag | Requirements |
 |---|---|---|---|
+| `getApiRoot` | GET `/` | health | R-24 |
 | `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26 |
 | `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29 |
 | `listCategories` | GET `/categories` | public | R-01 |
@@ -293,4 +294,48 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 1. A new requirement, screen, endpoint or test is added here in the same change that introduces it.
 2. A requirement gains a test id before its implementation starts; a failing or missing test blocks the phase gate.
 3. OQ ids are removed from a row only when the decision register records the decision.
-4. Test results are recorded in phase reports with commands and outputs, never here, and never invented.
+4. Whether a test exists and has been executed is recorded in §6; full results (commands and outputs) are recorded in phase reports and are never invented.
+5. This file is generated: edit `tools/traceability/generate.py` and run `python tools/traceability/generate.py`.
+
+## 6. Implementation status (Phase 1)
+
+Only the tests listed here exist. Everything else in §4 is still planned. "executed" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md`); it is not a CI claim.
+
+| Test id | Implemented by | Status |
+|---|---|---|
+| PERM-01 | `apps/api/tests/test_access_registry.py::test_perm_01_initial_roles_are_exactly_three_and_no_publisher` | executed |
+| PERM-02 | `apps/api/tests/test_access_registry.py::test_perm_02_future_role_needs_only_a_registry_entry` | executed |
+| PERM-03 | `apps/api/tests/test_access_registry.py::test_perm_03_registry_matches_the_permission_matrix_document` | executed |
+| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_return_or_verify_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
+| SOD-02 | `apps/api/tests/test_access_policy.py::test_sod_02_another_editor_or_administrator_can_approve` | executed (pure policy) |
+| SOD-04 | `apps/api/tests/test_access_policy.py::test_sod_04_the_approver_may_publish_the_exact_revision` | executed (pure policy) |
+| SOD-09 | `apps/api/tests/test_access_policy.py::test_sod_09_administrator_can_publish_someone_elses_approved_listing` | executed (pure policy) |
+| SOD-10 | `apps/api/tests/test_access_policy.py::test_sod_10_author_may_publish_only_after_another_person_approved_the_exact_revision` | executed (pure policy) |
+| WF-04 | `apps/api/tests/test_access_policy.py::test_material_change_after_approval_invalidates_it` | executed (pure policy; row-level enforcement is Phase 2) |
+| DB-01 | `apps/api/tests/test_models.py::test_db_01_primary_keys_are_immutable` | executed on PostgreSQL 18.6 |
+| AUTH-03 | `apps/api/tests/test_auth_api.py::test_unknown_email_and_wrong_password_are_indistinguishable` | executed |
+| AUTH-04 | `apps/api/tests/test_auth_api.py::test_per_email_failure_limit_returns_429_with_retry_after; ::test_ip_throttle_applies` | executed |
+| AUTH-07 | `apps/api/tests/test_auth_api.py::test_session_and_csrf_cookie_settings; ::test_login_success_sets_http_only_session_and_returns_user` | executed |
+| AUTH-08 | `apps/api/tests/test_auth_api.py::test_login_requires_csrf_even_for_anonymous_requests` | executed |
+| AUTH-12 | `apps/api/tests/test_auth_api.py::test_non_active_accounts_cannot_start_a_session` | executed |
+| SEC-01 | `apps/api/tests/test_platform.py::test_security_headers_on_api_responses; apps/web/tests/e2e/foundation.spec.ts (security headers)` | executed |
+| SEC-09 | `apps/api/tests/test_platform.py::test_sec_09_logs_are_json_with_request_id_and_no_credentials` | executed |
+| OPS-01 | `apps/api/tests/test_platform.py (health tests); apps/web/tests/e2e/foundation.spec.ts (API through proxy)` | executed |
+| OPS-02 | `apps/api/tests/test_platform.py::test_request_id_is_generated_and_echoed` | executed |
+| A11Y-01 | `apps/web/tests/e2e/foundation.spec.ts (axe on / and /design-system at 390 and 1440)` | executed (public foundation pages only) |
+| A11Y-03 | `apps/web/tests/e2e/foundation.spec.ts::the skip link is the first tab stop and focus is visible` | executed (foundation pages) |
+| A11Y-05 | `apps/web/tests/e2e/foundation.spec.ts (no horizontal scroll at 320/390/768/1440)` | executed (foundation pages) |
+| A11Y-06 | `apps/web/tests/unit/tokens.test.ts::production text pairs meet WCAG 2.2 AA` | executed |
+| A11Y-07 | `apps/web/tests/unit/tokens.test.ts::non-text pairs meet 3:1` | executed |
+| A11Y-08 | `apps/web/tests/e2e/foundation.spec.ts (reference parity of the primitives)` | executed |
+| VIS-02 | `apps/web/tests/e2e/foundation.spec.ts (reference parity: listing row, tags, tabs)` | executed (computed-style parity, not pixel diff) |
+| VIS-04 | `apps/web/tests/e2e/foundation.spec.ts (nothing rounded/shadowed/gradient); apps/web/tests/unit/design-guard.test.ts` | executed |
+| VIS-05 | `apps/web/tests/unit/tokens.test.ts::the only production deviations are DEV-01…DEV-04` | executed |
+| E2E-10 | `apps/web/tests/e2e/foundation.spec.ts (no horizontal scroll)` | executed (foundation pages only) |
+| CAT-01 | `tools/check_docs.py (category schemas are valid JSON Schema 2020-12)` | executed |
+| CAT-02 | `tools/check_docs.py (examples validate against schemas)` | executed |
+| CAT-03 | `tools/check_docs.py (examples validate against the OpenAPI createDraft body)` | executed |
+| CAT-04 | `tools/check_docs.py (negative cases are rejected)` | executed |
+| OPS-10 | `apps/api/Dockerfile (pip --require-hashes) and apps/web/Dockerfile (npm ci); .github/workflows/ci.yml` | authored; the GitHub Actions run has not been executed in this environment |
+| OPS-11 | `npm audit --omit=dev (executed locally: 0 advisories); .github/workflows/ci.yml` | partly executed; pip advisory scan authored for CI |
+| OPS-13 | `docker compose run api pytest on PostgreSQL 18.6 + Python 3.14.8 + Django 5.2.18 + psycopg 3.3.6` | executed (task V-01) |

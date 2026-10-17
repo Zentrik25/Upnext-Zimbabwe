@@ -1,5 +1,5 @@
 # Decision register — SOURCE OF TRUTH
-Authoritative per D-16. Status of every other document is DRAFT until the owner approves it. Proposals are not approvals; unresolved items stay **OPEN** and are never defaulted. Last updated 2026-10-17 (Phase 0 approved as baseline; Phase 1 authorised).
+Authoritative per D-16. Status of every other document is DRAFT until the owner approves it. Proposals are not approvals; unresolved items stay **OPEN** and are never defaulted. Last updated 2026-10-17 (Phase 0 approved as baseline; Phase 1 implemented, awaiting review).
 
 ## CONFIRMED
 | ID | Decision | Date |
@@ -36,6 +36,7 @@ Authoritative per D-16. Status of every other document is DRAFT until the owner 
 |---|---|---|
 | OQ-12 | May the approving Editor also publish? | **Yes** — D-18: approver ≠ author is the rule; the approver may publish |
 | OQ-25 | Pixel fidelity vs WCAG 2.2 AA where the reference conflicts | **Accessibility wins, minimally** — D-19; deviations DEV-01…DEV-04 **approved** (D-24) |
+| OQ-28 | Runtime version pins | **Resolved at Phase 1** — Node.js 24 LTS selected (D-25) and every recommended pin verified for availability, compatibility, advisories and runtime behaviour with none replaced; record in `docs/engineering/PHASE1_VERSION_VERIFICATION.md`. Residual: official support-window pages could not be re-checked from the build environment (task V-05) |
 | OQ-32 | Keep the optional Publisher role? | **No** — D-23 |
 | OQ-33 | May an author publish their own listing after another person approved it? | **Yes, only for the exact revision another authorised person approved** — D-22 |
 
@@ -69,7 +70,6 @@ Authoritative per D-16. Status of every other document is DRAFT until the owner 
 | OQ-24 | Reference features outside launch scope: "For employers" link, alerts widget, "Apply unavailable" demo; how the organisation filter works without public organisation pages | Phase 3 |
 | OQ-26 | Hosting of error tracking and metrics (off-server vs self-hosted) | Phase 6 |
 | OQ-27 | Backup RPO/RTO, retention, off-server target | Phase 6 |
-| OQ-28 | **Runtime version pins** — Node.js 24 LTS selected and the other recommended versions provisionally accepted (D-25). Remaining: record the verification result for each pin (availability, compatibility, advisories, runtime behaviour) in `PHASE1_VERSION_VERIFICATION.md` before dependency lockfiles are final; Django 5.2/PostgreSQL 18 behaviour is verified by running the foundation (task V-01) | Phase 1 (in progress) |
 | OQ-29 | Source rules: may a source lack a URL (print/email citation)? https-only for application and source URLs? | Phase 2 |
 | OQ-30 | Review thresholds for moving email delivery from the DB outbox to Celery/Redis | Phase 4 |
 | OQ-31 | Whether a seeker may save an expired opportunity, and the per-user saved-item cap | Phase 5 |

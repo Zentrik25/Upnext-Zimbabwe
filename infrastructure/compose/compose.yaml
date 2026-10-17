@@ -43,6 +43,8 @@ services:
       UPNEXT_RUN_MIGRATIONS: "1" # development convenience; production runs migrations as a release step
       UPNEXT_REPO_ROOT: /repo
       COVERAGE_FILE: /tmp/.coverage
+      RUFF_CACHE_DIR: /tmp/.ruff_cache
+      MYPY_CACHE_DIR: /tmp/.mypy_cache
     user: "${UPNEXT_UID:-10001}:${UPNEXT_GID:-10001}"
     volumes:
       - ../../apps/api:/app

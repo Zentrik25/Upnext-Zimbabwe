@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14.8"
+  NODE_VERSION: "24.22.0"
+
+jobs:
+  api:
+    name: API (ruff, mypy, migrations, pytest, OpenAPI) on PostgreSQL 18.6
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+        env:
+          POSTGRES_DB: upnext
+          POSTGRES_USER: upnext
+          POSTGRES_PASSWORD: ci-ephemeral-database-password # throwaway service container, not a secret
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U upnext -d upnext" --health-interval 5s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      POSTGRES_DB: upnext
+      POSTGRES_USER: upnext
+      POSTGRES_PASSWORD: ci-ephemeral-database-password
+      POSTGRES_HOST: localhost
+      REQUIRE_DOCS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Generate an ephemeral secret key
+        run: echo "DJANGO_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(64))')" >> "$GITHUB_ENV"
+      - name: Install hash-pinned dependencies
+        run: pip install --require-hashes -r requirements/runtime.txt -r requirements/dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy .
+      - name: No model changes without a migration
+        run: python manage.py makemigrations --check --dry-run
+      - name: Apply migrations to PostgreSQL 18.6
+        run: python manage.py migrate --noinput
+      - name: Tests (coverage gate in pyproject.toml)
+        run: UPNEXT_REPO_ROOT="$GITHUB_WORKSPACE" python -m pytest
+      - name: OpenAPI schema validates
+        run: python manage.py spectacular --validate --file "$RUNNER_TEMP/schema.yaml"
+      - name: Dependency advisories (runtime pins)
+        run: pip install pip-audit==2.9.0 && pip-audit --require-hashes -r requirements/runtime.txt
+
+  web:
+    name: Web (ESLint, tsc, Prettier, tokens, Vitest, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run tokens:check
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Production dependency advisories (must be clean)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Development-tool advisories (reported, not blocking — see PHASE1_VERSION_VERIFICATION.md)
+        run: npm audit --audit-level=high || true
+
+  docs:
+    name: Documentation consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install --require-hashes -r apps/api/requirements/runtime.txt -r apps/api/requirements/dev.txt
+      - run: python tools/check_docs.py
+      - name: Traceability matrix is regenerated and committed
+        run: |
+          python tools/traceability/generate.py
+          git diff --exit-code docs/governance/TRACEABILITY.md
+
+  secrets:
+    name: No secrets committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install --require-hashes -r apps/api/requirements/runtime.txt -r apps/api/requirements/dev.txt
+      - name: No tracked .env files other than *.example
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$'; then echo "tracked .env file"; exit 1; fi
+      - name: Scan every commit with detect-secrets
+        run: bash tools/scan-secrets.sh
+
+  e2e:
+    name: End-to-end on the production-mode Compose stack
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Write an ephemeral Compose environment
+        working-directory: infrastructure/compose
+        run: |
+          {
+            echo "POSTGRES_DB=upnext"
+            echo "POSTGRES_USER=upnext"
+            echo "POSTGRES_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+            echo "DJANGO_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
+          } > .env
+      - name: Build and start the stack (waits for health checks)
+        working-directory: infrastructure/compose
+        run: docker compose -f compose.yaml -f compose.prod-like.yaml up -d --build --wait --wait-timeout 300
+      - run: npm ci --ignore-scripts
+        working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: Playwright
+        working-directory: apps/web
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          E2E_STRICT_CONSOLE: "1"
+        run: npm run test:e2e
+      - name: Compose logs on failure
+        if: failure()
+        working-directory: infrastructure/compose
+        run: docker compose -f compose.yaml -f compose.prod-like.yaml logs --no-color --tail 200
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-results
+          path: apps/web/test-results
+      - name: Tear down
+        if: always()
+        working-directory: infrastructure/compose
+        run: docker compose -f compose.yaml -f compose.prod-like.yaml down -v
