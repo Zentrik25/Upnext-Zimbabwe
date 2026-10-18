@@ -42,9 +42,7 @@ STUCK_AFTER = timedelta(minutes=5)
 SUBJECTS = {
     EmailKind.EMAIL_VERIFICATION: "Confirm your NextJob Zimbabwe e-mail address",
     EmailKind.ACCOUNT_EXISTS: "You already have a NextJob Zimbabwe account",
-    # pragma: allowlist nextline secret
     EmailKind.PASSWORD_RESET: "Reset your NextJob Zimbabwe password",
-    # pragma: allowlist nextline secret
     EmailKind.PASSWORD_CHANGED_NOTICE: "Your NextJob Zimbabwe password was changed",
     EmailKind.ACCOUNT_DELETION_NOTICE: "We received your NextJob Zimbabwe account deletion request",
     EmailKind.ACCOUNT_DELETION_COMPLETED: "Your NextJob Zimbabwe account has been deleted",
