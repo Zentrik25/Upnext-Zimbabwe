@@ -315,6 +315,22 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/close:
+    post:
+      tags: [employer]
+      operationId: closeEmployerListing
+      summary: 'Close (withdraw) the organisation''s own published listing'
+      description: 'Body `{row_version, reason}` (reason 10 to 1000 characters). A one-person safety action like T10 for a listing bound to an organisation the caller currently acts for; the listing stays readable, marked withdrawn. Employers still can never approve, verify or publish.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /employers/{slug}:
     get:
       tags: [public]

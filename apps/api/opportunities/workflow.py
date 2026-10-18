@@ -705,6 +705,31 @@ def withdraw(
     )
 
 
+def withdraw_own(
+    actor: User, opportunity_id: uuid.UUID | str, *, expected_row_version: int, reason: str
+) -> Opportunity:
+    """T10 for an employer member: close the organisation's own open listing. Like T10 it is a one-person
+    safety action (it removes content, never adds it), but only for a listing bound to an organisation the
+    actor currently acts for; staff keep `withdraw` for any listing."""
+    ctx = Context("T10", "opportunity.withdraw", Permission.OPP_WITHDRAW_OWN)
+
+    def body() -> Opportunity:
+        employer = _require(actor, ctx.permission)
+        opportunity = _lock(opportunity_id, expected_row_version)
+        if employer:
+            employer_capability.enforce(actor, opportunity)
+        if opportunity.status != ListingStatus.PUBLISHED:
+            raise InvalidTransition()
+        before = opportunity.status
+        opportunity.status = ListingStatus.WITHDRAWN
+        opportunity.closed_at = timezone.now()
+        _bump(opportunity)
+        _record(ctx, actor, opportunity, opportunity.live_version, before, _reason(reason, maximum=1000))
+        return opportunity
+
+    return _run(ctx, actor, opportunity_id, body)
+
+
 def expire(
     actor: User, opportunity_id: uuid.UUID | str, *, expected_row_version: int, reason: str
 ) -> Opportunity:
@@ -1017,4 +1042,5 @@ __all__ = [
     "submit",
     "takedown",
     "withdraw",
+    "withdraw_own",
 ]

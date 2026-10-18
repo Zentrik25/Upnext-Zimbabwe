@@ -79,6 +79,11 @@ urlpatterns = [
         name="employer-listing-discard",
     ),
     path(
+        "employer/listings/<uuid:opportunity_id>/close",
+        employer_views.CloseListingView.as_view(),
+        name="employer-listing-close",
+    ),
+    path(
         "employer/listings/<uuid:opportunity_id>/reopen",
         employer_views.ReopenListingView.as_view(),
         name="employer-listing-reopen",

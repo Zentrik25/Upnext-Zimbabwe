@@ -89,6 +89,13 @@ def amend(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int
     return workflow.amend(user, opportunity_id, expected_row_version=expected_row_version)
 
 
+def close(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int, reason: str) -> Opportunity:
+    member_listing(user, opportunity_id)
+    return workflow.withdraw_own(
+        user, opportunity_id, expected_row_version=expected_row_version, reason=reason
+    )
+
+
 def next_actions(user: User, opportunity: Opportunity) -> list[str]:
     """What the employer could do now (advisory; the service re-checks everything)."""
     pending = opportunity.pending_version
@@ -102,6 +109,8 @@ def next_actions(user: User, opportunity: Opportunity) -> list[str]:
         pending is None or pending.state in (VersionState.REJECTED, VersionState.DISCARDED)
     ):
         actions.append("amend")
+    if opportunity.status == ListingStatus.PUBLISHED:
+        actions.append("close")
     return actions
 
 

@@ -34,6 +34,7 @@ class Permission(StrEnum):
     OPP_SCHEDULE = "opp.schedule"
     OPP_TAKEDOWN = "opp.takedown"
     OPP_WITHDRAW = "opp.withdraw"
+    OPP_WITHDRAW_OWN = "opp.withdraw_own"
     OPP_EXPIRE = "opp.expire"
     OPP_ARCHIVE = "opp.archive"
     ORG_CREATE = "org.create"
@@ -81,7 +82,14 @@ _EDITOR_CODES = frozenset(
 # staff role: it is not in DEFAULT_REGISTRY, grants no admin access, and holds only author actions. Review,
 # verification and publication codes are deliberately absent (D-18, D-22); a test pins that.
 EMPLOYER_AUTHOR_PERMISSIONS: frozenset[str] = frozenset(
-    {P.OPP_DRAFT_CREATE, P.OPP_DRAFT_EDIT_OWN, P.OPP_SUBMIT, P.OPP_DISCARD_OWN, P.OPP_AMEND}
+    {
+        P.OPP_DRAFT_CREATE,
+        P.OPP_DRAFT_EDIT_OWN,
+        P.OPP_SUBMIT,
+        P.OPP_DISCARD_OWN,
+        P.OPP_AMEND,
+        P.OPP_WITHDRAW_OWN,
+    }
 )
 # Categories an employer may post in (they are issuers of vacancies and placements).
 EMPLOYER_CATEGORIES: frozenset[str] = frozenset({"jobs", "internships", "graduate-programmes"})
