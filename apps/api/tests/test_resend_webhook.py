@@ -14,9 +14,7 @@ from notifications import resend_webhook, suppression
 
 pytestmark = pytest.mark.django_db
 
-SECRET = (
-    "whsec_" + base64.b64encode(b"unit-test-secret-not-real-0123456789").decode()
-)
+SECRET = "whsec_" + base64.b64encode(b"unit-test-secret-not-real-0123456789").decode()
 URL = "/api/v1/hooks/email/resend"
 
 
