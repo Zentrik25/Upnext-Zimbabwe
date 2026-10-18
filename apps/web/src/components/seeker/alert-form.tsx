@@ -53,7 +53,11 @@ export function AlertForm({
     event.preventDefault();
     const choices = { frequency, categories: categoryCodes, locations: placeIds };
     if (enabled) void send(choices, "Alert settings saved.");
-    else void send({ ...choices, enabled: true, consent }, "Job alerts are on.");
+    else
+      void send(
+        { ...choices, enabled: true, consent },
+        "Job alerts are on. You will hear only about opportunities published from now on.",
+      );
   }
 
   const placeOptions = locations.map((l) => ({ value: l.id, label: l.name }));

@@ -1,6 +1,6 @@
 # Phase 6B — seeker profile, For You, saved opportunities and e-mail alerts: readiness plan — DRAFT
 
-Status: DRAFT. **Preparation only (D-37).** No Phase 6B code, migration, endpoint or page exists. Implementation starts only on the owner's separate written go-ahead. Nothing here is legal advice or an approval. No deployment, DNS change, VPS access or change to The Granite Post is part of it. **No e-mail is sent: alerts stay off until delivery is verified (B-01, B-03).**
+Status: DRAFT. **Superseded by the owner's go-ahead (D-38) and the implementation in ADR-0023; kept as the readiness record.** The differences between this plan and what was built are listed in ADR-0023 ("Departures from the readiness plan"). Earlier text: Preparation only (D-37); no Phase 6B code existed. Nothing here is legal advice or an approval. No deployment, DNS change, VPS access or change to The Granite Post is part of it. **No e-mail is sent: alerts stay off until delivery is verified (B-01, B-03).**
 
 ## 1. Scope
 

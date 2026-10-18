@@ -557,3 +557,26 @@ def test_pending_messages_die_with_the_account(
         row.status == OutboxStatus.DEAD and row.to_address == "scrubbed@deleted.invalid" and row.payload == {}
     )
     assert Opportunity.objects.filter(pk__isnull=False).exists()  # listings are untouched
+
+
+def test_the_demo_command_makes_an_alert_due_and_is_refused_elsewhere(
+    make_user: Callable[..., User],
+    world: World,
+    people: dict[str, User],
+    verified: None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from django.core.management.base import CommandError
+
+    client, user = signed_in(make_user)
+    enable(client)
+    live(world, people, "jobs-1", "demo-cmd")
+    monkeypatch.delenv("UPNEXT_DEMO_TOOLS", raising=False)
+    with pytest.raises(CommandError, match="UPNEXT_DEMO_TOOLS"):
+        call_command("demo_alert_run", "--email", user.email)
+    monkeypatch.setenv("UPNEXT_DEMO_TOOLS", "1")
+    with pytest.raises(CommandError, match="No enabled alert"):
+        call_command("demo_alert_run", "--email", "nobody@example.org")
+    call_command("demo_alert_run", "--email", user.email, "--days-back", "2")
+    assert "queued=1" in capsys.readouterr().out and len(jobs_rows()) == 1

@@ -108,3 +108,18 @@ Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own,
 ## Phase 6A addendum: verified employer members (D-35)
 
 A member of a **verified** organisation is not a staff role (there is no assignment row, no admin access, `User.is_staff` is unchanged). Through the publishing service such a member holds only `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.withdraw_own` (constant `EMPLOYER_AUTHOR_PERMISSIONS`), and only for listings bound to their own organisation in the categories jobs, internships and graduate programmes. `opp.withdraw_own` lets them close (withdraw) their own organisation's published listing, a one-person safety action like T10 that removes content and never adds it. They never hold a review, verification, publication, takedown or staff withdrawal (`opp.withdraw`) code. `employer.review` (Editors, Administrators) decides organisation claims and company-profile revisions; `employer.verification.revoke` (Administrators) withdraws an organisation's verification.
+
+## Phase 6B addendum: seeker profile, For You and alerts (D-38)
+
+No new permission code and no new role. The seeker features sit behind the existing account-level codes held by every authenticated, active account: `me.profile` (profile, For You, alert settings) and `me.saved` (saved opportunities). Access rules:
+
+| Capability | Anonymous | Seeker (own account) | Another seeker | Employer member | Contributor / Editor | Administrator |
+|---|---|---|---|---|---|---|
+| Browse and search listings | yes | yes | yes | yes | yes | yes |
+| Read, change, reset, delete **own** profile | no | yes | no | own only | own only | own only |
+| Read anyone else's profile | no | no | no | **no** | **no** | **no** (no code, no route, not in Django Admin) |
+| Read the For You page | no | own | own | own | own | own |
+| Read, change **own** job alert | no | yes | no | own only | own only | own only |
+| Unsubscribe from an alert | with the signed link in the message | yes | no | no | no | no |
+
+Enforcement: every `/me/*` and `/discovery/for-you` view works on `request.user` only and no route carries an identifier that selects an account (`tests/test_profiles.py::test_no_url_exposes_a_seeker_profile_by_id`); `profiles` and `alerts` models are not registered in Django Admin (tested); the unsubscribe operation is on the reviewed public list in `tests/test_endpoint_review.py`.

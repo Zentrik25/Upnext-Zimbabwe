@@ -49,6 +49,8 @@ afterEach(() => vi.unstubAllGlobals());
 describe("safeNext", () => {
   it("accepts known same-origin routes and keeps their query", () => {
     expect(safeNext("/saved")).toBe("/saved");
+    for (const path of ["/dashboard", "/for-you", "/profile", "/alerts"]) expect(safeNext(path)).toBe(path);
+    expect(safeNext("/alerts/unsubscribe?token=x")).toBe("/account");
     expect(safeNext("/opportunities?category=jobs")).toBe("/opportunities?category=jobs");
     expect(safeNext("/opportunities/graduate-engineer-abc123")).toBe(
       "/opportunities/graduate-engineer-abc123",
