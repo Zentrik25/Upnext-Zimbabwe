@@ -525,7 +525,10 @@ def test_manage_staff_role_is_audited_and_requires_an_administrator(people: dict
         call_command("manage_staff_role", "revoke", *args, people["admin"].email)  # not held any more
 
 
-def test_seed_demo_loads_every_category_and_respects_the_rules(people: dict[str, User]) -> None:
+def test_seed_demo_loads_every_category_and_respects_the_rules(
+    people: dict[str, User], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("UPNEXT_DEMO_TOOLS", "1")  # seeding needs demo tools (production never allows them)
     call_command("seed_demo", "--force")
     live = Opportunity.objects.filter(status=ListingStatus.PUBLISHED)
     assert set(live.values_list("category__code", flat=True)) == {
