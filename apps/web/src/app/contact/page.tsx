@@ -1,25 +1,33 @@
 import type { Metadata } from "next";
+import { openGraphFor } from "@/lib/brand";
 import { ProsePage, Section } from "@/components/content/prose";
-import { contactEmail } from "@/lib/site";
+import { mailboxes } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Contact",
-  description: "How to reach the UPNEXT team.",
+  description: "How to reach the NextJob Zimbabwe team.",
   alternates: { canonical: "/contact" },
+  openGraph: openGraphFor("/contact"),
 };
 
 export default function ContactPage() {
-  const email = contactEmail();
+  const boxes = mailboxes();
   return (
     <ProsePage title="Contact" intro="Questions, corrections and privacy requests.">
       <Section title="E-mail">
-        {email ? (
-          <p>
-            <a href={`mailto:${email}`} className="text-accent underline">
-              {email}
-            </a>
-          </p>
+        {boxes.length > 0 ? (
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {boxes.map((box) => (
+              <li key={box.email}>
+                <span className="text-small text-muted">{box.purpose}</span>
+                <br />
+                <a href={`mailto:${box.email}`} className="text-accent underline">
+                  {box.email}
+                </a>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p data-testid="contact-pending">
             Contact details will be published here before launch. Until then there is no address to write to.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { openGraphFor } from "@/lib/brand";
 import Link from "next/link";
 import { Container } from "@/components/layout";
 import { OpportunityRow } from "@/components/opportunities/parts";
@@ -26,6 +27,7 @@ export async function generateMetadata({
     title: "Opportunities",
     description: BASE_DESCRIPTION,
     alternates: { canonical: "/opportunities" },
+    openGraph: openGraphFor("/opportunities"),
     ...(refined ? { robots: { index: false, follow: true } } : {}),
   };
 }
@@ -330,7 +332,7 @@ async function Results({
         </nav>
       ) : null}
       <Notice className="mt-6 border border-border-notice">
-        Verification labels describe what UPNEXT checked. A listing that is not verified still names its
+        Verification labels describe what NextJob checked. A listing that is not verified still names its
         source.
       </Notice>
     </>

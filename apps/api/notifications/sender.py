@@ -31,6 +31,7 @@ class EmailMessage:
     subject: str
     body: str
     kind: str
+    html: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,7 @@ class FileSender:
             "to": message.to,
             "subject": message.subject,
             "body": message.body,
+            "html": message.html,
         }
         (self.directory / f"{stamp}-{message_id}.json").write_text(json.dumps(record), encoding="utf-8")
         return DeliveryResult("sent", message_id)
@@ -114,9 +116,11 @@ class SmtpSender:
         mime["From"], mime["To"], mime["Subject"] = self.sender, message.to, message.subject
         if self.reply_to:
             mime["Reply-To"] = self.reply_to
-        mime["Message-ID"] = f"<{message.idempotency_key}@upnext>"
+        mime["Message-ID"] = f"<{message.idempotency_key}@nextjob>"
         mime["Auto-Submitted"] = "auto-generated"
         mime.set_content(message.body)
+        if message.html:
+            mime.add_alternative(message.html, subtype="html")
         try:
             with self._connect() as smtp:
                 if self.user:

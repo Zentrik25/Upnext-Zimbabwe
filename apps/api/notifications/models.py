@@ -22,6 +22,7 @@ class EmailKind(models.TextChoices):
     PASSWORD_CHANGED_NOTICE = "password_changed_notice"  # noqa: S105
     ACCOUNT_DELETION_NOTICE = "account_deletion_notice"
     ACCOUNT_DELETION_COMPLETED = "account_deletion_completed"
+    ACCOUNT_DELETION_CANCELLED = "account_deletion_cancelled"
     EMAIL_CHANGE_CONFIRM = "email_change_confirm"
     EMAIL_CHANGE_REQUESTED_NOTICE = "email_change_requested_notice"
     EMAIL_CHANGED_NOTICE = "email_changed_notice"

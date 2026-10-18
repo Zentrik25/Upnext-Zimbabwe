@@ -37,7 +37,7 @@ def test_rows_store_no_secret_and_the_link_is_derived_at_send_time(make_user: Ca
     message = outbox.build_message(row)
     assert message is not None and "/reset-password?token=" in message.body
     assert tokens.render(row.user.auth_tokens.get()) in message.body  # type: ignore[union-attr]
-    assert message.subject == "Reset your UPNEXT password"
+    assert message.subject == "Reset your NextJob Zimbabwe password"
 
 
 def test_processing_sends_scrubs_the_payload_and_is_idempotent(make_user: Callable[..., User]) -> None:

@@ -28,7 +28,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     const errors = await collectViolations(page);
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle(/UPNEXT/);
+    await expect(page).toHaveTitle(/NextJob Zimbabwe/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover what's next.");
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
@@ -42,7 +42,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
   test("the API answers through /api/v1/ and the health probes", async ({ request }) => {
     const root = await request.get("/api/v1/");
     expect(root.status()).toBe(200);
-    expect(await root.json()).toEqual({ name: "UPNEXT API", version: "v1", status: "ok" });
+    expect(await root.json()).toEqual({ name: "NextJob API", version: "v1", status: "ok" });
     expect((await request.get("/health/live")).status()).toBe(200);
     expect(await (await request.get("/health/ready")).json()).toEqual({ status: "ok" });
     const missing = await request.get("/api/v1/does-not-exist");

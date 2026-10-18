@@ -20,7 +20,7 @@ async function openFirst(page: Page, title: string) {
 test.describe("browse and search", () => {
   test("lists only public opportunities and names the count", async ({ page }) => {
     await page.goto("/opportunities");
-    await expect(page).toHaveTitle(/Opportunities · UPNEXT/);
+    await expect(page).toHaveTitle(/Opportunities · NextJob Zimbabwe/);
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
     await expect(page.getByTestId("result-count")).toHaveText("12 opportunities");
     const body = await page.locator("main").innerText();
@@ -114,10 +114,10 @@ test.describe("detail page", () => {
     await expect(page.getByLabel("Sources")).toContainText("checked");
   });
 
-  test("the apply link leaves UPNEXT safely and says so", async ({ page }) => {
+  test("the apply link leaves NextJob safely and says so", async ({ page }) => {
     await openFirst(page, "Graduate Electrical Engineer");
     const apply = page.getByTestId("apply");
-    await expect(apply).toContainText("You will leave UPNEXT");
+    await expect(apply).toContainText("You will leave NextJob");
     await expect(apply).toContainText("does not receive or track applications");
     const link = apply.getByRole("link");
     await expect(link).toHaveAttribute("href", /^https:\/\//);

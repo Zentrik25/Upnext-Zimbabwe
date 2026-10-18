@@ -139,7 +139,7 @@ test.describe("home and static pages (SC-01, SC-14)", () => {
     page,
   }) => {
     await page.goto("/about");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("About UPNEXT");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("About NextJob Zimbabwe");
     for (const label of ["Not verified", "Source checked", "Verified with the issuer"])
       await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
     expect(await robotsMeta(page)).toBeNull();

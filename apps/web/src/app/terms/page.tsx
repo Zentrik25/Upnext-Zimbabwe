@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
+import { openGraphFor } from "@/lib/brand";
 import Link from "next/link";
 import { Bullets, ProsePage, Section } from "@/components/content/prose";
 
 export const metadata: Metadata = {
   title: "Terms of use (draft)",
-  description: "Draft terms of use for UPNEXT, awaiting owner and legal review.",
+  description: "Draft terms of use for NextJob Zimbabwe, awaiting owner and legal review.",
   alternates: { canonical: "/terms" },
+  openGraph: openGraphFor("/terms"),
   robots: { index: false, follow: true },
 };
 
 export default function TermsPage() {
   return (
-    <ProsePage draft title="Terms of use" intro="The rules for using UPNEXT.">
+    <ProsePage draft title="Terms of use" intro="The rules for using NextJob.">
       <Section title="The service">
         <p>
-          UPNEXT lists opportunities published by other organisations and shows where each one came from. We
+          NextJob lists opportunities published by other organisations and shows where each one came from. We
           do not employ, award or fund anything ourselves, we are not a party to any application, and we do
           not receive applications.
         </p>

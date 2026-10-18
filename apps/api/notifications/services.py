@@ -23,6 +23,7 @@ from accounts import tokens
 from accounts.models import AuthToken, TokenPurpose, User
 
 from . import suppression
+from .htmlmail import render_html
 from .models import EmailKind, EmailOutbox, OutboxStatus
 from .sender import DeliveryResult, EmailMessage, EmailSender, get_sender
 
@@ -39,15 +40,16 @@ MAX_ATTEMPTS = 6  # PROPOSED, OQ-17
 STUCK_AFTER = timedelta(minutes=5)
 
 SUBJECTS = {
-    EmailKind.EMAIL_VERIFICATION: "Confirm your UPNEXT e-mail address",
-    EmailKind.ACCOUNT_EXISTS: "You already have a UPNEXT account",
-    EmailKind.PASSWORD_RESET: "Reset your UPNEXT password",
-    EmailKind.PASSWORD_CHANGED_NOTICE: "Your UPNEXT password was changed",
-    EmailKind.ACCOUNT_DELETION_NOTICE: "We received your UPNEXT account deletion request",
-    EmailKind.ACCOUNT_DELETION_COMPLETED: "Your UPNEXT account has been deleted",
-    EmailKind.EMAIL_CHANGE_CONFIRM: "Confirm your new UPNEXT e-mail address",
-    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your UPNEXT e-mail address was requested",
-    EmailKind.EMAIL_CHANGED_NOTICE: "Your UPNEXT e-mail address was changed",
+    EmailKind.EMAIL_VERIFICATION: "Confirm your NextJob Zimbabwe e-mail address",
+    EmailKind.ACCOUNT_EXISTS: "You already have a NextJob Zimbabwe account",
+    EmailKind.PASSWORD_RESET: "Reset your NextJob Zimbabwe password",
+    EmailKind.PASSWORD_CHANGED_NOTICE: "Your NextJob Zimbabwe password was changed",
+    EmailKind.ACCOUNT_DELETION_NOTICE: "We received your NextJob Zimbabwe account deletion request",
+    EmailKind.ACCOUNT_DELETION_COMPLETED: "Your NextJob Zimbabwe account has been deleted",
+    EmailKind.ACCOUNT_DELETION_CANCELLED: "Your NextJob Zimbabwe account deletion request was cancelled",
+    EmailKind.EMAIL_CHANGE_CONFIRM: "Confirm your new NextJob Zimbabwe e-mail address",
+    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your NextJob Zimbabwe e-mail address was requested",
+    EmailKind.EMAIL_CHANGED_NOTICE: "Your NextJob Zimbabwe e-mail address was changed",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
@@ -104,12 +106,14 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
     # Plain text: nothing is HTML-escaped (a link's "&" or a name such as "Tom & Jerry" must arrive as typed).
     template = get_template(f"notifications/{row.template_key}_v{row.template_version}.txt")
     body = str(cast(Any, template).template.render(Context(context, autoescape=False)))
+    subject = SUBJECTS[EmailKind(row.kind)]
     return EmailMessage(
         idempotency_key=row.idempotency_key,
         to=row.to_address,
-        subject=SUBJECTS[EmailKind(row.kind)],
+        subject=subject,
         body=body,
         kind=row.kind,
+        html=render_html(subject=subject, body=body),
     )
 
 

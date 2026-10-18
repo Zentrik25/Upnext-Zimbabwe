@@ -105,7 +105,7 @@ def smtp(settings: Any) -> Iterator[StubSmtp]:
     settings.UPNEXT_SMTP_PORT = server.server_address[1]
     settings.UPNEXT_SMTP_SECURITY = "none"
     settings.UPNEXT_SMTP_USER, settings.UPNEXT_SMTP_PASSWORD = USER, PASSWORD
-    settings.UPNEXT_EMAIL_FROM = "UPNEXT <hello@example.test>"
+    settings.UPNEXT_EMAIL_FROM = "NextJob Zimbabwe <hello@example.test>"
     settings.UPNEXT_EMAIL_REPLY_TO = "help@example.test"
     settings.UPNEXT_SMTP_TIMEOUT_SECONDS = 5
     yield server
@@ -162,17 +162,17 @@ def test_the_default_backend_sends_nothing_and_a_custom_adapter_can_be_registere
 # --- SMTP adapter against the stub ------------------------------------------------------------------------
 def test_smtp_adapter_delivers_with_the_right_headers_and_authenticates(smtp: StubSmtp) -> None:
     result = SmtpSender().send(message())
-    assert result.outcome == "sent" and result.provider_message_id == "<key-1@upnext>"
+    assert result.outcome == "sent" and result.provider_message_id == "<key-1@nextjob>"
     sent = smtp.messages[0]
     assert sent["rcpt"] == "reader@example.org"
     raw = sent["raw"]
     for expected in (
-        "From: UPNEXT <hello@example.test>",
+        "From: NextJob Zimbabwe <hello@example.test>",
         "To: reader@example.org",
         "Subject: Hello",
         "Reply-To: help@example.test",
         "Auto-Submitted: auto-generated",
-        "Message-ID: <key-1@upnext>",
+        "Message-ID: <key-1@nextjob>",
         "Body text",
     ):
         assert expected in raw

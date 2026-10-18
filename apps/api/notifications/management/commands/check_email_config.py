@@ -60,8 +60,8 @@ class Command(BaseCommand):
                 EmailMessage(
                     idempotency_key=f"test-{uuid.uuid4().hex}",
                     to=options["to"],
-                    subject="UPNEXT test message",
-                    body="This is a test message from the UPNEXT e-mail configuration check.\n",
+                    subject="NextJob Zimbabwe test message",
+                    body="This is a test message from the NextJob Zimbabwe e-mail configuration check.\n",
                     kind="test",
                 )
             )

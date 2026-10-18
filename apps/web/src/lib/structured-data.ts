@@ -1,3 +1,4 @@
+import { BRAND } from "./brand";
 import type { OpportunityDetail } from "./catalog-types";
 import { decodeEntities } from "./safe-html";
 
@@ -85,7 +86,8 @@ export function websiteFor(origin: string): Json[] {
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "UPNEXT",
+      name: BRAND.name,
+      alternateName: BRAND.short,
       url: origin,
       inLanguage: "en",
       potentialAction: {
@@ -94,7 +96,13 @@ export function websiteFor(origin: string): Json[] {
         "query-input": "required name=search_term_string",
       },
     },
-    { "@context": "https://schema.org", "@type": "Organization", name: "UPNEXT", url: origin },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: BRAND.name,
+      alternateName: BRAND.short,
+      url: origin,
+    },
   ];
 }
 

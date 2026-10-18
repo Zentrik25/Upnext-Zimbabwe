@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { openGraphFor } from "@/lib/brand";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/account/register-form";
 import { FormPage } from "@/components/account/parts";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "Create account",
   robots: { index: false },
   alternates: { canonical: "/register" },
+  openGraph: openGraphFor("/register"),
 };
 
 export default async function RegisterPage() {

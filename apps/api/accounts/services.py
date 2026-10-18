@@ -452,6 +452,12 @@ def cancel_deletion(user: User) -> bool:
             actor_id=locked.pk,
             severity=Severity.SECURITY,
         )
+        outbox.enqueue(
+            EmailKind.ACCOUNT_DELETION_CANCELLED,
+            locked,
+            locked.email,
+            context={"display_name": locked.display_name},
+        )
         user.deletion_requested_at = None
     return True
 

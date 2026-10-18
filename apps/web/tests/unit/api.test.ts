@@ -9,11 +9,11 @@ describe("getApiRoot", () => {
   it("returns the parsed API root", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ name: "UPNEXT API", version: "v1", status: "ok" }))),
+      vi.fn(async () => new Response(JSON.stringify({ name: "NextJob API", version: "v1", status: "ok" }))),
     );
     expect(await getApiRoot()).toEqual({
       ok: true,
-      data: { name: "UPNEXT API", version: "v1", status: "ok" },
+      data: { name: "NextJob API", version: "v1", status: "ok" },
     });
   });
   it("calls the internal URL without cookies or caching", async () => {

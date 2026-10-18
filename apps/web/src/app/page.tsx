@@ -6,13 +6,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Notice, SearchGroup } from "@/components/ui";
 import { listCategories, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
+import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import { websiteFor } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  title: { absolute: "UPNEXT · Opportunity discovery for Zimbabwe" },
+  title: { absolute: `${BRAND.name} · ${BRAND.tagline}` },
+  openGraph: openGraphFor("/"),
 };
 
 export default async function HomePage() {

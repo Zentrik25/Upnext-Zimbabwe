@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "./container";
 import { Logo } from "@/components/ui";
+import { BRAND } from "@/lib/brand";
 import { getCurrentUser } from "@/lib/session";
 
 export async function SiteHeader() {
@@ -8,7 +9,7 @@ export async function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface">
       <Container className="flex h-[58px] items-center justify-between gap-4 max-sm:h-[55px]">
-        <Link href="/" aria-label="UPNEXT home">
+        <Link href="/" aria-label={`${BRAND.name} home`}>
           <Logo />
         </Link>
         <nav aria-label="Primary" className="flex items-center gap-[22px] max-sm:gap-[11px]">

@@ -1,7 +1,7 @@
 Hello {{ display_name }},
 
-The e-mail address of your UPNEXT account was changed. From now on, sign in with the new address and expect UPNEXT messages there. This address no longer receives them.
+The e-mail address of your NextJob Zimbabwe account was changed. From now on, sign in with the new address and expect NextJob Zimbabwe messages there. This address no longer receives them.
 
 If you did not make this change, use the password reset on the sign-in page with your new address if you can, or contact us using the details on the Contact page.
 
-UPNEXT never asks for your password by e-mail.
+NextJob Zimbabwe never asks for your password by e-mail.

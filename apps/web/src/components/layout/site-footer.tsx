@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import { Container } from "./container";
 
 const LINKS = [
@@ -12,7 +13,9 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-line py-6 text-small text-muted">
       <Container className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <span>UPNEXT · Opportunity discovery for Zimbabwe</span>
+        <span>
+          {BRAND.name} · {BRAND.tagline}
+        </span>
         <nav aria-label="Footer">
           <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0">
             {LINKS.map(([href, label]) => (

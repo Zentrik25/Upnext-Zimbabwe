@@ -208,20 +208,24 @@ UPNEXT_TOKEN_KEY = get_str("UPNEXT_TOKEN_KEY", SECRET_KEY)
 UPNEXT_ENVIRONMENT = get_str("UPNEXT_ENVIRONMENT", "development")
 UPNEXT_EMAIL_BACKEND = get_str("UPNEXT_EMAIL_BACKEND", "none")
 UPNEXT_EMAIL_FILE_DIR = get_str("UPNEXT_EMAIL_FILE_DIR", "/tmp/upnext-mail")  # noqa: S108
-UPNEXT_EMAIL_FROM = get_str("UPNEXT_EMAIL_FROM", "UPNEXT <no-reply@example.invalid>")
+UPNEXT_EMAIL_FROM = get_str("UPNEXT_EMAIL_FROM", "NextJob Zimbabwe <no-reply@example.invalid>")
 UPNEXT_SMTP_HOST = get_str("UPNEXT_SMTP_HOST", "")
 UPNEXT_SMTP_PORT = get_int("UPNEXT_SMTP_PORT", 587)
 UPNEXT_SMTP_SECURITY = get_str("UPNEXT_SMTP_SECURITY", "starttls")  # starttls | ssl | none (dev stubs only)
 UPNEXT_SMTP_TIMEOUT_SECONDS = get_int("UPNEXT_SMTP_TIMEOUT_SECONDS", 15)
 UPNEXT_EMAIL_REPLY_TO = get_str("UPNEXT_EMAIL_REPLY_TO", "")
+# Mailbox named in the footer of e-mails (D-33); empty = not shown. The owner verifies it exists.
+UPNEXT_SUPPORT_EMAIL = get_str("UPNEXT_SUPPORT_EMAIL", "")
 UPNEXT_SMTP_USER = get_str("UPNEXT_SMTP_USER", "")
 UPNEXT_SMTP_PASSWORD = get_str("UPNEXT_SMTP_PASSWORD", "")
 # Origin used in e-mailed links; the public site is path-routed on one hostname (OQ-01).
 UPNEXT_EMAIL_WEBHOOK_SECRET = get_str("UPNEXT_EMAIL_WEBHOOK_SECRET", "")  # off until set (P5-01)
+# Resend signs webhooks with a Svix secret ("whsec_..."). Off until set; never commit it (D-34).
+UPNEXT_RESEND_WEBHOOK_SECRET = get_str("UPNEXT_RESEND_WEBHOOK_SECRET", "")
 UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "UPNEXT API",
+    "TITLE": "NextJob API",
     "DESCRIPTION": "Implemented subset of docs/engineering/openapi/openapi.yaml (Phase 1 foundation).",
     "VERSION": "1.0.0-phase1",
     "SERVE_INCLUDE_SCHEMA": False,

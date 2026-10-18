@@ -1,6 +1,6 @@
 Hello {{ display_name }},
 
-Your UPNEXT account has been deleted. Your saved listings, sign-in records and unused links were removed, and your name and e-mail address were replaced on our side.
+Your NextJob Zimbabwe account has been deleted. Your saved listings, sign-in records and unused links were removed, and your name and e-mail address were replaced on our side.
 
 If you did not ask for this, reply through the contact page: {{ base_url }}/contact
 

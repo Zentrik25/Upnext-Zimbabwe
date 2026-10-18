@@ -50,7 +50,7 @@ def secret_text(device: StaffMfaDevice) -> str:
 
 def provisioning_uri(user: User, device: StaffMfaDevice) -> str:
     secret = base64.b32encode(secret_for(device)).decode().rstrip("=")
-    label = quote(f"UPNEXT:{user.email}")
+    label = quote(f"NextJob:{user.email}")
     return f"otpauth://totp/{label}?secret={secret}&issuer=UPNEXT&digits={DIGITS}&period={PERIOD}"
 
 
