@@ -1,4 +1,6 @@
-# UPNEXT
+# NextJob Zimbabwe (formerly UPNEXT)
+
+> Find what's next. Jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe. Website: https://nextjob.co.zw (not live; nothing is deployed). Internal identifiers (`UPNEXT_*` variables, repository, Compose projects) keep the old spelling on purpose (D-33). E-mail goes through Resend once configured and verified (D-34): see `docs/engineering/RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`. Production settings template: `infrastructure/compose/production.env.example`.
 
 Zimbabwe-first opportunity discovery: jobs, internships, graduate programmes, scholarships, tenders and grants.
 

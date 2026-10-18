@@ -71,3 +71,7 @@ No provider is chosen (OQ-03) and none is enabled. Until one is configured the d
 **Local TLS rehearsal.** `infrastructure/tls/make-local-cert.sh` creates a 30-day throwaway CA and certificate (git-ignored); `compose.tls.yaml` with `nginx.tls.conf` puts them in front of the stack. It proves that Secure and `__Host-` cookies, HSTS, the redirect and forwarded-header trust behave over https, and that the complete browser suite passes over TLS. It does not say anything about the real domain, certificate issuance or the shared Traefik/Nginx.
 
 **Demo data.** `seed_demo` refuses without `DEBUG` or `UPNEXT_DEMO_TOOLS=1`, which production refuses at start-up; the preflight flags demo accounts and fictional issuers in the database.
+
+## Addendum (D-33, D-34): identity and e-mail variables
+
+Public origin `UPNEXT_PUBLIC_BASE_URL=https://nextjob.co.zw`; mailboxes `UPNEXT_CONTACT_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_JOBS_EMAIL`, `UPNEXT_PARTNERSHIPS_EMAIL` (shown only when set); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.

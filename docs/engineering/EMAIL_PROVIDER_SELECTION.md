@@ -1,5 +1,7 @@
 # E-mail provider selection — DRAFT
 
+> **Update 2026-10-18 (D-34):** the owner selected **Resend**; Amazon SES is no longer under consideration. The scorecard below is kept as the historical comparison. The integration guide is `RESEND_INTEGRATION.md`; selection does not close B-01.
+
 Status: DRAFT (Phase 5, WS1). The owner shortlisted **Resend** and **Amazon SES** (D-32). **No provider has been chosen, no account has been opened, no credential exists and nothing has been configured.** This page is the scorecard the owner fills in; the engineering side does not choose. Statements about the providers below are what has to be checked against each provider's current documentation and a real test; they are not findings.
 
 ## 1. What the application needs

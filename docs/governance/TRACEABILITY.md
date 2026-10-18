@@ -48,6 +48,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-38 | Change of e-mail address works only when e-mail delivery has been verified (D-31, P5-07) | D-31; WS1 | SC-11 | requestEmailChange, verifyEmail | ACC-01 | OQ-03 |
 | R-39 | Signed bounce and complaint feed feeds the suppression list (P5-01) | D-32; WS1 | — | receiveEmailEvents | MAIL-09 | OQ-03 |
 | R-40 | Personal-data inventory stays complete and no document claims legal approval (WS2) | D-32; WS2 | SC-14 | — | PRV-01, PRV-02 | OQ-09 |
+| R-41 | Resend delivery events suppress only permanent bounces and complaints, verified on the raw body, once per event (D-34) | D-34; WS1 | — | receiveResendEmailEvents | MAIL-10, MAIL-11 | OQ-03 |
 
 ## 2. Screen register
 
@@ -86,6 +87,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `verifyEmail` | POST `/auth/email/verify` | auth | R-04, R-38 |
 | `resendVerification` | POST `/auth/email/resend` | auth | R-04, R-18 |
 | `receiveEmailEvents` | POST `/hooks/email` | auth | R-39 |
+| `receiveResendEmailEvents` | POST `/hooks/email/resend` | auth | R-41 |
 | `login` | POST `/auth/login` | auth | R-04, R-06, R-17, R-33 |
 | `logout` | POST `/auth/logout` | auth | R-04 |
 | `requestPasswordReset` | POST `/auth/password-reset/request` | auth | R-04, R-17, R-18 |
@@ -317,6 +319,8 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | EDT-02 | Content health counts match; the separation-of-duties audit finds a deliberately broken row; the staff page is for editors and administrators |
 | ACC-01 | Change of e-mail: unavailable without verified delivery, password required, uniform answer for an address in use, single-use link, old address told, staff refused |
 | MAIL-09 | Bounce webhook: off without a secret; stale, replayed, wrongly signed, oversized and malformed deliveries are refused; permanent bounces and complaints suppress |
+| MAIL-10 | Resend webhook: signature over the raw body, freshness, duplicate events, permanent versus temporary bounces, complaints, size limit, no addresses in logs; Resend SMTP settings checks |
+| MAIL-11 | Transactional messages are NextJob Zimbabwe branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
 | PRV-01 | Every personal-looking column is listed in docs/legal/DATA_INVENTORY.md and the inventory names no column that does not exist |
 | PRV-02 | No page or legal document claims legal approval |
 | PERF-04 | Mobile budgets (LCP, CLS, transfer, script) on a throttled profile for four pages |
@@ -490,6 +494,8 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | EDT-01 | `apps/api/tests/test_content_ops.py (importer)` | executed |
 | EDT-02 | `apps/api/tests/test_content_ops.py (health, audit, staff page)` | executed |
 | ACC-01 | `apps/api/tests/test_email_change.py; apps/web/tests/unit/accounts.test.tsx; apps/web/tests/e2e/accounts-journey.spec.ts test 9` | executed with the file mail backend on throwaway stacks; no real provider |
+| MAIL-10 | `apps/api/tests/test_resend_webhook.py (Resend/Svix signature, replay, duplicates, bounce semantics, config checks)` | executed with locally computed signatures only; no real Resend request |
+| MAIL-11 | `apps/api/tests/test_brand_email.py (branded multipart messages, deletion-cancelled notice)` | executed |
 | MAIL-09 | `apps/api/tests/test_email_provider.py (signed feed)` | executed against the neutral format; no provider's own format exists |
 | PRV-01 | `apps/api/tests/test_data_inventory.py` | executed |
 | PRV-02 | `apps/api/tests/test_data_inventory.py (no legal-approval claims)` | executed |

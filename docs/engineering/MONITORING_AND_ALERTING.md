@@ -59,3 +59,7 @@ Renew through the owner's certificate process. Expiry alerts need the real front
 
 ## 11. How this was tested
 Unit tests exercise every alert and the debouncing with a fake clock (`tests/test_operations.py`); the webhook path is tested against a stub opener only. **No test sent anything to a real channel.** Acceptance of the monitoring architecture needs the owner's channel and one real test alert recorded.
+
+## Addendum (D-34): Resend webhook
+
+Watch the `email.webhook.resend` log events (counts and event types only) and the suppression count. A sudden rise in permanent bounces or any complaint should be reviewed the same day. A 401 burst on `/api/v1/hooks/email/resend` means a wrong secret or clock drift; 404 means the secret is not set. Runbook for a leaked key: revoke it in Resend, create a new restricted key, update `UPNEXT_SMTP_PASSWORD`, restart the worker.
