@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "catalog",
     "opportunities",
     "notifications",
+    "employers",
 ]
 
 MIDDLEWARE = [

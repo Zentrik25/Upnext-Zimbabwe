@@ -24,13 +24,14 @@ from django.utils import timezone
 
 from access import policy
 from access.policy import Actor, Reason, RevisionFacts
-from access.registry import DEFAULT_REGISTRY, Permission, Role
+from access.registry import DEFAULT_REGISTRY, EMPLOYER_AUTHOR_PERMISSIONS, Permission, Role
 from accounts.models import User
 from audit import services as audit
 from audit.models import ActorType, Severity
 from catalog.models import Category, DetailSchema, DetailSchemaStatus
 from catalog.validators import make_slug
 from core.context import get_request_id
+from employers import capability as employer_capability
 
 from . import content as content_mod
 from .duplicates import find_duplicates
@@ -94,12 +95,20 @@ def _capacity(user: User, permission: Permission) -> str:
     for role in (Role.EDITOR, Role.ADMINISTRATOR, Role.CONTRIBUTOR):
         if role in user.active_roles() and DEFAULT_REGISTRY.has([role], permission):
             return str(role)
-    return "none"
+    return "employer" if employer_capability.is_employer(user) else "none"
 
 
-def _require(user: User, permission: Permission) -> None:
-    if not user.is_active or not DEFAULT_REGISTRY.has(user.active_roles(), permission):
+def _require(user: User, permission: Permission) -> bool:
+    """Raise unless the actor may attempt `permission`. Returns True when the authority comes *only* from an
+    employer membership (author actions; Phase 6A), in which case the caller must also pass the listing
+    through `employer_capability.enforce`."""
+    if not user.is_active:
         raise PermissionDeniedError()
+    if DEFAULT_REGISTRY.has(user.active_roles(), permission):
+        return False
+    if permission in EMPLOYER_AUTHOR_PERMISSIONS and employer_capability.is_employer(user):
+        return True
+    raise PermissionDeniedError()
 
 
 def _lock(opportunity_id: uuid.UUID | str, expected_row_version: int | None) -> Opportunity:
@@ -267,7 +276,7 @@ def create_draft(actor: User, *, category_code: str, content: Mapping[str, Any])
     ctx = Context("T01", "opportunity.create", Permission.OPP_DRAFT_CREATE)
 
     def body() -> Opportunity:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         category = Category.objects.filter(code=category_code, active=True).first()
         if category is None:
             raise ValidationFailed({"category": [("not_found_reference", "Unknown category.")]})
@@ -275,7 +284,12 @@ def create_draft(actor: User, *, category_code: str, content: Mapping[str, Any])
         if "organisation" not in cleaned:
             errors.setdefault("organisation_id", []).append(("required", "Choose an organisation."))
         content_mod.raise_if_errors(errors)
+        if employer:
+            employer_capability.check_content(None, cleaned, content)
+            employer_capability.enforce_create(actor, category_code, cleaned["organisation"])
         opportunity = Opportunity.objects.create(category=category, created_by=actor)
+        if employer:
+            employer_capability.bind_listing(actor, opportunity, cleaned["organisation"])
         version = OpportunityVersion.objects.create(
             opportunity=opportunity,
             version_no=1,
@@ -299,8 +313,9 @@ def save_draft(
     ctx = Context("T02", "opportunity.save", Permission.OPP_DRAFT_EDIT_OWN)
 
     def body() -> OpportunityVersion:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, expected_row_version)
+        binding = employer_capability.enforce(actor, opportunity) if employer else None
         version = _version(opportunity, opportunity.pending_version_id)
         if version.state != VersionState.DRAFT:
             raise InvalidTransition("Only a draft can be edited.")
@@ -308,6 +323,8 @@ def save_draft(
             raise PermissionDeniedError("permission_denied", "Only the author can edit this draft.")
         cleaned, errors = content_mod.clean_draft(content)
         content_mod.raise_if_errors(errors)
+        if employer:
+            employer_capability.check_content(binding, cleaned, content)
         content_mod.apply_to_version(version, cleaned, actor_id=actor.pk)
         _bump(opportunity)
         _record(ctx, actor, opportunity, version, opportunity.status)
@@ -327,13 +344,16 @@ def submit(
     ctx = Context("T03", "opportunity.submit", Permission.OPP_SUBMIT)
 
     def body() -> OpportunityVersion:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, expected_row_version)
+        binding = employer_capability.enforce(actor, opportunity) if employer else None
         version = _version(opportunity, opportunity.pending_version_id)
         if version.state != VersionState.DRAFT:
             raise InvalidTransition("Only a draft can be submitted.")
         if version.author_id != actor.pk:
             raise PermissionDeniedError("permission_denied", "Only the author can submit this draft.")
+        if binding is not None:
+            employer_capability.prepare_submission(actor, version, binding)
         errors = validate_publishable(version)
         duplicates = find_duplicates(version)
         hard = [d for d in duplicates if d.level == "hard"]
@@ -764,8 +784,10 @@ def discard(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_versio
     ctx = Context("T13", "opportunity.discard", Permission.OPP_DISCARD_OWN)
 
     def body() -> Opportunity:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, expected_row_version)
+        if employer:
+            employer_capability.enforce(actor, opportunity)
         version = _version(opportunity, opportunity.pending_version_id)
         if version.state not in (VersionState.DRAFT, VersionState.REJECTED):
             raise InvalidTransition("Only a draft or a rejected revision can be discarded.")
@@ -789,8 +811,10 @@ def reopen(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_version
     ctx = Context("T14", "opportunity.reopen", Permission.OPP_DRAFT_EDIT_OWN)
 
     def body() -> OpportunityVersion:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, expected_row_version)
+        if employer:
+            employer_capability.enforce(actor, opportunity)
         rejected = _version(opportunity, opportunity.pending_version_id)
         if rejected.state != VersionState.REJECTED:
             raise InvalidTransition("Only a rejected revision can be reopened.")
@@ -812,8 +836,10 @@ def amend(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_version:
     ctx = Context("T15", "opportunity.amend", Permission.OPP_AMEND)
 
     def body() -> OpportunityVersion:
-        _require(actor, ctx.permission)
+        employer = _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, expected_row_version)
+        if employer:
+            employer_capability.enforce(actor, opportunity)
         if opportunity.status not in (
             ListingStatus.PUBLISHED,
             ListingStatus.EXPIRED,

@@ -38,6 +38,8 @@ class Permission(StrEnum):
     OPP_ARCHIVE = "opp.archive"
     ORG_CREATE = "org.create"
     ORG_EDIT = "org.edit"
+    EMPLOYER_REVIEW = "employer.review"
+    EMPLOYER_VERIFICATION_REVOKE = "employer.verification.revoke"
     TAXONOMY_MANAGE = "taxonomy.manage"
     USER_ROLE_GRANT = "user.role.grant"
     USER_ROLE_REVOKE = "user.role.revoke"
@@ -71,8 +73,18 @@ _EDITOR_CODES = frozenset(
         P.OPP_ARCHIVE,
         P.ORG_CREATE,
         P.ORG_EDIT,
+        P.EMPLOYER_REVIEW,
     }
 )
+
+# What a verified employer's member may do through the publishing service (Phase 6A, D-35). This is *not* a
+# staff role: it is not in DEFAULT_REGISTRY, grants no admin access, and holds only author actions. Review,
+# verification and publication codes are deliberately absent (D-18, D-22); a test pins that.
+EMPLOYER_AUTHOR_PERMISSIONS: frozenset[str] = frozenset(
+    {P.OPP_DRAFT_CREATE, P.OPP_DRAFT_EDIT_OWN, P.OPP_SUBMIT, P.OPP_DISCARD_OWN, P.OPP_AMEND}
+)
+# Categories an employer may post in (they are issuers of vacancies and placements).
+EMPLOYER_CATEGORIES: frozenset[str] = frozenset({"jobs", "internships", "graduate-programmes"})
 
 _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
     {
@@ -96,6 +108,7 @@ _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
                 P.USER_STATUS_CHANGE,
                 P.AUDIT_READ_ALL,
                 P.SETTINGS_MANAGE,
+                P.EMPLOYER_VERIFICATION_REVOKE,
             }
         ),
     }
