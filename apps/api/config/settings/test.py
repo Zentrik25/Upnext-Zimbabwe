@@ -28,6 +28,8 @@ REST_FRAMEWORK = {
         "token_ip": "10/1h",
         "me_write": "60/1m",
         "listing_event_ip": "120/1m",
+        "for_you_user": "120/1m",
+        "unsubscribe_ip": "30/1h",
     },
 }
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = 60

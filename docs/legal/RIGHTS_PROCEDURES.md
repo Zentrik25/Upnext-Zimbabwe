@@ -12,7 +12,7 @@ The person signs in and requests deletion on the account page (14-day cooling-of
 Name: the person edits it on the account page. E-mail address: change of e-mail address once available (it depends on verified delivery), otherwise an Administrator after identity verification.
 
 ## Access to a copy (manual, until the owner decides on a self-service export)
-An Administrator runs a read-only query for the verified person's rows listed in DATA_INVENTORY.md section A (account row without password hash, saved listings, session records, message log without bodies) and sends the result to the account's own address. The query and the person's identity check are logged.
+An Administrator runs a read-only query for the verified person's rows listed in DATA_INVENTORY.md section A (account row without password hash, saved listings, seeker profile and its choices, job-alert settings and consent proof, session records, message log without bodies) and sends the result to the account's own address. The query and the person's identity check are logged.
 
 ## Objection, restriction, complaints
 Recorded and answered by the owner; no automated processing decides anything about a person (there is no profiling in the current product).

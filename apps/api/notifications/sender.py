@@ -32,6 +32,7 @@ class EmailMessage:
     body: str
     kind: str
     html: str | None = None
+    headers: tuple[tuple[str, str], ...] = ()  # extra message headers, for example List-Unsubscribe
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,7 @@ class FileSender:
             "subject": message.subject,
             "body": message.body,
             "html": message.html,
+            "headers": dict(message.headers),
         }
         (self.directory / f"{stamp}-{message_id}.json").write_text(json.dumps(record), encoding="utf-8")
         return DeliveryResult("sent", message_id)
@@ -118,6 +120,8 @@ class SmtpSender:
             mime["Reply-To"] = self.reply_to
         mime["Message-ID"] = f"<{message.idempotency_key}@nextjob>"
         mime["Auto-Submitted"] = "auto-generated"
+        for name, value in message.headers:
+            mime[name] = value
         mime.set_content(message.body)
         if message.html:
             mime.add_alternative(message.html, subtype="html")

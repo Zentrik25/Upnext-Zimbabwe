@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { OpportunitySummary } from "./catalog-types";
+import type { ForYouFeed, JobAlert, SeekerProfile } from "./seeker-types";
 
 export type CurrentUser = {
   id: string;
@@ -97,4 +98,22 @@ export async function getSessions(): Promise<SessionInfo[]> {
   const response = await authedGet("me/sessions");
   if (!response || !response.ok) return [];
   return ((await response.json()) as { data: SessionInfo[] }).data;
+}
+
+/** The caller's own private profile (an empty one when nothing was saved), or null when unreachable. */
+export async function getProfile(): Promise<SeekerProfile | null> {
+  const result = await authedJson<SeekerProfile>("me/profile");
+  return result.ok ? result.data : null;
+}
+
+export async function getJobAlert(): Promise<JobAlert | null> {
+  const result = await authedJson<JobAlert>("me/alerts");
+  return result.ok ? result.data : null;
+}
+
+/** The For You page of recommendations; `status` 0 means the service could not be reached. */
+export async function getForYou(
+  params: URLSearchParams,
+): Promise<{ ok: true; data: ForYouFeed } | { ok: false; status: number }> {
+  return authedJson<ForYouFeed>(`discovery/for-you?${params.toString()}`);
 }

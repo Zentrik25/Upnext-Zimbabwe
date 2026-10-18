@@ -1,6 +1,7 @@
 /** Shapes returned by the public catalogue API (docs/engineering/openapi/openapi.yaml). */
 export type Category = { code: string; name: string };
 export type Location = { id: string; slug: string; name: string; kind: string; parent_slug: string | null };
+export type Sector = { id: string; slug: string; name: string };
 export type DeadlineState = "open" | "closing_soon" | "unknown" | "expired";
 export type Deadline = {
   at: string | null;

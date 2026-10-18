@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { OpportunitySummary, VerificationLevel } from "@/lib/catalog-types";
 import {
   deadlineView,
@@ -19,11 +20,13 @@ export function OpportunityRow({
   row,
   save,
   refreshOnChange = false,
+  extra,
 }: {
   row: OpportunitySummary;
   /** Present on pages that know the session: the live save toggle. */
   save?: { signedIn: boolean; saved: boolean; returnTo: string };
   refreshOnChange?: boolean;
+  extra?: ReactNode;
 }) {
   const deadline = deadlineView(row.deadline, row.status);
   const facts = [
@@ -46,6 +49,7 @@ export function OpportunityRow({
           tone: verificationTone(row.verification.level),
         },
       ]}
+      extra={extra}
       sourceNote={row.primary_source_name ? `Source: ${row.primary_source_name}` : "Source not named"}
       action={
         save ? (

@@ -50,6 +50,9 @@ services:
       UPNEXT_THROTTLE_LOGIN_IP: 500/15m
       UPNEXT_THROTTLE_EMAIL_REQUEST_IP: 200/1h
       UPNEXT_THROTTLE_TOKEN_IP: 200/1h
+      # Every server-rendered page fetches its data from this one container, so the browser suite looks like a
+      # single busy client: the per-IP public read limit (240/min) answered 429 to /sitemap and the lists. Test stack only.
+      UPNEXT_THROTTLE_PUBLIC_READ: 6000/1m
       UPNEXT_EMAIL_REQUEST_GAP_SECONDS: "1"
       UPNEXT_EMAIL_REQUESTS_PER_HOUR: "100"
       COVERAGE_FILE: /tmp/.coverage

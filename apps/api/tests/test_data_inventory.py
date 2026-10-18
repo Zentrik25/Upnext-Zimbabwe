@@ -11,7 +11,15 @@ from django.db import connection
 LOOKS_PERSONAL = re.compile(
     r"(email|display_name|address|^ip|_ip|agent|password|phone|contact|birth|session_key|to_address)", re.I
 )
-SCOPE_PREFIXES = ("accounts_", "notifications_", "audit_", "opportunities_savedopportunity", "employers_")
+SCOPE_PREFIXES = (
+    "accounts_",
+    "notifications_",
+    "audit_",
+    "opportunities_savedopportunity",
+    "employers_",
+    "profiles_",
+    "alerts_",
+)
 # Columns that match the pattern but are not personal data of a person, with the reason.
 NOT_PERSONAL = {
     "notifications_emailsuppression.address_hash": "a keyed one-way hash, listed in the inventory anyway",

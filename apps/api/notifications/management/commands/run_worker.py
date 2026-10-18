@@ -11,6 +11,7 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandParser
 
 from accounts import deletion, retention
+from alerts import service as alert_service
 from core import alerts as alert_catalogue
 from core.models import JobRun
 from notifications.services import process_batch, status_summary
@@ -40,6 +41,11 @@ class Command(BaseCommand):
                     raise
                 last_housekeeping = time.monotonic()
                 JobRun.record("housekeeping", detail=f"deleted={deleted} removed={sum(removed.values())}")
+                try:  # job alerts: does nothing while e-mail delivery is unverified (B-01)
+                    ran = alert_service.run_due()
+                    JobRun.record("alerts", detail=f"{ran.status} checked={ran.checked} queued={ran.queued}")
+                except Exception:  # an alert problem must never stop the outbox or deletions
+                    logger.exception("job alerts failed", extra={"event": "alerts.pass_failed"})
                 if alerts := status_summary()["alerts"]:
                     logger.warning(
                         "outbox needs attention", extra={"event": "outbox.alert", "alerts": alerts}

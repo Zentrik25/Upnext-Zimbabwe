@@ -28,11 +28,28 @@ export function SavedRow({ item }: { item: SavedItem }) {
       </article>
     );
   }
+  const open = item.availability === "open";
+  const extra = (
+    <p className="mt-3 text-small" data-testid="saved-availability">
+      {open ? (
+        <a href={`/opportunities/${item.opportunity.slug}#apply`} className="text-accent underline">
+          How to apply on the official site
+        </a>
+      ) : (
+        <span className="text-muted">
+          {item.availability === "withdrawn"
+            ? "The issuer withdrew this listing, so there is nothing to apply to."
+            : "This listing has closed. It stays here so you can see what happened."}
+        </span>
+      )}
+    </p>
+  );
   return (
     <OpportunityRow
       row={item.opportunity}
       save={{ signedIn: true, saved: true, returnTo: "/saved" }}
       refreshOnChange
+      extra={extra}
     />
   );
 }

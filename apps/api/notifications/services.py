@@ -50,6 +50,7 @@ SUBJECTS = {
     EmailKind.EMAIL_CHANGE_CONFIRM: "Confirm your new NextJob Zimbabwe e-mail address",
     EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your NextJob Zimbabwe e-mail address was requested",
     EmailKind.EMAIL_CHANGED_NOTICE: "Your NextJob Zimbabwe e-mail address was changed",
+    EmailKind.JOB_ALERT: "New opportunities matching your NextJob Zimbabwe alert",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
@@ -103,10 +104,19 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
     if row.kind in _TOKEN_PATHS and link is None:
         return None
     context = {**row.payload, "link": link, "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/")}
+    headers: tuple[tuple[str, str], ...] = ()
+    if row.kind == EmailKind.JOB_ALERT:
+        from alerts import messages  # local import: alerts depends on this module
+
+        extra = messages.context_for(row)
+        if extra is None:
+            return None
+        context.update(extra)
+        headers = messages.headers_for(row)
     # Plain text: nothing is HTML-escaped (a link's "&" or a name such as "Tom & Jerry" must arrive as typed).
     template = get_template(f"notifications/{row.template_key}_v{row.template_version}.txt")
     body = str(cast(Any, template).template.render(Context(context, autoescape=False)))
-    subject = SUBJECTS[EmailKind(row.kind)]
+    subject = str(row.payload.get("subject") or SUBJECTS[EmailKind(row.kind)])
     return EmailMessage(
         idempotency_key=row.idempotency_key,
         to=row.to_address,
@@ -114,6 +124,7 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
         body=body,
         kind=row.kind,
         html=render_html(subject=subject, body=body),
+        headers=headers,
     )
 
 

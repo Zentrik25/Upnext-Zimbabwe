@@ -82,6 +82,8 @@ export default function PrivacyPage() {
             "Confirmation and reset links work once and expire (24 hours and 60 minutes). Used and expired ones are removed after 7 days.",
             "The e-mail address on a sent message is removed from our outbox 30 days after sending.",
             "Saved listings and account details are kept until you ask us to delete your account.",
+            "If you fill in the optional profile, it is kept until you change, reset or delete it, or delete your account. Only you can see it: employers and the public cannot. It is used only to order opportunities for you.",
+            "If you turn on job alerts, your choices and the time you agreed are kept until you delete your account. The list of listings already sent is kept for 30 days. Every alert has a link to stop it.",
             "Security records keep only an opaque account number and one-way hashes. [How long they are kept: to be decided.]",
             "[Backups: how long deleted data remains in backups: to be confirmed.]",
           ]}
@@ -91,9 +93,9 @@ export default function PrivacyPage() {
         <p>
           You can ask us to delete your account from the account page. Your request waits 14 days so that you
           can change your mind, and you can cancel at any time before the end of that period. After that, your
-          name and e-mail address are replaced, your saved listings, sessions and unused links are deleted,
-          and you cannot sign in again. We send a confirmation. Accounts that also hold staff access must have
-          that access removed by an administrator first.
+          name and e-mail address are replaced, your saved listings, profile, job-alert settings, sessions and
+          unused links are deleted, and you cannot sign in again. We send a confirmation. Accounts that also
+          hold staff access must have that access removed by an administrator first.
         </p>
       </Section>
       <Section title="Changing your e-mail address">

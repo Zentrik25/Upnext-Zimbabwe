@@ -1,5 +1,12 @@
 import "server-only";
-import type { Category, Location, OpportunityDetail, OpportunitySummary, Page } from "./catalog-types";
+import type {
+  Category,
+  Location,
+  OpportunityDetail,
+  OpportunitySummary,
+  Page,
+  Sector,
+} from "./catalog-types";
 import type { PublicProfile } from "./employer-types";
 
 export type Failure = "unreachable" | "invalid-query" | "rate-limited" | "unexpected-response";
@@ -82,6 +89,11 @@ export async function listCategories(): Promise<Category[]> {
 
 export async function listLocations(): Promise<Location[]> {
   const result = await json<{ data: Location[] }>("locations");
+  return result.ok ? result.data.data : [];
+}
+
+export async function listSectors(): Promise<Sector[]> {
+  const result = await json<{ data: Sector[] }>("sectors");
   return result.ok ? result.data.data : [];
 }
 

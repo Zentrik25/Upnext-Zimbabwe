@@ -171,6 +171,14 @@ jobs:
           E2E_ACCOUNTS: "1"
           E2E_EXEC: docker compose -f ${{ github.workspace }}/infrastructure/compose/compose.yaml -f ${{ github.workspace }}/infrastructure/compose/compose.prod-like.yaml exec -T worker python manage.py
         run: npx playwright test tests/e2e/accounts-journey.spec.ts
+      - name: Jobseeker browser journey (profile, For you, saved, alerts generated locally, unsubscribe, privacy)
+        working-directory: apps/web
+        env:
+          BASE_URL: http://127.0.0.1:8080
+          E2E_SEEKER: "1"
+          E2E_ACCOUNTS: "1"
+          E2E_EXEC: docker compose -f ${{ github.workspace }}/infrastructure/compose/compose.yaml -f ${{ github.workspace }}/infrastructure/compose/compose.prod-like.yaml exec -T worker python manage.py
+        run: npx playwright test tests/e2e/seeker-journey.spec.ts
       - name: Employer portal browser journey (register, claim, profile, post, review, counters)
         working-directory: apps/web
         env:

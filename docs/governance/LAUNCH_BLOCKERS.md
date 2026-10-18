@@ -36,6 +36,9 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 | B-09 | Editorial handbook, draft-only import, content-health page and separation-of-duties audit | Three named staff, approved schemas and taxonomies, 100 source-checked listings from 30 issuers entered by real staff. **Not done: no real content exists** |
 | B-10 | Automated checks; manual audit plan and mobile budgets | Testers, real devices and screen readers; a report. **Not done: no manual accessibility testing has been performed** |
 
+## A3. Phase 6B additions (D-38)
+No blocker is closed. B-01 additionally gates **job alerts** (nothing is sent while delivery is unverified) and B-02 additionally gates **collecting seeker profiles and alert consent in production** (privacy text, lawful basis, retention P6B-11, the consent wording `alerts-consent-v1`). B-09 still applies: For You quality cannot be judged on fictional demo listings. See `docs/phase6b/PHASE6B_REPORT.md`.
+
 ## B. Owner decisions still needed
 
 | Decision | Current default | Recommendation |

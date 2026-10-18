@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SavedRow } from "@/components/opportunities/saved-row";
+import { SeekerNav } from "@/components/seeker/seeker-nav";
 import { Container } from "@/components/layout";
 import { ButtonLink, EmptyState, Tabs } from "@/components/ui";
 import { listCategories } from "@/lib/catalog";
@@ -43,8 +44,9 @@ export default async function SavedPage({ searchParams }: { searchParams: Promis
           </p>
         </Container>
       </section>
+      <SeekerNav current="saved" />
       <Container>
-        <Tabs label="Saved by category" items={tabs} />
+        <Tabs label="Saved by category" items={tabs} className="border-t-0" />
       </Container>
       <Container className="pt-[18px] pb-[65px]">
         <h2 className="sr-only">Saved listings</h2>
@@ -68,6 +70,13 @@ export default async function SavedPage({ searchParams }: { searchParams: Promis
                 ? `${result.total} saved ${result.total === 1 ? "listing" : "listings"}`
                 : "Showing more"}
             </p>
+            {result.data.some((item) => item.availability !== "open") ? (
+              <p className="mb-2 text-small text-muted" data-testid="saved-closed-note">
+                {result.data.filter((item) => item.availability === "open").length} open ·{" "}
+                {result.data.filter((item) => item.availability !== "open").length} closed or removed on this
+                page
+              </p>
+            ) : null}
             <div className="border-t border-line" data-testid="saved-results">
               {result.data.map((item) => (
                 <SavedRow key={item.opportunity_id} item={item} />

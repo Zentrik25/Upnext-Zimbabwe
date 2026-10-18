@@ -25,6 +25,8 @@ tags:
   - name: me
     description: Authenticated seeker
   - name: discovery
+  - name: alerts
+    description: Job alerts (Phase 6B). Nothing is sent while e-mail delivery is unverified (B-01).
   - name: editorial
     description: Staff only. x-status reserved — exposure depends on the staff-UI decision.
   - name: administration
@@ -603,6 +605,8 @@ paths:
     get:
       tags: [me]
       operationId: getProfile
+      summary: The caller's own private profile (Phase 6B)
+      description: Always 200. `exists` is false until something was saved. Never readable by anyone but its owner.
       security: [{ cookieAuth: [] }]
       responses:
         '200': { description: 'Profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
@@ -610,7 +614,7 @@ paths:
     patch:
       tags: [me]
       operationId: updateProfile
-      description: Partial update. `null` clears an optional field; omitted fields are unchanged; arrays replace.
+      description: Partial update. `null` clears an optional field; omitted fields are unchanged; arrays replace. Taxonomy values are ids (categories are codes).
       security: [{ cookieAuth: [], csrf: [] }]
       requestBody:
         required: true
@@ -619,6 +623,63 @@ paths:
         '200': { description: 'Updated profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [me]
+      operationId: deleteProfile
+      description: Removes the profile and everything in it. Idempotent; 204 whether or not one existed. The account and its display name stay.
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Deleted' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/profile/reset-preferences:
+    post:
+      tags: [me]
+      operationId: resetProfilePreferences
+      description: Clears categories, industries, preferred places, employment types and work arrangements; keeps the about-you fields.
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'Profile after the reset', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/alerts:
+    get:
+      tags: [alerts]
+      operationId: getJobAlert
+      summary: The caller's job-alert settings (Phase 6B)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Alert settings', content: { application/json: { schema: { $ref: '#/components/schemas/JobAlert' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    put:
+      tags: [alerts]
+      operationId: updateJobAlert
+      description: |
+        Partial update of the caller's alert. Switching it on needs `consent: true` (nothing is pre-ticked), a confirmed
+        e-mail address (403 otherwise) and at least one category or place. Switching it off records the withdrawal.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/JobAlertUpdate' } } }
+      responses:
+        '200': { description: 'Updated settings', content: { application/json: { schema: { $ref: '#/components/schemas/JobAlert' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /alerts/unsubscribe:
+    post:
+      tags: [alerts]
+      operationId: unsubscribeJobAlert
+      summary: One-click unsubscribe from the link in every alert
+      description: No session and no CSRF token (RFC 8058 one-click POST from a mail client). The signed token, in the query or the body, is the credential; its only effect is to switch that person's alert off. Idempotent.
+      security: []
+      parameters:
+        - { name: token, in: query, required: false, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { type: object, additionalProperties: false, properties: { token: { type: string, maxLength: 500 } } } } }
+      responses:
+        '204': { description: 'Alerts are off' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /me/sessions:
     get:
       tags: [me]
@@ -682,12 +743,12 @@ paths:
     get:
       tags: [discovery]
       operationId: getForYou
-      summary: Rules-based personalised feed
+      summary: Rules-based personalised feed (rules-v1, Phase 6B)
       description: |
-        Relevance estimates, not eligibility decisions. Returns useful results even for an incomplete profile
-        (departure from the reference lock panel, x-open OQ-23). Missing profile data never disqualifies;
-        unknown requirements are reported under `match.unknowns`, never treated as satisfied.
-      x-open: OQ-23
+        Relevance estimates, not eligibility decisions (docs/engineering/RECOMMENDATION_SPEC.md). A listing appears only
+        with at least one positive signal; missing data never excludes it and never counts as a match; unknown
+        requirements are reported under `match.unknowns`. With no profile, or no match, `meta.mode` is `newest` and the
+        page is the newest open listings with no reasons. Computed on request; nothing is stored.
       security: [{ cookieAuth: [] }]
       parameters:
         - { name: category, in: query, schema: { type: string } }
@@ -707,12 +768,16 @@ paths:
                   page: { $ref: '#/components/schemas/PageInfo' }
                   meta:
                     type: object
-                    required: [model_version, profile_complete]
+                    required: [model_version, mode, fields_filled, fields_total, suggestions]
                     properties:
                       model_version: { type: string, examples: ['rules-v1'] }
-                      profile_complete: { type: boolean }
-                      suggestions: { type: array, items: { type: object, required: [code, text], properties: { code: { type: string }, text: { type: string } } } }
+                      mode: { type: string, enum: [matched, newest] }
+                      fields_filled: { type: integer }
+                      fields_total: { type: integer }
+                      suggestions: { type: array, items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /editorial/opportunities:
     get:
@@ -1193,34 +1258,67 @@ components:
       additionalProperties: false
       required: [token]
       properties: { token: { type: string, maxLength: 200 } }
+    Qualification: { type: string, enum: [o_level, a_level, certificate, diploma, bachelors_degree, honours_degree, masters_degree, doctorate, professional_qualification], description: 'Same vocabulary as the jobs detail schema minimum_qualification' }
+    NamedRef:
+      type: object
+      required: [id, slug, name]
+      properties: { id: { type: string, format: uuid }, slug: { type: string }, name: { type: string } }
     Profile:
       type: object
-      required: [country, category_interests, sector_interests, preferred_locations, skills, fields_of_study, work_arrangements]
+      description: Private to its owner. Holds taxonomy references and enums only; no free text, contact detail or protected characteristic.
+      required: [exists, home_location, highest_qualification, experience_level, work_arrangements, employment_types, categories, sectors, preferred_locations, skills, fields_filled, fields_total, updated_at]
       properties:
-        country: { type: string, pattern: '^[A-Z]{2}$', default: ZW }
-        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        exists: { type: boolean }
+        home_location: { oneOf: [ { $ref: '#/components/schemas/NamedRef' }, { type: 'null' } ] }
+        highest_qualification: { oneOf: [ { $ref: '#/components/schemas/Qualification' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
-        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string, description: 'category code' } }
-        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
-        preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
-        skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
-        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
-        updated_at: { type: string, format: date-time }
+        employment_types: { type: array, maxItems: 6, uniqueItems: true, items: { $ref: '#/components/schemas/EmploymentType' } }
+        categories: { type: array, maxItems: 6, items: { $ref: '#/components/schemas/Category' } }
+        sectors: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/NamedRef' } }
+        preferred_locations: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/NamedRef' } }
+        skills: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/Skill' } }
+        fields_filled: { type: integer }
+        fields_total: { type: integer }
+        updated_at: { type: [string, 'null'], format: date-time }
     ProfileUpdate:
       type: object
       additionalProperties: false
       minProperties: 1
       properties:
-        country: { type: string, pattern: '^[A-Z]{2}$' }
-        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        home_location: { type: [string, 'null'], format: uuid, description: 'A city or province' }
+        highest_qualification: { oneOf: [ { $ref: '#/components/schemas/Qualification' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
-        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
-        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        employment_types: { type: array, maxItems: 6, uniqueItems: true, items: { $ref: '#/components/schemas/EmploymentType' } }
+        categories: { type: array, maxItems: 6, uniqueItems: true, items: { type: string, description: 'category code' } }
+        sectors: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
         preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
         skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
-        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
+    JobAlert:
+      type: object
+      required: [enabled, frequency, categories, locations, consented_at, consent_wording_version, last_sent_at, delivery_available, consent_wording, updated_at]
+      properties:
+        enabled: { type: boolean }
+        frequency: { type: string, enum: [daily, weekly] }
+        categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
+        locations: { type: array, items: { $ref: '#/components/schemas/NamedRef' } }
+        consented_at: { type: [string, 'null'], format: date-time }
+        consent_wording_version: { type: string }
+        last_sent_at: { type: [string, 'null'], format: date-time }
+        delivery_available: { type: boolean, description: 'False while e-mail delivery is unverified (B-01): settings are stored, nothing is sent' }
+        consent_wording: { type: string, description: 'The exact consent sentence shown next to the unticked box' }
+        updated_at: { type: [string, 'null'], format: date-time }
+    JobAlertUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        enabled: { type: boolean }
+        frequency: { type: string, enum: [daily, weekly] }
+        categories: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
+        locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        consent: { type: boolean, description: 'Must be true when switching the alert on' }
     SessionInfo:
       type: object
       required: [id, created_at, last_seen_at, current]
@@ -1245,16 +1343,19 @@ components:
         opportunity: { $ref: '#/components/schemas/OpportunitySummary' }
         match:
           type: object
-          required: [reasons, unknowns]
-          description: Relevance estimate, not an eligibility decision. Reasons must be derived from the same deterministic factors that produced the ranking.
+          required: [reasons, unknowns, notes]
+          description: Relevance estimate, not an eligibility decision. Every reason comes from the signal that ranked the listing. There is no numeric score.
           properties:
-            score: { type: [number, 'null'], minimum: 0, maximum: 100, description: 'x-open OQ-23: may be omitted or hidden by the UI' }
             reasons:
               type: array
-              items: { type: object, required: [signal, text], properties: { signal: { type: string, enum: [category_interest, sector_interest, location, skills, education, experience, deadline] }, text: { type: string } } }
+              items: { type: object, required: [signal, text], properties: { signal: { type: string, enum: [category_interest, sector_interest, skills, location, work_arrangement, employment_type, experience, education] }, text: { type: string } } }
             unknowns:
               type: array
-              description: Requirements or profile facts that could not be compared; never treated as satisfied
+              description: Things the profile states that the listing does not; never treated as satisfied
+              items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
+            notes:
+              type: array
+              description: Information that is neither a match nor an exclusion, for example a stated minimum qualification above the profile's level
               items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
     DraftContent:
       type: object
