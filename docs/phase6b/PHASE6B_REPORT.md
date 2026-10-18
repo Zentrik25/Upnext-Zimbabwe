@@ -58,4 +58,10 @@ Profile and alert views work on `request.user` only; no route carries an account
 All of B-01 to B-10 remain open (`LAUNCH_BLOCKERS.md`). Phase 6B adds dependencies: B-01 gates alerts, B-02 gates collecting profiles and alert consent, B-09 limits what can be judged about For You.
 
 ## 9. Pull request, final commit, CI
-Filled in after the run (below).
+- Draft pull request: https://github.com/Zentrik25/Upnext-Zimbabwe/pull/9 into `claude/new-session-t9v0fd`. Not merged; merging needs the owner's separate approval.
+- Last code commit: `e528b02`. **Both CI runs on it passed**: push run 39172718782 and pull_request run 39172722866 (API, web, documentation, secrets scan, the production-mode Compose end-to-end job including the new jobseeker journey step, and the local TLS rehearsal). A later commit changes this report only; its CI result is noted in the pull request.
+- Failed runs on the way, and why (all fixed, none by weakening a test):
+  1. Run 39169128385 (head `15cb14e`): Prettier on `privacy/page.tsx`, and the secrets scan flagged the throwaway password literal of the new browser test (allow-listed by hash, as in Phase 6A).
+  2. Runs 39170187046 and 39170189273 (head `d93d70b`): the browser suite's server-rendered pages share one container IP, so the public-read limit (240 per minute) returned 429 and `seo.spec.ts` (sitemap) failed; fixed by loosening that limit on the throwaway Compose test stack only (`965967e`). This is the pre-existing flake described in section 2.
+  3. Run 39171407244 (head `965967e`, push run): the new journey clicked a controlled checkbox before React hydrated on the production build; fixed by waiting for hydration in the test (`e528b02`). The pull_request run of the same commit had passed, which is what a race looks like.
+- Local evidence: sections 5 and 6 above; screenshots in `docs/phase6b/evidence/`.
