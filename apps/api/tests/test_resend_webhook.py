@@ -46,12 +46,33 @@ def post(
     return Client().post(URL, data=body, content_type="application/json", **headers)
 
 
-def test_a_permanent_bounce_suppresses_every_recipient() -> None:
-    body = event(
-        "email.bounced", ["Gone One <gone@example.org>", "two@example.org"], bounce={"type": "Permanent"}
-    )
+def test_a_permanent_bounce_suppresses_the_recipient() -> None:
+    body = event("email.bounced", ["Gone One <gone@example.org>"], bounce={"type": "Permanent"})
     assert post(body).status_code == 204
-    assert suppression.is_suppressed("gone@example.org") and suppression.is_suppressed("TWO@example.org")
+    assert suppression.is_suppressed("gone@example.org")
+
+
+@pytest.mark.parametrize("kind", ["email.bounced", "email.complained"])
+def test_an_event_naming_several_recipients_suppresses_nobody(kind: str) -> None:
+    """Which recipient failed is unknowable from such an event; guessing would suppress innocent addresses."""
+    body = event(kind, ["one@example.org", "two@example.org"], bounce={"type": "Permanent"})
+    assert post(body, message_id=f"msg_{kind}").status_code == 204
+    assert not suppression.is_suppressed("one@example.org") and not suppression.is_suppressed(
+        "two@example.org"
+    )
+
+
+def test_no_recipient_or_a_malformed_one_suppresses_nobody() -> None:
+    for to in ([], ["not-an-address"], [None]):
+        body = json.dumps({"type": "email.complained", "data": {"to": to}}).encode()
+        assert post(body, message_id=f"msg_{len(str(to))}").status_code == 204
+
+
+def test_the_bounce_type_is_matched_without_regard_to_case() -> None:
+    assert (
+        post(event("email.bounced", ["lower@example.org"], bounce={"type": "permanent"})).status_code == 204
+    )
+    assert suppression.is_suppressed("lower@example.org")
 
 
 def test_a_complaint_suppresses() -> None:
@@ -70,6 +91,10 @@ def test_a_complaint_suppresses() -> None:
         ("email.delivered", {}),
         ("email.sent", {}),
         ("email.something_new", {}),
+        ("email.scheduled", {}),
+        ("email.suppressed", {"suppressed": {"type": "OnAccountSuppressionList", "message": "x"}}),
+        ("email.failed", {"failed": {"reason": "reached_daily_quota"}}),
+        ("suppression.added", {"email": "fine@example.org", "origin": "bounce"}),
     ],
 )
 def test_temporary_or_unknown_events_never_suppress(kind: str, extra: dict[str, Any]) -> None:
@@ -189,3 +214,51 @@ def test_resend_smtp_settings_are_checked() -> None:
     assert any("465" in p for p in problems(wrong_port, production=True))
     starttls_wrong = SimpleNamespace(**{**vars(good), "UPNEXT_SMTP_SECURITY": "starttls"})
     assert any("587" in p for p in problems(starttls_wrong, production=True))
+
+
+# --- Interoperability with the Standard Webhooks library that Resend's SDK uses to verify ----------------
+# Produced once with standardwebhooks@1.1.1 (npm): Webhook(secret).sign(id, date, body). A signature our code
+# reproduces byte for byte is one the provider's own verifier accepts, and the reverse.
+KAT_SECRET = "whsec_a25vd24tYW5zd2VyLXRlc3Qta2V5LTAxMjM0NTY3ODk="
+KAT_ID, KAT_TS = "msg_kat1", 1760774400
+KAT_BODY = (
+    b'{"type":"email.bounced","created_at":"2026-10-18T08:00:00.000Z",'
+    b'"data":{"to":["a@example.org"],"bounce":{"type":"Permanent"}}}'
+)
+KAT_SIG = "v1,cixF5Xg2mFZRLhRRsO8xuz0UFQaYZrcRehhwI1/FtYs="
+
+
+def test_our_signature_equals_the_standard_webhooks_library_output() -> None:
+    assert resend_webhook.sign(KAT_SECRET, KAT_ID, str(KAT_TS), KAT_BODY) == KAT_SIG
+
+
+def test_the_known_answer_is_accepted_inside_the_window_and_refused_outside(settings: Any) -> None:
+    settings.UPNEXT_RESEND_WEBHOOK_SECRET = KAT_SECRET
+    assert resend_webhook.process(KAT_BODY, KAT_ID, str(KAT_TS), KAT_SIG, now=KAT_TS + 299)["suppressed"] == 1
+    assert suppression.is_suppressed("a@example.org")
+    for now in (KAT_TS + 301, KAT_TS - 301):  # the tolerance is five minutes in both directions
+        with pytest.raises(resend_webhook.WebhookRefused) as refused:
+            resend_webhook.process(KAT_BODY, "msg_kat2", str(KAT_TS), KAT_SIG, now=now)
+        assert refused.value.status == 401
+
+
+def test_the_standard_webhooks_header_names_are_accepted_too() -> None:
+    body = event("email.complained", ["std@example.org"])
+    ts = str(int(time.time()))
+    response = Client().post(
+        URL,
+        data=body,
+        content_type="application/json",
+        HTTP_WEBHOOK_ID="msg_std",
+        HTTP_WEBHOOK_TIMESTAMP=ts,
+        HTTP_WEBHOOK_SIGNATURE=resend_webhook.sign(SECRET, "msg_std", ts, body),
+    )
+    assert response.status_code == 204 and suppression.is_suppressed("std@example.org")
+
+
+def test_only_v1_signatures_count() -> None:
+    body = event("email.complained", ["v2@example.org"])
+    ts = str(int(time.time()))
+    good = resend_webhook.sign(SECRET, "msg_v2", ts, body).replace("v1,", "v2,")
+    assert post(body, message_id="msg_v2", signature=good).status_code == 401
+    assert not suppression.is_suppressed("v2@example.org")

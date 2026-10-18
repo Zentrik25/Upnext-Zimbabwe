@@ -32,3 +32,17 @@ Status: DRAFT. A self-review by the engineering side, using automated checks and
 - **The bootstrap database role is a superuser** in the PostgreSQL image; a real server needs a non-superuser owner role.
 - **TLS, HSTS, cookies on the real domain** are verified only on a local rehearsal (Phase 7).
 - **Breach procedure** is not written (LEGAL_REVIEW_PACK L-8).
+
+## 4. Secret-scan allow-list review (2026-10-18)
+
+`tools/scan-secrets.sh` scans the working tree and the tree of every commit with detect-secrets; reviewed false positives live in `tools/secrets-allowlist.json`, **matched by the SHA-1 of the flagged string** (the `paths` field is documentation: the script does not check it, so an allowed string is allowed in any file). Each hash was recomputed from the candidate literal, not taken on trust:
+
+| Hash (SHA-1) | The string that hashes to it | Where | Verdict |
+|---|---|---|---|
+| `447a8ea0…` | `Reset your NextJob Zimbabwe password` | `notifications/services.py` subject line | genuine false positive (keyword heuristic on "password") |
+| `a69f712b…` | `Your NextJob Zimbabwe password was changed` | same | genuine false positive |
+| `0e61cfdd…` | `whsec_` | `tests/test_resend_webhook.py` | genuine false positive: the public prefix of Resend webhook secrets; the secret in the test is built from the made-up bytes `unit-test-secret-not-real-…` |
+| `a03f834c…` | `re_placeholder` | same file, a config-check fixture | genuine false positive: made-up value, not a Resend key |
+| `d1847d05…` | `whsec_` + base64 of `known-answer-test-key-0123456789` | same file, known-answer vector | genuine false positive: a test vector for the open-source `standardwebhooks` library, protecting nothing (added in the Resend webhook review) |
+
+Why they appear in history: the first two came in with the rebrand commit and the others with the webhook tests, before the entries existed, so the history-wide scan failed on those commits (CI run 39112493750) until the hashes were allow-listed (commit `75198ec`). I did not rewrite history. **Residual risk:** because matching is by string, `whsec_` and `re_placeholder` are tolerated wherever they appear; a real secret has different content and still fails the scan. Tightening the script to also check the path is possible and is left to the owner.

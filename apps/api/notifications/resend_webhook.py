@@ -4,16 +4,23 @@
     svix-id: msg_...                    unique per event, reused on retries
     svix-timestamp: <unix seconds>
     svix-signature: v1,<base64> [v1,<base64> ...]
+    (the same three values under webhook-id / webhook-timestamp / webhook-signature are accepted too: the
+    Standard Webhooks names that Resend's current SDK passes to its verifier)
     signature = base64(HMAC_SHA256(base64decode(secret without "whsec_"), f"{id}.{timestamp}.{raw body}"))
 
-ASSUMPTION to confirm against Resend's current documentation before enabling
-(docs/engineering/RESEND_INTEGRATION.md): the header names, the `whsec_` secret format, and the payload
-`{"type": "email.bounced", "data": {"to": [...], "bounce": {"type": "Permanent"}}}`. Only those fields are
-used, so an unknown field or event type is ignored.
+Checked against (2026-10-18; resend.com was not reachable from the build environment):
+- the `resend` npm SDK 6.34.1 and the `standardwebhooks` 1.1.1 library it calls to verify: signed content
+  `id.timestamp.body`, key = base64 of the secret without `whsec_`, 5-minute tolerance both ways,
+  space-separated `v1,` signatures (known-answer test in tests/test_resend_webhook.py);
+- the SDK's event types: `data.to` is a list, `bounce` is `{type, subType, message}`.
+NOT confirmed from Resend's own documentation: the list of `bounce.type` values (only "Permanent" is relied
+on; anything else never suppresses) and whether `svix-*` or `webhook-*` header names are sent (both are
+accepted).
 
 Semantics: a sending-API 200 is not delivery. Only `email.bounced` with a Permanent bounce and
-`email.complained` suppress an address. Transient or undetermined bounces, `email.delivery_delayed`,
-`email.failed` and the rest never suppress. Nothing personal is logged; a retry of the same event id is
+`email.complained` suppress an address, and only when the event names exactly one recipient (our messages
+have one). Transient or undetermined bounces, `email.delivery_delayed`, `email.failed`, `email.suppressed`,
+`suppression.*` and the rest never suppress. Nothing personal is logged; a retry of the same event id is
 acknowledged and ignored.
 """
 
@@ -119,10 +126,13 @@ def process(
     try:
         bounce = data.get("bounce")
         bounce_type = str(bounce.get("type", "")).lower() if isinstance(bounce, dict) else ""
-        if kind == "email.complained":
-            suppressed = sum(int(suppression.suppress(a, "complaint")) for a in _recipients(data))
+        recipients = _recipients(data)
+        if len(recipients) != 1:
+            pass  # not attributable to one address (our messages have exactly one): never suppress a guess
+        elif kind == "email.complained":
+            suppressed = int(suppression.suppress(recipients[0], "complaint"))
         elif kind == "email.bounced" and bounce_type == "permanent":
-            suppressed = sum(int(suppression.suppress(a, "bounce")) for a in _recipients(data))
+            suppressed = int(suppression.suppress(recipients[0], "bounce"))
     except Exception:
         cache.delete(seen_key)  # let the provider's retry apply it
         raise

@@ -210,9 +210,10 @@ paths:
         Off (404 `webhook_disabled`, so a disabled endpoint looks absent) unless `UPNEXT_RESEND_WEBHOOK_SECRET` (`whsec_...`) is set. Headers `svix-id`,
         `svix-timestamp` (unix seconds, within 5 minutes) and `svix-signature` (`v1,<base64 HMAC-SHA256>` over
         `id.timestamp.rawbody`, one or more space-separated). A repeated `svix-id` is acknowledged and ignored.
-        `email.bounced` with a Permanent bounce and `email.complained` suppress the recipients (keyed hash);
-        every other event type changes nothing. Header names and payload fields are to be confirmed against
-        Resend's current documentation (docs/engineering/RESEND_INTEGRATION.md).
+        `email.bounced` with a Permanent bounce and `email.complained` suppress the single recipient (keyed hash);
+        every other event type changes nothing. Headers `webhook-id`, `webhook-timestamp`, `webhook-signature` (Standard Webhooks names) are accepted in
+        place of the `svix-*` ones. An event naming zero or several recipients suppresses nobody. See
+        docs/engineering/RESEND_INTEGRATION.md for what was verified and what is still to confirm.
       security: []
       responses:
         '204': { description: 'Applied or acknowledged' }

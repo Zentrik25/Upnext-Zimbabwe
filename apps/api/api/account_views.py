@@ -332,9 +332,9 @@ class ResendEmailEventsView(APIView):
         try:
             resend_webhook.process(
                 request.body,
-                request.headers.get("svix-id"),
-                request.headers.get("svix-timestamp"),
-                request.headers.get("svix-signature"),
+                request.headers.get("svix-id") or request.headers.get("webhook-id"),
+                request.headers.get("svix-timestamp") or request.headers.get("webhook-timestamp"),
+                request.headers.get("svix-signature") or request.headers.get("webhook-signature"),
             )
         except resend_webhook.WebhookRefused as refused:
             return error_response(refused.code, "Not accepted.", refused.status)

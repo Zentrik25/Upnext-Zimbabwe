@@ -41,12 +41,21 @@ UPNEXT_EMAIL_REPLY_TO=support@nextjob.co.zw
 
 ## 4. Webhook behaviour
 
-Signature scheme **[confirm]**: Resend signs with Svix. Headers `svix-id`, `svix-timestamp`, `svix-signature` (`v1,<base64>`, possibly several, space-separated). The signed content is `<svix-id>.<svix-timestamp>.<raw body>`, HMAC-SHA256 with the base64-decoded part of the `whsec_` secret.
+Review of 2026-10-18 against the `resend` npm SDK 6.34.1 and the `standardwebhooks` 1.1.1 library its `webhooks.verify` calls (resend.com itself was blocked by the build environment's egress policy, so Resend's web documentation was **not** read):
+
+| Item | Verified in the SDK | Still to confirm on resend.com |
+|---|---|---|
+| Signed content | `<id>.<timestamp>.<raw body>`, HMAC-SHA256, key = base64-decoded secret without `whsec_`, signature `v1,<base64>`, several allowed (space-separated) | |
+| Timestamp tolerance | 5 minutes, rejected both when too old and too new | |
+| Header names | the SDK hands its verifier `webhook-id`, `webhook-timestamp`, `webhook-signature` (Standard Webhooks); Resend's published examples are believed to read `svix-id`, `svix-timestamp`, `svix-signature` | which set Resend sends; **both are accepted** |
+| Payload | `data.to` is a list of recipients; `email.bounced` carries `bounce: {type, subType, message}`; `email.failed` carries `failed.reason`; `email.suppressed` carries `suppressed: {type, message}`; `suppression.added/removed` carry `{email, origin: bounce\|complaint\|manual}` | the list of `bounce.type` values (only "Permanent" is relied on) |
+| Raw body | the SDK verifies the exact string received | |
 
 | Control | Behaviour |
 |---|---|
 | Raw body | the signature is checked on the exact bytes received before the JSON is read |
 | Freshness | timestamps more than 5 minutes from now are refused (401) |
+| Header names | `svix-*` or `webhook-*` (Standard Webhooks); `svix-*` wins when both are present; the signature authenticates either |
 | Replay / duplicates | a repeated `svix-id` is acknowledged (204) and not applied again; a failure while applying releases the id so the provider's retry works |
 | Size | bodies over 64 KiB are refused (413), also by `Content-Length` before reading |
 | Disabled | no valid secret configured gives 404 |
@@ -57,16 +66,17 @@ Event handling **[confirm names and fields]**:
 
 | Event | Effect |
 |---|---|
-| `email.bounced` with bounce type Permanent | recipients suppressed (reason `bounce`) |
+| `email.bounced` with bounce type Permanent (any letter case), event names exactly one recipient | that recipient suppressed (reason `bounce`) |
 | `email.bounced` with Transient, Undetermined or unknown type | nothing; never permanent |
-| `email.complained` | recipients suppressed (reason `complaint`) |
-| `email.delivery_delayed`, `email.failed`, `email.sent`, `email.delivered`, anything else | counted in the log only |
+| `email.complained`, exactly one recipient | that recipient suppressed (reason `complaint`) |
+| Any event naming zero or several recipients | nothing: the failing address cannot be told apart, and a guess would suppress innocent addresses (NextJob sends every message to one recipient) |
+| `email.delivery_delayed`, `email.failed`, `email.suppressed`, `suppression.added/removed`, `email.sent`, `email.scheduled`, `email.delivered`, anything else | no effect (`email.suppressed` and `suppression.added` mean Resend itself holds the address; they are not used to suppress locally until their exact semantics are confirmed) |
 
 `email.delivered` means the receiving server accepted the message; it is not proof the message reached the inbox. **A 200 from Resend's sending API or SMTP is acceptance for delivery, not delivery.** The outbox status `sent` therefore means "handed to the provider".
 
 ## 5. What was and was not tested
 
-Tested: signature validity and invalidity, tampered body, multiple signatures, stale and future timestamps, missing headers, duplicates, failure and retry, size limit, malformed bodies, disabled endpoint, permanent versus temporary bounce, complaint, log content, Resend config checks. **Not tested:** any real Resend request, real DNS, real delivery or the live webhook format. Tests use a locally computed signature with an example secret.
+Tested: signature validity and invalidity, tampered body, multiple signatures, stale and future timestamps, missing headers, duplicates, failure and retry, size limit, malformed bodies, disabled endpoint, permanent versus temporary bounce, complaint, log content, Resend config checks. **Not tested:** any real Resend request, real DNS, real delivery or the live webhook format. Tests use a locally computed signature with an example secret, plus one **known-answer vector produced by the open-source `standardwebhooks` 1.1.1 library** (the one Resend's SDK uses): our signer reproduces its output byte for byte and our verifier accepts it only inside the 5-minute window (`tests/test_resend_webhook.py`).
 
 ## 6. Delivery verification gate
 
