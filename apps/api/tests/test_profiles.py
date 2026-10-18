@@ -232,9 +232,11 @@ def test_profiles_and_alerts_are_not_in_the_staff_site() -> None:
 
 def test_no_url_exposes_a_seeker_profile_by_id() -> None:
     """The seeker profile is reachable only as `/me/profile`: no route takes an id that selects another account."""
+    from collections.abc import Iterator
+
     from django.urls import URLPattern, URLResolver, get_resolver
 
-    def routes(patterns, prefix=""):  # type: ignore[no-untyped-def]
+    def routes(patterns: list[URLPattern | URLResolver], prefix: str = "") -> Iterator[str]:
         for p in patterns:
             if isinstance(p, URLResolver):
                 yield from routes(p.url_patterns, prefix + str(p.pattern))

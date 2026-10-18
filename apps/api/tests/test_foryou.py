@@ -5,9 +5,11 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from accounts.models import User
 from opportunities import workflow
@@ -37,22 +39,23 @@ def catalogue(world: World, people: dict[str, User]) -> dict[str, Opportunity]:
     }
 
 
-def feed(client, **params):  # type: ignore[no-untyped-def]
+def feed(client: APIClient, **params: str | int) -> dict[str, Any]:
     response = client.get(URL, params)
     assert response.status_code == 200, response.content
-    return response.json()
+    body: dict[str, Any] = response.json()
+    return body
 
 
-def ids(body):  # type: ignore[no-untyped-def]
+def ids(body: dict[str, Any]) -> list[str]:
     return [row["opportunity"]["id"] for row in body["data"]]
 
 
-def reasons(body, opportunity: Opportunity):  # type: ignore[no-untyped-def]
+def reasons(body: dict[str, Any], opportunity: Opportunity) -> dict[str, str]:
     row = next(r for r in body["data"] if r["opportunity"]["id"] == str(opportunity.pk))
     return {r["signal"]: r["text"] for r in row["match"]["reasons"]}
 
 
-def test_for_you_needs_a_session(client, catalogue) -> None:  # type: ignore[no-untyped-def]
+def test_for_you_needs_a_session(client: APIClient, catalogue: dict[str, Opportunity]) -> None:
     assert client.get(URL).status_code == 401
 
 
@@ -365,8 +368,6 @@ def test_a_profile_with_no_match_shows_the_newest_open_listings_labelled_as_such
 def test_public_browsing_is_unchanged_and_not_personalised(
     make_user: Callable[..., User], catalogue: dict[str, Opportunity]
 ) -> None:
-    from rest_framework.test import APIClient
-
     client, _ = signed_in(make_user)
     patch(client, PROFILE, {"categories": ["grants"]})
     anonymous = APIClient().get("/api/v1/opportunities").json()
