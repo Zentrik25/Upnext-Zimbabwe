@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     "opportunities",
     "notifications",
     "employers",
+    "profiles",
+    "alerts",
 ]
 
 MIDDLEWARE = [
@@ -186,6 +188,8 @@ REST_FRAMEWORK = {
         "token_ip": get_str("UPNEXT_THROTTLE_TOKEN_IP", "10/1h"),  # PROPOSED
         "me_write": get_str("UPNEXT_THROTTLE_ME_WRITE", "60/1m"),  # PROPOSED
         "listing_event_ip": get_str("UPNEXT_THROTTLE_LISTING_EVENT", "120/1m"),  # PROPOSED (Phase 6A)
+        "for_you_user": get_str("UPNEXT_THROTTLE_FOR_YOU", "120/1m"),  # PROPOSED (Phase 6B)
+        "unsubscribe_ip": get_str("UPNEXT_THROTTLE_UNSUBSCRIBE", "30/1h"),  # PROPOSED (Phase 6B)
     },
     "URL_FORMAT_OVERRIDE": None,
 }
@@ -239,6 +243,7 @@ SPECTACULAR_SETTINGS = {
     "OAS_VERSION": "3.1.0",
     "ENUM_NAME_OVERRIDES": {
         "AccountStatusEnum": "accounts.models.AccountStatus",
+        "ExperienceLevelEnum": "opportunities.models.ExperienceLevel",
         "PublicListingStatusEnum": ["published", "expired", "withdrawn"],
     },
 }

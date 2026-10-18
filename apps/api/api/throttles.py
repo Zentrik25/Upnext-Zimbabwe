@@ -108,6 +108,16 @@ class UserWriteThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": str(user.pk)}
 
 
+class UnsubscribeIpThrottle(IpRateThrottle):
+    scope = "unsubscribe_ip"
+
+
+class ForYouThrottle(UserWriteThrottle):
+    """The personalised feed reads up to a few hundred listings per request, so reads are limited per user."""
+
+    scope = "for_you_user"
+
+
 def email_request_gate(email: str) -> None:
     """Per-address limits for e-mail-sending requests: 3 per hour and at least 60 s apart. Applies to every
     address alike, registered or not, so it reveals nothing. Raises `Throttled` when exceeded."""

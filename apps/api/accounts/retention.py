@@ -13,6 +13,7 @@ from django.contrib.sessions.models import Session
 from django.db.models import Q
 from django.utils import timezone
 
+from alerts import service as alert_service
 from employers.models import ListingDailyStat
 from notifications.models import EmailOutbox, OutboxStatus
 
@@ -51,4 +52,5 @@ def run(now: datetime | None = None) -> dict[str, int]:
     counts["listing_stats"] = ListingDailyStat.objects.filter(
         day__lt=(now - timedelta(days=settings.UPNEXT_RETENTION_LISTING_STATS_DAYS)).date()
     ).delete()[0]
+    counts["alert_ledger"] = alert_service.purge_ledger(now)
     return counts

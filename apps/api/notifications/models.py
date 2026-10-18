@@ -26,6 +26,7 @@ class EmailKind(models.TextChoices):
     EMAIL_CHANGE_CONFIRM = "email_change_confirm"
     EMAIL_CHANGE_REQUESTED_NOTICE = "email_change_requested_notice"
     EMAIL_CHANGED_NOTICE = "email_changed_notice"
+    JOB_ALERT = "job_alert"
 
 
 class OutboxStatus(models.TextChoices):

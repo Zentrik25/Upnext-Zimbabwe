@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, employer_views, public_views, views
+from api import account_views, employer_views, profile_views, public_views, views
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -32,6 +32,15 @@ urlpatterns = [
     path("me/deletion-request", account_views.DeletionRequestView.as_view(), name="me-deletion"),
     path("me/sessions", account_views.SessionListView.as_view(), name="me-sessions"),
     path("me/sessions/<uuid:session_id>", account_views.SessionDetailView.as_view(), name="me-session"),
+    path("me/profile", profile_views.ProfileView.as_view(), name="me-profile"),
+    path(
+        "me/profile/reset-preferences",
+        profile_views.ProfileResetView.as_view(),
+        name="me-profile-reset-preferences",
+    ),
+    path("me/alerts", profile_views.AlertView.as_view(), name="me-alerts"),
+    path("alerts/unsubscribe", profile_views.UnsubscribeView.as_view(), name="alerts-unsubscribe"),
+    path("discovery/for-you", profile_views.ForYouView.as_view(), name="discovery-for-you"),
     path("me/saved", account_views.SavedListView.as_view(), name="me-saved"),
     path("me/saved/<uuid:opportunity_id>", account_views.SavedDetailView.as_view(), name="me-saved-item"),
     path("opportunities", public_views.OpportunityListView.as_view(), name="opportunity-list"),

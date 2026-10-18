@@ -1,6 +1,7 @@
 """Executing account deletions after the cooling-off period (OQ-09, provisional default P4-05).
 
-What is removed: saved listings, session records and sessions, e-mail tokens, two-step devices, and the
+What is removed: saved listings, the seeker profile, job-alert settings and ledger, session records and
+sessions, e-mail tokens, two-step devices, and the
 address and name on the account and on its outbox rows. What remains: a tombstone user row (needed because
 history rows point at users), audit rows with an opaque account number, and one completion e-mail that is
 removed from the outbox like any other sent message. The address is released, so it can register again.
@@ -16,12 +17,14 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from alerts import service as alert_service
 from audit import services as audit
 from audit.models import ActorType, Severity
 from employers import services as employer_services
 from notifications import services as outbox
 from notifications.models import EmailKind, EmailOutbox, OutboxStatus
 from opportunities.models import SavedOpportunity
+from profiles import service as profile_service
 
 from .models import AccountStatus, AuthToken, StaffMfaDevice, User, UserSession
 from .services import revoke_sessions
@@ -66,6 +69,8 @@ def execute(user_id: uuid.UUID, now: datetime | None = None, *, restored: bool =
         AuthToken.objects.filter(user=user).delete()
         StaffMfaDevice.objects.filter(user=user).delete()
         SavedOpportunity.objects.filter(user=user).delete()
+        profile_service.delete(user, record=False)  # the deletion itself is audited below
+        alert_service.delete_for(user)  # alert choices, consent proof and the delivery ledger
         employer_services.end_all_roles_for_deleted_account(user, now=now)
         # Mail still waiting for this person is cancelled; all their rows lose the address.
         EmailOutbox.objects.filter(
