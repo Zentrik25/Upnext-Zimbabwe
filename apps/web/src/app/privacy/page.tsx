@@ -93,9 +93,9 @@ export default function PrivacyPage() {
         <p>
           You can ask us to delete your account from the account page. Your request waits 14 days so that you
           can change your mind, and you can cancel at any time before the end of that period. After that, your
-          name and e-mail address are replaced, your saved listings, profile, job-alert settings, sessions and unused links are deleted,
-          and you cannot sign in again. We send a confirmation. Accounts that also hold staff access must have
-          that access removed by an administrator first.
+          name and e-mail address are replaced, your saved listings, profile, job-alert settings, sessions and
+          unused links are deleted, and you cannot sign in again. We send a confirmation. Accounts that also
+          hold staff access must have that access removed by an administrator first.
         </p>
       </Section>
       <Section title="Changing your e-mail address">
