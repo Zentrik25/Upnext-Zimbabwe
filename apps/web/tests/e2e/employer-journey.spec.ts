@@ -12,11 +12,20 @@ test.describe.configure({ mode: "serial" });
 
 const STAMP = Date.now().toString(36);
 const EMAIL = `employer.${STAMP}@example.org`;
-const PASSWORD = `employer passphrase ${STAMP}`;
+const PASSWORD = `harvest lantern ${STAMP} brook`;
 const ORG = `Zambezi Mining ${STAMP}`;
 const TITLE = `Mining Engineer ${STAMP}`;
 const SECOND_TITLE = `Safety Officer ${STAMP}`;
 const WIDTHS = [320, 390, 768, 1440];
+
+// Whatever happens, the listing this run published is withdrawn so other specs see the demo data they expect.
+test.afterAll(() => {
+  try {
+    manage(`demo_employer_review --withdraw-listing "${TITLE}"`);
+  } catch {
+    /* it was never published, or already withdrawn */
+  }
+});
 
 async function signIn(page: Page, next?: string) {
   await page.goto(next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in");
@@ -223,14 +232,12 @@ test("6. a returned listing shows the editor's reason and can be reopened and re
 
 test("7. an employer cannot reach staff pages or other people's pages", async ({ page }) => {
   await signIn(page, "/employer");
+  await expect(page).toHaveURL(/\/employer$/);
+  // someone else's id looks exactly like an id that does not exist
+  await page.goto("/employer/listings/00000000-0000-4000-8000-000000000000");
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
+  await page.goto("/employer/organisations/00000000-0000-4000-8000-000000000000/profile");
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
   await page.goto("/staff/");
   await expect(page).toHaveURL(/\/staff\/login\/|\/staff\/mfa\//);
-  const missing = await page.goto("/employer/listings/00000000-0000-4000-8000-000000000000");
-  expect(missing?.status()).toBe(404);
-  const profile = await page.goto("/employer/organisations/00000000-0000-4000-8000-000000000000/profile");
-  expect(profile?.status()).toBe(404);
-});
-
-test("8. clean-up: the published test listing is withdrawn so other specs see the demo data they expect", async () => {
-  manage(`demo_employer_review --withdraw-listing "${TITLE}"`);
 });

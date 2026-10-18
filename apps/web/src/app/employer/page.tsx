@@ -22,7 +22,7 @@ export default async function EmployerDashboard() {
   if (!overview.ok) {
     return (
       <Container className="py-10" role="alert">
-        <EmptyState title="The dashboard is unavailable">
+        <EmptyState as="h1" title="The dashboard is unavailable">
           The service could not be reached. Try again shortly.
         </EmptyState>
       </Container>
@@ -109,7 +109,7 @@ export default async function EmployerDashboard() {
 
       {organisations.length === 0 && waiting.length === 0 ? (
         <div className="mt-6">
-          <EmptyState title="You do not act for an organisation yet">
+          <EmptyState as="h2" title="You do not act for an organisation yet">
             Claim your organisation to post jobs, internships and graduate programmes.{" "}
             <Link href="/employer/claim" className="text-accent underline">
               Claim an organisation

@@ -518,6 +518,8 @@ def test_deleting_an_employer_account_ends_their_roles(employer: User, people: d
     assert EmployerMembership.objects.get(user=employer).revoked_reason == "account deleted"
     pending.refresh_from_db()
     assert pending.status == ClaimStatus.WITHDRAWN
+    assert not OrganisationClaim.objects.filter(user=employer, evidence_note__contains="hr@acme").exists()
+    assert OrganisationClaim.objects.filter(user=employer).first().role_title == "[removed]"  # type: ignore[union-attr]
 
 
 # --- analytics -----------------------------------------------------------------------------------------------------

@@ -55,6 +55,23 @@ describe("safeNext", () => {
     );
     expect(safeNext(["/account", "/x"])).toBe("/account");
   });
+  it("accepts the employer portal routes and nothing under them that is not a known page", () => {
+    const id = "0b9a3c1e-9d1f-4d8e-8f6c-2a7f5c3b1d4e";
+    for (const ok of [
+      "/employer",
+      "/employer/claim",
+      `/employer/listings/${id}`,
+      `/employer/organisations/${id}/profile`,
+    ])
+      expect(safeNext(ok)).toBe(ok);
+    for (const bad of [
+      "/employer/listings/new",
+      "/employer/../staff/",
+      "/employer/claim/x",
+      "/employers/register",
+    ])
+      expect(safeNext(bad)).toBe("/account");
+  });
   it.each([
     "https://evil.example/",
     "//evil.example",

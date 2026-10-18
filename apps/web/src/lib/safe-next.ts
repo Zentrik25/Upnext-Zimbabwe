@@ -2,7 +2,16 @@
  * Where to send someone after signing in. Only same-origin relative paths under known routes are accepted
  * (SECURITY_ARCHITECTURE §6: no open redirect); anything else becomes the fallback.
  */
-const ALLOWED = [/^\/$/, /^\/opportunities(\/[a-z0-9-]+)?$/, /^\/saved$/, /^\/account$/];
+const ALLOWED = [
+  /^\/$/,
+  /^\/opportunities(\/[a-z0-9-]+)?$/,
+  /^\/saved$/,
+  /^\/account$/,
+  // Employer portal (Phase 6A): the dashboard, the claim form and the pages addressed by an id.
+  /^\/employer(\/claim)?$/,
+  /^\/employer\/listings\/[0-9a-f-]{36}$/,
+  /^\/employer\/organisations\/[0-9a-f-]{36}\/profile$/,
+];
 
 export function safeNext(value: string | string[] | null | undefined, fallback = "/account"): string {
   const raw = Array.isArray(value) ? value[0] : value;

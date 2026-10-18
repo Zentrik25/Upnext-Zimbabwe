@@ -16,7 +16,7 @@ export default function EmployersPage() {
   return (
     <ProsePage
       title="For employers"
-      intro="Reach people looking for work in Zimbabwe. Posting is free; every organisation is verified and every listing is reviewed."
+      intro="Reach people looking for work in Zimbabwe. Every organisation is verified and every listing is reviewed."
     >
       <div className="flex flex-wrap gap-3">
         <ButtonLink href="/employers/register">Create an employer account</ButtonLink>

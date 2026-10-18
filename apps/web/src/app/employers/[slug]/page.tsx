@@ -32,7 +32,7 @@ export default async function EmployerProfilePage({ params }: Props) {
   if (!result.ok) {
     return (
       <Container className="py-10" role="alert">
-        <EmptyState title="This page is unavailable">
+        <EmptyState as="h1" title="This page is unavailable">
           {result.reason === "rate-limited"
             ? "Too many requests. Wait a minute and try again."
             : "The service could not be reached. Try again shortly."}

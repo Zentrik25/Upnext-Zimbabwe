@@ -29,3 +29,15 @@ Corrections: amend through a new revision (needs fresh approval). Takedown (lega
 
 ## 9. Open items for the owner
 Named staff; the category field lists (OQ-06) and taxonomies (OQ-21, OQ-22); source rules for sources without a URL (OQ-29); response times for corrections and takedowns; how issuers contact UPNEXT (blocker B-03).
+
+## Employer claims, company profiles and employer listings (Phase 6A, D-35)
+
+Staff with the Editor or Administrator role see **Organisation claims**, **Profile revisions**, **Organisation verifications** and **Employer memberships** on the staff site. Nothing there is edited by hand: each screen posts to the same services the employer portal uses, and refusals are shown to you and audited.
+
+**Deciding a claim.** Read the claimant's role and the evidence they offered, then check it yourself by a route they did not choose (the organisation's published telephone number or website, a known contact). Choose an existing organisation when one matches (look for duplicates first) or leave it empty to create one from the claimed name. If the organisation has no verification yet you must record the method (document review, official e-mail domain, website control, telephone call-back, other) and a short evidence note: what you saw or did, **not** documents or identity numbers. You cannot decide your own claim, and you cannot verify an organisation you act for. Reject with a reason the claimant can act on; they will see it.
+
+**Company profiles.** A profile is public only after you approve it, and only while the organisation stays verified. Check that it is plain text about the organisation, makes no promise of jobs or income and asks for no payment. You cannot decide a revision you submitted.
+
+**Employer listings** arrive in the normal review queue and follow the normal rules: another person approves, then anyone permitted publishes. The listing carries an automatic source "Submitted by the employer through the NextJob employer portal" and starts as *not verified*: verifying the organisation does not verify the listing. Use the usual verification record if you check the content with the issuer. A returned or rejected listing shows your reason to the employer, so write it for them.
+
+**Withdrawing trust.** An Administrator can revoke an organisation's verification (members then cannot submit and the public profile is hidden; published listings stay until you take them down). Any reviewer can revoke a person's membership. Both are audited.

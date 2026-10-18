@@ -13,7 +13,7 @@ export default async function ClaimPage() {
   return (
     <FormPage
       title="Claim an organisation"
-      intro="Tell us who you are and how we can confirm it. An editor checks each claim by hand before you can post. Claiming costs nothing."
+      intro="Tell us who you are and how we can confirm it. An editor checks each claim by hand before you can post."
     >
       <ClaimForm />
     </FormPage>

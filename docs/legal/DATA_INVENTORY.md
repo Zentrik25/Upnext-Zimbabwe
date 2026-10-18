@@ -31,13 +31,24 @@ Format: each row names its table and column in backticks. "Who sees it" means pe
 | Who authored, reviewed, verified and published each revision | foreign keys on `opportunities_opportunityversion`, `opportunities_reviewdecision`, `opportunities_verificationrecord`, `opportunities_publishingevent` | separation of duties | staff | kept with the listing |
 | Operator who verified e-mail delivery | `notifications_emaildeliveryverification.operator` | proof that mail was tested | Administrators | kept |
 
+## B2. Employer accounts (Phase 6A, D-35)
+
+| Data | Where | Why | Who sees it | Retention |
+|---|---|---|---|---|
+| What a person tells us to support an organisation claim: role title, a note on how we can confirm them, optional registration number and website | `employers_organisationclaim.role_title`, `.evidence_note`, `.registration_number`, `.website_url` | so staff can decide the claim | staff who may review employers; the claimant | **scrubbed when the account is deleted** (the decision, decider and time stay for the audit trail); retention while the account exists is undecided |
+| The decision and, for verification, the method and the evidence note written by staff | `employers_organisationclaim.decision_reason`, `employers_organisationverification.*` | accountability for who may post | staff; the claimant sees a rejection reason | kept; period undecided. Staff are told not to paste documents or identity numbers |
+| Which account may act for which organisation, its role, who granted and revoked it | `employers_employermembership.*` | authority to post | staff; the member | kept as history; ended when the account is deleted |
+| Company profile text | `employers_profilerevision.*` | public company page (about the organisation, not a person) | public once approved | kept with its history |
+| Marker that a listing came from an employer, and its organisation | `employers_employerlisting.*` | access control | staff; the organisation's members | kept with the listing |
+| Daily counts of views and apply-link clicks per listing | `employers_listingdailystat.*` | basic analytics for the employer | the organisation's members | counts only: **no cookie, identifier, address or user agent is stored**; retention undecided |
+
 ## C. Information about organisations and listings (not personal data of site users)
 
 Organisation names and web addresses (`catalog_organisation.name`, `catalog_organisation.website_url`), source names, addresses and citations (`opportunities_opportunitysource.*`), listing text, and contact details that the source itself published for applicants (`opportunities_opportunityversion.application_email`, `opportunities_opportunityversion.contact_details`, `opportunities_opportunityversion.location_text`). These can occasionally name or identify a person (for example a contact officer): editors are told to publish only business contact details the source published, and a correction or takedown request is honoured (EDITORIAL_HANDBOOK.md).
 
 ## D. Not collected
 
-Date of birth, gender, national identity numbers, photographs, CVs or other uploads, payment details, precise location, advertising or analytics identifiers (P4-04: no analytics, only the session and CSRF cookies). Profile data (qualification, skills, interests) is designed (D-31) but **not built and not collected**.
+Date of birth, gender, national identity numbers, photographs, CVs or other uploads, payment details, precise location, advertising or analytics identifiers (P4-04, amended by D-35: no analytics service and no tracking; only the session and CSRF cookies, plus anonymous per-listing counts of views and apply clicks). Profile data (qualification, skills, interests) is designed (D-31) but **not built and not collected**.
 
 ## E. Processors and places the data goes (owner to complete)
 

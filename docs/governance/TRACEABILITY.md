@@ -49,6 +49,11 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-39 | Signed bounce and complaint feed feeds the suppression list (P5-01) | D-32; WS1 | — | receiveEmailEvents | MAIL-09 | OQ-03 |
 | R-40 | Personal-data inventory stays complete and no document claims legal approval (WS2) | D-32; WS2 | SC-14 | — | PRV-01, PRV-02 | OQ-09 |
 | R-41 | Resend delivery events suppress only permanent bounces and complaints, verified on the raw body, once per event (D-34) | D-34; WS1 | — | receiveResendEmailEvents | MAIL-10, MAIL-11 | OQ-03 |
+| R-42 | Employer registration and organisation claims: an ordinary confirmed account asks to act for an organisation; a claim grants nothing until staff decide it, and nobody decides their own claim (D-35) | D-35; Phase 6A | — | getEmployerOverview, searchOrganisationsToClaim, submitOrganisationClaim, withdrawOrganisationClaim | EMP-01, EMP-02, EMP-10 | OQ-03 |
+| R-43 | Organisation verification is recorded by staff with a method and evidence, can be revoked by an Administrator, and never makes a listing verified (D-35, D-14) | D-35; D-14 | — | — | EMP-03, EMP-04, EMP-11 | — |
+| R-44 | Company profiles are moderated revisions shown publicly only when approved by someone else and while the organisation is verified (D-35) | D-35; D-15 | — | getEmployerProfile, submitEmployerProfile, withdrawEmployerProfileRevision, getEmployerProfilePublic | EMP-05, EMP-12 | — |
+| R-45 | Moderated job posting: employers author and submit through the existing publishing service for their own verified organisation; review, verification and publication stay staff-only under D-18 and D-22 (D-35) | D-35; D-18; D-22 | — | listEmployerListings, createEmployerListing, getEmployerListing, saveEmployerListing, submitEmployerListing, discardEmployerListing, reopenEmployerListing, amendEmployerListing | EMP-06, EMP-07, EMP-08, EMP-13 | — |
+| R-46 | Employer dashboard and basic listing analytics: aggregate counters only, no visitor data, saves as a number (D-35) | D-35 | — | getEmployerAnalytics, recordListingEvent | EMP-09, EMP-14 | — |
 
 ## 2. Screen register
 
@@ -77,6 +82,24 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getApiRoot` | GET `/` | health | R-24 |
 | `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26 |
 | `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29 |
+| `getEmployerOverview` | GET `/employer/overview` | employer | R-42 |
+| `searchOrganisationsToClaim` | GET `/employer/organisations/search` | employer | R-42 |
+| `submitOrganisationClaim` | POST `/employer/claims` | employer | R-42 |
+| `withdrawOrganisationClaim` | DELETE `/employer/claims/{claim_id}` | employer | R-42 |
+| `getEmployerProfile` | GET `/employer/organisations/{organisation_id}/profile` | employer | R-44 |
+| `submitEmployerProfile` | POST `/employer/organisations/{organisation_id}/profile` | employer | R-44 |
+| `withdrawEmployerProfileRevision` | DELETE `/employer/organisations/{organisation_id}/profile/revisions/{revision_id}` | employer | R-44 |
+| `listEmployerListings` | GET `/employer/organisations/{organisation_id}/listings` | employer | R-45 |
+| `createEmployerListing` | POST `/employer/organisations/{organisation_id}/listings` | employer | R-45 |
+| `getEmployerAnalytics` | GET `/employer/organisations/{organisation_id}/analytics` | employer | R-46 |
+| `getEmployerListing` | GET `/employer/listings/{opportunity_id}` | employer | R-45 |
+| `saveEmployerListing` | PATCH `/employer/listings/{opportunity_id}` | employer | R-45 |
+| `submitEmployerListing` | POST `/employer/listings/{opportunity_id}/submit` | employer | R-45 |
+| `discardEmployerListing` | POST `/employer/listings/{opportunity_id}/discard` | employer | R-45 |
+| `reopenEmployerListing` | POST `/employer/listings/{opportunity_id}/reopen` | employer | R-45 |
+| `amendEmployerListing` | POST `/employer/listings/{opportunity_id}/amend` | employer | R-45 |
+| `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |
+| `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `getSitemapEntries` | GET `/sitemap` | public | R-29 |
 | `listCategories` | GET `/categories` | public | R-01 |
 | `listLocations` | GET `/locations` | public | R-01 |
@@ -320,6 +343,20 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | ACC-01 | Change of e-mail: unavailable without verified delivery, password required, uniform answer for an address in use, single-use link, old address told, staff refused |
 | MAIL-09 | Bounce webhook: off without a secret; stale, replayed, wrongly signed, oversized and malformed deliveries are refused; permanent bounces and complaints suppress |
 | MAIL-10 | Resend webhook: signature over the raw body, freshness, duplicate events, permanent versus temporary bounces, complaints, size limit, no addresses in logs; Resend SMTP settings checks |
+| EMP-01 | Claims: validation, limits, existing-organisation claims, withdrawal; unconfirmed accounts refused |
+| EMP-02 | Claim decisions: reviewers only, never one's own claim, verification method and evidence required, rejection reasons |
+| EMP-03 | Revoking verification stops posting and hides the profile; revoking a membership ends authority at once |
+| EMP-04 | Employers hold only author permissions; no review or publication code; no staff role or admin access |
+| EMP-05 | Profile revisions: owners only, frozen, withdrawn when replaced, decided by someone else, public text unchanged until approval |
+| EMP-06 | Employer posting through the publishing service: organisation fixed, categories limited, automatic provenance, staff publish |
+| EMP-07 | Object-level access: other organisations' listings and ids answer 404; membership re-checked at every action even on direct service calls |
+| EMP-08 | Returned work: reasons shown to the employer, reopen and amend, row-version conflicts |
+| EMP-09 | Aggregate counters: views and apply clicks per day, windows, saves, only open listings, no personal data |
+| EMP-10 | Employer HTTP API: authentication, CSRF, validation and the whole journey |
+| EMP-11 | Staff screens for claims, profiles, verification and membership revocation run through the services |
+| EMP-12 | Public company profile and the listing-page link appear only for verified organisations with an approved profile |
+| EMP-13 | Browser: employer journey over HTTP and TLS with axe at four widths, no horizontal scroll |
+| EMP-14 | Web units: listing request body, claim, profile and listing forms, view and apply beacon |
 | MAIL-11 | Transactional messages are NextJob Zimbabwe branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
 | PRV-01 | Every personal-looking column is listed in docs/legal/DATA_INVENTORY.md and the inventory names no column that does not exist |
 | PRV-02 | No page or legal document claims legal approval |
@@ -494,6 +531,20 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | EDT-01 | `apps/api/tests/test_content_ops.py (importer)` | executed |
 | EDT-02 | `apps/api/tests/test_content_ops.py (health, audit, staff page)` | executed |
 | ACC-01 | `apps/api/tests/test_email_change.py; apps/web/tests/unit/accounts.test.tsx; apps/web/tests/e2e/accounts-journey.spec.ts test 9` | executed with the file mail backend on throwaway stacks; no real provider |
+| EMP-01 | `apps/api/tests/test_employers.py (claims)` | executed |
+| EMP-02 | `apps/api/tests/test_employers.py (decisions)` | executed |
+| EMP-03 | `apps/api/tests/test_employers.py (revocation)` | executed |
+| EMP-04 | `apps/api/tests/test_employers.py (permissions); apps/api/tests/test_access_registry.py` | executed |
+| EMP-05 | `apps/api/tests/test_employers.py (profiles); apps/api/tests/test_employer_admin.py` | executed |
+| EMP-06 | `apps/api/tests/test_employers.py (posting)` | executed |
+| EMP-07 | `apps/api/tests/test_employers.py; apps/api/tests/test_employer_api.py (404 for other ids)` | executed |
+| EMP-08 | `apps/api/tests/test_employers.py (returned work); apps/api/tests/test_employer_api.py` | executed |
+| EMP-09 | `apps/api/tests/test_employers.py (analytics); apps/api/tests/test_employer_api.py (beacon)` | executed |
+| EMP-10 | `apps/api/tests/test_employer_api.py` | executed |
+| EMP-11 | `apps/api/tests/test_employer_admin.py; apps/api/tests/test_employer_demo_command.py` | executed |
+| EMP-12 | `apps/api/tests/test_employer_api.py (public profile)` | executed |
+| EMP-13 | `apps/web/tests/e2e/employer-journey.spec.ts; apps/web/tests/e2e/a11y.spec.ts` | executed in CI on the production-mode and TLS stacks; see the Phase 6A report for the local run |
+| EMP-14 | `apps/web/tests/unit/employer.test.tsx` | executed |
 | MAIL-10 | `apps/api/tests/test_resend_webhook.py (Resend/Svix signature, replay, duplicates, bounce semantics, config checks)` | executed with locally computed signatures only; no real Resend request |
 | MAIL-11 | `apps/api/tests/test_brand_email.py (branded multipart messages, deletion-cancelled notice)` | executed |
 | MAIL-09 | `apps/api/tests/test_email_provider.py (signed feed)` | executed against the neutral format; no provider's own format exists |

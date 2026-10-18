@@ -45,7 +45,7 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 | Deletion cooling-off length, completion e-mail, export of personal data (OQ-09, P4-05) | 14 days; no export | decide the period; decide whether an export is needed at launch |
 | Expired and withdrawn listings: keep readable and unindexed? API opt-ins `include_expired` and `deadline_state=expired` (OQ-20, P2-01, P4-03) | readable, unindexed, opt-ins still exist | remove the opt-ins if "never in active lists" must hold for API users too |
 | Category pages with their own addresses (OQ-20, P4-02) | category tabs are unindexed filters | decide once there is enough content to justify them |
-| Analytics and the outbound-click KPI (OQ-19, P4-04) | none | decide how to measure outbound clicks without tracking people, or accept not measuring |
+| Analytics and the outbound-click KPI (OQ-19, P4-04) | Phase 6A (D-35) added anonymous per-listing counts of views and apply clicks for employers; no analytics service | decide how to measure outbound clicks without tracking people, or accept not measuring |
 | Languages (OQ-18, P4-01) | English only | confirm; add Shona or Ndebele later only with owner-supplied translations |
 | "For employers" link, alerts, other reference features (OQ-24) | not built | confirm exclusion for launch |
 | Verification policy, duplicate rules, category schemas, taxonomies, currencies (OQ-06 to OQ-08, OQ-21, OQ-22, OQ-29) | Phase 2 defaults | approve or change before real content is entered |

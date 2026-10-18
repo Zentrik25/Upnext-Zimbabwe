@@ -445,6 +445,12 @@ def end_all_roles_for_deleted_account(user: User, *, now: datetime | None = None
     OrganisationClaim.objects.filter(user=user, status=ClaimStatus.PENDING).update(
         status=ClaimStatus.WITHDRAWN
     )
+    # What the person wrote about themselves goes; the decision, decider and time stay for the audit trail.
+    OrganisationClaim.objects.filter(user=user).update(
+        evidence_note="[removed when the account was deleted]",
+        role_title="[removed]",
+        registration_number=None,
+    )
     revoked = EmployerMembership.objects.filter(user=user, revoked_at__isnull=True).update(
         revoked_at=now, revoked_reason="account deleted"
     )
