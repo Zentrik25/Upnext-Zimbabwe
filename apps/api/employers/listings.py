@@ -25,7 +25,7 @@ from . import services
 from .models import EmployerListing, EmployerMembership
 
 
-def _member_listing(user: User, opportunity_id: uuid.UUID | str) -> EmployerListing:
+def member_listing(user: User, opportunity_id: uuid.UUID | str) -> EmployerListing:
     try:
         binding = EmployerListing.objects.select_related(
             "opportunity__category",
@@ -60,7 +60,7 @@ def create(
 def save(
     user: User, opportunity_id: uuid.UUID | str, expected_row_version: int, content: Mapping[str, Any]
 ) -> OpportunityVersion:
-    binding = _member_listing(user, opportunity_id)
+    binding = member_listing(user, opportunity_id)
     return workflow.save_draft(
         user,
         opportunity_id,
@@ -70,22 +70,22 @@ def save(
 
 
 def submit(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int) -> OpportunityVersion:
-    _member_listing(user, opportunity_id)
+    member_listing(user, opportunity_id)
     return workflow.submit(user, opportunity_id, expected_row_version=expected_row_version)
 
 
 def discard(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int) -> Opportunity:
-    _member_listing(user, opportunity_id)
+    member_listing(user, opportunity_id)
     return workflow.discard(user, opportunity_id, expected_row_version=expected_row_version)
 
 
 def reopen(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int) -> OpportunityVersion:
-    _member_listing(user, opportunity_id)
+    member_listing(user, opportunity_id)
     return workflow.reopen(user, opportunity_id, expected_row_version=expected_row_version)
 
 
 def amend(user: User, opportunity_id: uuid.UUID | str, expected_row_version: int) -> OpportunityVersion:
-    _member_listing(user, opportunity_id)
+    member_listing(user, opportunity_id)
     return workflow.amend(user, opportunity_id, expected_row_version=expected_row_version)
 
 

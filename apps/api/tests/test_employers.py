@@ -21,6 +21,7 @@ from employers.models import (
     EmployerListing,
     EmployerMembership,
     MemberRole,
+    OrganisationClaim,
     OrganisationVerification,
     ProfileState,
 )
@@ -53,7 +54,7 @@ PROFILE = {
 }
 
 
-def claim_for(user: User, **over: Any) -> Any:
+def claim_for(user: User, **over: Any) -> OrganisationClaim:
     return services.submit_claim(user, {**CLAIM, **over})
 
 
@@ -70,8 +71,9 @@ def verified_member(
         role=role,
     )
     claim.refresh_from_db()
-    assert claim.organisation is not None
-    return claim.organisation
+    organisation = claim.organisation
+    assert organisation is not None
+    return organisation
 
 
 def content(

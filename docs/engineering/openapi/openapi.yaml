@@ -98,6 +98,248 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  # --- Phase 6A employer portal (D-35). Every id is resolved through the caller's memberships: someone else's id is 404.
+  /employer/overview:
+    get:
+      tags: [employer]
+      operationId: getEmployerOverview
+      summary: 'Claims and organisations of the signed-in account'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Overview', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /employer/organisations/search:
+    get:
+      tags: [employer]
+      operationId: searchOrganisationsToClaim
+      summary: 'Find an existing organisation to claim (id and name only)'
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 100 } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Up to 8 matches', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /employer/claims:
+    post:
+      tags: [employer]
+      operationId: submitOrganisationClaim
+      summary: 'Ask to act for an organisation'
+      description: 'Needs a confirmed e-mail address. A claim grants nothing until staff with `employer.review` decide it; nobody decides their own claim.'
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'The waiting claim', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/claims/{claim_id}:
+    delete:
+      tags: [employer]
+      operationId: withdrawOrganisationClaim
+      summary: 'Withdraw a waiting claim'
+      parameters:
+        - { name: claim_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: Withdrawn }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/organisations/{organisation_id}/profile:
+    get:
+      tags: [employer]
+      operationId: getEmployerProfile
+      summary: 'Live, waiting and last rejected company profile'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Profile state', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [employer]
+      operationId: submitEmployerProfile
+      summary: 'Submit profile text for review (owners of verified organisations)'
+      description: 'Frozen with a content hash; decided by a different person. An earlier waiting revision is withdrawn.'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'Revision waiting for review', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/organisations/{organisation_id}/profile/revisions/{revision_id}:
+    delete:
+      tags: [employer]
+      operationId: withdrawEmployerProfileRevision
+      summary: 'Withdraw a waiting revision'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: revision_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: Withdrawn }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/organisations/{organisation_id}/listings:
+    get:
+      tags: [employer]
+      operationId: listEmployerListings
+      summary: 'The organisation listings'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Listings with status, the reasons editors gave, and next actions', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [employer]
+      operationId: createEmployerListing
+      summary: 'Create a draft (jobs, internships, graduate programmes)'
+      description: 'Goes through the publishing service. The organisation comes from the membership, never from the body; `sources` is not accepted (provenance is recorded automatically).'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'The draft', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/organisations/{organisation_id}/analytics:
+    get:
+      tags: [employer]
+      operationId: getEmployerAnalytics
+      summary: 'Aggregate counters per listing'
+      description: 'Counts only, approximate; no visitor data exists.'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Views and apply clicks over 7 and 30 days and in total, and saves', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/listings/{opportunity_id}:
+    get:
+      tags: [employer]
+      operationId: getEmployerListing
+      summary: 'A listing with its current revision'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Listing', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [employer]
+      operationId: saveEmployerListing
+      summary: 'Save the open draft (author only)'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'Saved draft', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/submit:
+    post:
+      tags: [employer]
+      operationId: submitEmployerListing
+      summary: 'Submit the draft for editorial review'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/discard:
+    post:
+      tags: [employer]
+      operationId: discardEmployerListing
+      summary: 'Discard the draft or rejected revision'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/reopen:
+    post:
+      tags: [employer]
+      operationId: reopenEmployerListing
+      summary: 'Reopen a rejected revision as a new draft'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/amend:
+    post:
+      tags: [employer]
+      operationId: amendEmployerListing
+      summary: 'Start an amendment of a published listing'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employers/{slug}:
+    get:
+      tags: [public]
+      operationId: getEmployerProfilePublic
+      summary: Approved company profile of a verified organisation
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Profile, content: { application/json: { schema: { type: object } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /opportunities/{slug}/events:
+    post:
+      tags: [public]
+      operationId: recordListingEvent
+      summary: Count a view or an apply click (aggregate only)
+      description: 'Body {type: view or apply}. No cookie, identifier or session is read or stored; unknown or closed listings are ignored.'
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '204': { description: Counted or ignored }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '413': { description: too_large, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /sitemap:
     get:
       tags: [public]
@@ -849,7 +1091,7 @@ components:
         title: { type: string }
         summary: { type: string }
         category: { $ref: '#/components/schemas/Category' }
-        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string } } }
+        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string }, profile_slug: { type: [string, 'null'], description: 'Detail only: slug of the approved company profile of a verified organisation (Phase 6A)' } } }
         locations:
           type: array
           items: { type: object, required: [slug, name, is_primary], properties: { slug: { type: string }, name: { type: string }, is_primary: { type: boolean } } }

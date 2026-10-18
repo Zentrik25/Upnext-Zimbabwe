@@ -86,6 +86,7 @@ class SummaryLocationSerializer(serializers.Serializer[None]):
 class SummaryOrganisationSerializer(serializers.Serializer[None]):
     id = serializers.UUIDField()
     name = serializers.CharField()
+    profile_slug = serializers.CharField(allow_null=True, required=False)  # detail only (Phase 6A)
 
 
 class OpportunitySummarySerializer(serializers.Serializer[None]):

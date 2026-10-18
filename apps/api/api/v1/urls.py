@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, public_views, views
+from api import account_views, employer_views, public_views, views
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -35,6 +35,65 @@ urlpatterns = [
     path("me/saved", account_views.SavedListView.as_view(), name="me-saved"),
     path("me/saved/<uuid:opportunity_id>", account_views.SavedDetailView.as_view(), name="me-saved-item"),
     path("opportunities", public_views.OpportunityListView.as_view(), name="opportunity-list"),
+    path("employer/overview", employer_views.OverviewView.as_view(), name="employer-overview"),
+    path(
+        "employer/organisations/search",
+        employer_views.OrganisationSearchView.as_view(),
+        name="employer-organisation-search",
+    ),
+    path("employer/claims", employer_views.ClaimListView.as_view(), name="employer-claims"),
+    path("employer/claims/<uuid:claim_id>", employer_views.ClaimDetailView.as_view(), name="employer-claim"),
+    path(
+        "employer/organisations/<uuid:organisation_id>/profile",
+        employer_views.ProfileView.as_view(),
+        name="employer-profile",
+    ),
+    path(
+        "employer/organisations/<uuid:organisation_id>/profile/revisions/<uuid:revision_id>",
+        employer_views.ProfileRevisionView.as_view(),
+        name="employer-profile-revision",
+    ),
+    path(
+        "employer/organisations/<uuid:organisation_id>/listings",
+        employer_views.OrganisationListingsView.as_view(),
+        name="employer-listings",
+    ),
+    path(
+        "employer/organisations/<uuid:organisation_id>/analytics",
+        employer_views.AnalyticsView.as_view(),
+        name="employer-analytics",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>",
+        employer_views.ListingView.as_view(),
+        name="employer-listing",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>/submit",
+        employer_views.SubmitListingView.as_view(),
+        name="employer-listing-submit",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>/discard",
+        employer_views.DiscardListingView.as_view(),
+        name="employer-listing-discard",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>/reopen",
+        employer_views.ReopenListingView.as_view(),
+        name="employer-listing-reopen",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>/amend",
+        employer_views.AmendListingView.as_view(),
+        name="employer-listing-amend",
+    ),
+    path("employers/<slug:slug>", employer_views.PublicProfileView.as_view(), name="employer-public-profile"),
+    re_path(
+        r"^opportunities/(?P<slug>[^/]{1,200})/events$",
+        employer_views.ListingEventView.as_view(),
+        name="listing-event",
+    ),
     re_path(
         r"^opportunities/(?P<slug>[^/]{1,200})$",
         public_views.OpportunityDetailView.as_view(),

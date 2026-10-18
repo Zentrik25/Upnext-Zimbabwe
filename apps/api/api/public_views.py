@@ -22,6 +22,7 @@ from access.drf import HasRequiredPermission
 from access.registry import Permission
 from catalog.models import Category, Location, Sector, Skill
 from catalog.text import TextError, clean_single_line
+from employers.models import EmployerProfile
 from opportunities import public
 from opportunities.models import OpportunityVersion
 
@@ -97,6 +98,15 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
     opportunity = version.opportunity
     assert opportunity.last_published_at is not None
     out = summary_of(version, now)
+    out["organisation"]["profile_slug"] = (
+        EmployerProfile.objects.filter(
+            organisation_id=version.organisation_id,
+            live_revision__isnull=False,
+            organisation__verifications__revoked_at__isnull=True,
+        )
+        .values_list("slug", flat=True)
+        .first()
+    )
     out.update(
         {
             "description_html": public.render_html(version.description_md) or "",

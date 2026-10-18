@@ -27,6 +27,7 @@ REST_FRAMEWORK = {
         "email_request_ip": "10/1h",
         "token_ip": "10/1h",
         "me_write": "60/1m",
+        "listing_event_ip": "120/1m",
     },
 }
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = 60

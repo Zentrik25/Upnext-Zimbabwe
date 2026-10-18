@@ -185,6 +185,7 @@ REST_FRAMEWORK = {
         "email_request_ip": get_str("UPNEXT_THROTTLE_EMAIL_REQUEST_IP", "10/1h"),  # PROPOSED
         "token_ip": get_str("UPNEXT_THROTTLE_TOKEN_IP", "10/1h"),  # PROPOSED
         "me_write": get_str("UPNEXT_THROTTLE_ME_WRITE", "60/1m"),  # PROPOSED
+        "listing_event_ip": get_str("UPNEXT_THROTTLE_LISTING_EVENT", "120/1m"),  # PROPOSED (Phase 6A)
     },
     "URL_FORMAT_OVERRIDE": None,
 }
