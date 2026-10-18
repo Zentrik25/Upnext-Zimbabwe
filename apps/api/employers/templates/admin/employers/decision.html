@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> &rsaquo; <a href="{{ list_url }}">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo; {{ title }}</div>
+{% endblock %}
+{% block content %}
+<div id="content-main">
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+  <table class="module" style="margin-bottom:1em">
+    {% for label, value in facts %}<tr><th scope="row">{{ label }}</th><td>{{ value|linebreaksbr }}</td></tr>{% endfor %}
+  </table>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <fieldset class="module aligned">
+      {% for field in form.visible_fields %}
+      <div class="form-row{% if field.errors %} errors{% endif %}">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </fieldset>
+    <div class="submit-row"><input type="submit" class="default" value="{{ submit_label }}"> <a class="closelink" href="{{ list_url }}">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}
