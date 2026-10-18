@@ -40,18 +40,20 @@ def due_user_ids(now: datetime | None = None) -> list[uuid.UUID]:
     )
 
 
-def execute(user_id: uuid.UUID, now: datetime | None = None) -> bool:
-    """Delete one account if it is still due. Safe to repeat and to run from several workers."""
+def execute(user_id: uuid.UUID, now: datetime | None = None, *, restored: bool = False) -> bool:
+    """Delete one account if it is still due. Safe to repeat and to run from several workers.
+
+    `restored=True` is for re-applying a deletion that had already completed before a backup was restored: the
+    request date and cooling-off are not checked (the person's deletion was already carried out once) and no
+    second completion e-mail is queued.
+    """
     now = now or timezone.now()
     cutoff = now - timedelta(days=settings.UPNEXT_DELETION_COOLING_OFF_DAYS)
     with transaction.atomic():
         user = User.objects.select_for_update().filter(pk=user_id).first()
-        if (
-            user is None
-            or user.deleted_at is not None
-            or user.deletion_requested_at is None
-            or user.deletion_requested_at > cutoff
-        ):
+        if user is None or user.deleted_at is not None:
+            return False
+        if not restored and (user.deletion_requested_at is None or user.deletion_requested_at > cutoff):
             return False
         if user.active_roles():
             # Staff access was granted after the request: an administrator must offboard the person first.
@@ -76,19 +78,25 @@ def execute(user_id: uuid.UUID, now: datetime | None = None) -> bool:
         user.last_login = None
         user.deleted_at = now
         user.save()
-        outbox.enqueue(
-            EmailKind.ACCOUNT_DELETION_COMPLETED,
-            None,
-            original_email,
-            context={"display_name": display_name},
-        )
+        if not restored:
+            outbox.enqueue(
+                EmailKind.ACCOUNT_DELETION_COMPLETED,
+                None,
+                original_email,
+                context={"display_name": display_name},
+            )
         audit.record(
-            action="account.deletion_executed",
+            action="account.deletion_reapplied" if restored else "account.deletion_executed",
             object_type="user",
             object_id=user.pk,
             actor_id=None,
             actor_type=ActorType.SYSTEM,
             severity=Severity.SECURITY,
+        )
+        # The only record of a completed deletion that survives restoring an older backup (opaque id only).
+        logger.info(
+            "account deletion completed",
+            extra={"event": "account.deletion_completed", "user_id": str(user.pk)},
         )
     return True
 

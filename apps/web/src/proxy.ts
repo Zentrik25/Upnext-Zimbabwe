@@ -26,6 +26,12 @@ export function proxy(request: NextRequest) {
   headers.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy", csp);
+  // HSTS only where the request really arrived over https (the front sets X-Forwarded-Proto) and the
+  // operator turned it on; never includeSubDomains or preload without approval.
+  const hsts = Number.parseInt(process.env.UPNEXT_HSTS_SECONDS ?? "0", 10);
+  if (hsts > 0 && request.headers.get("x-forwarded-proto") === "https") {
+    response.headers.set("Strict-Transport-Security", `max-age=${hsts}`);
+  }
   return response;
 }
 

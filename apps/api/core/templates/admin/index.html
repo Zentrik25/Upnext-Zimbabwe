@@ -1,0 +1,5 @@
+{% extends "admin/index.html" %}
+{% block content %}
+{% if request.user.is_staff %}<p><a href="{% url 'staff-content-health' %}">Content health and launch target</a></p>{% endif %}
+{{ block.super }}
+{% endblock %}

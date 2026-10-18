@@ -1,0 +1,53 @@
+# LOCAL TLS REHEARSAL (P5-02/P5-03). Layer on the production-mode override:
+#   infrastructure/tls/make-local-cert.sh
+#   docker compose -p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml up -d --build --wait
+# It runs the API in real `production` mode (all start-up safeguards on) behind a throwaway-certificate
+# proxy, connecting as the unprivileged database role. The worker stays `local-prod-like` with the file mail
+# backend so the browser journeys can read spooled mail. Local only: nothing here is a deployment
+# configuration, and the passwords below are throwaway values for this local stack.
+services:
+  api:
+    environment:
+      UPNEXT_ENVIRONMENT: production
+      UPNEXT_DEMO_TOOLS: "0" # production refuses demo tools; the worker keeps them for the browser journeys
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://localhost:8443
+      DJANGO_HSTS_SECONDS: "31536000"
+      DJANGO_SSL_REDIRECT: "false" # the proxy redirects plain http; Django answers behind it
+      UPNEXT_TRUST_PROXY_HEADERS: "true"
+      UPNEXT_PUBLIC_BASE_URL: https://localhost:8443
+      UPNEXT_HOST_COOKIE_PREFIX: "true"
+      UPNEXT_TOKEN_KEY: ${UPNEXT_TOKEN_KEY:-local-tls-token-key-0123456789-abcdefghij}
+      UPNEXT_EMAIL_BACKEND: none
+      UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
+      POSTGRES_MIGRATOR_USER: ${POSTGRES_USER}
+      POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: upnext_app
+      POSTGRES_PASSWORD: ${UPNEXT_DB_APP_PASSWORD:-local-tls-app-password-0001}
+      UPNEXT_DB_APP_PASSWORD: ${UPNEXT_DB_APP_PASSWORD:-local-tls-app-password-0001}
+      UPNEXT_DB_READONLY_PASSWORD: ${UPNEXT_DB_READONLY_PASSWORD:-local-tls-ro-password-0001}
+  worker:
+    environment:
+      UPNEXT_TOKEN_KEY: ${UPNEXT_TOKEN_KEY:-local-tls-token-key-0123456789-abcdefghij} # every service must share it
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://localhost:8443
+      UPNEXT_PUBLIC_BASE_URL: https://localhost:8443
+      UPNEXT_HOST_COOKIE_PREFIX: "true"
+      POSTGRES_USER: upnext_app
+      POSTGRES_PASSWORD: ${UPNEXT_DB_APP_PASSWORD:-local-tls-app-password-0001}
+  web:
+    environment:
+      UPNEXT_PUBLIC_BASE_URL: https://localhost:8443
+      UPNEXT_HSTS_SECONDS: "31536000"
+  proxy:
+    ports: !override
+      - "127.0.0.1:${UPNEXT_TLS_PORT:-8443}:443"
+      - "127.0.0.1:${UPNEXT_HTTP_REDIRECT_PORT:-8081}:80"
+    volumes: !override
+      - ./nginx.tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../tls/.certs/server.crt:/etc/nginx/tls/server.crt:ro
+      - ../tls/.certs/server.key:/etc/nginx/tls/server.key:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--no-check-certificate", "-O", "/dev/null", "https://127.0.0.1/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20

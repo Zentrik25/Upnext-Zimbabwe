@@ -11,6 +11,8 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:8080",
+    // Only for the local TLS rehearsal, whose certificate is signed by a throwaway CA.
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === "1",
     launchOptions: executablePath ? { executablePath } : {},
     trace: "retain-on-failure",
   },

@@ -81,7 +81,12 @@ test.describe("security headers (SEC-01)", () => {
     expect(h["cross-origin-opener-policy"]).toBe("same-origin");
     expect(h["permissions-policy"]).toContain("camera=()");
     expect(h["x-powered-by"]).toBeUndefined();
-    expect(h["strict-transport-security"]).toBeUndefined(); // HSTS is an edge decision (OQ-01/OQ-10)
+    if (process.env.BASE_URL?.startsWith("https://")) {
+      // The local TLS rehearsal turns HSTS on (P5-03); a real deployment does the same behind its own TLS.
+      expect(h["strict-transport-security"]).toMatch(/^max-age=(\d{8,})$/);
+    } else {
+      expect(h["strict-transport-security"]).toBeUndefined(); // never over plain http
+    }
   });
 
   test("each request gets a fresh nonce", async ({ request }) => {
