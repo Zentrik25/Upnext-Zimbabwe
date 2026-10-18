@@ -32,7 +32,7 @@ export type Overview = {
 export type ListingStatusValue =
   "draft" | "in_review" | "approved" | "rejected" | "published" | "expired" | "withdrawn" | "archived";
 
-export type EmployerAction = "edit" | "submit" | "discard" | "reopen" | "amend";
+export type EmployerAction = "edit" | "submit" | "discard" | "reopen" | "amend" | "close";
 
 export type Decision = { decision: "rejected" | "returned"; reason: string | null; decided_at: string };
 

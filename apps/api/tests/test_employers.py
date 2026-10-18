@@ -430,7 +430,7 @@ def test_returned_and_rejected_work_can_be_reopened_and_published_work_amended(
     opp.refresh_from_db()
     workflow.publish(people["editor"], opp.pk, expected_row_version=opp.row_version)
     opp.refresh_from_db()
-    assert listings.next_actions(employer, opp) == ["amend"]
+    assert listings.next_actions(employer, opp) == ["amend", "close"]
     draft = listings.amend(employer, opp.pk, opp.row_version)
     assert draft.author == employer and draft.state == VersionState.DRAFT
     opp.refresh_from_db()

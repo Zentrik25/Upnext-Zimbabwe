@@ -52,7 +52,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-42 | Employer registration and organisation claims: an ordinary confirmed account asks to act for an organisation; a claim grants nothing until staff decide it, and nobody decides their own claim (D-35) | D-35; Phase 6A | — | getEmployerOverview, searchOrganisationsToClaim, submitOrganisationClaim, withdrawOrganisationClaim | EMP-01, EMP-02, EMP-10 | OQ-03 |
 | R-43 | Organisation verification is recorded by staff with a method and evidence, can be revoked by an Administrator, and never makes a listing verified (D-35, D-14) | D-35; D-14 | — | — | EMP-03, EMP-04, EMP-11 | — |
 | R-44 | Company profiles are moderated revisions shown publicly only when approved by someone else and while the organisation is verified (D-35) | D-35; D-15 | — | getEmployerProfile, submitEmployerProfile, withdrawEmployerProfileRevision, getEmployerProfilePublic | EMP-05, EMP-12 | — |
-| R-45 | Moderated job posting: employers author and submit through the existing publishing service for their own verified organisation; review, verification and publication stay staff-only under D-18 and D-22 (D-35) | D-35; D-18; D-22 | — | listEmployerListings, createEmployerListing, getEmployerListing, saveEmployerListing, submitEmployerListing, discardEmployerListing, reopenEmployerListing, amendEmployerListing | EMP-06, EMP-07, EMP-08, EMP-13 | — |
+| R-45 | Moderated job posting: employers author and submit through the existing publishing service for their own verified organisation; review, verification and publication stay staff-only under D-18 and D-22 (D-35) | D-35; D-18; D-22 | — | listEmployerListings, createEmployerListing, getEmployerListing, saveEmployerListing, submitEmployerListing, discardEmployerListing, reopenEmployerListing, amendEmployerListing, closeEmployerListing | EMP-06, EMP-07, EMP-08, EMP-13 | — |
 | R-46 | Employer dashboard and basic listing analytics: aggregate counters only, no visitor data, saves as a number (D-35) | D-35 | — | getEmployerAnalytics, recordListingEvent | EMP-09, EMP-14 | — |
 
 ## 2. Screen register
@@ -98,6 +98,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `discardEmployerListing` | POST `/employer/listings/{opportunity_id}/discard` | employer | R-45 |
 | `reopenEmployerListing` | POST `/employer/listings/{opportunity_id}/reopen` | employer | R-45 |
 | `amendEmployerListing` | POST `/employer/listings/{opportunity_id}/amend` | employer | R-45 |
+| `closeEmployerListing` | POST `/employer/listings/{opportunity_id}/close` | employer | R-45 |
 | `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |
 | `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `getSitemapEntries` | GET `/sitemap` | public | R-29 |

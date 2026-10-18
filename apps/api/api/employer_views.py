@@ -558,6 +558,32 @@ class AmendListingView(_ListingActionView):
         return super().post(request, opportunity_id)
 
 
+class CloseListingView(EmployerView):
+    @extend_schema(
+        operation_id="closeEmployerListing",
+        tags=["employer"],
+        request=None,
+        responses=_ACTION_RESPONSES,
+    )
+    def post(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        data = _body(request)
+        user = self.user_of(request)
+        fields: dict[str, list[dict[str, str]]] = {}
+        if data is None or not isinstance(data.get("row_version"), int):
+            fields["row_version"] = [{"code": "required", "message": "Send the row_version you were shown."}]
+        if data is None or not isinstance(data.get("reason"), str):
+            fields["reason"] = [{"code": "required", "message": "Say why you are closing it."}]
+        if fields or data is None:
+            return error_response("validation_failed", "The request is invalid.", 400, fields)
+        try:
+            listings.close(user, opportunity_id, data["row_version"], data["reason"])
+        except WorkflowError as exc:
+            return _refused(exc)
+        opportunity = _own_listing(user, opportunity_id)
+        assert opportunity is not None
+        return Response(_listing_detail(user, opportunity))
+
+
 class AnalyticsView(EmployerView):
     @extend_schema(
         operation_id="getEmployerAnalytics",

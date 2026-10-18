@@ -196,7 +196,7 @@ def test_the_whole_journey_register_claim_verify_post_review_publish_and_count(
     assert "approximate" in stats["note"]
     # the dashboard lists it as published with an amend action
     listed = web.get(f"{J}/organisations/{org_id}/listings").json()["data"]
-    assert listed[0]["status"] == "published" and listed[0]["next_actions"] == ["amend"]
+    assert listed[0]["status"] == "published" and listed[0]["next_actions"] == ["amend", "close"]
 
 
 def test_other_peoples_ids_answer_404_and_never_reveal_existence(
