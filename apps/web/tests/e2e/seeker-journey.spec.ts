@@ -48,6 +48,14 @@ async function register(page: Page, email: string, name: string) {
   await expect(page.getByText("E-mail address confirmed")).toBeVisible();
 }
 
+/** The forms are controlled React inputs: a click before hydration is reverted, so wait until React owns the form. */
+async function hydrated(page: Page) {
+  await page.waitForFunction(() => {
+    const form = document.querySelector("#main form");
+    return form !== null && Object.keys(form).some((key) => key.startsWith("__reactProps"));
+  });
+}
+
 async function axeClean(page: Page, label: string) {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
@@ -109,6 +117,7 @@ test("2. registration and confirmation lead to a private profile that is optiona
 
 test("3. the profile is filled in step by step and saved; the dashboard reflects it", async ({ page }) => {
   await signIn(page, EMAIL, "/profile");
+  await hydrated(page);
   await expect(page.getByRole("heading", { name: "Your profile", level: 1 })).toBeVisible();
   await expect(page.getByTestId("profile-privacy")).toContainText("Only you can see this");
   await shot(page, "seeker-03-profile-empty");
@@ -157,6 +166,7 @@ test("4. For you follows the preferences and explains every recommendation", asy
 
   // change the preferences: only grants now
   await page.goto("/profile");
+  await hydrated(page);
   await page.getByLabel("Jobs", { exact: true }).uncheck();
   await page.getByLabel("Engineering", { exact: true }).uncheck();
   await page.getByLabel("Permanent", { exact: true }).uncheck();
@@ -180,6 +190,7 @@ test("4. For you follows the preferences and explains every recommendation", asy
 
   // reset keeps the about-you details and clears the preferences
   await page.goto("/profile");
+  await hydrated(page);
   await page.getByRole("button", { name: "Reset preferences" }).click();
   await page.getByRole("button", { name: "Yes, clear preferences" }).click();
   await expect(page.getByText("Preferences cleared")).toBeVisible();
@@ -224,6 +235,7 @@ test("6. alerts are set up with explicit consent, generated locally and never du
   page,
 }) => {
   await signIn(page, EMAIL, "/alerts");
+  await hydrated(page);
   await expect(page.getByTestId("alert-state")).toContainText("off");
   // this throwaway stack counts as verified, so the "not being sent yet" notice is absent here
   await expect(page.getByTestId("alerts-unavailable")).toHaveCount(0);
@@ -279,8 +291,10 @@ test("7. the unsubscribe link in the e-mail works without signing in", async ({ 
 
 test("8. deleting the profile removes everything and For you falls back", async ({ page }) => {
   await signIn(page, EMAIL, "/alerts");
+  await hydrated(page);
   await expect(page.getByTestId("alert-state")).toContainText("off"); // the unsubscribe took effect
   await page.goto("/profile");
+  await hydrated(page);
   await page.getByRole("button", { name: "Delete profile" }).click();
   await expect(page.getByRole("alertdialog")).toContainText("Delete your whole profile?");
   await page.getByRole("button", { name: "Yes, delete my profile" }).click();
@@ -301,6 +315,7 @@ test("9. another account cannot read a profile, and there is no way to ask for o
 }) => {
   // give the first person's profile something to protect
   await signIn(page, EMAIL, "/profile");
+  await hydrated(page);
   await page.getByLabel("Experience", { exact: true }).selectOption({ label: "Executive" });
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByText("Profile saved")).toBeVisible();
