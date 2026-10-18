@@ -2,6 +2,8 @@
 
 Status: DRAFT for owner review, written at the end of Phase 4. It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
 
+Sequenced by D-31 into the Phase 5 workstreams of `docs/phase5/PHASE5_REVISED_PLAN.md` (§WS7 maps each blocker to its closing work and evidence).
+
 ## A. Blockers (a launch cannot happen until each is resolved)
 
 | # | Blocker | Why | Who | Evidence |
@@ -30,7 +32,7 @@ Status: DRAFT for owner review, written at the end of Phase 4. It lists what sto
 | Languages (OQ-18, P4-01) | English only | confirm; add Shona or Ndebele later only with owner-supplied translations |
 | "For employers" link, alerts, other reference features (OQ-24) | not built | confirm exclusion for launch |
 | Verification policy, duplicate rules, category schemas, taxonomies, currencies (OQ-06 to OQ-08, OQ-21, OQ-22, OQ-29) | Phase 2 defaults | approve or change before real content is entered |
-| Profile, For You, match display (OQ-23) | not built | decide before Phase 5 |
+| Profile, For You, match display (OQ-23) | design approved (D-31); not built; Phase 6 | no action until the Phase 5 launch gate |
 | Change of e-mail address | not built | confirm it is wanted |
 
 ## C. Known limitations that are not blockers

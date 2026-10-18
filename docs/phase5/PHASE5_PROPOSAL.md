@@ -1,6 +1,6 @@
 # Phase 5 implementation proposal — DRAFT for owner review
 
-Status: DRAFT. Planning only, authorised after Phase 4 acceptance (verified commit `ea54d91`, CI 39065035043). **No Phase 5 code has been written.** Nothing here is approved; the open questions and defaults below are proposals. Nothing is deployed and the VPS, Traefik/Nginx and The Granite Post are not touched.
+Status: DRAFT. **Superseded in ordering by D-31 (2026-10-18):** the design in this document (profile fields, privacy constraints, `rules-v1`) is approved for the future, but launch readiness comes first (`PHASE5_REVISED_PLAN.md`), and wherever this document says "Phase 5" it now means **Phase 6**. Original status: planning only, authorised after Phase 4 acceptance (verified commit `ea54d91`, CI 39065035043). **No Phase 5 code has been written.** Nothing here is approved; the open questions and defaults below are proposals. Nothing is deployed and the VPS, Traefik/Nginx and The Granite Post are not touched.
 
 ## 0. Recommendation in one paragraph
 
