@@ -41,7 +41,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-31 | Runtime versions are researched, pinned, patched and monitored for end of life | D-20; ADR-0013; VERSION_RECOMMENDATION | — | — | OPS-10…OPS-13 | OQ-28 |
 | R-32 | Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category | D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES | SC-12 | createDraft, saveDraft | CAT-01…CAT-08 | OQ-06, OQ-21, OQ-22, OQ-29 |
 | R-33 | Staff access protections: two-step verification, shorter staff sessions, staff CSP, audited authentication events (provisional default P3-07 for OQ-16) | P3 review; SECURITY_ARCHITECTURE §3, §5.1; OQ-16 | SC-12, SC-13 | login, getMe | AUTH-13…AUTH-15, SEC-11 | OQ-13, OQ-16, OQ-17 |
-| R-34 | Production preflight, least-privilege database roles and a local TLS rehearsal prove the configuration without deploying (P5-02, P5-03) | D-32; WS3 | — | — | PRE-01…PRE-03 | OQ-01, OQ-10, OQ-13 |
+| R-34 | Production preflight, least-privilege database roles and a local TLS rehearsal prove the configuration without deploying (P5-02, P5-03) | D-32; WS3 | — | — | PRE-01…PRE-04 | OQ-01, OQ-10, OQ-13 |
 | R-35 | Encrypted backups with a tested restore path, tamper refusal and re-application of deletions after a restore (P5-04) | D-32; WS4 | — | — | BAK-01, BAK-02 | OQ-27 |
 | R-36 | Job state, alert catalogue and debounced notifications; logs and alerts carry no personal data (P5-05) | D-32; WS4 | — | — | MON-01, MON-02 | OQ-26 |
 | R-37 | Draft-only import, content-health report and a separation-of-duties audit support the launch content target without bypassing the workflow (P5-06) | D-18, D-22, D-32; WS6 | SC-12, SC-13 | — | EDT-01, EDT-02 | OQ-06, OQ-21, OQ-22, OQ-29 |
@@ -308,6 +308,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | PRE-01 | Preflight settings checks: each unsafe setting fails; local-prod-like findings are warnings; no secret value appears in output |
 | PRE-02 | The application database role cannot change schema, audit or history tables, users or migration history; the read-only role can only read; roles have no dangerous attributes |
 | PRE-03 | Preflight passes with zero failures against the production-mode stack behind local TLS (headers, cookies, certificate, redirect) |
+| PRE-04 | Every operation is protected by a session or on the reviewed public list; protected operations refuse anonymous callers and a missing CSRF token; none answers 5xx to hostile input |
 | BAK-01 | Backup is encrypted, a tampered file is refused, the restore matches the source (rows, triggers, indexes) and the application's read paths answer as the application role |
 | BAK-02 | Deletions completed after a backup are re-applied after a restore without a second e-mail; staff accounts are skipped |
 | MON-01 | Every alert in the catalogue fires and clears under test; the debouncer notifies once; the webhook payload carries only alert fields |
@@ -481,6 +482,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | PRE-01 | `apps/api/tests/test_preflight.py (settings findings)` | executed |
 | PRE-02 | `apps/api/tests/test_preflight.py (real PostgreSQL roles: data rights only, read-only role, attributes, provisioning refusals)` | executed |
 | PRE-03 | `apps/api/core/preflight.py via `manage.py check_production_config --url` in infrastructure/compose/compose.tls.yaml; CI job tls-rehearsal` | executed locally (0 failures, 2 warnings: no provider, no contact address); not run against a real deployment |
+| PRE-04 | `apps/api/tests/test_endpoint_review.py` | executed |
 | BAK-01 | `infrastructure/backup/rehearse.sh; apps/api/tests/test_operations.py (restore_check); output in docs/phase5/acceptance/backup-rehearsal-small.txt` | executed locally on a small dataset; no off-server storage exists |
 | BAK-02 | `apps/api/tests/test_operations.py (reapply_deletions)` | executed |
 | MON-01 | `apps/api/tests/test_operations.py (alerts, debouncer, webhook with a stub opener)` | executed; nothing was delivered to a real channel |
