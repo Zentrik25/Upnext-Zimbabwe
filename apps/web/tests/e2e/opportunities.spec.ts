@@ -46,8 +46,8 @@ test.describe("browse and search", () => {
     await page.goto("/opportunities");
     await page
       .getByRole("searchbox", { name: "Search by title, organisation or keyword" })
-      .fill("solar water");
-    await page.getByRole("button", { name: "Search" }).first().click();
+      .fill("  solar water ");
+    await page.getByRole("searchbox", { name: "Search by title, organisation or keyword" }).press("Enter");
     await expect(page).toHaveURL(/q=solar\+water/);
     await expect(
       page.getByRole("link", { name: "Supply of Solar Water Heating Units", exact: true }),
@@ -249,8 +249,49 @@ test.describe("accessibility and design of the catalogue pages", () => {
 test.describe("home search", () => {
   test("the home page search goes to the results", async ({ page }) => {
     await page.goto("/");
+    await expect(page.getByRole("button", { name: "Search" })).toHaveCount(0);
     await page.getByRole("searchbox").fill("grant");
-    await page.getByRole("button", { name: "Search" }).click();
+    await page.getByRole("searchbox").press("Enter");
     await expect(page).toHaveURL(/\/opportunities\?q=grant/);
+  });
+
+  test("a blank search sends nothing; filters and a cleared keyword behave", async ({ page }) => {
+    await page.goto("/");
+    let requests = 0;
+    page.on("request", (r) => {
+      if (r.isNavigationRequest()) requests += 1;
+    });
+    await page.getByRole("searchbox").fill("   ");
+    await page.getByRole("searchbox").press("Enter");
+    await page.waitForTimeout(300);
+    expect(requests).toBe(0);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("searchbox")).toBeFocused();
+    // existing filters survive a new keyword
+    await page.goto("/opportunities?category=jobs&sort=newest&limit=20");
+    await page.getByRole("searchbox").fill("engineer");
+    await page.getByRole("searchbox").press("Enter");
+    await expect(page).toHaveURL(/q=engineer/);
+    await expect(page).toHaveURL(/category=jobs/);
+    await expect(page).toHaveURL(/sort=newest/);
+    // emptying the keyword clears it from the address
+    await page.getByRole("searchbox").fill("");
+    await page.getByRole("searchbox").press("Enter");
+    await expect(page).not.toHaveURL(/q=/);
+  });
+
+  test("the field has a magnifier, no button, the 4px radius and a visible focus ring", async ({ page }) => {
+    await page.goto("/opportunities");
+    const box = page.getByRole("searchbox");
+    await expect(page.getByRole("search").getByRole("button")).toHaveCount(0);
+    await expect(page.getByRole("search").locator("svg[aria-hidden='true']")).toHaveCount(1);
+    await expect(box).toHaveAttribute("enterkeyhint", "search");
+    await box.focus();
+    expect(await box.evaluate((e) => getComputedStyle(e).outlineStyle)).not.toBe("none");
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 800 });
+      expect(await box.evaluate((e) => getComputedStyle(e).borderTopLeftRadius)).toBe("4px");
+      expect(await box.evaluate((e) => e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(36);
+    }
   });
 });

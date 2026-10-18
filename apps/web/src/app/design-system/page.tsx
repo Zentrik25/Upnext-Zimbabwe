@@ -98,9 +98,6 @@ export default function DesignSystemPage() {
             <option>Harare</option>
             <option>Bulawayo</option>
           </SearchGroup.Select>
-          <Button size="search" type="submit">
-            Find opportunities
-          </Button>
         </SearchGroup>
       </Section>
 

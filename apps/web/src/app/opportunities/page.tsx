@@ -115,6 +115,9 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             Every listing names its source. Applications happen on the issuer&apos;s own channel.
           </p>
           <SearchGroup action="/opportunities" method="get" aria-label="Search opportunities">
+            {keepForSearch.map(([k, v]) => (
+              <input key={k} type="hidden" name={k} value={v} />
+            ))}
             <label htmlFor="q" className="sr-only">
               Search by title, organisation or keyword
             </label>
@@ -137,12 +140,6 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
                 </option>
               ))}
             </SearchGroup.Select>
-            {keepForSearch.map(([k, v]) => (
-              <input key={k} type="hidden" name={k} value={v} />
-            ))}
-            <Button type="submit" size="search">
-              Search
-            </Button>
           </SearchGroup>
         </Container>
       </section>

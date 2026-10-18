@@ -1,28 +1,18 @@
-import type { FormHTMLAttributes, ReactNode } from "react";
+import type { FormHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { SearchForm } from "./search-form";
 import { cn } from "@/lib/cn";
 
 /**
- * The compact search control from the reference: one outlined group holding a text field, a select and
- * a primary button. Children are expected to be `SearchGroup.Input`, `SearchGroup.Select` and a
- * `Button size="search"`. On narrow screens the group unwraps into separate outlined controls.
+ * The compact search control from the reference: one outlined group holding a text field (with a magnifying
+ * glass inside it) and optionally a select. There is no separate button: Enter submits on a keyboard and the
+ * phone keyboard shows "Search" (`enterKeyHint`). A blank search that would change nothing is not sent. On
+ * narrow screens the group unwraps into separate outlined controls.
  */
 export function SearchGroup({
-  className,
   children,
   ...props
 }: FormHTMLAttributes<HTMLFormElement> & { children: ReactNode }) {
-  return (
-    <form
-      role="search"
-      className={cn(
-        "flex max-w-[790px] sm:rounded-control border border-control-border max-sm:flex-wrap max-sm:gap-[7px] max-sm:border-0",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </form>
-  );
+  return <SearchForm {...props}>{children}</SearchForm>;
 }
 
 const part =
@@ -31,9 +21,31 @@ const part =
 SearchGroup.Input = function SearchInput({
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { id: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { id: string }) {
   return (
-    <input className={cn(part, "min-w-0 flex-1 sm:rounded-r-none max-sm:basis-full", className)} {...props} />
+    <div className="relative min-w-0 flex-1 max-sm:basis-full sm:[&:not(:last-child)>input]:rounded-r-none sm:[&:last-child>input]:border-r-0">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="pointer-events-none absolute top-1/2 left-[11px] -translate-y-1/2 text-muted"
+      >
+        <circle cx="7" cy="7" r="4.5" />
+        <path d="M10.5 10.5 14 14" />
+      </svg>
+      <input
+        type="search"
+        enterKeyHint="search"
+        autoComplete="off"
+        className={cn(part, "block w-full pl-[34px]", className)}
+        {...props}
+      />
+    </div>
   );
 };
 
@@ -41,9 +53,12 @@ SearchGroup.Select = function SearchSelect({
   className,
   children,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { id: string }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & { id: string }) {
   return (
-    <select className={cn(part, "w-[155px] sm:rounded-none max-sm:flex-1", className)} {...props}>
+    <select
+      className={cn(part, "w-[155px] sm:rounded-l-none sm:border-r-0 max-sm:flex-1", className)}
+      {...props}
+    >
       {children}
     </select>
   );

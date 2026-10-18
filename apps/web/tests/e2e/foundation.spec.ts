@@ -290,8 +290,8 @@ test.describe("reference parity of the primitives (1440px) — only DEV-01…DEV
     expect(box?.width).toBe(790);
     expect(box?.height).toBe(41);
     await expect(group).toHaveCSS("border-top-color", rgb("#7693b7"));
-    await expect(group.getByRole("button")).toHaveCSS("min-height", "39px");
-    await expect(group.getByRole("button")).toHaveCSS("background-color", refRgb("accent"));
+    await expect(group.getByRole("button")).toHaveCount(0); // no separate Search button (owner request)
+    await expect(group.getByRole("searchbox")).toHaveCSS("min-height", "39px");
     await expect(group.getByRole("combobox")).toHaveCSS("width", "155px");
   });
 

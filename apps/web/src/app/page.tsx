@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout";
 import { OpportunityRow } from "@/components/opportunities/parts";
 import { JsonLd } from "@/components/seo/json-ld";
-import { Button, Notice, SearchGroup } from "@/components/ui";
+import { Notice, SearchGroup } from "@/components/ui";
 import { listCategories, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 import { siteUrl } from "@/lib/site";
@@ -56,9 +56,6 @@ export default async function HomePage() {
               maxLength={100}
               placeholder="Title, organisation or keyword"
             />
-            <Button type="submit" size="search">
-              Search
-            </Button>
           </SearchGroup>
           {categories.length > 0 ? (
             <nav aria-label="Browse by category" className="mt-4">
