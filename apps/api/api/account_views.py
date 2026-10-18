@@ -31,6 +31,7 @@ from .account_serializers import (
     AcceptedSerializer,
     ChangePasswordSerializer,
     DeletionRequestedSerializer,
+    EmailChangeSerializer,
     EmailOnlySerializer,
     MeUpdateSerializer,
     PasswordOnlySerializer,
@@ -277,6 +278,46 @@ class SessionDetailView(MeBaseView):
         if not services.revoke_session(self.user_of(request), session_id):
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EmailChangeView(MeBaseView):
+    """Change of e-mail address (D-31): off until e-mail delivery has been verified (P5-07)."""
+
+    throttle_classes = [UserWriteThrottle, EmailRequestIpThrottle]
+
+    @extend_schema(
+        operation_id="requestEmailChange",
+        tags=["me"],
+        request=EmailChangeSerializer,
+        responses={202: AcceptedSerializer, 400: None, 403: None, 409: None, 503: None},
+    )
+    def post(self, request: Request) -> Response:
+        data = EmailChangeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        if not services.email_change_available():
+            return error_response(
+                "email_unavailable",
+                "Changing the e-mail address is not available yet.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        self.reauthenticate(request, data.validated_data["password"])
+        try:
+            services.request_email_change(self.user_of(request), data.validated_data["new_email"])
+        except services.EmailChangeUnavailable:
+            return error_response(
+                "email_unavailable",
+                "Changing the e-mail address is not available yet.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except services.StaffAccountError:
+            return error_response(
+                "staff_account",
+                "Staff e-mail addresses are changed by an administrator.",
+                status.HTTP_409_CONFLICT,
+            )
+        except services.AccountError as exc:
+            raise _fields(exc) from exc
+        return Response(ACCEPTED, status=status.HTTP_202_ACCEPTED)
 
 
 class DeletionRequestView(MeBaseView):

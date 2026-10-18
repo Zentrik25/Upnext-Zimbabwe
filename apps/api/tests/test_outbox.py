@@ -169,3 +169,15 @@ def test_two_workers_do_not_send_the_same_row_twice(make_user: Callable[..., Use
     outbox.process_batch(sender=second, batch=2)
     keys = [m.idempotency_key for m in first.sent + second.sent]
     assert len(keys) == len(set(keys)) == 3
+
+
+def test_plain_text_mail_is_not_html_escaped(db: None, make_user: Any) -> None:
+    from notifications import services as outbox_services
+    from notifications.models import EmailKind
+
+    user = make_user(display_name="Tom & Jerry <3")
+    row = outbox_services.enqueue(
+        EmailKind.PASSWORD_CHANGED_NOTICE, user, user.email, context={"display_name": user.display_name}
+    )
+    body = outbox_services.build_message(row).body  # type: ignore[union-attr]
+    assert "Tom & Jerry <3" in body and "&amp;" not in body and "&lt;" not in body

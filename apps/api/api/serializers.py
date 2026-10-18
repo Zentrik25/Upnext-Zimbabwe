@@ -38,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer[User]):
     status = serializers.ChoiceField(choices=AccountStatus.choices, read_only=True)
     roles = serializers.SerializerMethodField()
     deletion_scheduled_for = serializers.SerializerMethodField()
+    email_change_available = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -51,6 +52,7 @@ class UserSerializer(serializers.ModelSerializer[User]):
             "created_at",
             "deletion_requested_at",
             "deletion_scheduled_for",
+            "email_change_available",
         ]
         read_only_fields = fields
 
@@ -59,6 +61,12 @@ class UserSerializer(serializers.ModelSerializer[User]):
         from accounts.services import scheduled_for
 
         return scheduled_for(obj)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_email_change_available(self, obj: User) -> bool:
+        from accounts.services import email_change_available
+
+        return email_change_available() and not obj.active_roles()
 
     @extend_schema_field(serializers.BooleanField())
     def get_email_verified(self, obj: User) -> bool:

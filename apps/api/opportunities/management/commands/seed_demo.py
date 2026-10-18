@@ -37,8 +37,8 @@ class Command(BaseCommand):
         if not (settings.DEBUG or options["force"]):
             raise CommandError("Demo data is for development; pass --force to load it anyway.")
         if not (settings.DEBUG or os.environ.get("UPNEXT_DEMO_TOOLS") == "1"):
-            # Production refuses UPNEXT_DEMO_TOOLS at start-up, so fictional data and shared demo passwords can
-            # never be loaded into a real deployment, with or without --force.
+            # Production refuses UPNEXT_DEMO_TOOLS at start-up, so fictional data and shared demo passwords
+            # can never be loaded into a real deployment, with or without --force.
             raise CommandError("Demo data needs DEBUG or UPNEXT_DEMO_TOOLS=1; production never allows these.")
         with transaction.atomic():
             seed_taxonomies()

@@ -22,6 +22,9 @@ class EmailKind(models.TextChoices):
     PASSWORD_CHANGED_NOTICE = "password_changed_notice"  # noqa: S105
     ACCOUNT_DELETION_NOTICE = "account_deletion_notice"
     ACCOUNT_DELETION_COMPLETED = "account_deletion_completed"
+    EMAIL_CHANGE_CONFIRM = "email_change_confirm"
+    EMAIL_CHANGE_REQUESTED_NOTICE = "email_change_requested_notice"
+    EMAIL_CHANGED_NOTICE = "email_changed_notice"
 
 
 class OutboxStatus(models.TextChoices):
@@ -77,3 +80,6 @@ class EmailSuppression(models.Model):
 
     def __str__(self) -> str:
         return f"{self.reason}:{self.address_hash[:8]}"
+
+
+from .verification import EmailDeliveryVerification  # noqa: E402,F401

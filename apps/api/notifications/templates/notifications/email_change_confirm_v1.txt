@@ -1,0 +1,9 @@
+Hello {{ display_name }},
+
+You asked to use this address for your UPNEXT account. Confirm it to finish the change:
+
+{{ link }}
+
+The link works once and expires in 24 hours. Until you confirm, your account keeps its current address. If you did not ask for this, you can ignore this message and nothing will change.
+
+UPNEXT never asks for your password by e-mail.

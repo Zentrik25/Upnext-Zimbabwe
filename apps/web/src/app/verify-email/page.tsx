@@ -17,9 +17,10 @@ export default async function VerifyEmailPage({
 }) {
   const raw = (await searchParams).token;
   const token = (Array.isArray(raw) ? raw[0] : raw) || null;
+  const change = (await searchParams).change === "1";
   return (
-    <FormPage title="Confirm your e-mail address">
-      <VerifyEmailPanel token={token} />
+    <FormPage title={change ? "Confirm your new e-mail address" : "Confirm your e-mail address"}>
+      <VerifyEmailPanel token={token} change={change} />
     </FormPage>
   );
 }

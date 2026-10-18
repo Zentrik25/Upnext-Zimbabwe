@@ -5,7 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -29,7 +29,8 @@ def repo_root() -> Path:
 
 @pytest.fixture
 def client(db: None) -> APIClient:
-    cache.clear()  # throttle counters live in the database cache
+    cache.clear()  # security counters live in the database cache
+    caches["local"].clear()  # anonymous read counters and the sitemap feed live in process memory
     return APIClient(enforce_csrf_checks=True)
 
 

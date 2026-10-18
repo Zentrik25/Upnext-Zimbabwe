@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const router = { replace: vi.fn(), refresh: vi.fn(), push: vi.fn() };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
+import { EmailChangePanel } from "@/components/account/account-panels";
 import { ForgotPasswordForm } from "@/components/account/forgot-password-form";
 import { RegisterForm } from "@/components/account/register-form";
 import { ResetPasswordForm } from "@/components/account/reset-password-form";
@@ -236,6 +237,39 @@ describe("one-time token pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm e-mail address" }));
     expect(await screen.findByText("E-mail address confirmed")).toBeInTheDocument();
     expect(calls[0]!.url).toBe("/api/v1/auth/email/verify");
+  });
+});
+
+describe("EmailChangePanel", () => {
+  it("asks for the new address and the password, and never claims the change happened", async () => {
+    const calls = script({ status: 202, body: { status: "accepted" } });
+    render(<EmailChangePanel currentEmail="old@example.org" />);
+    type("New e-mail address", "new@example.org");
+    type("Your password", "correct horse battery staple 42");
+    fireEvent.click(screen.getByRole("button", { name: "Send confirmation link" }));
+    expect(await screen.findByText("Check your new inbox")).toBeInTheDocument();
+    expect(screen.getByText(/keeps old@example\.org until you open the link/)).toBeInTheDocument();
+    expect(calls[0]!.url).toBe("/api/v1/me/email-change");
+    expect(JSON.parse(String(calls[0]!.init.body))).toEqual({
+      new_email: "new@example.org",
+      password: "correct horse battery staple 42",
+    });
+  });
+  it("says so plainly when the feature is switched off or the password is wrong", async () => {
+    script(error(503, "email_unavailable"), error(403, "reauth_required"));
+    render(<EmailChangePanel currentEmail="old@example.org" />);
+    type("New e-mail address", "new@example.org");
+    type("Your password", "x".repeat(12));
+    fireEvent.click(screen.getByRole("button", { name: "Send confirmation link" }));
+    expect(await screen.findByText(/not available right now/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Send confirmation link" }));
+    expect(await screen.findByText("That password is not correct.")).toBeInTheDocument();
+  });
+  it("uses its own wording on the confirmation page", async () => {
+    script({ status: 204 });
+    render(<VerifyEmailPanel token="abc.def" change />);
+    fireEvent.click(screen.getByRole("button", { name: "Confirm e-mail address" }));
+    expect(await screen.findByText(/Sign in with it from now on/)).toBeInTheDocument();
   });
 });
 

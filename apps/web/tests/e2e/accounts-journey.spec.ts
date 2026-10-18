@@ -273,3 +273,48 @@ test("8. the account pages fit every width and are accessible", async ({ page })
   ).toBeLessThanOrEqual(0);
   await axeClean(page);
 });
+
+test("9. change of e-mail address: the new address must confirm, the old one is told, then only the new one signs in", async ({
+  page,
+}) => {
+  const NEW_EMAIL = `moved.${STAMP}@example.org`;
+  await signIn(page, EMAIL, THIRD_PASSWORD);
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByRole("heading", { name: "Change your e-mail address" })).toBeVisible();
+  await shot(page, "acct-16-email-change");
+  await axeClean(page);
+
+  await page.getByLabel("New e-mail address").fill(EMAIL); // the current address is refused
+  await page.getByLabel("Your password", { exact: true }).fill(THIRD_PASSWORD);
+  await page.getByRole("button", { name: "Send confirmation link" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Error:" })).toContainText("already your address");
+
+  await page.getByLabel("New e-mail address").fill(NEW_EMAIL);
+  await page.getByLabel("Your password", { exact: true }).fill(THIRD_PASSWORD);
+  await page.getByRole("button", { name: "Send confirmation link" }).click();
+  await expect(page.getByText("Check your new inbox")).toBeVisible();
+  await shot(page, "acct-17-email-change-asked");
+
+  const notice = await lastEmail(EMAIL, "email_change_requested_notice");
+  expect(notice.body).toContain("Nothing has changed yet");
+  const confirm = await lastEmail(NEW_EMAIL, "email_change_confirm");
+  const link = linkIn(confirm.body);
+  await page.goto(link);
+  await expect(page.getByRole("heading", { name: "Confirm your new e-mail address" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm e-mail address" }).click();
+  await expect(page.getByText(/Sign in with it from now on/)).toBeVisible();
+  await shot(page, "acct-18-email-changed");
+  await axeClean(page);
+  const after = await lastEmail(EMAIL, "email_changed_notice");
+  expect(after.body).toContain("was changed");
+
+  await page.goto("/account");
+  await page.getByRole("button", { name: "Sign out" }).first().click();
+  await signIn(page, EMAIL, THIRD_PASSWORD);
+  await expect(page.getByRole("alert").filter({ hasText: "Error:" })).toContainText(
+    "Incorrect e-mail or password.",
+  );
+  await signIn(page, NEW_EMAIL, THIRD_PASSWORD);
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByText(NEW_EMAIL)).toBeVisible();
+});

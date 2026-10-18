@@ -34,6 +34,11 @@ class ChangePasswordSerializer(StrictSerializer):
     new_password = serializers.CharField(min_length=10, **PASSWORD)  # type: ignore[arg-type]
 
 
+class EmailChangeSerializer(StrictSerializer):
+    new_email = serializers.EmailField(max_length=254)
+    password = serializers.CharField(**PASSWORD)  # type: ignore[arg-type]
+
+
 class MeUpdateSerializer(StrictSerializer):
     display_name = serializers.CharField(min_length=1, max_length=80)
 

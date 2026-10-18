@@ -26,6 +26,7 @@ urlpatterns = [
     ),
     path("auth/password/change", account_views.ChangePasswordView.as_view(), name="auth-password-change"),
     path("me", account_views.MeView.as_view(), name="me"),
+    path("me/email-change", account_views.EmailChangeView.as_view(), name="me-email-change"),
     path("me/deletion-request", account_views.DeletionRequestView.as_view(), name="me-deletion"),
     path("me/sessions", account_views.SessionListView.as_view(), name="me-sessions"),
     path("me/sessions/<uuid:session_id>", account_views.SessionDetailView.as_view(), name="me-session"),

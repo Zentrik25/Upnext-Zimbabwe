@@ -278,6 +278,8 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { description: 'e-mail delivery has not been verified, so the change is not available (`email_unavailable`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /me/deletion-request:
     post:
       tags: [me]
@@ -865,6 +867,7 @@ components:
         created_at: { type: string, format: date-time }
         deletion_requested_at: { type: [string, 'null'], format: date-time, description: 'Set while an account-deletion request is pending (OQ-09). Added in Phase 3; additive.' }
         deletion_scheduled_for: { type: [string, 'null'], format: date-time, description: 'When a pending deletion will be carried out (request plus the cooling-off period). Added in Phase 4; additive.' }
+        email_change_available: { type: boolean, description: 'True when change of e-mail address can be used: delivery has been verified (P5-07) and the account holds no staff role. Added in Phase 5; additive.' }
     AdminUser:
       allOf:
         - $ref: '#/components/schemas/User'

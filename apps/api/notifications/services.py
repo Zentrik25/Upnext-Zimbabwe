@@ -10,12 +10,13 @@ import logging
 import random
 import uuid
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F
-from django.template.loader import render_to_string
+from django.template import Context
+from django.template.loader import get_template
 from django.utils import timezone
 
 from accounts import tokens
@@ -44,10 +45,14 @@ SUBJECTS = {
     EmailKind.PASSWORD_CHANGED_NOTICE: "Your UPNEXT password was changed",
     EmailKind.ACCOUNT_DELETION_NOTICE: "We received your UPNEXT account deletion request",
     EmailKind.ACCOUNT_DELETION_COMPLETED: "Your UPNEXT account has been deleted",
+    EmailKind.EMAIL_CHANGE_CONFIRM: "Confirm your new UPNEXT e-mail address",
+    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your UPNEXT e-mail address was requested",
+    EmailKind.EMAIL_CHANGED_NOTICE: "Your UPNEXT e-mail address was changed",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
     EmailKind.PASSWORD_RESET: "/reset-password",
+    EmailKind.EMAIL_CHANGE_CONFIRM: "/verify-email",
 }
 
 
@@ -79,15 +84,15 @@ def _link(row: EmailOutbox) -> str | None:
     path = _TOKEN_PATHS.get(EmailKind(row.kind))
     if not token_id or path is None:
         return None
-    purpose = (
-        TokenPurpose.EMAIL_VERIFICATION
-        if row.kind == EmailKind.EMAIL_VERIFICATION
-        else TokenPurpose.PASSWORD_RESET
-    )
+    purpose = {
+        EmailKind.EMAIL_VERIFICATION: TokenPurpose.EMAIL_VERIFICATION,
+        EmailKind.EMAIL_CHANGE_CONFIRM: TokenPurpose.EMAIL_CHANGE,
+    }.get(EmailKind(row.kind), TokenPurpose.PASSWORD_RESET)
     token = AuthToken.objects.filter(pk=token_id, purpose=purpose).first()
     if token is None:
         return None
-    return f"{settings.UPNEXT_PUBLIC_BASE_URL.rstrip('/')}{path}?token={tokens.render(token)}"
+    extra = "&change=1" if row.kind == EmailKind.EMAIL_CHANGE_CONFIRM else ""
+    return f"{settings.UPNEXT_PUBLIC_BASE_URL.rstrip('/')}{path}?token={tokens.render(token)}{extra}"
 
 
 def build_message(row: EmailOutbox) -> EmailMessage | None:
@@ -95,10 +100,10 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
     link = _link(row)
     if row.kind in _TOKEN_PATHS and link is None:
         return None
-    body = render_to_string(
-        f"notifications/{row.template_key}_v{row.template_version}.txt",
-        {**row.payload, "link": link, "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/")},
-    )
+    context = {**row.payload, "link": link, "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/")}
+    # Plain text: nothing is HTML-escaped (a link's "&" or a name such as "Tom & Jerry" must arrive as typed).
+    template = get_template(f"notifications/{row.template_key}_v{row.template_version}.txt")
+    body = str(cast(Any, template).template.render(Context(context, autoescape=False)))
     return EmailMessage(
         idempotency_key=row.idempotency_key,
         to=row.to_address,

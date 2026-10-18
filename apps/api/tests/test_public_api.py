@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.test import TestCase
 from django.utils import timezone
 from jsonschema import Draft202012Validator
@@ -485,6 +485,7 @@ def repo_root() -> Path | None:
 class PublicThrottleTests(TestCase):
     def test_rate_limit_returns_429_with_retry_after(self) -> None:
         cache.clear()
+        caches["local"].clear()
         PublicReadThrottle.THROTTLE_RATES = {**PublicReadThrottle.THROTTLE_RATES, "public_read": "2/1m"}
         try:
             statuses = [self.client.get("/api/v1/categories").status_code for _ in range(4)]
@@ -492,6 +493,7 @@ class PublicThrottleTests(TestCase):
         finally:
             PublicReadThrottle.THROTTLE_RATES = {**PublicReadThrottle.THROTTLE_RATES, "public_read": "240/1m"}
             cache.clear()
+            caches["local"].clear()
         assert statuses[:2] == [200, 200] and 429 in statuses
         assert blocked.status_code == 429 and blocked.json()["error"]["code"] == "rate_limited"
         assert int(blocked["Retry-After"]) > 0

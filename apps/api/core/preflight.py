@@ -166,6 +166,12 @@ def settings_findings(conf: Any, environ: dict[str, str]) -> list[Finding]:
     return c.items
 
 
+def _mail_hash(conf: Any) -> str:
+    from notifications.verification import config_hash
+
+    return config_hash(conf) if hasattr(conf, "UPNEXT_SMTP_HOST") else ""
+
+
 def database_findings(connection: Any, conf: Any) -> list[Finding]:
     relaxed = getattr(conf, "UPNEXT_ENVIRONMENT", "development") == "local-prod-like"
     c = _Collector("database", relaxed)
@@ -217,6 +223,15 @@ def database_findings(connection: Any, conf: Any) -> list[Finding]:
             demo_users == 0 and demo_orgs == 0,
             f"{demo_users} demo account(s) and {demo_orgs} fictional issuer(s) are present",
             real_deployment_only=True,
+        )
+        cur.execute(
+            "SELECT count(*) FROM notifications_emaildeliveryverification WHERE config_hash = %s",
+            [_mail_hash(conf)],
+        )
+        c.warn(
+            "e-mail delivery has a verification record for the live sender configuration",
+            cur.fetchone()[0] > 0,
+            "no record: change of e-mail stays off and launch blocker B-01 is open",
         )
         cur.execute("SHOW statement_timeout")
         c.check("statement timeout is set", cur.fetchone()[0] not in ("0", "0ms"), "no statement timeout")

@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from rest_framework.request import Request
 from rest_framework.throttling import SimpleRateThrottle
 
@@ -45,6 +45,11 @@ class PublicReadThrottle(IpRateThrottle):
     """Anonymous read endpoints (SECURITY_ARCHITECTURE §8, PROPOSED values)."""
 
     scope = "public_read"
+    # Counted in process memory: a database write on every anonymous read was the main database cost under
+    # load (Phase 5 load test). Each worker counts separately, so the effective limit is at most the rate
+    # times the number of workers, which is acceptable for abuse control on public data. Login, e-mail and
+    # second-step counters stay in the shared database cache because their accuracy matters.
+    cache = caches["local"]
 
 
 class EmailFailureLimiter:

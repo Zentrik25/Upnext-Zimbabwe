@@ -140,6 +140,7 @@ class StaffRoleAssignment(models.Model):
 class TokenPurpose(models.TextChoices):
     EMAIL_VERIFICATION = "email_verification"
     PASSWORD_RESET = "password_reset"  # noqa: S105
+    EMAIL_CHANGE = "email_change"
 
 
 class AuthToken(models.Model):
@@ -154,6 +155,9 @@ class AuthToken(models.Model):
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
     invalidated_at = models.DateTimeField(null=True, blank=True)
+    # Only for an e-mail change: the address that replaces the current one once this link is used. Kept in the
+    # row, never in the link, so it cannot be altered by whoever holds the link.
+    new_email = CaseInsensitiveEmailField(null=True, blank=True, max_length=254)
 
     class Meta:
         indexes = [models.Index(fields=["user", "purpose"], name="authtoken_user_purpose_idx")]

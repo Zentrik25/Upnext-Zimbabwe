@@ -13,6 +13,7 @@ from audit.models import Severity
 
 from .models import EmailOutbox, OutboxStatus
 from .services import retry
+from .verification import EmailDeliveryVerification, config_hash
 
 
 def mask(address: str) -> str:
@@ -82,3 +83,32 @@ class EmailOutboxAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             )
             count += 1
         self.message_user(request, f"{count} message(s) queued again.")
+
+
+@admin.register(EmailDeliveryVerification)
+class EmailDeliveryVerificationAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    """Read-only for Administrators: records are written only by `record_email_verification` (P5-07)."""
+
+    list_display = ("verified_at", "provider", "mailboxes", "operator", "matches_live_configuration")
+    ordering = ("-verified_at",)
+
+    @admin.display(boolean=True, description="Matches the live sender configuration")
+    def matches_live_configuration(self, obj: EmailDeliveryVerification) -> bool:
+        return obj.config_hash == config_hash()
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+    def has_view_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        user = request.user
+        return bool(
+            user.is_authenticated
+            and getattr(user, "has_permission_code", None)
+            and user.has_permission_code("settings.manage")
+        )

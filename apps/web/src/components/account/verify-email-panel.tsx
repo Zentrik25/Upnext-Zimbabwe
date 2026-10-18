@@ -11,7 +11,7 @@ import { useStripTokenFromUrl } from "./reset-password-form";
  * The link only opens this page; confirming is an explicit click, so mail scanners that fetch links cannot
  * consume the token. No session is created (SECURITY_ARCHITECTURE §3.2).
  */
-export function VerifyEmailPanel({ token }: { token: string | null }) {
+export function VerifyEmailPanel({ token, change = false }: { token: string | null; change?: boolean }) {
   useStripTokenFromUrl();
   const [state, setState] = useState<"ready" | "busy" | "done" | "invalid">("ready");
   const [failure, setFailure] = useState<string | null>(null);
@@ -20,13 +20,22 @@ export function VerifyEmailPanel({ token }: { token: string | null }) {
     return (
       <div className="grid gap-4">
         <FormError>This link is invalid or has expired.</FormError>
-        <p className="text-ctl">
-          Register again or{" "}
-          <Link href="/sign-in" className="text-accent underline">
-            sign in
-          </Link>{" "}
-          to ask for a new link.
-        </p>
+        {change ? (
+          <p className="text-ctl">
+            <Link href="/sign-in?next=%2Faccount" className="text-accent underline">
+              Sign in
+            </Link>{" "}
+            and ask for the change again from your account page.
+          </p>
+        ) : (
+          <p className="text-ctl">
+            Register again or{" "}
+            <Link href="/sign-in" className="text-accent underline">
+              sign in
+            </Link>{" "}
+            to ask for a new link.
+          </p>
+        )}
       </div>
     );
   }
@@ -35,7 +44,11 @@ export function VerifyEmailPanel({ token }: { token: string | null }) {
       <div className="grid gap-4">
         <FormSuccess>
           <p className="font-strong">E-mail address confirmed</p>
-          <p className="mt-1">Your account is ready. Sign in to continue.</p>
+          <p className="mt-1">
+            {change
+              ? "Your account now uses this address. Sign in with it from now on."
+              : "Your account is ready. Sign in to continue."}
+          </p>
         </FormSuccess>
         <p>
           <Link href="/sign-in" className="text-accent underline">

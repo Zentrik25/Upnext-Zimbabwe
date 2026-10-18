@@ -6,6 +6,8 @@ import re
 from datetime import datetime
 from typing import Any
 
+from django.conf import settings
+from django.core.cache import caches
 from django.db.models import Case, When
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -237,8 +239,16 @@ class SitemapView(PublicView):
         responses={200: SitemapSerializer, 429: OpenApiResponse(description="rate_limited")},
     )
     def get(self, request: Request) -> Response:
-        entries = public.sitemap_entries(timezone.now())
-        return Response({"data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries]})
+        ttl = settings.UPNEXT_SITEMAP_API_CACHE_SECONDS
+        payload = caches["local"].get("sitemap-feed") if ttl else None
+        if payload is None:
+            entries = public.sitemap_entries(timezone.now())
+            payload = {"data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries]}
+            if ttl:
+                caches["local"].set(
+                    "sitemap-feed", payload, ttl
+                )  # a few minutes of staleness; pages say noindex themselves
+        return Response(payload)
 
 
 class CategoryListView(PublicView):

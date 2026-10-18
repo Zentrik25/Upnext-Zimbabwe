@@ -160,8 +160,12 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "django_cache",
-    }
+    },
+    # Per-process memory, never shared: only for data that is cheap to lose and safe to count per process
+    # (anonymous read throttle counters, the sitemap feed). Security counters stay in the database cache.
+    "local": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "upnext-local"},
 }
+UPNEXT_SITEMAP_API_CACHE_SECONDS = get_int("UPNEXT_SITEMAP_API_CACHE_SECONDS", 300)
 
 # --- REST framework -------------------------------------------------------------
 REST_FRAMEWORK = {

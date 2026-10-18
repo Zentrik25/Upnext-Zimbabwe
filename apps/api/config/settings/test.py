@@ -13,6 +13,7 @@ STORAGES = {
 }
 LOGGING["root"]["level"] = "CRITICAL"  # type: ignore[index]
 UPNEXT_EMAIL_BACKEND = "file"
+UPNEXT_SITEMAP_API_CACHE_SECONDS = 0  # correctness tests read live data; the cache has its own test
 UPNEXT_EMAIL_FILE_DIR = "/tmp/upnext-mail-test"  # noqa: S108
 UPNEXT_STAFF_MFA_REQUIRED = False  # the staff gate has its own tests (test_staff_mfa.py)
 

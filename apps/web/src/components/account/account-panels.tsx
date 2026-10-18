@@ -72,6 +72,82 @@ export function ProfilePanel({ displayName, email }: { displayName: string; emai
   );
 }
 
+export function EmailChangePanel({ currentEmail }: { currentEmail: string }) {
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [failure, setFailure] = useState<string | null>(null);
+  const [asked, setAsked] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setErrors({});
+    setFailure(null);
+    const outcome = await apiFetch("POST", "me/email-change", {
+      new_email: String(form.get("new_email") ?? "").trim(),
+      password: String(form.get("password") ?? ""),
+    });
+    setBusy(false);
+    if (outcome.ok) setAsked(true);
+    else if (outcome.code === "validation_failed") setErrors(outcome.fields);
+    else if (outcome.code === "reauth_required") setFailure("That password is not correct.");
+    else if (outcome.code === "email_unavailable")
+      setFailure("Changing your e-mail address is not available right now.");
+    else setFailure(describeFailure(outcome));
+  }
+
+  return (
+    <Panel aria-labelledby="email-change-title" role="region">
+      <h2 id="email-change-title" className="text-title font-strong">
+        Change your e-mail address
+      </h2>
+      {asked ? (
+        <div className="mt-3">
+          <FormSuccess>
+            <p className="font-strong">Check your new inbox</p>
+            <p className="mt-1">
+              If that address can be used, we have sent it a link. Your account keeps {currentEmail} until you
+              open the link. We also told your current address about this request.
+            </p>
+          </FormSuccess>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="mt-3 grid gap-3">
+          {failure ? <FormError>{failure}</FormError> : null}
+          <Field id="new_email" label="New e-mail address" error={errors.new_email?.[0]}>
+            <TextInput
+              id="new_email"
+              name="new_email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={254}
+              invalid={Boolean(errors.new_email)}
+            />
+          </Field>
+          <Field id="email_change_password" label="Your password" error={errors.password?.[0]}>
+            <TextInput
+              id="email_change_password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              maxLength={128}
+              invalid={Boolean(errors.password)}
+            />
+          </Field>
+          <div>
+            <Button type="submit" disabled={busy}>
+              Send confirmation link
+            </Button>
+          </div>
+        </form>
+      )}
+    </Panel>
+  );
+}
+
 export function PasswordPanel() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [failure, setFailure] = useState<string | null>(null);

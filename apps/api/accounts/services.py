@@ -22,6 +22,7 @@ from django.utils import timezone
 from audit import services as audit
 from audit.models import Severity
 from notifications import services as outbox
+from notifications import verification
 from notifications.models import EmailKind
 
 from . import tokens
@@ -135,7 +136,7 @@ def verify_email(token_value: str) -> bool:
     with transaction.atomic():
         token = tokens.resolve(token_value, TokenPurpose.EMAIL_VERIFICATION, now=now)
         if token is None:
-            return False
+            return _confirm_email_change(token_value, now)
         user = User.objects.select_for_update().get(pk=token.user_id)
         token.used_at = now
         token.save(update_fields=["used_at"])
@@ -149,6 +150,89 @@ def verify_email(token_value: str) -> bool:
                 actor_id=user.pk,
                 severity=Severity.SECURITY,
             )
+    return True
+
+
+class EmailChangeUnavailable(Exception):
+    """Delivery has not been verified (P5-07), so a confirmation link cannot be relied on to arrive."""
+
+
+def email_change_available() -> bool:
+    return verification.delivery_verified()
+
+
+def request_email_change(user: User, new_email: str) -> None:
+    """Ask to move the account to `new_email`. The caller has already re-checked the password.
+
+    Nothing changes until the link sent to the NEW address is used. The old address is told. The answer does
+    not reveal whether the new address already belongs to someone: that person gets the usual "you already
+    have an account" message instead of a link.
+    """
+    if not email_change_available():
+        raise EmailChangeUnavailable
+    new_email = normalise_email(new_email)
+    problem = email_problem(new_email)
+    if problem:
+        raise AccountError({"new_email": [problem]})
+    with transaction.atomic():
+        locked = User.objects.select_for_update().get(pk=user.pk)
+        if locked.active_roles():
+            raise StaffAccountError
+        if locked.status != AccountStatus.ACTIVE:
+            raise AccountError({"new_email": ["Confirm your current address first."]})
+        if new_email.casefold() == locked.email.casefold():
+            raise AccountError({"new_email": ["This is already your address."]})
+        if User.objects.filter(email=new_email).exists():
+            outbox.enqueue(EmailKind.ACCOUNT_EXISTS, None, new_email)
+        else:
+            token = tokens.issue(locked, TokenPurpose.EMAIL_CHANGE, new_email=new_email)
+            outbox.enqueue(
+                EmailKind.EMAIL_CHANGE_CONFIRM,
+                locked,
+                new_email,
+                token=token,
+                context={"display_name": locked.display_name},
+            )
+        outbox.enqueue(
+            EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE,
+            locked,
+            locked.email,
+            context={"display_name": locked.display_name},
+        )
+        audit.record(
+            action="account.email_change_requested",
+            object_type="user",
+            object_id=locked.pk,
+            actor_id=locked.pk,
+            severity=Severity.SECURITY,
+        )
+
+
+def _confirm_email_change(token_value: str, now: datetime) -> bool:
+    token = tokens.resolve(token_value, TokenPurpose.EMAIL_CHANGE, now=now)
+    if token is None or not token.new_email:
+        return False
+    user = User.objects.select_for_update().get(pk=token.user_id)
+    new_email, old_email = token.new_email, user.email
+    token.used_at = now
+    token.save(update_fields=["used_at"])
+    if (
+        user.status != AccountStatus.ACTIVE
+        or User.objects.filter(email=new_email).exclude(pk=user.pk).exists()
+    ):
+        return False  # taken in the meantime, or the account is no longer usable: same answer as a bad link
+    user.email, user.email_verified_at = new_email, now
+    user.save(update_fields=["email", "email_verified_at", "updated_at"])
+    outbox.enqueue(
+        EmailKind.EMAIL_CHANGED_NOTICE, user, old_email, context={"display_name": user.display_name}
+    )
+    audit.record(
+        action="account.email_changed",
+        object_type="user",
+        object_id=user.pk,
+        actor_id=user.pk,
+        severity=Severity.SECURITY,
+    )
     return True
 
 

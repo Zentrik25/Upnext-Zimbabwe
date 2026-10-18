@@ -17,6 +17,7 @@ from .models import AuthToken, TokenPurpose, User
 TTL = {
     TokenPurpose.EMAIL_VERIFICATION: timedelta(hours=24),  # PROPOSED, OQ-17
     TokenPurpose.PASSWORD_RESET: timedelta(minutes=60),  # PROPOSED, OQ-17
+    TokenPurpose.EMAIL_CHANGE: timedelta(hours=24),  # PROPOSED, like address confirmation
 }
 MAX_LENGTH = 200
 
@@ -36,13 +37,17 @@ def _mac(token_id: uuid.UUID, purpose: str, user_id: uuid.UUID, expires_at: date
     return hmac.new(settings.UPNEXT_TOKEN_KEY.encode(), message, hashlib.sha256).digest()
 
 
-def issue(user: User, purpose: str, *, now: datetime | None = None) -> AuthToken:
+def issue(
+    user: User, purpose: str, *, now: datetime | None = None, new_email: str | None = None
+) -> AuthToken:
     """Create a token row and invalidate earlier unused ones for the same user and purpose."""
     now = now or timezone.now()
     AuthToken.objects.filter(
         user=user, purpose=purpose, used_at__isnull=True, invalidated_at__isnull=True
     ).update(invalidated_at=now)
-    return AuthToken.objects.create(user=user, purpose=purpose, expires_at=now + TTL[TokenPurpose(purpose)])
+    return AuthToken.objects.create(
+        user=user, purpose=purpose, expires_at=now + TTL[TokenPurpose(purpose)], new_email=new_email
+    )
 
 
 def render(token: AuthToken) -> str:
