@@ -25,4 +25,12 @@ export function mailboxes(): { purpose: string; email: string }[] {
 }
 
 export const SITE_NAME = BRAND.name;
-export const STATIC_PATHS = ["/", "/opportunities", "/about", "/contact", "/privacy", "/terms"] as const;
+export const STATIC_PATHS = [
+  "/",
+  "/opportunities",
+  "/about",
+  "/employers",
+  "/contact",
+  "/privacy",
+  "/terms",
+] as const;

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ListingEvents } from "@/components/opportunities/listing-events";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
 import { getOpportunity } from "@/lib/catalog";
@@ -79,6 +80,7 @@ export default async function OpportunityPage({ params }: Props) {
           ])}
         />
       ) : null}
+      <ListingEvents slug={listing.slug} open={listing.status === "published"} />
       <Container className="pt-[18px] pb-[65px]">
         {listing.status !== "published" ? (
           <div
@@ -110,7 +112,15 @@ export default async function OpportunityPage({ params }: Props) {
             <h1 id="listing-title" className="mt-1 text-section font-strong leading-title tracking-section">
               {listing.title}
             </h1>
-            <p className="mt-1 text-title text-company">{listing.organisation.name}</p>
+            <p className="mt-1 text-title text-company">
+              {listing.organisation.profile_slug ? (
+                <Link href={`/employers/${listing.organisation.profile_slug}`} className="underline">
+                  {listing.organisation.name}
+                </Link>
+              ) : (
+                listing.organisation.name
+              )}
+            </p>
             {listing.status === "published" || isSaved ? (
               <SaveToggle
                 className="mt-2"
@@ -295,6 +305,7 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
           </p>
           <a
             href={application.url}
+            data-listing-apply
             rel="noopener noreferrer nofollow ugc"
             target="_blank"
             className="mt-3 inline-flex rounded-control min-h-control items-center justify-center border border-accent bg-accent px-3 py-[7px] text-ctl font-medium text-white hover:bg-accent-hover"
@@ -307,7 +318,7 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
         <>
           <p className="mt-1 text-base">Apply by e-mail. NextJob does not receive applications.</p>
           <p className="mt-2 text-base">
-            <a href={`mailto:${application.email}`} className="text-accent underline">
+            <a href={`mailto:${application.email}`} data-listing-apply className="text-accent underline">
               {application.email}
             </a>
           </p>

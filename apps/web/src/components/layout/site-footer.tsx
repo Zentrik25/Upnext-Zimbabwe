@@ -4,6 +4,7 @@ import { Container } from "./container";
 
 const LINKS = [
   ["/about", "About"],
+  ["/employers", "For employers"],
   ["/contact", "Contact"],
   ["/privacy", "Privacy"],
   ["/terms", "Terms"],

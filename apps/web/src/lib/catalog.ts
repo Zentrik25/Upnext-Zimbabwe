@@ -1,5 +1,6 @@
 import "server-only";
 import type { Category, Location, OpportunityDetail, OpportunitySummary, Page } from "./catalog-types";
+import type { PublicProfile } from "./employer-types";
 
 export type Failure = "unreachable" | "invalid-query" | "rate-limited" | "unexpected-response";
 export type Result<T> = { ok: true; data: T } | { ok: false; reason: Failure; message?: string };
@@ -82,4 +83,19 @@ export async function listCategories(): Promise<Category[]> {
 export async function listLocations(): Promise<Location[]> {
   const result = await json<{ data: Location[] }>("locations");
   return result.ok ? result.data.data : [];
+}
+
+/** The approved company profile of a verified organisation, or null when there is none (404). */
+export async function getEmployerProfile(slug: string): Promise<Result<PublicProfile | null>> {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return { ok: true, data: null };
+  const response = await get(`employers/${slug}`);
+  if (response === null) return { ok: false, reason: "unreachable" };
+  if (response.status === 404) return { ok: true, data: null };
+  if (response.status === 429) return { ok: false, reason: "rate-limited" };
+  if (!response.ok) return { ok: false, reason: "unexpected-response" };
+  try {
+    return { ok: true, data: (await response.json()) as PublicProfile };
+  } catch {
+    return { ok: false, reason: "unexpected-response" };
+  }
 }

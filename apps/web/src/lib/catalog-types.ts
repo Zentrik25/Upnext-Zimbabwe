@@ -18,7 +18,7 @@ export type OpportunitySummary = {
   title: string;
   summary: string;
   category: Category;
-  organisation: { id: string; name: string };
+  organisation: { id: string; name: string; profile_slug?: string | null };
   locations: { slug: string; name: string; is_primary: boolean }[];
   work_mode: string | null;
   employment_type: string | null;

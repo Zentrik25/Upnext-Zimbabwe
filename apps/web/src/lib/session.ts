@@ -47,6 +47,20 @@ async function authedGet(path: string): Promise<Response | null> {
   }
 }
 
+/** Authenticated server-side GET of a JSON document (employer portal pages). `status` 0 means unreachable. */
+export async function authedJson<T>(
+  path: string,
+): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
+  const response = await authedGet(path);
+  if (!response) return { ok: false, status: 0 };
+  if (!response.ok) return { ok: false, status: response.status };
+  try {
+    return { ok: true, data: (await response.json()) as T };
+  } catch {
+    return { ok: false, status: 502 };
+  }
+}
+
 /** The signed-in user, or null for visitors. Memoised for one render pass. */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const response = await authedGet("me");

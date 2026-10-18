@@ -21,6 +21,8 @@ const PUBLIC = [
   "/opportunities?q=zzzzqqqq",
   "/opportunities?employment_type=bogus",
   "/about",
+  "/employers",
+  "/employers/register",
   "/contact",
   "/privacy",
   "/terms",
@@ -31,7 +33,7 @@ const PUBLIC = [
   "/verify-email?token=x",
   "/no-such-page",
 ];
-const SIGNED_IN = ["/account", "/saved"];
+const SIGNED_IN = ["/account", "/saved", "/employer", "/employer/claim"];
 
 async function checkPage(page: Page, path: string, width: number) {
   await page.setViewportSize({ width, height: 900 });
