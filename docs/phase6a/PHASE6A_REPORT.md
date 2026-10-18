@@ -58,4 +58,6 @@ Plan and threat analysis: `docs/phase6a/PHASE6A_PLAN.md`; decision D-35; ADR-002
 
 ## 6. Final CI
 
-(recorded after the final push)
+- **Run 39128467626 on `a7eea1b` completed successfully** (https://github.com/Zentrik25/Upnext-Zimbabwe/actions/runs/39128467626), checked through the GitHub API: API, web, documentation, history-wide secret scan, production-mode end-to-end (including the employer portal journey) and the local TLS rehearsal.
+- The run before it, 39127661647 on `7590c2a`, passed every job except the secret scan, which flagged an earlier version of a throwaway test password in commit `0e341cb`. Its SHA-1 was recomputed from that commit's file and allow-listed as a reviewed false positive (the allow-list now has one entry for each of the two versions of that test password); every Phase 6A commit was then scanned locally with no findings.
+- The commit that records this line is documentation only; its own CI run is reported separately in the hand-over message.
