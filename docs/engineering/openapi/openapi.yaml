@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: UPNEXT API
+  title: NextJob API
   version: 1.0.0-draft.1
   summary: Contract for /api/v1 (DRAFT; Phase 1 and Phase 2 implement the operations listed in API_CONTRACTS.md)
   description: |
@@ -201,6 +201,25 @@ paths:
         '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
         '503': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /hooks/email/resend:
+    post:
+      tags: [auth]
+      operationId: receiveResendEmailEvents
+      summary: Resend (Svix-signed) delivery events (D-34)
+      description: |
+        Off (404 `webhook_disabled`, so a disabled endpoint looks absent) unless `UPNEXT_RESEND_WEBHOOK_SECRET` (`whsec_...`) is set. Headers `svix-id`,
+        `svix-timestamp` (unix seconds, within 5 minutes) and `svix-signature` (`v1,<base64 HMAC-SHA256>` over
+        `id.timestamp.rawbody`, one or more space-separated). A repeated `svix-id` is acknowledged and ignored.
+        `email.bounced` with a Permanent bounce and `email.complained` suppress the recipients (keyed hash);
+        every other event type changes nothing. Header names and payload fields are to be confirmed against
+        Resend's current documentation (docs/engineering/RESEND_INTEGRATION.md).
+      security: []
+      responses:
+        '204': { description: 'Applied or acknowledged' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: 'invalid_signature (also for a stale timestamp)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /auth/login:
     post:
       tags: [auth]
@@ -861,7 +880,7 @@ components:
             application:
               type: object
               required: [method]
-              description: UPNEXT never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
+              description: NextJob never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
               properties:
                 method: { type: string, enum: [external_url, email, instructions] }
                 url: { type: [string, 'null'], format: uri }

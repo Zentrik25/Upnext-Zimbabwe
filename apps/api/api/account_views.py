@@ -24,6 +24,7 @@ from access.registry import Permission
 from accounts import services
 from accounts.models import User, UserSession
 from catalog.models import Category
+from notifications import resend_webhook
 from notifications import webhook as notification_webhook
 from opportunities import public, saved
 from opportunities.models import OpportunityVersion
@@ -302,6 +303,40 @@ class EmailEventsView(APIView):
                 request.headers.get("X-Upnext-Signature"),
             )
         except notification_webhook.WebhookRefused as refused:
+            return error_response(refused.code, "Not accepted.", refused.status)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ResendEmailEventsView(APIView):
+    """Resend (Svix-signed) delivery events (D-34). Off unless UPNEXT_RESEND_WEBHOOK_SECRET is set."""
+
+    authentication_classes: list[Any] = []
+    permission_classes = [AllowAny]
+    # No per-IP throttle: real event bursts come from the provider's few addresses and would be dropped.
+    # Cost is bounded instead: size cap, cheap HMAC, nothing is written before the signature is valid.
+    throttle_classes: list[Any] = []
+
+    @extend_schema(
+        operation_id="receiveResendEmailEvents",
+        tags=["auth"],
+        request=None,
+        responses={204: OpenApiResponse(description="Applied"), 400: None, 401: None, 404: None, 413: None},
+    )
+    def post(self, request: Request) -> Response:
+        try:
+            length = int(request.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if length > resend_webhook.MAX_BODY:
+            return error_response("too_large", "Not accepted.", 413)
+        try:
+            resend_webhook.process(
+                request.body,
+                request.headers.get("svix-id"),
+                request.headers.get("svix-timestamp"),
+                request.headers.get("svix-signature"),
+            )
+        except resend_webhook.WebhookRefused as refused:
             return error_response(refused.code, "Not accepted.", refused.status)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

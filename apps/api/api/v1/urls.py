@@ -26,6 +26,7 @@ urlpatterns = [
     ),
     path("auth/password/change", account_views.ChangePasswordView.as_view(), name="auth-password-change"),
     path("me", account_views.MeView.as_view(), name="me"),
+    path("hooks/email/resend", account_views.ResendEmailEventsView.as_view(), name="hooks-email-resend"),
     path("hooks/email", account_views.EmailEventsView.as_view(), name="hooks-email"),
     path("me/email-change", account_views.EmailChangeView.as_view(), name="me-email-change"),
     path("me/deletion-request", account_views.DeletionRequestView.as_view(), name="me-deletion"),
