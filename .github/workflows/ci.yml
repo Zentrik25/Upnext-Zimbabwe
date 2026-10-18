@@ -192,3 +192,71 @@ jobs:
         if: always()
         working-directory: infrastructure/compose
         run: docker compose -f compose.yaml -f compose.prod-like.yaml down -v
+
+  tls-rehearsal:
+    name: Local TLS rehearsal (production mode API, least-privilege database role, preflight, browser suite, restore test)
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Throwaway certificate authority and certificate (never reused anywhere)
+        run: bash infrastructure/tls/make-local-cert.sh
+      - name: Write an ephemeral Compose environment
+        working-directory: infrastructure/compose
+        run: |
+          {
+            echo "POSTGRES_DB=upnext"
+            echo "POSTGRES_USER=upnext"
+            echo "POSTGRES_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+            echo "DJANGO_SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
+            echo "UPNEXT_DB_APP_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+            echo "UPNEXT_DB_READONLY_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+            echo "UPNEXT_TOKEN_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          } > .env
+          echo "UPNEXT_DEMO_PASSWORD=$(python3 -c 'import secrets; print(secrets.token_urlsafe(18))')" >> "$GITHUB_ENV"
+      - name: Build and start the stack behind TLS
+        working-directory: infrastructure/compose
+        env:
+          COMPOSE_BAKE: "false"
+        run: docker compose -p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml up -d --build --wait --wait-timeout 400
+      - name: Preflight (settings, database role, headers, cookies, certificate, redirect)
+        working-directory: infrastructure/compose
+        run: |
+          F="-p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml"
+          docker compose $F cp ../tls/.certs/ca.crt api:/tmp/ca.crt
+          docker compose $F exec -T api python manage.py check_production_config --url https://proxy --ca-file /tmp/ca.crt --http-url http://proxy
+      - run: npm ci --ignore-scripts
+        working-directory: apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: Seed demo data, then the whole browser suite over TLS (main, accounts, CMS journeys)
+        env:
+          E2E_DEMO_PASSWORD: ${{ env.UPNEXT_DEMO_PASSWORD }}
+        run: bash infrastructure/scripts/tls-e2e.sh
+      - name: Mobile performance budgets (production build, throttled profile)
+        working-directory: apps/web
+        env:
+          BASE_URL: https://localhost:8443
+          E2E_IGNORE_HTTPS_ERRORS: "1"
+          E2E_PERF: "1"
+        run: npx playwright test mobile-budget
+      - name: Backup and restore rehearsal (encrypted backup, tamper refusal, restore, privileges, verification)
+        run: bash infrastructure/backup/rehearse.sh
+      - name: Compose logs on failure
+        if: failure()
+        working-directory: infrastructure/compose
+        run: docker compose -p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml logs --no-color --tail 200
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-results-tls
+          path: apps/web/test-results
+      - name: Tear down
+        if: always()
+        working-directory: infrastructure/compose
+        run: docker compose -p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml down -v

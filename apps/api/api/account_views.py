@@ -24,6 +24,7 @@ from access.registry import Permission
 from accounts import services
 from accounts.models import User, UserSession
 from catalog.models import Category
+from notifications import webhook as notification_webhook
 from opportunities import public, saved
 from opportunities.models import OpportunityVersion
 
@@ -277,6 +278,31 @@ class SessionDetailView(MeBaseView):
     def delete(self, request: Request, session_id: uuid.UUID) -> Response:
         if not services.revoke_session(self.user_of(request), session_id):
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EmailEventsView(APIView):
+    """Signed bounce/complaint feed (P5-01). Off unless UPNEXT_EMAIL_WEBHOOK_SECRET is set."""
+
+    authentication_classes: list[Any] = []
+    permission_classes = [AllowAny]
+    throttle_classes = [TokenIpThrottle]
+
+    @extend_schema(
+        operation_id="receiveEmailEvents",
+        tags=["auth"],
+        request=None,
+        responses={204: OpenApiResponse(description="Applied"), 400: None, 401: None, 413: None, 503: None},
+    )
+    def post(self, request: Request) -> Response:
+        try:
+            notification_webhook.process(
+                request.body,
+                request.headers.get("X-Upnext-Timestamp"),
+                request.headers.get("X-Upnext-Signature"),
+            )
+        except notification_webhook.WebhookRefused as refused:
+            return error_response(refused.code, "Not accepted.", refused.status)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

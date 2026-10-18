@@ -274,9 +274,27 @@ test("8. the account pages fit every width and are accessible", async ({ page })
   await axeClean(page);
 });
 
-test("9. change of e-mail address: the new address must confirm, the old one is told, then only the new one signs in", async ({
+test("9a. where delivery is not verified (production mode, no demo tools) change of e-mail is off everywhere", async ({
   page,
 }) => {
+  test.skip(process.env.E2E_EMAIL_CHANGE_OFF !== "1", "only on a stack whose API runs without demo tools");
+  await signIn(page, EMAIL, THIRD_PASSWORD);
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByRole("heading", { name: "Change your e-mail address" })).toHaveCount(0);
+  const csrf = await page.request.get("/api/v1/auth/csrf");
+  const token = (await csrf.json()).csrf_token;
+  const attempt = await page.request.post("/api/v1/me/email-change", {
+    headers: { "X-CSRFToken": token, Referer: `${new URL(page.url()).origin}/account` },
+    data: { new_email: `blocked.${STAMP}@example.org`, password: THIRD_PASSWORD },
+  });
+  expect(attempt.status()).toBe(503);
+  expect((await attempt.json()).error.code).toBe("email_unavailable");
+});
+
+test("9b. change of e-mail address: the new address must confirm, the old one is told, then only the new one signs in", async ({
+  page,
+}) => {
+  test.skip(process.env.E2E_EMAIL_CHANGE_OFF === "1", "off on this stack by design (see 9a)");
   const NEW_EMAIL = `moved.${STAMP}@example.org`;
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page).toHaveURL(/\/account$/);

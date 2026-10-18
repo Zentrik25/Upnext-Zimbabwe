@@ -217,6 +217,7 @@ UPNEXT_EMAIL_REPLY_TO = get_str("UPNEXT_EMAIL_REPLY_TO", "")
 UPNEXT_SMTP_USER = get_str("UPNEXT_SMTP_USER", "")
 UPNEXT_SMTP_PASSWORD = get_str("UPNEXT_SMTP_PASSWORD", "")
 # Origin used in e-mailed links; the public site is path-routed on one hostname (OQ-01).
+UPNEXT_EMAIL_WEBHOOK_SECRET = get_str("UPNEXT_EMAIL_WEBHOOK_SECRET", "")  # off until set (P5-01)
 UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
 
 SPECTACULAR_SETTINGS = {

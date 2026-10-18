@@ -338,3 +338,126 @@ def test_administrators_see_a_masked_outbox_and_can_retry_with_an_audit_trail(
     other.force_login(editor)
     assert other.get("/staff/notifications/emailoutbox/").status_code in (302, 403, 404)
     assert Client().get("/staff/notifications/emailoutbox/").status_code == 302
+
+
+# --- signed bounce/complaint feed (P5-01) ---------------------------------------------------------------------------
+
+import json as _json  # noqa: E402
+import time as _time  # noqa: E402
+
+from rest_framework.test import APIClient as _Client  # noqa: E402
+
+from notifications import suppression as _suppression  # noqa: E402
+from notifications import webhook as _webhook  # noqa: E402
+
+SECRET = "w" * 32
+
+
+def _post(
+    client: _Client, events: list[dict[str, Any]], *, secret: str = SECRET, ts: int | None = None
+) -> object:
+    body = _json.dumps({"events": events}).encode()
+    stamp = str(ts if ts is not None else int(_time.time()))
+    return client.post(
+        "/api/v1/hooks/email",
+        data=body,
+        content_type="application/json",
+        HTTP_X_UPNEXT_TIMESTAMP=stamp,
+        HTTP_X_UPNEXT_SIGNATURE=_webhook.sign(secret, stamp, body),
+    )
+
+
+def test_a_signed_permanent_bounce_and_a_complaint_suppress_the_addresses(db: None, settings: Any) -> None:
+    from django.core.cache import cache
+
+    cache.clear()
+    settings.UPNEXT_EMAIL_WEBHOOK_SECRET = SECRET
+    client = _Client()
+    response = _post(
+        client,
+        [
+            {"type": "bounce", "permanent": True, "address": "Gone@Example.org"},
+            {"type": "complaint", "address": "angry@example.org"},
+            {"type": "bounce", "permanent": False, "address": "soft@example.org"},
+            {"type": "delivered", "address": "fine@example.org"},
+            {"nonsense": True},
+        ],
+    )
+    assert response.status_code == 204  # type: ignore[attr-defined]
+    assert _suppression.is_suppressed("gone@example.org") and _suppression.is_suppressed("angry@example.org")
+    assert not _suppression.is_suppressed("soft@example.org") and not _suppression.is_suppressed(
+        "fine@example.org"
+    )
+
+
+def test_the_feed_is_off_without_a_secret(db: None, settings: Any) -> None:
+    settings.UPNEXT_EMAIL_WEBHOOK_SECRET = ""
+    assert _post(_Client(), [], secret="x" * 32).status_code == 503  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("case", ["wrong_secret", "stale", "future", "replay", "oversize", "bad_json"])
+def test_unsigned_stale_replayed_or_malformed_deliveries_are_refused(
+    db: None, settings: Any, case: str
+) -> None:
+    from django.core.cache import cache
+
+    cache.clear()
+    settings.UPNEXT_EMAIL_WEBHOOK_SECRET = SECRET
+    client = _Client()
+    event: list[dict[str, Any]] = [{"type": "complaint", "address": "victim@example.org"}]
+    if case == "wrong_secret":
+        assert _post(client, event, secret="z" * 32).status_code == 401  # type: ignore[attr-defined]
+    elif case == "stale":
+        assert _post(client, event, ts=int(_time.time()) - 3600).status_code == 401  # type: ignore[attr-defined]
+    elif case == "future":
+        assert _post(client, event, ts=int(_time.time()) + 3600).status_code == 401  # type: ignore[attr-defined]
+    elif case == "replay":
+        stamp = str(int(_time.time()))
+        body = _json.dumps({"events": event}).encode()
+        headers = {
+            "HTTP_X_UPNEXT_TIMESTAMP": stamp,
+            "HTTP_X_UPNEXT_SIGNATURE": _webhook.sign(SECRET, stamp, body),
+        }
+        assert (
+            client.post(
+                "/api/v1/hooks/email",
+                data=body,
+                content_type="application/json",
+                **headers,  # type: ignore[arg-type]
+            ).status_code
+            == 204
+        )
+        assert (
+            client.post(
+                "/api/v1/hooks/email",
+                data=body,
+                content_type="application/json",
+                **headers,  # type: ignore[arg-type]
+            ).status_code
+            == 401
+        )
+        return
+    elif case == "oversize":
+        big: list[dict[str, Any]] = [
+            {"type": "complaint", "address": f"{i}@example.org"} for i in range(5000)
+        ]
+        assert _post(client, big).status_code == 413  # type: ignore[attr-defined]
+    else:
+        stamp = str(int(_time.time()))
+        body = b"{not json"
+        response = client.post(
+            "/api/v1/hooks/email",
+            data=body,
+            content_type="application/json",
+            HTTP_X_UPNEXT_TIMESTAMP=stamp,
+            HTTP_X_UPNEXT_SIGNATURE=_webhook.sign(SECRET, stamp, body),
+        )
+        assert response.status_code == 400
+        return
+    assert not _suppression.is_suppressed("victim@example.org")
+
+
+def test_no_credentials_or_cookies_are_needed_and_none_are_set(db: None, settings: Any) -> None:
+    settings.UPNEXT_EMAIL_WEBHOOK_SECRET = SECRET
+    response = _post(_Client(), [])
+    assert response.status_code == 204 and not response.cookies  # type: ignore[attr-defined]

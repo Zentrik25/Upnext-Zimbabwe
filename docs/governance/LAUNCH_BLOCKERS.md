@@ -2,7 +2,7 @@
 
 Status: DRAFT for owner review, written at the end of Phase 4. It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
 
-Sequenced by D-31 into the Phase 5 workstreams of `docs/phase5/PHASE5_REVISED_PLAN.md` (§WS7 maps each blocker to its closing work and evidence).
+Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A2 below) of `docs/phase5/PHASE5_REVISED_PLAN.md` (§WS7 maps each blocker to its closing work and evidence).
 
 ## A. Blockers (a launch cannot happen until each is resolved)
 
@@ -18,6 +18,23 @@ Sequenced by D-31 into the Phase 5 workstreams of `docs/phase5/PHASE5_REVISED_PL
 | B-08 | **Deployment path** (Phase 7) | Not started; requires read-only inspection of the shared VPS and explicit approval | Owner | roadmap |
 | B-09 | **Real content and editorial staffing** | The catalogue holds only fictional demo data; no editors are assigned; category field lists are still drafts (OQ-06) | Owner | decision register |
 | B-10 | **Manual accessibility audit** (OQ-11) | Automated axe checks, keyboard and reflow checks pass on every page, but there has been no screen-reader or assistive-technology test and no audit by a person | Owner, Phase 6 | `docs/phase4/PHASE4_REPORT.md` |
+
+## A2. Status after Phase 5 (engineering work done, evidence recorded, and what still blocks)
+
+**No blocker is closed.** Each one needs something only the owner, a lawyer, real staff or the real infrastructure can supply; the table says what now exists to receive it.
+
+| # | Built in Phase 5 | Still required to close it (evidence needed) |
+|---|---|---|
+| B-01 | Provider-neutral signed bounce/complaint feed, delivery-verification record and gate, selection scorecard for Resend and Amazon SES (`EMAIL_PROVIDER_SELECTION.md`), change of e-mail built behind the gate | Owner chooses; real account, domain authentication, test mail in three mailbox families, `record_email_verification` run by a person. **Not done: no provider chosen, no real message sent** |
+| B-02 | Data inventory with a completeness test, privacy and terms drafts v2, legal review pack, rights procedures | Lawyer's review and the owner's recorded approval; operator identity; provider names; retention decisions |
+| B-03 | Contact page and corrections route are ready to show an address | Owner sets `UPNEXT_CONTACT_EMAIL`; a monitored mailbox |
+| B-04 | Local TLS rehearsal: production-mode API behind a throwaway certificate, preflight with 0 failures, whole browser suite passing over TLS | Real domain, real certificate, real front (Phase 7) |
+| B-05 | Staff runbook from Phase 4, two-step mandatory, no IP restriction (owner decision), role-change alert | Named people, a completed drill on the real setup, second administrator decision |
+| B-06 | One consolidated list of provisional defaults (register P2 to P5) | Owner approval or changes, recorded |
+| B-07 | Backup scripts, encrypted and authenticated, tamper refusal, restore and re-apply-deletions rehearsal (CI), job state, alert catalogue, generic alert webhook, runbooks | Off-server storage and key custody, a restore measured on real infrastructure (RTO), an alert channel with one real test alert, error tracking and uptime probe |
+| B-08 | — | Phase 7 and separate written authorisation |
+| B-09 | Editorial handbook, draft-only import, content-health page and separation-of-duties audit | Three named staff, approved schemas and taxonomies, 100 source-checked listings from 30 issuers entered by real staff. **Not done: no real content exists** |
+| B-10 | Automated checks; manual audit plan and mobile budgets | Testers, real devices and screen readers; a report. **Not done: no manual accessibility testing has been performed** |
 
 ## B. Owner decisions still needed
 

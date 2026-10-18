@@ -1,0 +1,4 @@
+WARN  [settings] an e-mail provider is configured: UPNEXT_EMAIL_BACKEND=none: no mail is sent (blocker B-01 until a provider is approved and verified)
+WARN  [database] e-mail delivery has a verification record for the live sender configuration: no record: change of e-mail stays off and launch blocker B-01 is open
+WARN  [http] the contact page shows a contact address: no contact address is published (blocker B-03)
+58 passed, 3 warnings, 0 failures (production)

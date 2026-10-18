@@ -91,11 +91,29 @@ export default function PrivacyPage() {
           that access removed by an administrator first.
         </p>
       </Section>
+      <Section title="Changing your e-mail address">
+        <p>
+          When this is available you can ask to move your account to a new address from the account page. We
+          ask for your password, send a link to the new address and tell the old address about the request.
+          Nothing changes until the link is used, and once it is we tell the old address again. We keep the
+          new address in the link record only until the link is used or expires.
+        </p>
+      </Section>
+      <Section title="Backups">
+        <p>
+          We keep encrypted backups of the database so the service can be restored after a failure. A backup
+          holds the personal data described above as it was on the day it was made, and is removed when its
+          retention period ends. If a backup is ever restored, accounts that had already been deleted are
+          deleted again. [Backup retention period and storage location: to be confirmed by the owner.]
+        </p>
+      </Section>
       <Section title="Sharing">
         <p>
-          We do not sell or share your personal data. [E-mail delivery provider and hosting provider: to be
-          named here when chosen.] Listings we show come from public sources and contain no information about
-          you.
+          We do not sell your personal data. We use service providers to run UPNEXT: one to deliver e-mail,
+          one to host the service and one to store encrypted backups. They receive only what they need to do
+          that. [Names, locations and the terms they work under: to be added here when they are chosen. No
+          e-mail provider has been chosen yet.] Listings we show come from public sources and contain no
+          information about you.
         </p>
       </Section>
       <Section title="Your rights">

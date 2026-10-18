@@ -55,3 +55,19 @@ No provider is chosen (OQ-03) and none is enabled. Until one is configured the d
 - Staff site: CSP `script-src 'self'`, no inline script or eval; `style-src` allows inline styles because Django Admin sets them. This is the one remaining relaxation.
 - API and staff: `X-Robots-Tag: noindex, nofollow`, `Cache-Control: no-store` on authenticated and auth responses.
 - Not verifiable here: the real TLS front (HSTS, redirect, cookie transmission), the proxy's header handling. Phase 7 checklist.
+
+## 5. Phase 5 additions (DRAFT; nothing here has been applied to a real server)
+
+**Preflight.** `manage.py check_production_config [--url https://… --ca-file … --http-url http://…]` checks the settings, the database role and a running stack's TLS, headers and cookies. It exits 1 on any blocking finding. On a `local-prod-like` stack the findings that only matter for a real deployment are warnings that say so. It was run, with zero failures and two honest warnings (no e-mail provider, no contact address), against the local TLS rehearsal stack (`infrastructure/compose/compose.tls.yaml`, throwaway certificate, API in real `production` mode). It has not been run against a real deployment.
+
+**Database roles.** The running service and the worker connect as a non-owner role without DDL, TRUNCATE, changes to the audit and editorial-history tables, deletion of users or edits of the migration history (`manage.py provision_db_roles`, run by the owner role after `migrate`). A read-only role serves backups. Migrations are a release step with the owner credentials, which the running service never holds (the Compose entrypoint carries both only on the local stacks). The ordinary bootstrap role of the PostgreSQL image is a superuser: on a real server create a non-superuser owner role.
+
+**One shared `UPNEXT_TOKEN_KEY` for every service** (API and worker). A different value in the worker made every e-mailed link and every derived two-step secret fail in the rehearsal. Treat it as a secret with its own rotation plan; rotating it invalidates links and staff authenticator enrolments.
+
+**Variables added:** `UPNEXT_DB_APP_PASSWORD`, `UPNEXT_DB_READONLY_PASSWORD`, `POSTGRES_MIGRATOR_USER` and `POSTGRES_MIGRATOR_PASSWORD` (release step only), `UPNEXT_HSTS_SECONDS` (web, applies only to requests that arrived over https), `UPNEXT_SITEMAP_API_CACHE_SECONDS` (300), `UPNEXT_EMAIL_WEBHOOK_SECRET` (24 or more characters; the bounce feed is off without it), `UPNEXT_EMAIL_VERIFICATION_MAX_AGE_DAYS` (180), `UPNEXT_ALERT_WEBHOOK_URL` and the alert thresholds in MONITORING_AND_ALERTING.md, `UPNEXT_BACKUP_*` in BACKUP_AND_RESTORE.md, `UPNEXT_LAUNCH_TARGET_LISTINGS` (100) and `UPNEXT_LAUNCH_TARGET_ISSUERS` (30).
+
+**Throttle store.** Anonymous read counters are in process memory (see PERFORMANCE_AND_LOAD.md §3 and §4.1); security counters stay in the database cache.
+
+**Local TLS rehearsal.** `infrastructure/tls/make-local-cert.sh` creates a 30-day throwaway CA and certificate (git-ignored); `compose.tls.yaml` with `nginx.tls.conf` puts them in front of the stack. It proves that Secure and `__Host-` cookies, HSTS, the redirect and forwarded-header trust behave over https, and that the complete browser suite passes over TLS. It does not say anything about the real domain, certificate issuance or the shared Traefik/Nginx.
+
+**Demo data.** `seed_demo` refuses without `DEBUG` or `UPNEXT_DEMO_TOOLS=1`, which production refuses at start-up; the preflight flags demo accounts and fictional issuers in the database.

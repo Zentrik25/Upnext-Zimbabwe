@@ -45,6 +45,7 @@ services:
       # demo-account tooling is enabled, and the public-endpoint limits are loosened. Never copy to production.
       UPNEXT_EMAIL_BACKEND: file
       UPNEXT_DEMO_TOOLS: "1"
+      UPNEXT_SITEMAP_API_CACHE_SECONDS: "0" # tests read the sitemap right after publishing and withdrawing
       UPNEXT_THROTTLE_REGISTER_IP: 200/1h
       UPNEXT_THROTTLE_LOGIN_IP: 500/15m
       UPNEXT_THROTTLE_EMAIL_REQUEST_IP: 200/1h

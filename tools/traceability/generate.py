@@ -37,17 +37,24 @@ R=[
 ("R-23","Privacy: data minimisation, notice, retention, deletion, no PII in logs","spec §25; SECURITY","SC-11, SC-14","requestAccountDeletion, getProfile","PRIV-01…PRIV-06","OQ-09"),
 ("R-24","Observability and health: structured logs, request ids, health/readiness, job heartbeat, alerts","spec §33; QUALITY-GATES","—","healthLive, healthReady, getApiRoot","OPS-01…OPS-04","OQ-26"),
 ("R-25","Backups and tested restoration; migration rehearsal; rollback plan","spec §34; QUALITY-GATES","—","—","OPS-05…OPS-07","OQ-27"),
-("R-26","Performance targets (LCP, INP, CLS, API latency) measured on realistic data","spec §31; QUALITY-GATES","SC-01…SC-03","listOpportunities, getOpportunity","PERF-01…PERF-03","OQ-11"),
+("R-26","Performance targets (LCP, INP, CLS, API latency) measured on realistic data","spec §31; QUALITY-GATES","SC-01…SC-03","listOpportunities, getOpportunity","PERF-01…PERF-05","OQ-11"),
 ("R-27","Isolation from The Granite Post (no shared secrets, DB, networks; no changes without approval)","D-06; CLAUDE.md","—","—","OPS-08, OPS-09 (Phase 7 checklist)","OQ-10"),
 ("R-28","Unpublished content (draft, in review, approved, rejected, takedown) is never public or indexed; 404 not 403","ACCEPTANCE; spec §6","SC-03","getOpportunity","API-09, SEC-04, E2E-03","OQ-20"),
 ("R-29","Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex","IA; spec §6","SC-01…SC-03, SC-12, SC-13, SC-14","getOpportunity, getSitemapEntries","SEO-01…SEO-05","OQ-01, OQ-20"),
 ("R-31","Runtime versions are researched, pinned, patched and monitored for end of life","D-20; ADR-0013; VERSION_RECOMMENDATION","—","—","OPS-10…OPS-13","OQ-28"),
 ("R-32","Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category","D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES","SC-12","createDraft, saveDraft","CAT-01…CAT-08","OQ-06, OQ-21, OQ-22, OQ-29"),
 ("R-33","Staff access protections: two-step verification, shorter staff sessions, staff CSP, audited authentication events (provisional default P3-07 for OQ-16)","P3 review; SECURITY_ARCHITECTURE §3, §5.1; OQ-16","SC-12, SC-13","login, getMe","AUTH-13…AUTH-15, SEC-11","OQ-13, OQ-16, OQ-17"),
+("R-34","Production preflight, least-privilege database roles and a local TLS rehearsal prove the configuration without deploying (P5-02, P5-03)","D-32; WS3","—","—","PRE-01…PRE-03","OQ-01, OQ-10, OQ-13"),
+("R-35","Encrypted backups with a tested restore path, tamper refusal and re-application of deletions after a restore (P5-04)","D-32; WS4","—","—","BAK-01, BAK-02","OQ-27"),
+("R-36","Job state, alert catalogue and debounced notifications; logs and alerts carry no personal data (P5-05)","D-32; WS4","—","—","MON-01, MON-02","OQ-26"),
+("R-37","Draft-only import, content-health report and a separation-of-duties audit support the launch content target without bypassing the workflow (P5-06)","D-18, D-22, D-32; WS6","SC-12, SC-13","—","EDT-01, EDT-02","OQ-06, OQ-21, OQ-22, OQ-29"),
+("R-38","Change of e-mail address works only when e-mail delivery has been verified (D-31, P5-07)","D-31; WS1","SC-11","requestEmailChange, verifyEmail","ACC-01","OQ-03"),
+("R-39","Signed bounce and complaint feed feeds the suppression list (P5-01)","D-32; WS1","—","receiveEmailEvents","MAIL-09","OQ-03"),
+("R-40","Personal-data inventory stays complete and no document claims legal approval (WS2)","D-32; WS2","SC-14","—","PRV-01, PRV-02","OQ-09"),
 ("R-30","Deferred scope is not exposed: eligibility decisions, public organisation pages, advanced related items, uploads, alerts, employer self-service, payments","D-15; ADR-0008; PRD exclusions","SC-01…SC-03","—","SCOPE-01, SCOPE-02","OQ-24"),
 ]
 tests = {
-"UT":"Unit","IT":"Integration","DB":"Database constraint / migration","API":"API contract","AUTH":"Authentication","E2E":"Playwright end to end","A11Y":"Accessibility","VIS":"Visual comparison to reference","SEC":"Security / authorisation","WF":"Workflow state machine","SOD":"Separation of duties","VER":"Verification & provenance","VAL":"Validation","AUD":"Audit","MAIL":"Email outbox","ADM":"Administration","PRIV":"Privacy","OPS":"Operations","PERF":"Performance","JOB":"Scheduled jobs","SEO":"SEO/indexing","SCOPE":"Scope guard"}
+"UT":"Unit","IT":"Integration","DB":"Database constraint / migration","API":"API contract","AUTH":"Authentication","E2E":"Playwright end to end","A11Y":"Accessibility","VIS":"Visual comparison to reference","SEC":"Security / authorisation","WF":"Workflow state machine","SOD":"Separation of duties","VER":"Verification & provenance","VAL":"Validation","AUD":"Audit","MAIL":"Email outbox","PRE":"Production preflight and database privileges","BAK":"Backup and restore","MON":"Monitoring and alerting","EDT":"Editorial launch tooling","ACC":"Account completion","PRV":"Privacy documentation","ADM":"Administration","PRIV":"Privacy","OPS":"Operations","PERF":"Performance","JOB":"Scheduled jobs","SEO":"SEO/indexing","SCOPE":"Scope guard"}
 catalog=[
 ("UT-01","Unknown salary/deadline/requirements render as 'Not stated'; never defaulted"),
 ("UT-02","Slug generation: format, collision retry, reserved words; immutability after assignment"),
@@ -225,6 +232,21 @@ catalog=[
 ("VIS-02","Listing row/detail vs reference tokens"),
 ("VIS-03","Badges/states derived from tokens reviewed and approved"),
 ("VIS-04","Computed-style check: radius 0 (4px only on buttons, inputs, selects, textareas, D-29), no shadows/gradients anywhere"),
+("PRE-01","Preflight settings checks: each unsafe setting fails; local-prod-like findings are warnings; no secret value appears in output"),
+("PRE-02","The application database role cannot change schema, audit or history tables, users or migration history; the read-only role can only read; roles have no dangerous attributes"),
+("PRE-03","Preflight passes with zero failures against the production-mode stack behind local TLS (headers, cookies, certificate, redirect)"),
+("BAK-01","Backup is encrypted, a tampered file is refused, the restore matches the source (rows, triggers, indexes) and the application's read paths answer as the application role"),
+("BAK-02","Deletions completed after a backup are re-applied after a restore without a second e-mail; staff accounts are skipped"),
+("MON-01","Every alert in the catalogue fires and clears under test; the debouncer notifies once; the webhook payload carries only alert fields"),
+("MON-02","Job state keeps one bounded row per job; the worker records its jobs"),
+("EDT-01","Import creates drafts only (static check of what the importer can reach), reports every bad row, refuses partial writes, cannot approve or verify what it imported"),
+("EDT-02","Content health counts match; the separation-of-duties audit finds a deliberately broken row; the staff page is for editors and administrators"),
+("ACC-01","Change of e-mail: unavailable without verified delivery, password required, uniform answer for an address in use, single-use link, old address told, staff refused"),
+("MAIL-09","Bounce webhook: off without a secret; stale, replayed, wrongly signed, oversized and malformed deliveries are refused; permanent bounces and complaints suppress"),
+("PRV-01","Every personal-looking column is listed in docs/legal/DATA_INVENTORY.md and the inventory names no column that does not exist"),
+("PRV-02","No page or legal document claims legal approval"),
+("PERF-04","Mobile budgets (LCP, CLS, transfer, script) on a throttled profile for four pages"),
+("PERF-05","Load ladder and soak at 24,012 listings: latency and error rate per scenario"),
 ("VIS-05","Visual-regression baseline is the reference; the allow-list contains only the documented accessibility deviations"),
 ]
 cat_ids={c[0] for c in catalog}
@@ -432,10 +454,25 @@ IMPL = [
  ("A11Y-04","apps/web/tests/e2e/a11y.spec.ts (structure, labels, error association, autocomplete); no screen reader was used","partly executed"),
  ("A11Y-05","apps/web/tests/e2e/a11y.spec.ts (no horizontal scroll at four widths; 400% reflow)","executed"),
  ("PERF-01","tools/perf/synthetic_load.sql and tools/perf/measure.py (24,012 listings, 72,000 saved rows); results in docs/phase4/acceptance/perf-before.txt and perf-after.txt","executed on a scratch database in the development container (not representative hardware)"),
+ ("PRE-01","apps/api/tests/test_preflight.py (settings findings)","executed"),
+ ("PRE-02","apps/api/tests/test_preflight.py (real PostgreSQL roles: data rights only, read-only role, attributes, provisioning refusals)","executed"),
+ ("PRE-03","apps/api/core/preflight.py via `manage.py check_production_config --url` in infrastructure/compose/compose.tls.yaml; CI job tls-rehearsal","executed locally (0 failures, 2 warnings: no provider, no contact address); not run against a real deployment"),
+ ("BAK-01","infrastructure/backup/rehearse.sh; apps/api/tests/test_operations.py (restore_check); output in docs/phase5/acceptance/backup-rehearsal-small.txt","executed locally on a small dataset; no off-server storage exists"),
+ ("BAK-02","apps/api/tests/test_operations.py (reapply_deletions)","executed"),
+ ("MON-01","apps/api/tests/test_operations.py (alerts, debouncer, webhook with a stub opener)","executed; nothing was delivered to a real channel"),
+ ("MON-02","apps/api/tests/test_operations.py (job records, worker)","executed"),
+ ("EDT-01","apps/api/tests/test_content_ops.py (importer)","executed"),
+ ("EDT-02","apps/api/tests/test_content_ops.py (health, audit, staff page)","executed"),
+ ("ACC-01","apps/api/tests/test_email_change.py; apps/web/tests/unit/accounts.test.tsx; apps/web/tests/e2e/accounts-journey.spec.ts test 9","executed with the file mail backend on throwaway stacks; no real provider"),
+ ("MAIL-09","apps/api/tests/test_email_provider.py (signed feed)","executed against the neutral format; no provider's own format exists"),
+ ("PRV-01","apps/api/tests/test_data_inventory.py","executed"),
+ ("PRV-02","apps/api/tests/test_data_inventory.py (no legal-approval claims)","executed"),
+ ("PERF-04","apps/web/tests/e2e/mobile-budget.spec.ts","executed locally on a throttled desktop Chromium; not a real phone"),
+ ("PERF-05","tools/perf/load.py, soak.sh; results in docs/phase5/acceptance/","executed locally on resource-limited containers; not representative of the VPS"),
  ("E2E-10","apps/web/tests/e2e/a11y.spec.ts (all public and account pages at four widths)","executed"),
 ]
 assert all(t in {c[0] for c in catalog} for t,_,_ in IMPL), "unknown test id in IMPL"
-md.append("\n## 6. Implementation status (Phases 1 to 4)\n")
+md.append("\n## 6. Implementation status (Phases 1 to 5)\n")
 md.append("Only the tests listed here exist. Everything else in §4 is still planned. \"executed\" means the test was run in this repository's development environment on 2026-10-17 and passed (commands and outputs are in `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md`); it is not a CI claim.\n")
 md.append("| Test id | Implemented by | Status |\n|---|---|---|")
 for tid,where,status in IMPL: md.append(f"| {tid} | `{where}` | {status} |")

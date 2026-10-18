@@ -183,6 +183,24 @@ paths:
       responses:
         '202': { $ref: '#/components/responses/AcceptedGeneric' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /hooks/email:
+    post:
+      tags: [auth]
+      operationId: receiveEmailEvents
+      summary: Signed bounce and complaint feed from the e-mail provider side (Phase 5)
+      description: |
+        Off (503 `webhook_disabled`) unless a shared secret is configured. Headers `X-Upnext-Timestamp` (unix seconds,
+        within 5 minutes) and `X-Upnext-Signature` (hex HMAC-SHA256 of `timestamp.body`). A signature works once.
+        Body `{events:[{type: bounce|complaint, permanent: boolean, address: string}]}`; permanent bounces and
+        complaints add the address to the suppression list (stored as a keyed hash).
+      security: []
+      responses:
+        '204': { description: 'Applied' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: 'invalid_signature (also for a stale timestamp or a replay)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
   /auth/login:
     post:
       tags: [auth]

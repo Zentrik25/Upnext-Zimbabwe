@@ -35,6 +35,13 @@ export default function TermsPage() {
           Apply and source links lead to websites we do not control. Their content and rules are theirs. Be
           careful with any request to pay money or share sensitive documents.
         </p>
+        <p>
+          <strong className="font-strong">Never pay to apply.</strong> A genuine job, internship, scholarship
+          or grant does not ask applicants for a fee, and a tender document may have a published, official
+          price at most. We do not list anything that asks applicants to pay or to hand over identity or bank
+          details before a real process begins. If you see a listing that looks wrong, tell us on the contact
+          page and we will check it and take it down if needed.
+        </p>
       </Section>
       <Section title="Your account">
         <Bullets
