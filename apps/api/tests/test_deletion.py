@@ -328,3 +328,17 @@ def test_no_table_outside_the_known_set_holds_the_account_address(make_user: Cal
     assert columns <= known | {c for c in columns if c[0].startswith(("catalog_", "opportunities_"))}, (
         columns - known
     )
+
+
+def test_retention_deletes_listing_counters_after_the_provisional_twelve_months(
+    world: World, people: dict[str, User]
+) -> None:
+    from employers.models import ListingDailyStat
+
+    opportunity = published(world, people["author"], people["editor"])
+    today = timezone.now().date()
+    ListingDailyStat.objects.create(opportunity=opportunity, day=today - timedelta(days=366), views=4)
+    ListingDailyStat.objects.create(opportunity=opportunity, day=today - timedelta(days=364), views=2)
+    counts = retention.run()
+    assert counts["listing_stats"] == 1
+    assert list(ListingDailyStat.objects.values_list("views", flat=True)) == [2]

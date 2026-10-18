@@ -34,9 +34,10 @@ export default function PrivacyPage() {
           You do not need an account to search or read listings. We set no advertising, analytics or tracking
           cookies and use no analytics service. When you open a listing, or follow its apply link, we add one
           to a daily count for that listing (shown to the employer who posted it); the count holds no cookie,
-          identifier, address or browser details. Our servers keep technical logs of requests (time, address
-          requested, result, a request number) to run and protect the service. [Retention period of web-server
-          and network logs, including network addresses: to be confirmed.]
+          identifier, address or browser details, and daily counts are deleted after about twelve months
+          [provisional period, to be confirmed by the owner and the lawyer]. Our servers keep technical logs
+          of requests (time, address requested, result, a request number) to run and protect the service.
+          [Retention period of web-server and network logs, including network addresses: to be confirmed.]
         </p>
       </Section>
       <Section title="If you create an account">

@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/layout";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink, EmptyState, Tag } from "@/components/ui";
-import { getEmployerProfile } from "@/lib/catalog";
+import { OpportunityRow } from "@/components/opportunities/parts";
+import { getEmployerProfile, listOpportunities } from "@/lib/catalog";
 import { absolute } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,11 @@ export default async function EmployerProfilePage({ params }: Props) {
   }
   if (result.data === null) notFound();
   const p = result.data;
+  // Only what the public list already shows: published listings of this organisation.
+  const vacancies = await listOpportunities(
+    new URLSearchParams({ organisation_id: p.organisation.id, limit: "20" }),
+  );
+  const rows = vacancies.ok ? vacancies.data.data : [];
   const facts = [
     p.sector ? ["Sector", p.sector.name] : null,
     p.size_band ? ["Employees", p.size_band] : null,
@@ -97,15 +103,27 @@ export default async function EmployerProfilePage({ params }: Props) {
               </a>
             </p>
           ) : null}
-          <p className="mt-5">
-            {p.open_listings > 0 ? (
-              <ButtonLink href={`/opportunities?organisation_id=${p.organisation.id}`}>
-                See {p.open_listings} open {p.open_listings === 1 ? "listing" : "listings"}
+          <h2 className="mt-6 text-title font-strong">Open listings</h2>
+          {rows.length > 0 ? (
+            <div className="mt-2 border-t border-line" data-testid="employer-listings">
+              {rows.map((row) => (
+                <OpportunityRow key={row.id} row={row} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-base text-muted">
+              {vacancies.ok
+                ? "No open listings right now."
+                : "The listings could not be loaded. Try again shortly."}
+            </p>
+          )}
+          {p.open_listings > rows.length ? (
+            <p className="mt-3">
+              <ButtonLink variant="secondary" href={`/opportunities?organisation_id=${p.organisation.id}`}>
+                See all {p.open_listings} open listings
               </ButtonLink>
-            ) : (
-              <span className="text-base text-muted">No open listings right now.</span>
-            )}
-          </p>
+            </p>
+          ) : null}
           <p className="mt-4 text-ctl">
             <Link href="/opportunities" className="text-accent underline">
               ← All opportunities

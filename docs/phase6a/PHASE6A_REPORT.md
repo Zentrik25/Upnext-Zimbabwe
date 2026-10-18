@@ -1,6 +1,6 @@
 # Phase 6A report — employer portal — DRAFT
 
-Status: DRAFT, implemented and awaiting owner review. Authorised in writing on 2026-10-18 (D-35; baseline `bba8168`, CI 39122537513 passed). Nothing was deployed; the VPS, Traefik/Nginx and The Granite Post were not touched. **Phase 6B was not started.** E-mail sending and change of e-mail stay off; the Resend delivery-verification blockers (B-01, B-03) are open and unchanged. Nothing here is legal approval.
+Status: DRAFT; **accepted by the owner on 2026-10-18 (D-36)**. Authorised in writing on 2026-10-18 (D-35; baseline `bba8168`, CI 39122537513 passed). Nothing was deployed; the VPS, Traefik/Nginx and The Granite Post were not touched. **Phase 6B was not started by this report; it is prepared separately in `docs/phase6b/PHASE6B_PLAN.md`.** E-mail sending and change of e-mail stay off; the Resend delivery-verification blockers (B-01, B-03) are open and unchanged. Nothing here is legal approval.
 
 ## 1. What was built (and only this)
 
@@ -8,9 +8,10 @@ Status: DRAFT, implemented and awaiting owner review. Authorised in writing on 2
 |---|---|
 | Employer registration | `/employers` (what happens), `/employers/register` (the existing registration and e-mail confirmation), `/employer` dashboard. No new enumeration surface |
 | Organisation verification | Claims (`/employer/claim`), staff decisions on the staff site (method and evidence recorded, never self-decided), revocation by an Administrator, membership revocation |
-| Company profiles | Moderated revisions (owners only), staff approval by a different person, public page `/employers/<slug>` only for verified organisations with an approved profile, link from the listing page |
+| Company profiles | Moderated revisions (owners only), staff approval by a different person, public page `/employers/<slug>` only for verified organisations with an approved profile (now also listing the organisation's published vacancies), link from the listing page |
 | Moderated job posting | Jobs, internships and graduate programmes through the **existing publishing service**: draft, edit, submit, discard, reopen after rejection, amend a published listing. Staff approve and publish |
 | Employer dashboard | Claims, organisations with role and verification, listings with status in words, editors' reasons, next actions |
+| Close own listing (merged PR #8; owner confirmed it was intentional) | A member of a verified organisation can withdraw its **published** listing with a reason; staff `withdraw` and `takedown` remain staff-only |
 | Basic listing analytics | Views and apply-link clicks per listing and day (aggregates, no identifiers), 7 and 30 day windows and totals, saves as a number; the dashboard says counts are approximate |
 
 Plan and threat analysis: `docs/phase6a/PHASE6A_PLAN.md`; decision D-35; ADR-0022 (drafts); editorial handbook section for staff.
@@ -39,13 +40,17 @@ Plan and threat analysis: `docs/phase6a/PHASE6A_PLAN.md`; decision D-35; ADR-002
 | Local TLS rehearsal, `detect-secrets` over the full history | **not run locally** (CI runs both) |
 | GitHub Actions | see section 6 |
 
-## 4. Decisions and open points for the owner
+## 4. Owner decisions and open points
 
-1. **D-15 public organisation pages.** The company profile page is public for verified organisations with an approved profile. Confirm, or limit to the listing page.
-2. **No earlier Phase 6A plan existed in the repository**, so the scope here is the instruction's own list. Say if anything differs from what was approved before.
-3. Verification methods and evidence standards are editorial policy; the five methods are a starting point.
-4. Analytics: aggregates are kept indefinitely; the privacy draft and data inventory say so and are not legal approval. The earlier "no analytics" wording (P4-04) is amended to "no analytics service or identifiers".
-5. Not built: team invitations, employer-side withdrawal of a published listing, uploads (logos), employer notifications by e-mail (status is on the dashboard), employer bulk import, employer-side searching of applicants (the portal never receives applications).
+Decided by the owner on 2026-10-18 (D-36):
+
+1. **D-15 public organisation pages: approved** (verified public details and published vacancies; never private verification records). The page now lists the published vacancies through the existing public list API.
+2. **Scope approved**, including employer-side closing (intentional). No further employer features are required now.
+3. **Analytics:** cookie-free and approximate. Daily aggregates are deleted after a **provisional 12 months** (worker job, setting `UPNEXT_RETENTION_LISTING_STATS_DAYS`, test in `test_deletion.py`), subject to legal and privacy review. The earlier "no analytics" wording (P4-04) is amended to "no analytics service or identifiers".
+
+Still open: verification methods and evidence standards are editorial policy (the five methods are a starting point).
+
+Not built: team invitations, uploads (logos), employer notifications by e-mail (status is on the dashboard; B-01 open), employer bulk import, employer-side searching of applicants (the portal never receives applications). Employer-side withdrawal **was** built (section 7).
 
 ## 5. Limitations and risks
 
@@ -54,7 +59,7 @@ Plan and threat analysis: `docs/phase6a/PHASE6A_PLAN.md`; decision D-35; ADR-002
 - Claim approval depends on staff doing a real external check; the software records that it was done, it cannot do it.
 - One person can hold several roles; a reviewer who is also a member of an organisation cannot verify it, but nothing stops two colluding staff.
 - The browser journey uses fictional demo staff through a demo-only management command (refused without `UPNEXT_DEMO_TOOLS`, which production refuses at start-up).
-- Account page does not yet show an "employer" entry beyond the footer link and the dashboard URL.
+- The account page shows no "employer" entry beyond the footer link and the dashboard URL (no additional employer features are required now, D-36).
 
 ## 6. Final CI
 
@@ -75,3 +80,8 @@ Plan and threat analysis: `docs/phase6a/PHASE6A_PLAN.md`; decision D-35; ADR-002
 Pull request #8 (draft, base `claude/new-session-t9v0fd`, not merged). **Run 39138973039 on `36ce1d0` completed successfully** (https://github.com/Zentrik25/Upnext-Zimbabwe/actions/runs/39138973039), checked through the GitHub API: Documentation consistency; API (ruff, mypy, migrations, pytest with the coverage gate, OpenAPI, advisories) on PostgreSQL 18.6; No secrets committed (every commit scanned); Web (ESLint, tsc, Prettier, tokens, Vitest, build); End-to-end on the production-mode Compose stack, including the seeker, **employer portal** and editorial CMS browser journeys; and the local TLS rehearsal (preflight, whole browser suite, mobile budgets, backup and restore rehearsal). No job failed and no test or control was changed to obtain this result. This note is documentation only, so its own CI run is reported separately.
 
 The employer journeys (register, claim, verification by staff, profile, posting, review and publication by staff, counters) were therefore exercised by CI on this commit, not by me locally. The owner's review is the next step; nothing was merged or deployed.
+
+## 9. Final CI of the merged state and acceptance
+
+- The merge of PR #8 (`e1c9fba`) was checked through the GitHub API: **run 39145543362 completed successfully** (run attempt 2).
+- The owner formally **accepted Phase 6A** and confirmed that employer-side closing was intentional (D-36). The follow-up documentation, public-profile vacancy list and retention job are reported in the hand-over message with their own CI result.

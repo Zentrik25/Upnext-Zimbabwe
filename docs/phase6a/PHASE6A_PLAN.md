@@ -1,6 +1,6 @@
 # Phase 6A — employer portal: scope, design and security analysis — DRAFT
 
-Status: DRAFT, implemented after the owner's written authorisation of 2026-10-18 (D-35). The repository holds no earlier Phase 6A plan, so this document **is** the plan and records what was understood from the instruction. Nothing is deployed. E-mail sending and change of e-mail stay off (B-01).
+Status: DRAFT; implemented and **accepted by the owner (D-36)**, after the owner's written authorisation of 2026-10-18 (D-35). The repository holds no earlier Phase 6A plan, so this document **is** the plan and records what was understood from the instruction. Nothing is deployed. E-mail sending and change of e-mail stay off (B-01).
 
 ## 1. Scope (exactly what was authorised)
 
@@ -11,9 +11,10 @@ Status: DRAFT, implemented after the owner's written authorisation of 2026-10-18
 | 3 | Company profiles | A verified organisation has a profile (tagline, about text, sector, size, founded year, location). Every change is a moderated revision; the public sees only an approved revision |
 | 4 | Moderated job posting | Employers draft and submit jobs, internships and graduate programmes through the **existing publishing service**. Staff approve and publish. Employers can never approve, verify or publish |
 | 5 | Employer dashboard | Claims, organisations, listing statuses, editors' return/rejection reasons, next actions |
+| 7 | Close own listing (added by the merged PR #8, confirmed intentional by the owner in D-36) | A member of the verified organisation can withdraw a **published** listing with a reason (`opp.withdraw_own`); it removes content, never adds it. Staff `withdraw`/`takedown` stay staff-only |
 | 6 | Basic listing analytics | Aggregate daily counters per listing: page views and apply-link clicks, plus the number of seekers who saved it. No personal data |
 
-Not built (Phase 6B or later, or not authorised): team invitations, payments, applicant tracking or receiving applications, CV or logo uploads, employer e-mail notifications, bulk import by employers, employer-side withdrawal, profiles for seekers, For You or matching, any deployment.
+Not built (Phase 6B or later, or not authorised): team invitations, payments, applicant tracking or receiving applications, CV or logo uploads, employer e-mail notifications, bulk import by employers, profiles for seekers, For You or matching, any deployment.
 
 ## 2. Design
 
@@ -49,8 +50,9 @@ Daily aggregate counters only: no cookie, identifier, IP address or user agent i
 | Account deletion | Memberships are revoked when an account is deleted; listings keep their history |
 | E-mail | Nothing is sent: status is shown on the dashboard |
 
-## 4. Open points for the owner
-1. D-15 deferred public organisation pages. This phase adds a public profile page **only for verified organisations with an approved profile**, because "company profiles" was in scope. Confirm or limit it to the listing page.
-2. Employer-side withdrawal of a published listing and team invitations are not built.
-3. Verification methods and evidence standards are an editorial policy decision; the list in the code is a starting point.
-4. Analytics retention (currently kept indefinitely as aggregates) needs a decision.
+## 4. Owner decisions (D-36, 2026-10-18)
+
+1. **Public company profile pages: approved**, showing verified public organisation details and the organisation's published vacancies only. Private verification records (method, evidence, claimant, notes) are never exposed.
+2. **Implemented Phase 6A scope approved**, including employer-side closing of a published listing (confirmed intentional). No further employer features are required now.
+3. **Analytics stay cookie-free and approximate.** Daily aggregates are kept for a **provisional 12 months**, then deleted by the worker (`UPNEXT_RETENTION_LISTING_STATS_DAYS=365`), subject to legal and privacy review.
+4. Still open and editorial: verification methods and evidence standards (the five methods in the code are a starting point); team invitations stay unbuilt.

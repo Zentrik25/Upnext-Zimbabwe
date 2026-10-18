@@ -40,7 +40,7 @@ Format: each row names its table and column in backticks. "Who sees it" means pe
 | Which account may act for which organisation, its role, who granted and revoked it | `employers_employermembership.*` | authority to post | staff; the member | kept as history; ended when the account is deleted |
 | Company profile text | `employers_profilerevision.*` | public company page (about the organisation, not a person) | public once approved | kept with its history |
 | Marker that a listing came from an employer, and its organisation | `employers_employerlisting.*` | access control | staff; the organisation's members | kept with the listing |
-| Daily counts of views and apply-link clicks per listing | `employers_listingdailystat.*` | basic analytics for the employer | the organisation's members | counts only: **no cookie, identifier, address or user agent is stored**; retention undecided |
+| Daily counts of views and apply-link clicks per listing | `employers_listingdailystat.*` | basic analytics for the employer | the organisation's members | counts only: **no cookie, identifier, address or user agent is stored**; provisional retention **12 months**, then deleted by the worker (D-36), for the lawyer to confirm |
 
 ## C. Information about organisations and listings (not personal data of site users)
 
