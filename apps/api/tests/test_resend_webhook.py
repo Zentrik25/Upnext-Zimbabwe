@@ -14,7 +14,9 @@ from notifications import resend_webhook, suppression
 
 pytestmark = pytest.mark.django_db
 
-SECRET = "whsec_" + base64.b64encode(b"unit-test-secret-not-real-0123456789").decode()
+SECRET = (
+    "whsec_" + base64.b64encode(b"unit-test-secret-not-real-0123456789").decode()
+)  # pragma: allowlist secret
 URL = "/api/v1/hooks/email/resend"
 
 
@@ -180,7 +182,7 @@ def test_resend_smtp_settings_are_checked() -> None:
         UPNEXT_SMTP_SECURITY="ssl",
         UPNEXT_SMTP_PORT=465,
         UPNEXT_SMTP_USER="resend",
-        UPNEXT_SMTP_PASSWORD="re_placeholder",
+        UPNEXT_SMTP_PASSWORD="re_placeholder",  # pragma: allowlist secret
     )
     assert problems(good, production=True) == []
     wrong_user = SimpleNamespace(**{**vars(good), "UPNEXT_SMTP_USER": "me"})
