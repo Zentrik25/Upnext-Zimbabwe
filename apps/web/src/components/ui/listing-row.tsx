@@ -12,6 +12,8 @@ export type ListingRowProps = {
   sourceNote?: ReactNode;
   /** Static save control for presentational use. Omit it when there is nothing to save. */
   saved?: boolean;
+  /** Optional block under the facts (for example why a recommendation is shown). */
+  extra?: ReactNode;
   /** Replaces the save control (the live toggle comes from the page, since it needs the session). */
   action?: ReactNode;
 };
@@ -37,6 +39,7 @@ export function ListingRow({
   sourceNote,
   saved,
   action,
+  extra,
 }: ListingRowProps) {
   return (
     <article className="border-b border-line px-[14px] py-[15px] hover:bg-row-hover">
@@ -69,6 +72,7 @@ export function ListingRow({
           </li>
         ))}
       </ul>
+      {extra}
       <div className="mt-[13px] flex items-center justify-between gap-2">
         <span className="text-small text-muted">{sourceNote}</span>
         <ButtonLink

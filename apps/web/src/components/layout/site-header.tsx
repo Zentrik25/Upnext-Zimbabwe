@@ -22,6 +22,12 @@ export async function SiteHeader() {
           {user ? (
             <>
               <Link
+                href="/for-you"
+                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
+              >
+                For you
+              </Link>
+              <Link
                 href="/saved"
                 className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
               >
