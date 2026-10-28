@@ -61,6 +61,15 @@
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
+  /* Checkboxes and radios are 24px squares so every one meets the WCAG 2.2 target size (SC 2.5.8) on its own,
+     whatever its neighbours or wrapping do. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
   ::placeholder {
     color: var(--color-muted);
     opacity: 1;
