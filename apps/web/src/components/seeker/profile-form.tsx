@@ -235,7 +235,7 @@ export function ProfileForm({
         <div
           role="alertdialog"
           aria-labelledby="confirm-title"
-          className="max-w-[640px] border border-border-strong p-3"
+          className="max-w-[640px] rounded-card border border-border-strong p-3"
         >
           <p id="confirm-title" className="text-base font-strong">
             {pending === "reset" ? "Clear your preferences?" : "Delete your whole profile?"}

@@ -1,15 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import {
-  BOX_KEYS,
-  COLOR_KEYS,
-  TEXT_KEYS,
-  expectMatchesReference,
-  prodRgb,
-  reference,
-  refRgb,
-  rgb,
-} from "./support";
+import { refRgb, rgb } from "./support";
 
 const PAGES = ["/", "/design-system"];
 const WIDTHS = [320, 390, 768, 1440];
@@ -157,17 +148,22 @@ test.describe("accessibility (A11Y-01…A11Y-05)", () => {
   });
 });
 
-test.describe("flat design (gate 9: VIS-04, A11Y-08)", () => {
+test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
+  const SHADOWS = [
+    "none",
+    "rgba(23, 23, 23, 0.06) 0px 3px 6px 0px",
+    "rgba(23, 23, 23, 0.08) 0px 15px 35px 0px",
+    "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
+    "rgba(3, 3, 39, 0.25) 0px 14px 21px -14px, rgba(0, 0, 0, 0.1) 0px 8px 17px -8px",
+  ];
   for (const path of PAGES) {
-    test(`nothing is rounded, shadowed or gradient-filled on ${path}`, async ({ page }) => {
+    test(`radii, shadows and gradients stay inside the design system on ${path}`, async ({ page }) => {
       await page.goto(path);
-      const offenders = await page.evaluate(() => {
+      const offenders = await page.evaluate((shadows) => {
         const bad: string[] = [];
-        const controlSel =
-          "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
+        const allowed = ["0px", "4px", "6px", "8px"];
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
-          const allowed = el.matches(controlSel) ? ["0px", "4px"] : ["0px"]; // D-29
           const radii = [
             cs.borderTopLeftRadius,
             cs.borderTopRightRadius,
@@ -175,210 +171,45 @@ test.describe("flat design (gate 9: VIS-04, A11Y-08)", () => {
             cs.borderBottomRightRadius,
           ];
           if (radii.some((r) => !allowed.includes(r))) bad.push(`radius ${el.tagName}.${el.className}`);
-          if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}.${el.className}`);
-          if (cs.backgroundImage !== "none") bad.push(`bg-image ${el.tagName}.${el.className}`);
+          // Tailwind prefixes shadow utilities with fully transparent ring layers; only the visible layer counts.
+          const visible =
+            cs.boxShadow.replace(/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?/g, "").replace(/, $/, "") || "none";
+          if (!shadows.includes(visible)) bad.push(`shadow ${el.tagName}.${el.className}`);
+          // The only gradient is the decorative ruby to magenta accent, hidden from assistive technology.
+          if (cs.backgroundImage !== "none" && el.getAttribute("aria-hidden") !== "true")
+            bad.push(`bg-image ${el.tagName}.${el.className}`);
           if (cs.textShadow !== "none") bad.push(`text-shadow ${el.tagName}.${el.className}`);
         }
         return bad;
-      });
+      }, SHADOWS);
       expect(offenders).toEqual([]);
     });
   }
 
-  test("body typography equals the reference (Arial 13px, line-height 1.55)", async ({ page }) => {
+  test("body typography follows the design system (light weight, 15px, line-height 1.5, deep navy on white)", async ({
+    page,
+  }) => {
     await page.goto("/");
-    await expectMatchesReference(page.locator("body"), reference("header_and_chrome", "body"), [
-      "fontFamily",
-      "fontSize",
-      "fontWeight",
-      "lineHeight",
-      "color",
-      "backgroundColor",
-    ]);
-  });
-});
-
-test.describe("reference parity of the primitives (1440px) — only DEV-01…DEV-04 may differ", () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
-  const ALL = [...BOX_KEYS, ...TEXT_KEYS, ...COLOR_KEYS];
-  const BORDER_COLORS = ["borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"];
-
-  test("header, logo and notice", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(
-      page.getByRole("banner"),
-      reference("header_and_chrome", "header"),
-      ["backgroundColor", "borderBottomWidth", "borderBottomColor", "height"],
-      { height: "59px" },
-    );
-    await expectMatchesReference(
-      page.getByRole("banner").locator("span").first(),
-      reference("header_and_chrome", "logo"),
-      ["fontSize", "fontWeight", "letterSpacing", "color"],
-    );
-    await expectMatchesReference(
-      page.getByRole("note"),
-      reference("header_and_chrome", "notice"),
-      [...BOX_KEYS, "fontSize", "backgroundColor", "borderBottomColor", "textAlign"].filter(
-        (k) => k !== "borderTopWidth",
-      ),
-      {
-        color: prodRgb("muted"),
-      },
-    );
-    // DEV-02: production muted text is the approved #687380.
-    await expect(page.getByRole("note")).toHaveCSS("color", rgb("#687380"));
+    const body = page.locator("body");
+    await expect(body).toHaveCSS("font-size", "15px");
+    await expect(body).toHaveCSS("font-weight", "300");
+    await expect(body).toHaveCSS("line-height", "22.5px");
+    await expect(body).toHaveCSS("color", rgb("#061b31"));
+    await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
   });
 
-  test("hero heading", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(
-      page.getByRole("heading", { level: 1 }),
-      reference("header_and_chrome", "h1"),
-      ["fontSize", "fontWeight", "letterSpacing", "lineHeight", "color"],
-    );
-  });
-
-  test("buttons", async ({ page }) => {
+  test("primary and secondary buttons use the purple accent and the 4px control radius", async ({ page }) => {
     await page.goto("/design-system");
-    await expectMatchesReference(
-      page.getByTestId("btn-secondary"),
-      reference("header_and_chrome", "btnSecondary"),
-      [...ALL, ...BORDER_COLORS],
-      { borderTopLeftRadius: "4px" }, // D-29
-    );
     const primary = page.getByTestId("btn-primary");
-    await expect(primary).toHaveCSS("background-color", refRgb("accent"));
-    await expect(primary).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(primary).toHaveCSS("min-height", "33px");
-    await expect(primary).toHaveCSS("font-size", "12px");
-    await expect(primary).toHaveCSS("padding", "7px 12px");
+    await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
+    await expect(primary).toHaveCSS("border-top-left-radius", "4px");
     await primary.hover();
-    await expect(primary).toHaveCSS("background-color", refRgb("accent-hover"));
+    await expect(primary).toHaveCSS("background-color", rgb("#4434d4"));
   });
 
-  test("fields use the corrected control border and the reference box", async ({ page }) => {
+  test("form controls use the corrected DEV-04 border", async ({ page }) => {
     await page.goto("/design-system");
-    const cases = [
-      ["field-input", "field"],
-      ["field-select", "filterSelect"],
-    ] as const;
-    for (const [id, evidenceKey] of cases) {
-      await expectMatchesReference(
-        page.getByTestId(id),
-        reference("header_and_chrome", evidenceKey),
-        [...ALL],
-        {
-          fontSize: "13px",
-          borderTopLeftRadius: "4px", // D-29
-        },
-      );
-      // DEV-04: reference #d9e1eb → approved #7693b7 on all four sides.
-      for (const side of BORDER_COLORS)
-        await expect(page.getByTestId(id)).toHaveCSS(
-          side.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()),
-          rgb("#7693b7"),
-        );
-      await expect(page.getByTestId(id)).toHaveCSS("min-height", "36px");
-    }
-  });
-
-  test("search group matches the reference geometry with the corrected outline", async ({ page }) => {
-    await page.goto("/design-system");
-    const group = page.getByTestId("search-group");
-    const box = await group.boundingBox();
-    expect(box?.width).toBe(790);
-    expect(box?.height).toBe(41);
-    await expect(group).toHaveCSS("border-top-color", rgb("#7693b7"));
-    await expect(group.getByRole("button")).toHaveCount(0); // no separate Search button (owner request)
-    await expect(group.getByRole("searchbox")).toHaveCSS("min-height", "39px");
-    await expect(group.getByRole("combobox")).toHaveCSS("width", "155px");
-  });
-
-  test("tags, panel and tabs", async ({ page }) => {
-    await page.goto("/design-system");
-    await expectMatchesReference(page.getByTestId("tag-urgent"), reference("listing_cards", "tagUrgent"), [
-      ...ALL,
-      ...BORDER_COLORS,
-    ]);
-    await expectMatchesReference(
-      page.getByTestId("tag-default"),
-      reference("listing_cards", "tag"),
-      [...ALL, ...BORDER_COLORS],
-      {
-        color: prodRgb("meta"), // DEV-01
-      },
-    );
-    await expectMatchesReference(page.getByTestId("panel"), reference("header_and_chrome", "asidecard"), [
-      ...BOX_KEYS,
-      ...BORDER_COLORS,
-    ]);
-    const tabs = page.getByRole("navigation", { name: "Opportunity categories" });
-    await expectMatchesReference(
-      tabs.getByRole("link", { name: "Jobs" }),
-      reference("header_and_chrome", "pill"),
-      [
-        "color",
-        "fontSize",
-        "fontWeight",
-        "paddingTop",
-        "paddingRight",
-        "paddingBottom",
-        "paddingLeft",
-        "borderBottomWidth",
-      ],
-    );
-    await expectMatchesReference(
-      tabs.getByRole("link", { name: "All" }),
-      reference("header_and_chrome", "pillActive"),
-      ["color", "fontSize", "fontWeight", "borderBottomWidth", "borderBottomColor"],
-    );
-  });
-
-  test("listing row and save control", async ({ page }) => {
-    await page.goto("/design-system");
-    const row = page.locator("article").first();
-    await expect(row).toHaveCSS("border-bottom-width", "1px");
-    await expect(row).toHaveCSS("border-bottom-color", refRgb("line"));
-    await expect(row).toHaveCSS("padding", "15px 14px");
-    await expectMatchesReference(
-      row.getByRole("heading", { level: 3 }),
-      reference("listing_cards", "jobtitle"),
-      ["fontSize", "fontWeight", "lineHeight", "color"],
-    );
-    await expectMatchesReference(
-      row.getByText("Example Power Services", { exact: true }),
-      reference("listing_cards", "company"),
-      ["fontSize", "lineHeight"],
-      { color: prodRgb("company") },
-    ); // DEV-03
-    const avatar = row.locator("div[aria-hidden='true']").first();
-    await expectMatchesReference(avatar, reference("listing_cards", "avatar"), [
-      "backgroundColor",
-      "color",
-      "fontWeight",
-      "borderTopWidth",
-      "borderTopColor",
-    ]);
-    expect((await avatar.boundingBox())?.width).toBe(39);
-    await expectMatchesReference(page.getByTestId("save-idle"), reference("listing_cards", "bookmark"), [
-      "color",
-      "fontSize",
-      "lineHeight",
-      "paddingLeft",
-      "paddingRight",
-    ]);
-  });
-
-  test("footer", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(page.getByRole("contentinfo"), reference("header_and_chrome", "footer"), [
-      "paddingTop",
-      "paddingBottom",
-      "borderTopWidth",
-      "borderTopColor",
-      "fontSize",
-    ]);
-    await expect(page.getByRole("contentinfo")).toHaveCSS("color", prodRgb("muted"));
+    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#7a87a2"));
+    await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
 });

@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/session";
 export async function SiteHeader() {
   const user = await getCurrentUser();
   return (
-    <header className="border-b border-line bg-surface">
+    <header className="sticky top-0 z-40 rounded-b-card border-b border-line bg-surface/90 backdrop-blur-md">
       <Container className="flex min-h-[58px] flex-wrap items-center justify-between gap-x-4 max-sm:min-h-[55px]">
         <Link href="/" aria-label={`${BRAND.name} home`}>
           <Logo />

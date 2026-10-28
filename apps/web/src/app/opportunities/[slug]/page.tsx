@@ -86,7 +86,7 @@ export default async function OpportunityPage({ params }: Props) {
           <div
             role="status"
             data-testid="status-banner"
-            className="mb-4 border border-border-notice bg-surface-notice px-3 py-[10px] text-base"
+            className="mb-4 rounded-card border border-border-notice bg-surface-notice px-3 py-[10px] text-base"
           >
             <strong className="block text-title">
               {listing.status === "expired" ? "Closed" : "Withdrawn by the issuer"}

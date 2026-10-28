@@ -71,7 +71,10 @@ export function ProfileForm({ organisationId, state }: { organisationId: string;
         </FormSuccess>
       ) : null}
       {state.pending ? (
-        <div role="status" className="border border-border-notice bg-surface-notice p-3 text-base">
+        <div
+          role="status"
+          className="rounded-card border border-border-notice bg-surface-notice p-3 text-base"
+        >
           A change is waiting for review. Sending a new one replaces it.{" "}
           <button type="button" onClick={withdraw} disabled={busy} className="text-accent underline">
             Withdraw the waiting change

@@ -17,7 +17,7 @@ export function Tag({
   return (
     <span
       className={cn(
-        "inline-block border border-tag-border px-1.5 py-[2px] text-small",
+        "inline-block rounded-control border border-tag-border px-1.5 py-[2px] text-small",
         tones[tone],
         className,
       )}

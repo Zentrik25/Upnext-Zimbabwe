@@ -368,7 +368,7 @@ export function ListingForm({ organisationId, locations, listing }: Props) {
         </Select>
       </Field>
 
-      <fieldset className="grid gap-3 border border-border-panel p-3">
+      <fieldset className="grid gap-3 rounded-card border border-border-panel p-3">
         <legend className="px-1 text-small font-strong">Pay (optional)</legend>
         <p className="text-small text-muted">
           Give both the currency and the period when you state an amount.
@@ -423,7 +423,7 @@ export function ListingForm({ organisationId, locations, listing }: Props) {
         />
       </Field>
 
-      <fieldset className="grid gap-3 border border-border-panel p-3">
+      <fieldset className="grid gap-3 rounded-card border border-border-panel p-3">
         <legend className="px-1 text-small font-strong">How people apply</legend>
         <p className="text-small text-muted">Applications go to you, not to NextJob.</p>
         <Field id="application_method" label="Method">
@@ -489,7 +489,7 @@ export function ListingForm({ organisationId, locations, listing }: Props) {
         />
       </Field>
 
-      <fieldset className="grid gap-3 border border-border-panel p-3">
+      <fieldset className="grid gap-3 rounded-card border border-border-panel p-3">
         <legend className="px-1 text-small font-strong">More about this opportunity (optional)</legend>
         <Field id="vacancies" label="Number of vacancies" error={e("detail.vacancies")}>
           <TextInput

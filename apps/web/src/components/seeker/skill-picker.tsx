@@ -96,7 +96,7 @@ export function SkillPicker({
           {value.map((skill) => (
             <li
               key={skill.id}
-              className="inline-flex items-center gap-1 border border-tag-border bg-tag-bg px-2 py-[2px] text-small"
+              className="inline-flex items-center gap-1 rounded-control border border-tag-border bg-tag-bg px-2 py-[2px] text-small"
             >
               {skill.name}
               <button

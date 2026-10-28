@@ -16,7 +16,10 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={cn("border border-dashed border-border-empty p-7 text-center text-empty-text", className)}
+      className={cn(
+        "rounded-card border border-dashed border-border-empty p-7 text-center text-empty-text",
+        className,
+      )}
     >
       <Heading className="text-title font-strong text-ink">{title}</Heading>
       {children ? <p className="mt-[7px] text-base text-empty-text">{children}</p> : null}

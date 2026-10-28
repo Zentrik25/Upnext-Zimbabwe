@@ -78,7 +78,7 @@ export function ClaimForm() {
         />
       </Field>
       {shown.length > 0 ? (
-        <fieldset className="grid gap-1 border border-border-panel p-3">
+        <fieldset className="grid gap-1 rounded-card border border-border-panel p-3">
           <legend className="px-1 text-small font-strong">Is it one of these?</legend>
           {shown.map((match) => (
             <label key={match.id} className="flex items-center gap-2 text-base">

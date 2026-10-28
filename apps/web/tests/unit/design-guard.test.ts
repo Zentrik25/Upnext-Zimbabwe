@@ -12,18 +12,18 @@ function files(dir: string): string[] {
 }
 const sources = files(src).filter((f) => /\.(tsx?|css)$/.test(f) && !f.endsWith("tokens.generated.css"));
 
-describe("flat design guard (VIS-04, D-08)", () => {
+describe("design system guard (VIS-04, D-39)", () => {
   const banned = [
-    // D-29: only the control radius token and its square resets are allowed.
-    /\brounded(?!-(?:control|none|[rl]-none)(?![\w-]))(?:-[\w[\]./]+)?\b/,
-    /\b(?:drop-)?shadow(?:-[\w[\]./]+)?\b/,
-    /\bblur(?:-[\w[\]./]+)?\b/,
-    /\bbackdrop-[\w-]+\b/,
-    /\bbg-(?:gradient|linear|radial|conic)-[\w[\]./-]+/,
-    /\b(?:from|via|to)-(?:accent|ink|surface|line)\b/,
+    // Radii come only from the token scale: control 4px, card 6px, feature 8px. No pills, no arbitrary radii.
+    /\brounded(?!-(?:none|control|card|feature|[rltb]-(?:none|control|card|feature))(?![\w-]))(?:-[\w[\]./]+)?\b/,
+    // Shadows come only from the four design-system levels (subtle, ambient, elevated, deep).
+    /\b(?:drop-)?shadow(?!-(?:subtle|ambient|elevated|deep|none)(?![\w-]))(?:-[\w[\]./]+)?\b/,
+    /\bbg-(?:gradient|radial|conic)-[\w[\]./-]+/,
+    // The only gradient is the decorative ruby to magenta accent.
+    /\b(?:from|via|to)-(?!(?:ruby|magenta)\b)(?:accent|ink|surface|line|brand-dark)\b/,
   ];
 
-  it("no source file uses rounded, shadow, blur, backdrop or gradient utilities", () => {
+  it("no source file uses a radius, shadow or gradient outside the design-system tokens", () => {
     const offenders: string[] = [];
     for (const file of sources.filter((f) => /\.tsx?$/.test(f))) {
       const text = readFileSync(file, "utf8");
@@ -32,12 +32,12 @@ describe("flat design guard (VIS-04, D-08)", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("global CSS never sets a non-zero radius, a shadow or a gradient", () => {
+  it("global CSS only uses the control radius token, no raw shadows and no gradients", () => {
     const css = readFileSync(join(src, "styles/globals.css"), "utf8");
     expect(css).not.toMatch(/gradient\(/);
     for (const m of css.matchAll(/border-radius:\s*([^;]+);/g))
-      expect(["0", "var(--radius-control)"]).toContain(m[1]?.trim());
-    for (const m of css.matchAll(/box-shadow:\s*([^;]+);/g)) expect(m[1]?.trim()).toBe("none");
+      expect(m[1]?.trim()).toBe("var(--radius-control)");
+    expect(css).not.toMatch(/box-shadow:/);
   });
 
   it("application code never uses the reference-only colour tokens (they exist for tests)", () => {

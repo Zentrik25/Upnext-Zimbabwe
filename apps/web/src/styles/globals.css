@@ -11,16 +11,13 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: var(--text-base);
+    font-weight: var(--font-weight-light);
+    font-feature-settings: "ss01" 1;
     line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
   }
-  /* Flat design guard (D-08): nothing is ever rounded or shadowed. */
-  *,
-  ::before,
-  ::after {
-    border-radius: 0;
-    box-shadow: none;
-  }
-  /* The one approved exception (D-29): form controls and buttons share a 4px radius. */
+  /* Design system (D-39): radii and shadows come only from tokens (rounded-control/card/feature, shadow-*).
+     Form controls and buttons share the 4px control radius. */
   button,
   input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="file"]),
   select,
@@ -32,6 +29,19 @@
   h3,
   p {
     margin: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink);
+    font-weight: var(--font-weight-light);
+  }
+  button,
+  a {
+    transition:
+      background-color 0.15s,
+      color 0.15s,
+      border-color 0.15s;
   }
   button,
   input,
@@ -48,7 +58,7 @@
     outline-offset: 2px;
   }
   ::placeholder {
-    color: #757575; /* browser default, 4.6:1 on white — set explicitly so it can never regress */
+    color: var(--color-muted);
     opacity: 1;
   }
 }

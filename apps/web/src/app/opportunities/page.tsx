@@ -331,7 +331,7 @@ async function Results({
           ) : null}
         </nav>
       ) : null}
-      <Notice className="mt-6 border border-border-notice">
+      <Notice className="mt-6 rounded-card border border-border-notice">
         Verification labels describe what NextJob checked. A listing that is not verified still names its
         source.
       </Notice>

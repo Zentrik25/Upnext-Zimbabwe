@@ -14,7 +14,7 @@ const base =
   "inline-flex rounded-control items-center justify-center border text-ctl font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
 const variants: Record<ButtonVariant, string> = {
   primary: "border-accent bg-accent text-white hover:bg-accent-hover",
-  secondary: "border-border-strong bg-surface text-secondary-text",
+  secondary: "border-border-strong bg-transparent text-secondary-text hover:bg-accent/5",
 };
 const sizes: Record<ButtonSize, string> = {
   standard: "min-h-control px-3 py-[7px]",
