@@ -61,6 +61,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-51 | Staff moderation of reports in the existing Django Admin: queue, filters, notes, escalation, resolution, authorised listing actions through the publishing service, append-only history and audit; authors cannot decide reports about their own listings (D-18, D-22) | M2 (owner instruction 2026-10-28); D-41; D-18; D-22 | — | — | MOD-01, MOD-02, MOD-03, MOD-04, MOD-05 | OQ-09 |
 | R-52 | Route-level loading states, reusable static skeletons, global error handling with an accessible retry, responsive from 320px | M2 (owner instruction 2026-10-28); D-19 | — | — | STATE-01, STATE-02, STATE-03 | — |
 | R-53 | Category specifications are reviewed against the loaded schemas and stay a proposal: no schema, migration or published-listing meaning changes before the owner approves OQ-06 | M2 (owner instruction 2026-10-28); D-21; P2-07 | — | — | CAT-01 | OQ-06 |
+| R-54 | Public identity is UPNEXT Careers: flat black-and-white UN monogram and wordmark, monochrome Stripe-inspired design with Inter, the one official mailbox info@upnext.co.zw, canonical domain upnext.co.zw, branded e-mail and metadata, homepage and staff site, without changing architecture, security or the editorial workflow | D-42 (owner instruction 2026-10-28); D-39; D-40; D-33 (superseded naming) | SC-01 | — | BRAND-01, BRAND-02, BRAND-03, BRAND-04 | B-01; B-02 |
 
 ## 2. Screen register
 
@@ -388,12 +389,16 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | STATE-02 | Loading skeletons announce once, hide decorative blocks, use no animation; every private data-driven route has a loading file and public routes have none (so 404 and indexing stay correct) |
 | STATE-03 | Error views: accessible retry that calls reset, focus on the heading, only a reference shown (never error text), global error renders its own document; reporting journey at 320, 390 and desktop widths |
 | CAT-01 | The loaded v1 category schemas equal the drafts, the specification pack lists every field and required flag of each, and the pack and OQ-06 stay draft and open |
+| BRAND-01 | Central brand configuration, logo assets (only black or white, no effects), Open Graph blocks, structured data and the absence of the former name in public web source |
+| BRAND-02 | E-mail identity: sender UPNEXT Careers, reply-to and footer info@upnext.co.zw, branded subjects, plain and HTML bodies without the former name, no invented mailbox |
+| BRAND-03 | Metadata and domain: homepage title and description, canonical and sitemap origin, manifest and icons, www to apex redirect rules |
+| BRAND-04 | Browser checks of the redesigned pages: homepage landmarks and categories, design tokens as computed styles, axe and no horizontal scroll at 320, 390, 768 and 1440 px, contact shows only the official address, the four journeys |
 | EMP-10 | Employer HTTP API: authentication, CSRF, validation and the whole journey |
 | EMP-11 | Staff screens for claims, profiles, verification and membership revocation run through the services |
 | EMP-12 | Public company profile and the listing-page link appear only for verified organisations with an approved profile |
 | EMP-13 | Browser: employer journey over HTTP and TLS with axe at four widths, no horizontal scroll |
 | EMP-14 | Web units: listing request body, claim, profile and listing forms, view and apply beacon |
-| MAIL-11 | Transactional messages are NextJob Zimbabwe branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
+| MAIL-11 | Transactional messages are UPNEXT Careers branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
 | PRF-01 | Profile: private by construction, own account only, no id in any route, not in Django Admin, audit records the change and never its content |
 | PRF-02 | Profile validation: limits, unknown and inactive taxonomy values, home place must be a city or province, duplicates folded, clear-on-null |
 | PRF-03 | Reset clears the preference fields and keeps the about-you fields; delete removes the row and is idempotent |
@@ -619,6 +624,10 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | STATE-02 | `apps/web/tests/unit/reports-and-states.test.tsx (loading placeholders)` | executed |
 | STATE-03 | `apps/web/tests/unit/reports-and-states.test.tsx (error views); apps/web/tests/e2e/report-journey.spec.ts (320, 390, 1440)` | unit executed; e2e runs in CI |
 | CAT-01 | `apps/api/tests/test_category_specifications.py` | executed |
+| BRAND-01 | `apps/web/tests/unit/brand.test.ts; apps/web/tests/unit/tokens.test.ts; apps/web/tests/unit/design-guard.test.ts` | executed |
+| BRAND-02 | `apps/api/tests/test_brand_email.py; apps/api/tests/test_alerts.py (message branding); apps/api/tests/test_email_provider.py` | executed |
+| BRAND-03 | `apps/web/tests/unit/canonical-host.test.ts; apps/web/tests/unit/seo.test.tsx; apps/web/tests/e2e/seo.spec.ts` | unit executed; e2e executed locally and in CI |
+| BRAND-04 | `apps/web/tests/e2e/foundation.spec.ts; apps/web/tests/e2e/a11y.spec.ts; apps/web/tests/e2e/controls.spec.ts; apps/web/tests/e2e/seo.spec.ts; the four journey specs` | executed locally against a production build and in CI |
 | EMP-10 | `apps/api/tests/test_employer_api.py` | executed |
 | EMP-11 | `apps/api/tests/test_employer_admin.py; apps/api/tests/test_employer_demo_command.py` | executed |
 | EMP-12 | `apps/api/tests/test_employer_api.py (public profile)` | executed |
