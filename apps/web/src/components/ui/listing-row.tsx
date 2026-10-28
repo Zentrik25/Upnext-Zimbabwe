@@ -46,7 +46,7 @@ export function ListingRow({
       <div className="flex items-start gap-[11px]">
         <div
           aria-hidden="true"
-          className="grid h-avatar w-avatar shrink-0 place-items-center border border-avatar-border bg-avatar-bg font-bold text-avatar-text"
+          className="grid h-avatar w-avatar shrink-0 place-items-center rounded-card border border-avatar-border bg-avatar-bg font-bold text-avatar-text"
         >
           {initials(organisation)}
         </div>

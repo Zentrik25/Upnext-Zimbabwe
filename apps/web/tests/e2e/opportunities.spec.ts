@@ -205,7 +205,8 @@ test.describe("accessibility and design of the catalogue pages", () => {
           "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
-          const allowed = el.matches(controlSel) ? ["0px", "4px"] : ["0px"]; // D-29
+          const allowed = ["0px", "4px", "6px", "8px"]; // D-39 radius scale
+          void controlSel;
           if (
             [
               cs.borderTopLeftRadius,
@@ -215,8 +216,10 @@ test.describe("accessibility and design of the catalogue pages", () => {
             ].some((r) => !allowed.includes(r))
           )
             bad.push(`radius ${el.tagName}`);
-          if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}`);
-          if (cs.backgroundImage !== "none") bad.push(`bg-image ${el.tagName}`);
+          if (/rgba\(.*\) \d+px \d+px \d+px/.test(cs.boxShadow) === false && cs.boxShadow !== "none")
+            bad.push(`shadow ${el.tagName}`);
+          if (cs.backgroundImage !== "none" && el.getAttribute("aria-hidden") !== "true")
+            bad.push(`bg-image ${el.tagName}`);
         }
         return bad;
       });

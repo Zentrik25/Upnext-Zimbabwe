@@ -2,66 +2,38 @@ import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import tokens from "../../src/design/tokens.json";
-import { colors, contrast, prod, readRepoFile, ref } from "./helpers";
-
-type Evidence = Record<string, Record<string, Record<string, unknown> | null>>;
-const evidence = JSON.parse(readRepoFile("docs/design/evidence/reference-computed-styles.json")) as {
-  header_and_chrome: Evidence;
-  listing_cards: Evidence;
-};
-
-function rgbToHex(value: string): string | null {
-  const m = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
-  if (!m || (m[4] !== undefined && Number(m[4]) === 0)) return null;
-  return "#" + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("");
-}
-
-function evidenceHexes(): Set<string> {
-  const found = new Set<string>();
-  const visit = (node: unknown) => {
-    if (typeof node === "string") {
-      for (const part of node.match(/rgba?\([^)]*\)/g) ?? []) {
-        const hex = rgbToHex(part);
-        if (hex) found.add(hex);
-      }
-    } else if (node && typeof node === "object") Object.values(node).forEach(visit);
-  };
-  visit(evidence);
-  return found;
-}
-
-// Tokens that exist in the reference's CSS but are not visible in the sampled computed-style states
-// (hover, expanded details, success tag, focus ring, overlay). Each is recorded in DESIGN_TOKENS.md.
-const CSS_ONLY = new Set([
-  "accent-hover",
-  "good",
-  "good-bg",
-  "match-bg",
-  "save-on",
-  "focus",
-  "overlay",
-  "secondary-text",
-  "check-text",
-  "row-hover",
-  "border-interest",
-  "border-empty",
-]);
+import { colors, contrast, dark, prod, readRepoFile, ref } from "./helpers";
 
 describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
-  it("every reference colour was measured in the reference, or is a documented CSS-only token", () => {
-    const measured = evidenceHexes();
-    const missing = Object.entries(colors)
-      .filter(([name, t]) => t.ref.startsWith("#") && !measured.has(t.ref) && !CSS_ONLY.has(name))
-      .map(([name, t]) => `${name} ${t.ref}`);
-    expect(missing).toEqual([]);
+  it("the colour tokens equal the Stripe-inspired design system values (D-39)", () => {
+    expect(
+      Object.fromEntries(
+        Object.entries(colors)
+          .filter(([n]) =>
+            ["ink", "accent", "accent-hover", "line", "brand-dark", "ruby", "magenta"].includes(n),
+          )
+          .map(([n, t]) => [n, t.ref]),
+      ),
+    ).toEqual({
+      ink: "#061b31",
+      accent: "#533afd",
+      "accent-hover": "#4434d4",
+      line: "#e5edf5",
+      "brand-dark": "#1c1e54",
+      ruby: "#ea2261",
+      magenta: "#f96bee",
+    });
   });
 
   it("the only production deviations are DEV-01…DEV-04 and match ACCESSIBILITY_DEVIATIONS.md", () => {
     const deviating = Object.entries(colors).filter(([, t]) => t.prod);
-    expect(Object.fromEntries(deviating.map(([n, t]) => [n, t.dev]))).toEqual({
-      meta: "DEV-01",
-      muted: "DEV-02",
-      company: "DEV-03",
+    expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(
+      new Set(["DEV-01", "DEV-02", "DEV-03", "DEV-04"]),
+    );
+    expect(Object.fromEntries(deviating.map(([n, t]) => [n, t.dev]))).toMatchObject({
+      muted: "DEV-01",
+      good: "DEV-02",
+      urgent: "DEV-03",
       "control-border": "DEV-04",
     });
     const doc = readRepoFile("docs/design/ACCESSIBILITY_DEVIATIONS.md");
@@ -73,8 +45,8 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     }
   });
 
-  it("the DEV-04 control border is the value approved in D-24", () => {
-    expect(colors["control-border"]?.prod).toBe("#7693b7");
+  it("the DEV-04 control border is the corrected value", () => {
+    expect(colors["control-border"]?.prod).toBe("#7a87a2");
   });
 
   it("production text pairs meet WCAG 2.2 AA (A11Y-06)", () => {
@@ -92,6 +64,8 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       ["company", "surface", 4.5],
       ["company", "row-hover", 4.5],
       ["accent", "surface", 4.5],
+      ["accent", "surface-pale", 4.5],
+      ["brand-dark-text", "brand-dark", 4.5],
       ["white", "accent", 4.5],
       ["white", "accent-hover", 4.5],
       ["secondary-text", "surface", 4.5],
@@ -127,43 +101,93 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     expect(failing).toEqual([]);
   });
 
-  it("each deviation is the minimum necessary: the reference value really fails, and nothing else fails", () => {
+  it("each deviation is the minimum necessary: the design-system value really fails, the corrected one passes", () => {
     const failsRef: [string, string, number][] = [
-      ["meta", "tag-bg", 4.5],
-      ["meta", "row-hover", 4.5],
-      ["muted", "surface-notice", 4.5],
-      ["company", "row-hover", 4.5],
+      ["muted", "surface-pale", 4.5],
+      ["good", "good-bg", 4.5],
+      ["urgent", "urgent-bg", 4.5],
       ["control-border", "surface", 3],
     ];
-    for (const [fg, bg, min] of failsRef) expect(contrast(ref(fg), ref(bg)), `${fg}/${bg}`).toBeLessThan(min);
-    // …and the corrected values are close to the reference (imperceptible for the three text colours)
-    for (const name of ["meta", "muted", "company"]) {
-      const a = ref(name),
-        b = prod(name);
-      const delta = [1, 3, 5].map((i) =>
-        Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16)),
-      );
-      expect(Math.max(...delta), name).toBeLessThanOrEqual(6);
+    for (const [fg, bg, min] of failsRef) {
+      expect(contrast(ref(fg), ref(bg)), `${fg}/${bg} (design system)`).toBeLessThan(min);
+      expect(contrast(prod(fg), prod(bg)), `${fg}/${bg} (corrected)`).toBeGreaterThanOrEqual(min);
     }
   });
 
-  it("typography and layout tokens equal the measured reference values", () => {
-    expect(tokens.fontFamily).toBe("Arial, Helvetica, sans-serif");
-    expect(tokens.fontSizes).toMatchObject({
-      micro: "10px",
-      small: "11px",
-      ctl: "12px",
-      base: "13px",
-      title: "14px",
-      section: "17px",
-      logo: "25px",
-    });
-    expect(tokens.fontSizes.hero).toBe("clamp(29px, 3.6vw, 39px)");
-    expect(tokens.containers.page).toBe("1190px");
-    expect(tokens.heights).toEqual({ control: "33px", field: "36px", search: "39px", avatar: "39px" });
-    const header = evidence.header_and_chrome["1440"]?.body as Record<string, string>;
-    expect(header.fontFamily).toBe("Arial, Helvetica, sans-serif");
-    expect(header.fontSize).toBe("13px");
+  it("typography, radius, shadow and layout tokens equal the design system", () => {
+    expect(tokens.fontFamily).toMatch(/^"sohne-var", "SF Pro Display"/);
+    expect(tokens.fontSizes.hero).toBe("clamp(32px, 4.4vw, 48px)");
+    expect(tokens.fontWeights).toMatchObject({ light: "300", strong: "300", medium: "400" });
+    expect(tokens.radii).toMatchObject({ control: "4px", card: "6px", feature: "8px" });
+    expect(Object.keys(tokens.shadows)).toEqual(["subtle", "ambient", "elevated", "deep"]);
+    expect(tokens.shadows.elevated).toBe(
+      "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
+    );
+    expect(tokens.containers.page).toBe("1080px");
+  });
+
+  it("every colour token has a dark value and the generated CSS carries both dark blocks (D-40)", () => {
+    for (const [name, t] of Object.entries(colors)) expect(t.dark, name).toBeTruthy();
+    const css = readRepoFile("apps/web/src/styles/tokens.generated.css");
+    expect(css).toContain(':root[data-theme="dark"] {');
+    expect(css).toContain("@media (prefers-color-scheme: dark) {");
+    expect(css).toContain(':root:not([data-theme="light"]) {');
+    expect(css.match(/color-scheme: dark;/g)).toHaveLength(2);
+    expect(Object.keys(tokens.darkShadows)).toEqual(Object.keys(tokens.shadows));
+  });
+
+  it("dark text pairs meet WCAG 2.2 AA (A11Y-06)", () => {
+    const pairs: [string, string][] = [
+      ["ink", "surface"],
+      ["ink", "surface-pale"],
+      ["ink", "row-hover"],
+      ["muted", "surface"],
+      ["muted", "surface-notice"],
+      ["muted", "surface-pale"],
+      ["muted", "row-hover"],
+      ["meta", "tag-bg"],
+      ["company", "row-hover"],
+      ["accent", "surface"],
+      ["accent", "surface-pale"],
+      ["accent", "match-bg"],
+      ["white", "accent-solid"],
+      ["white", "accent-solid-hover"],
+      ["secondary-text", "surface"],
+      ["nav-text", "surface"],
+      ["eyebrow", "surface"],
+      ["tab-text", "surface"],
+      ["feed-tab-text", "surface"],
+      ["check-text", "surface"],
+      ["empty-text", "surface"],
+      ["good", "good-bg"],
+      ["urgent", "urgent-bg"],
+      ["urgent", "surface"],
+      ["avatar-text", "avatar-bg"],
+      ["brand-dark-text", "brand-dark"],
+    ];
+    const failing = pairs
+      .filter(([fg, bg]) => contrast(dark(fg), dark(bg)) < 4.5)
+      .map(([a, b]) => `${a}/${b}`);
+    expect(failing).toEqual([]);
+  });
+
+  it("dark non-text pairs meet 3:1 (A11Y-07)", () => {
+    const pairs: [string, string][] = [
+      ["control-border", "surface"],
+      ["control-border", "surface-pale"],
+      ["focus", "surface"],
+      ["focus", "surface-pale"],
+      ["save-on", "surface"],
+      ["save-idle", "surface"],
+      ["border-empty", "surface"],
+    ];
+    const failing = pairs.filter(([a, b]) => contrast(dark(a), dark(b)) < 3).map(([a, b]) => `${a}/${b}`);
+    expect(failing).toEqual([]);
+  });
+
+  it("the light solid button pairs still pass", () => {
+    expect(contrast("#ffffff", prod("accent-solid"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast("#ffffff", prod("accent-solid-hover"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("the generated Tailwind theme is up to date with tokens.json", () => {

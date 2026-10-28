@@ -31,22 +31,29 @@ export default async function HomePage() {
         <JsonLd key={index} data={block} />
       ))}
       <Notice>Every listing names its source. Applications happen on the issuer&apos;s own channel.</Notice>
-      <section aria-labelledby="home-title" className="border-b border-line py-[30px] max-sm:py-6">
-        <Container>
+      <section
+        aria-labelledby="home-title"
+        className="relative border-b border-line py-20 text-center max-sm:py-12"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-ruby to-magenta"
+        />
+        <Container className="flex flex-col items-center">
           <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
             Opportunity discovery for Zimbabwe
           </p>
           <h1 id="home-title" className="mt-2 mb-[6px] text-hero font-strong leading-hero tracking-hero">
             Discover what&apos;s next.
           </h1>
-          <p className="text-base text-muted">
+          <p className="max-w-[560px] text-title text-muted">
             Jobs, internships, graduate programmes, scholarships, tenders and grants in one place.
           </p>
           <SearchGroup
             action="/opportunities"
             method="get"
             aria-label="Search opportunities"
-            className="mt-4"
+            className="mt-8 w-full"
           >
             <label htmlFor="home-q" className="sr-only">
               Search by title, organisation or keyword
@@ -60,8 +67,8 @@ export default async function HomePage() {
             />
           </SearchGroup>
           {categories.length > 0 ? (
-            <nav aria-label="Browse by category" className="mt-4">
-              <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+            <nav aria-label="Browse by category" className="mt-6">
+              <ul className="m-0 flex list-none flex-wrap justify-center gap-2 p-0">
                 {categories.map((category) => (
                   <li key={category.code}>
                     <Link
@@ -78,7 +85,7 @@ export default async function HomePage() {
         </Container>
       </section>
       <Container className="pt-[22px] pb-[65px]">
-        <h2 className="text-title font-strong">Latest opportunities</h2>
+        <h2 className="text-section font-strong tracking-section">Latest opportunities</h2>
         {rows.length > 0 ? (
           <div className="mt-2 border-t border-line" data-testid="latest">
             {rows.map((row) => (

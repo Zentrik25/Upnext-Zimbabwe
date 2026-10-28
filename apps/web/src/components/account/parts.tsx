@@ -14,7 +14,10 @@ export function FormSuccess({ children, className, ...props }: HTMLAttributes<HT
   return (
     <div
       role="status"
-      className={cn("border border-border-interest bg-surface-pale p-[10px] text-base", className)}
+      className={cn(
+        "rounded-card border border-border-interest bg-surface-pale p-[10px] text-base",
+        className,
+      )}
       {...props}
     >
       {children}
