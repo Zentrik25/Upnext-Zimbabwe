@@ -4,6 +4,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends rclone rsync openssh-client \
  && rm -rf /var/lib/apt/lists/*
 COPY backup.sh restore.sh prune.sh offsite.sh measure-restore.sh /opt/backup/
-RUN chmod 0555 /opt/backup/*.sh
+RUN chmod 0555 /opt/backup/*.sh && mkdir -p /backups && chown postgres:postgres /backups && chmod 0700 /backups
 USER postgres
 ENTRYPOINT ["bash", "/opt/backup/backup.sh"]
