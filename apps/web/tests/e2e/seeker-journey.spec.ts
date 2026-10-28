@@ -268,7 +268,7 @@ test("6. alerts are set up with explicit consent, generated locally and never du
   expect(mail.body).toContain("/opportunities/");
   expect(mail.body).toContain("Stop these e-mails:");
   expect(mail.body).toContain("Change what you receive:");
-  expect(mail.body).not.toContain("UPNEXT");
+  expect(mail.body.toLowerCase()).not.toContain("nextjob");
   expect(mail.body).not.toMatch(/Public Health Programme Assistant[\s\S]*Public Health Programme Assistant/);
 
   // a second pass has nothing new and sends nothing

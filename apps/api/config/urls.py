@@ -9,6 +9,7 @@ from core import views as core_views
 from core.admin_login import ThrottledAdminAuthenticationForm
 
 admin.site.site_header = f"{settings.UPNEXT_BRAND_NAME} staff"
+admin.site.site_title = f"{settings.UPNEXT_BRAND_NAME} staff"
 admin.site.index_title = "Editorial workspace"
 admin.site.login_form = ThrottledAdminAuthenticationForm
 

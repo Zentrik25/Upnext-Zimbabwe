@@ -12,7 +12,7 @@ import { VERIFICATION } from "@/lib/format";
 export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
   return (
     <section aria-labelledby="home-title" className="relative overflow-hidden border-b border-line">
-      <Monogram className="pointer-events-none absolute -top-10 -right-24 h-[420px] w-auto text-surface-pale max-lg:hidden" />
+      <Monogram className="pointer-events-none absolute -right-16 -bottom-20 h-[340px] w-auto text-surface-pale max-md:hidden" />
       <Container className="relative pt-16 pb-14 max-sm:pt-10 max-sm:pb-10">
         <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
           Opportunities across Zimbabwe
@@ -104,7 +104,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
           Six kinds of opportunity, each with the same labelled sources and deadlines.
         </p>
         <nav aria-label="Browse by category" className="mt-6">
-          <ul className="m-0 grid list-none grid-cols-3 gap-4 p-0 max-lg:grid-cols-2 max-sm:grid-cols-1">
+          <ul className="m-0 grid list-none grid-cols-3 gap-4 p-0 max-md:grid-cols-2 max-sm:grid-cols-1">
             {categories.map((category) => (
               <li key={category.code}>
                 <Link
@@ -141,7 +141,7 @@ export function TrustSection() {
           {BRAND.name} lists opportunities published by other organisations. It does not take applications,
           and it says plainly what has and has not been checked.
         </p>
-        <div className="mt-6 grid grid-cols-3 gap-4 max-lg:grid-cols-1">
+        <div className="mt-6 grid grid-cols-3 gap-4 max-md:grid-cols-1">
           <div className="rounded-card border border-border-panel bg-surface p-5">
             <h3 className="text-title font-strong">Every listing names its source</h3>
             <p className="mt-2 text-base text-muted">
@@ -188,7 +188,7 @@ export function TrustSection() {
 export function EmployerSection() {
   return (
     <section aria-labelledby="employer-title" className="bg-brand-dark py-14 text-brand-dark-text">
-      <Container className="grid grid-cols-[1.2fr_1fr] items-center gap-10 max-lg:grid-cols-1">
+      <Container className="grid grid-cols-[1.2fr_1fr] items-center gap-10 max-md:grid-cols-1">
         <div>
           <h2 id="employer-title" className="text-display font-strong tracking-display text-white">
             For employers and organisations
@@ -198,17 +198,10 @@ export function EmployerSection() {
             Applications stay on your own channel.
           </p>
           <p className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink
-              href="/employers"
-              className="border-white bg-white text-black hover:border-line hover:bg-line"
-            >
+            <ButtonLink href="/employers" variant="inverse">
               Employer services
             </ButtonLink>
-            <ButtonLink
-              href="/employer"
-              variant="secondary"
-              className="border-brand-dark-text text-white hover:bg-white/10"
-            >
+            <ButtonLink href="/employer" variant="outline-inverse">
               Employer sign-in
             </ButtonLink>
           </p>

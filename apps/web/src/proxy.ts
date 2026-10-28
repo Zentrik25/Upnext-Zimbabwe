@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { canonicalRedirect } from "@/lib/canonical-host";
 
 /**
  * Per-request Content-Security-Policy with a nonce (SECURITY_ARCHITECTURE §6.1). Next.js applies the
@@ -6,6 +7,12 @@ import { NextResponse, type NextRequest } from "next/server";
  * dynamically. Static assets and prefetches are excluded by the matcher.
  */
 export function proxy(request: NextRequest) {
+  const moved = canonicalRedirect(
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    request.nextUrl,
+    process.env.UPNEXT_PUBLIC_BASE_URL,
+  );
+  if (moved) return NextResponse.redirect(moved, 308);
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV !== "production";
   const csp = [

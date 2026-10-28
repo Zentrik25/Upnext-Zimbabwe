@@ -56,7 +56,8 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        # The staff site branding (D-42) must win over Django admin's own base_site.html.
+        "DIRS": [BASE_DIR / "core" / "staff_templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

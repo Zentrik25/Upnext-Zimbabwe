@@ -27,9 +27,7 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
 
   it("the only production deviations are DEV-02…DEV-04 (DEV-01 retired by D-42) and match ACCESSIBILITY_DEVIATIONS.md", () => {
     const deviating = Object.entries(colors).filter(([, t]) => t.prod);
-    expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(
-      new Set(["DEV-02", "DEV-03", "DEV-04"]),
-    );
+    expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(new Set(["DEV-02", "DEV-03", "DEV-04"]));
     expect(Object.fromEntries(deviating.map(([n, t]) => [n, t.dev]))).toMatchObject({
       good: "DEV-02",
       urgent: "DEV-03",

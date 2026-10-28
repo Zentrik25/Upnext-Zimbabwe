@@ -145,10 +145,15 @@ test.describe("home and static pages (SC-01, SC-14)", () => {
     expect(await robotsMeta(page)).toBeNull();
   });
 
-  test("contact never shows an invented address", async ({ page }) => {
+  test("contact shows the one official address and no other mailbox", async ({ page }) => {
     await page.goto("/contact");
-    await expect(page.getByTestId("contact-pending")).toBeVisible();
-    await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0);
+    const link = page.getByTestId("contact-email");
+    await expect(link).toHaveText("info@upnext.co.zw");
+    await expect(link).toHaveAttribute("href", "mailto:info@upnext.co.zw");
+    const hrefs = await page
+      .locator('a[href^="mailto:"]')
+      .evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+    expect(new Set(hrefs)).toEqual(new Set(["mailto:info@upnext.co.zw"]));
   });
 
   for (const path of ["/privacy", "/terms"]) {

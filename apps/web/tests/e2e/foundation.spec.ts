@@ -20,7 +20,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/UPNEXT Careers/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover what's next.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your next opportunity starts here.");
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Browse by category" })).toBeVisible();
@@ -148,13 +148,13 @@ test.describe("accessibility (A11Y-01…A11Y-05)", () => {
   });
 });
 
-test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
+test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
   const SHADOWS = [
     "none",
-    "rgba(23, 23, 23, 0.06) 0px 3px 6px 0px",
-    "rgba(23, 23, 23, 0.08) 0px 15px 35px 0px",
-    "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
-    "rgba(3, 3, 39, 0.25) 0px 14px 21px -14px, rgba(0, 0, 0, 0.1) 0px 8px 17px -8px",
+    "rgba(16, 24, 40, 0.06) 0px 3px 6px 0px",
+    "rgba(16, 24, 40, 0.08) 0px 15px 35px 0px",
+    "rgba(16, 24, 40, 0.18) 0px 30px 45px -30px, rgba(0, 0, 0, 0.08) 0px 18px 36px -18px",
+    "rgba(16, 24, 40, 0.22) 0px 14px 21px -14px, rgba(0, 0, 0, 0.08) 0px 8px 17px -8px",
   ];
   for (const path of PAGES) {
     test(`radii, shadows and gradients stay inside the design system on ${path}`, async ({ page }) => {
@@ -175,7 +175,7 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
           const visible =
             cs.boxShadow.replace(/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?/g, "").replace(/, $/, "") || "none";
           if (!shadows.includes(visible)) bad.push(`shadow ${el.tagName}.${el.className}`);
-          // The only gradient is the decorative ruby to magenta accent, hidden from assistive technology.
+          // No gradients (the logo and the identity are flat): only hidden decorative elements may carry a background image.
           if (cs.backgroundImage !== "none" && el.getAttribute("aria-hidden") !== "true")
             bad.push(`bg-image ${el.tagName}.${el.className}`);
           if (cs.textShadow !== "none") bad.push(`text-shadow ${el.tagName}.${el.className}`);
@@ -186,30 +186,30 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
     });
   }
 
-  test("body typography follows the design system (light weight, 15px, line-height 1.5, deep navy on white)", async ({
+  test("body typography follows the design system (Inter 400, 15px, line-height 1.5, ink on white)", async ({
     page,
   }) => {
     await page.goto("/");
     const body = page.locator("body");
     await expect(body).toHaveCSS("font-size", "15px");
-    await expect(body).toHaveCSS("font-weight", "300");
+    await expect(body).toHaveCSS("font-weight", "400");
     await expect(body).toHaveCSS("line-height", "22.5px");
-    await expect(body).toHaveCSS("color", rgb("#061b31"));
+    await expect(body).toHaveCSS("color", rgb("#101828"));
     await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
   });
 
-  test("primary and secondary buttons use the purple accent and the 4px control radius", async ({ page }) => {
+  test("primary and secondary buttons use the black accent and the 4px control radius", async ({ page }) => {
     await page.goto("/design-system");
     const primary = page.getByTestId("btn-primary");
-    await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
+    await expect(primary).toHaveCSS("background-color", rgb("#000000"));
     await expect(primary).toHaveCSS("border-top-left-radius", "4px");
     await primary.hover();
-    await expect(primary).toHaveCSS("background-color", rgb("#4434d4"));
+    await expect(primary).toHaveCSS("background-color", rgb("#1d2939"));
   });
 
   test("form controls use the corrected DEV-04 border", async ({ page }) => {
     await page.goto("/design-system");
-    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#7a87a2"));
+    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#667085"));
     await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
 
@@ -219,8 +219,8 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
     test("Auto follows a dark device and the stored choice overrides it", async ({ page }) => {
       await page.goto("/");
       const body = page.locator("body");
-      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
-      await expect(body).toHaveCSS("color", rgb("#e8ecf0"));
+      await expect(body).toHaveCSS("background-color", rgb("#0b0c0e"));
+      await expect(body).toHaveCSS("color", rgb("#f2f4f7"));
       await page.getByRole("button", { name: "Light" }).click();
       await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
       await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
@@ -228,14 +228,14 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
       await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
       await page.getByRole("button", { name: "Auto" }).click();
       await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
-      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
+      await expect(body).toHaveCSS("background-color", rgb("#0b0c0e"));
     });
 
-    test("the primary button keeps white text on the solid purple in dark", async ({ page }) => {
+    test("the primary button inverts in dark: black text on the white solid", async ({ page }) => {
       await page.goto("/design-system");
       const primary = page.getByTestId("btn-primary");
-      await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
-      await expect(primary).toHaveCSS("color", rgb("#ffffff"));
+      await expect(primary).toHaveCSS("background-color", rgb("#ffffff"));
+      await expect(primary).toHaveCSS("color", rgb("#000000"));
     });
 
     test("no serious or critical accessibility violations on the home page in dark", async ({ page }) => {

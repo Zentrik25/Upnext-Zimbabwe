@@ -1,0 +1,109 @@
+/* UPNEXT Careers staff site (D-42): the Django Admin in the same flat black-and-white identity as the public
+   site. Only Django's own colour variables are overridden, so every admin screen follows. No gradients. */
+:root,
+html[data-theme="light"] {
+  --primary: #000000;
+  --secondary: #1d2939;
+  --accent: #101828;
+  --primary-fg: #ffffff;
+  --body-fg: #101828;
+  --body-bg: #ffffff;
+  --body-quiet-color: #475467;
+  --body-loud-color: #000000;
+  --header-color: #d0d5dd;
+  --header-branding-color: #ffffff;
+  --header-bg: #000000;
+  --header-link-color: #ffffff;
+  --breadcrumbs-fg: #d0d5dd;
+  --breadcrumbs-link-fg: #ffffff;
+  --breadcrumbs-bg: #1d2939;
+  --link-fg: #101828;
+  --link-hover-color: #000000;
+  --link-selected-fg: #000000;
+  --hairline-color: #e4e7ec;
+  --border-color: #d0d5dd;
+  --darkened-bg: #f8fafc;
+  --selected-bg: #f2f4f7;
+  --selected-row: #f2f4f7;
+  --button-fg: #ffffff;
+  --button-bg: #000000;
+  --button-hover-bg: #1d2939;
+  --default-button-bg: #000000;
+  --default-button-hover-bg: #1d2939;
+  --close-button-bg: #475467;
+  --close-button-hover-bg: #344054;
+  --object-tools-fg: #ffffff;
+  --object-tools-bg: #475467;
+  --object-tools-hover-bg: #344054;
+  --font-family-primary: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    --primary: #000000;
+    --secondary: #1d2939;
+    --accent: #d0d5dd;
+    --body-fg: #f2f4f7;
+    --body-bg: #0b0c0e;
+    --body-quiet-color: #98a2b3;
+    --body-loud-color: #ffffff;
+    --link-fg: #f2f4f7;
+    --link-hover-color: #ffffff;
+    --link-selected-fg: #ffffff;
+    --hairline-color: #272b33;
+    --border-color: #475467;
+    --darkened-bg: #111317;
+    --selected-bg: #16181d;
+    --selected-row: #16181d;
+    --button-bg: #ffffff;
+    --button-fg: #000000;
+    --button-hover-bg: #e4e7ec;
+    --default-button-bg: #ffffff;
+    --default-button-hover-bg: #e4e7ec;
+  }
+}
+#header {
+  border-bottom: 1px solid #1d2939;
+}
+#branding h1 {
+  margin: 0;
+  line-height: 0;
+}
+#branding img {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+#branding .staff-label {
+  margin-left: 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d0d5dd;
+}
+a:link,
+a:visited {
+  text-decoration: none;
+}
+#content a:link,
+#content a:visited {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: #101828;
+  color: #ffffff;
+  font-weight: 600;
+}
+.module h2 a,
+.module caption a {
+  color: #ffffff;
+}
+:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+#header :focus-visible {
+  outline-color: #ffffff;
+}
