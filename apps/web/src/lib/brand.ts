@@ -15,7 +15,7 @@ export const BRAND = {
   descriptor: "Careers",
   /** Previous development name, kept for documentation and redirects only. Never shown to visitors. */
   formerName: "UPNEXT Careers",
-  /** The apex domain is canonical; `www` redirects to it (infrastructure/nginx, not DNS in this change). */
+  /** https://upnext.co.zw is the only public and canonical website. No other hostname or redirect is configured. */
   domain: "upnext.co.zw",
   canonicalOrigin: "https://upnext.co.zw",
   /** The only official mailbox: contact, privacy and every system e-mail (sender name + reply-to). */

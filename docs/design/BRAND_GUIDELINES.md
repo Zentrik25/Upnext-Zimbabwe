@@ -5,7 +5,7 @@ Status: DRAFT (owner instruction 2026-10-28, decision D-42). Previous developmen
 | Property | Value |
 |---|---|
 | Brand | UPNEXT Careers (short name UPNEXT; descriptor CAREERS) |
-| Primary domain | https://upnext.co.zw (apex is canonical; `www` redirects to it) |
+| Primary domain | https://upnext.co.zw, the only public and canonical website (no other hostname or redirect is configured) |
 | Official mailbox | info@upnext.co.zw: contact, privacy, and every system e-mail. No other mailbox exists or is invented |
 | Logo | Black UN monogram; white inverse; wordmark UPNEXT with CAREERS beneath |
 | Design direction | Stripe-inspired structure (D-39) retuned to a monochrome identity with Inter (D-42) |
@@ -68,7 +68,6 @@ Sender name **UPNEXT Careers**, from and reply-to **info@upnext.co.zw** (`UPNEXT
 | Icons and manifest | favicons, Apple touch icon, `manifest.webmanifest`, theme colour |
 | Structured data | WebSite and Organization with the logo and email |
 | Sitemap, robots | unchanged paths; absolute URLs come from the configured origin |
-| `www` to apex | application-level 308 in `src/proxy.ts` (`src/lib/canonical-host.ts`, only for a real hostname); the shared production proxy should also redirect (`DOMAIN_AND_DNS_SETUP.md`). **No DNS was changed** |
 | Listing URLs | unchanged (slugs are immutable) |
 | Links in e-mail | built from the same configured origin |
 
@@ -78,9 +77,9 @@ Database tables, migrations, Django app names, `UPNEXT_*` variables, cookie name
 
 ## 11. Open points for the owner
 
-1. A vector of the wordmark (the supplied one is raster; the typeset wordmark is a close match, not identical).
+1. **Vectorisation of the wordmark is outstanding.** The supplied wordmark is raster only (kept as `docs/design/brand/UPNEXT_LOGO_SHEET.png`); the interface uses a typeset stand-in until the owner supplies a vector.
 2. Whether the staff site (Django Admin) should keep its own typography (it now uses the black header and logo).
-3. Production proxy: add the `www` to apex redirect and TLS for `upnext.co.zw` (not done here).
+3. Production proxy and TLS for `upnext.co.zw`: not configured here; shared production proxy changes need separate approval.
 4. Domain `upnext.co.zw` and mailbox `info@upnext.co.zw`: creation, SPF/DKIM/DMARC and sender verification (B-01).
 5. Privacy and terms text still say "[to be decided]" in places and remain drafts for legal review (B-02).
 

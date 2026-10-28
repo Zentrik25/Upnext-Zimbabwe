@@ -391,7 +391,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | CAT-01 | The loaded v1 category schemas equal the drafts, the specification pack lists every field and required flag of each, and the pack and OQ-06 stay draft and open |
 | BRAND-01 | Central brand configuration, logo assets (only black or white, no effects), Open Graph blocks, structured data and the absence of the former name in public web source |
 | BRAND-02 | E-mail identity: sender UPNEXT Careers, reply-to and footer info@upnext.co.zw, branded subjects, plain and HTML bodies without the former name, no invented mailbox |
-| BRAND-03 | Metadata and domain: homepage title and description, canonical and sitemap origin, manifest and icons, www to apex redirect rules |
+| BRAND-03 | Metadata and domain: homepage title and description, canonical and sitemap origin, manifest and icons |
 | BRAND-04 | Browser checks of the redesigned pages: homepage landmarks and categories, design tokens as computed styles, axe and no horizontal scroll at 320, 390, 768 and 1440 px, contact shows only the official address, the four journeys |
 | EMP-10 | Employer HTTP API: authentication, CSRF, validation and the whole journey |
 | EMP-11 | Staff screens for claims, profiles, verification and membership revocation run through the services |
@@ -626,7 +626,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | CAT-01 | `apps/api/tests/test_category_specifications.py` | executed |
 | BRAND-01 | `apps/web/tests/unit/brand.test.ts; apps/web/tests/unit/tokens.test.ts; apps/web/tests/unit/design-guard.test.ts` | executed |
 | BRAND-02 | `apps/api/tests/test_brand_email.py; apps/api/tests/test_alerts.py (message branding); apps/api/tests/test_email_provider.py` | executed |
-| BRAND-03 | `apps/web/tests/unit/canonical-host.test.ts; apps/web/tests/unit/seo.test.tsx; apps/web/tests/e2e/seo.spec.ts` | unit executed; e2e executed locally and in CI |
+| BRAND-03 | `apps/web/tests/unit/seo.test.tsx; apps/web/tests/e2e/seo.spec.ts` | unit executed; e2e executed locally and in CI |
 | BRAND-04 | `apps/web/tests/e2e/foundation.spec.ts; apps/web/tests/e2e/a11y.spec.ts; apps/web/tests/e2e/controls.spec.ts; apps/web/tests/e2e/seo.spec.ts; the four journey specs` | executed locally against a production build and in CI |
 | EMP-10 | `apps/api/tests/test_employer_api.py` | executed |
 | EMP-11 | `apps/api/tests/test_employer_admin.py; apps/api/tests/test_employer_demo_command.py` | executed |
