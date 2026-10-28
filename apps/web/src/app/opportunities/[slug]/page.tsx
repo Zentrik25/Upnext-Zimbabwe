@@ -248,6 +248,22 @@ export default async function OpportunityPage({ params }: Props) {
                 ))}
               </ul>
             </Panel>
+            <Panel>
+              <h2 className="text-title font-strong">Something wrong?</h2>
+              <p className="mt-2 text-small text-muted">
+                Tell us about a suspected fake, a request for payment, wrong application details or an expired
+                listing.
+              </p>
+              <p className="mt-2 text-base">
+                <Link
+                  href={`/opportunities/${listing.slug}/report`}
+                  className="text-accent underline"
+                  data-testid="report-link"
+                >
+                  Report this opportunity
+                </Link>
+              </p>
+            </Panel>
           </aside>
         </article>
       </Container>

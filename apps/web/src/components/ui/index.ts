@@ -26,3 +26,12 @@ export { SaveButton } from "./save-button";
 export { SearchGroup } from "./search-group";
 export { Tabs, type TabItem } from "./tabs";
 export { Tag, type TagTone } from "./tag";
+export {
+  LoadingRegion,
+  SkeletonBlock,
+  SkeletonLine,
+  SkeletonListingRow,
+  SkeletonListingRows,
+  SkeletonPageHeading,
+  SkeletonPanel,
+} from "./skeleton";

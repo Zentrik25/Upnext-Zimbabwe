@@ -1,19 +1,18 @@
 "use client";
 
 import { Container } from "@/components/layout/container";
-import { Button, EmptyState } from "@/components/ui";
+import { ErrorView } from "@/components/ui/error-view";
 
-export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
+export default function ErrorPage({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <Container className="py-10">
-      <EmptyState as="h1" title="Something went wrong">
-        We could not load this page. Please try again.
-        <span className="mt-3 block">
-          <Button variant="secondary" onClick={reset}>
-            Try again
-          </Button>
-        </span>
-      </EmptyState>
+      <ErrorView reset={reset} digest={error.digest} />
     </Container>
   );
 }
