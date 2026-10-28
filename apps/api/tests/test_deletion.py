@@ -320,6 +320,7 @@ def test_no_table_outside_the_known_set_holds_the_account_address(make_user: Cal
         ("accounts_authtoken", "new_email"),  # rows are deleted with the account
         ("notifications_emailoutbox", "to_address"),
         ("notifications_emailsuppression", "address_hash"),  # a keyed hash, not an address
+        ("reports_listingreport", "contact_email"),  # optional; cleared after closing and on deletion
         ("catalog_organisation", "website_url"),
         ("opportunities_opportunityversion", "application_email"),
         ("opportunities_opportunityversion", "location_text"),

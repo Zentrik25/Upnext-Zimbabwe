@@ -1,0 +1,11 @@
+Hello {{ display_name }},
+
+{% if amendment %}Your amendment to "{{ title }}" was approved and is now live.{% else %}Your listing "{{ title }}" was approved and is now published.{% endif %}
+{% if public_url %}
+See it as visitors do: {{ public_url }}
+{% endif %}
+Publishing does not mean NextJob has verified the opportunity with you; the page says what was checked. Applications happen on your own channel.
+
+Manage the listing: {{ listing_url }}
+
+You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.

@@ -48,8 +48,23 @@ No free text, no date of birth, gender, photo, CV, phone number or identity numb
 | The decision and, for verification, the method and the evidence note written by staff | `employers_organisationclaim.decision_reason`, `employers_organisationverification.*` | accountability for who may post | staff; the claimant sees a rejection reason | kept; period undecided. Staff are told not to paste documents or identity numbers |
 | Which account may act for which organisation, its role, who granted and revoked it | `employers_employermembership.*` | authority to post | staff; the member | kept as history; ended when the account is deleted |
 | Company profile text | `employers_profilerevision.*` | public company page (about the organisation, not a person) | public once approved | kept with its history |
+| Notices about claims, listings and expiry (M2): the outbox row holds the member's address and a plain-text message with the listing title and links; no token | `notifications_emailoutbox.to_address` (see section A) | tell employer members what happened to their claim or listing | Administrators, masked | address cleared 30 days after sending; dead messages 90 days. **Nothing is written while e-mail delivery is unverified (B-01)** |
 | Marker that a listing came from an employer, and its organisation | `employers_employerlisting.*` | access control | staff; the organisation's members | kept with the listing |
 | Daily counts of views and apply-link clicks per listing | `employers_listingdailystat.*` | basic analytics for the employer | the organisation's members | counts only: **no cookie, identifier, address or user agent is stored**; provisional retention **12 months**, then deleted by the worker (D-36), for the lawyer to confirm |
+
+## B3. Public reports about listings (M2)
+
+Anyone may report a public listing without an account. A report holds only what the reporter chose to write. There is no file upload, no account link, no cookie and **no IP address or browser string is stored**.
+
+| Data | Table.column | Purpose | Who sees it | Retention |
+|---|---|---|---|---|
+| Reason, free-text details (plain text, up to 2000 characters) and an optional https evidence link | `reports_listingreport.reason`, `reports_listingreport.details`, `reports_listingreport.evidence_url` | let staff check the concern | staff who may read reports (Editors, Administrators) | kept with the report; period undecided (P-REPORT-02). Reporters are told not to include other people's personal data; staff may be shown text that names a person |
+| Optional contact e-mail, only if the reporter wants to be asked a question | `reports_listingreport.contact_email` | ask the reporter one question | staff who may read reports | **cleared 30 days after the report is closed** (provisional, `UPNEXT_RETENTION_REPORT_CONTACT_DAYS`, for the lawyer to confirm); the worker clears it |
+| Keyed one-way hash of (client network address, listing, reason) | `reports_listingreport.dedupe_key` | fold repeats from one client into one report | nobody | cleared with the contact e-mail after closing; not reversible without the server key |
+| Reference shown to the reporter, repeat count, status, outcome, who closed it and when | `reports_listingreport.*` | case handling | staff | kept with the report |
+| Who took which step and the staff note | `reports_reportevent.*` (append-only) and `audit_auditevent` (opaque account id, action; never the note text) | accountability | staff who may read reports; Administrators | kept; period undecided (OQ-09) |
+
+A report never changes a listing. Reports are not shown publicly. The rate-limit counter for reports is a keyed hash in the shared cache (minutes to hours), like the other public endpoints.
 
 ## C. Information about organisations and listings (not personal data of site users)
 

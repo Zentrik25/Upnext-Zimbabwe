@@ -89,6 +89,17 @@ export default function PrivacyPage() {
           ]}
         />
       </Section>
+      <Section title="If you report a listing">
+        <Bullets
+          items={[
+            "You do not need an account. We keep the reason you chose, what you wrote, the optional web address you gave and the time of the report.",
+            "We do not store your IP address or browser details with the report. To stop one person filling the queue we keep a one-way code of your network address, the listing and the reason while the report is open; it is deleted after the report is closed.",
+            "Your e-mail address is optional. If you give it, staff may use it to ask one question. It is removed 30 days after the report is closed, and straight away if it is the address of an account that you delete. [Period for lawyer review.]",
+            "Please do not put other people's personal details in a report. Staff can see what you write. A report never removes a listing by itself.",
+            "[How long closed reports and staff notes are kept: to be decided.]",
+          ]}
+        />
+      </Section>
       <Section title="Deleting your account">
         <p>
           You can ask us to delete your account from the account page. Your request waits 14 days so that you

@@ -8,7 +8,7 @@ Status: DRAFT (Phase 5, P5-05). Describes what the application provides and what
 |---|---|---|
 | Probes | `/health/live` (process up), `/health/ready` (database answers, migrations applied) | An external uptime probe that calls the public home page and `/health/ready` from outside the server |
 | Logs | Structured JSON on stdout with request id; passwords, tokens, cookies and e-mail addresses are redacted (test SEC-09 and the alert tests) | Where logs are kept off the server and for how long (also the only durable record of completed deletions, see BACKUP_AND_RESTORE §5) |
-| Job state | `core_jobrun`: one row per job (`worker`, `housekeeping`, `expiry`, `backup`, `restore`) with last start, finish, last success, status, counters | — |
+| Job state | `core_jobrun`: one row per job (`worker`, `housekeeping`, `expiry`, `expiry_reminders`, `backup`, `restore`) with last start, finish, last success, status, counters | — |
 | Alert catalogue | `core/alerts.py` evaluated every housekeeping cycle by the worker and on demand by `manage.py check_alerts [--notify]` (exit 1 while anything fires) | A destination for alerts |
 | Delivery | Every alert is logged as `alert.fired`. If `UPNEXT_ALERT_WEBHOOK_URL` is set, new alerts are POSTed there as `{"service":"upnext","alerts":[{code,severity,message,runbook}]}` (https required in production), repeated at most every `UPNEXT_ALERT_REPEAT_HOURS` (6) while they persist | A webhook-capable channel (chat tool, incident service) or an external collector that reads the log lines |
 | Error tracking and metrics | Not built (OQ-26 open). Proposed: hosted error tracking with personal data scrubbed, plus request-rate, 5xx-rate and latency from the proxy or access logs | Choice of provider and hosting location, which also feeds the privacy notice |
@@ -21,6 +21,7 @@ Status: DRAFT (Phase 5, P5-05). Describes what the application provides and what
 | `mail.stuck` | critical | oldest waiting message older than 10 minutes | §3 mail |
 | `job.worker_stale` / `_missing` / `_failed` | critical | no worker cycle for 120 s, never recorded (when listed in `UPNEXT_ALERTS_EXPECT_JOBS`), or failed | §4 worker |
 | `job.housekeeping_stale` / `_missing` / `_failed` | critical | no deletion/retention run for 15 minutes, never recorded, or failed | §4 worker |
+| `job.expiry_reminders_stale` / `_missing` / `_failed` | critical | no employer expiry-reminder sweep for 15 minutes, never recorded (when listed in `UPNEXT_ALERTS_EXPECT_JOBS`), or failed | §4 worker |
 | `job.expiry_stale` / `_missing` / `_failed` | critical | no listing-expiry run for 15 minutes, never recorded (when listed in `UPNEXT_ALERTS_EXPECT_JOBS`), or failed | §4 worker |
 | `backup.never_ok` / `backup.stale` / `backup.failed` | critical | with `UPNEXT_BACKUP_EXPECTED=1`: no successful backup, last success older than `UPNEXT_BACKUP_MAX_AGE_HOURS` (26), or last run failed | §5 backup |
 | `backup.local_only` | warning | last backup was not copied off the server | §5 backup |
@@ -40,7 +41,7 @@ Not yet covered, and why: 5xx-rate and latency alerts need metrics from the fron
 ## 4. worker
 Check the container health, `docker logs`, then `manage.py run_worker --once`. A failed housekeeping run raises in the log; deletion and retention are idempotent and safe to repeat.
 
-Listing expiry (`expiry` in `core_jobrun`, M1) runs in the same cycle: published listings whose deadline has passed become `expired` (listings with an unknown deadline never do). Only one run happens at a time, across all worker processes, through a PostgreSQL advisory lock; a run that finds the lock taken logs `expiry.skipped` and does nothing. A failed run records `failed`, logs `expiry.failed` and never stops deletions, retention, alerts or the outbox; repeat it with `manage.py run_worker --once` once the cause is fixed. Add `expiry` to `UPNEXT_ALERTS_EXPECT_JOBS` in production so a worker that never runs it raises `job.expiry_missing`.
+Listing expiry (`expiry` in `core_jobrun`, M1) runs in the same cycle: published listings whose deadline has passed become `expired` (listings with an unknown deadline never do). Only one run happens at a time, across all worker processes, through a PostgreSQL advisory lock; a run that finds the lock taken logs `expiry.skipped` and does nothing. A failed run records `failed`, logs `expiry.failed` and never stops deletions, retention, alerts or the outbox; repeat it with `manage.py run_worker --once` once the cause is fixed. The seven-day employer reminders (`expiry_reminders`, M2) run right after it, take the same kind of lock and record themselves the same way; while e-mail delivery is unverified they write nothing and record `delivery_unverified` (see `EMPLOYER_NOTIFICATIONS.md`). Add `expiry` and `expiry_reminders` to `UPNEXT_ALERTS_EXPECT_JOBS` in production so a worker that never runs it raises `job.expiry_missing`.
 
 ## 5. backup
 See BACKUP_AND_RESTORE.md. A stale or failed backup means the 24-hour RPO is not being met: run `backup.sh` by hand and read its output.

@@ -25,6 +25,7 @@ from notifications import services as outbox
 from notifications.models import EmailKind, EmailOutbox, OutboxStatus
 from opportunities.models import SavedOpportunity
 from profiles import service as profile_service
+from reports import services as report_service
 
 from .models import AccountStatus, AuthToken, StaffMfaDevice, User, UserSession
 from .services import revoke_sessions
@@ -72,6 +73,7 @@ def execute(user_id: uuid.UUID, now: datetime | None = None, *, restored: bool =
         profile_service.delete(user, record=False)  # the deletion itself is audited below
         alert_service.delete_for(user)  # alert choices, consent proof and the delivery ledger
         employer_services.end_all_roles_for_deleted_account(user, now=now)
+        report_service.scrub_contact(original_email)  # a report may carry the same address as its contact
         # Mail still waiting for this person is cancelled; all their rows lose the address.
         EmailOutbox.objects.filter(
             user=user, status__in=[OutboxStatus.PENDING, OutboxStatus.FAILED, OutboxStatus.SENDING]

@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import Any, cast
 
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.template import Context
 from django.template.loader import get_template
@@ -51,6 +51,14 @@ SUBJECTS = {
     EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your NextJob Zimbabwe e-mail address was requested",
     EmailKind.EMAIL_CHANGED_NOTICE: "Your NextJob Zimbabwe e-mail address was changed",
     EmailKind.JOB_ALERT: "New opportunities matching your NextJob Zimbabwe alert",
+    EmailKind.EMPLOYER_CLAIM_RECEIVED: "We received your NextJob Zimbabwe organisation claim",
+    EmailKind.EMPLOYER_CLAIM_APPROVED: "Your NextJob Zimbabwe organisation claim was approved",
+    EmailKind.EMPLOYER_CLAIM_REJECTED: "Your NextJob Zimbabwe organisation claim was not approved",
+    EmailKind.EMPLOYER_LISTING_SUBMITTED: "Your NextJob Zimbabwe listing was submitted for review",
+    EmailKind.EMPLOYER_LISTING_PUBLISHED: "Your listing is now published on NextJob Zimbabwe",
+    EmailKind.EMPLOYER_LISTING_REJECTED: "Your NextJob Zimbabwe listing needs changes before publication",
+    EmailKind.EMPLOYER_LISTING_EXPIRING: "Your NextJob Zimbabwe listing closes soon",
+    EmailKind.EMPLOYER_LISTING_EXPIRED: "Your NextJob Zimbabwe listing has closed",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
@@ -80,6 +88,24 @@ def enqueue(
         payload=payload,
         idempotency_key=idempotency_key or f"{kind}:{uuid.uuid4().hex}",
     )
+
+
+def enqueue_once(
+    kind: str,
+    user: User | None,
+    to_address: str,
+    *,
+    idempotency_key: str,
+    context: dict[str, Any] | None = None,
+) -> EmailOutbox | None:
+    """`enqueue` that is safe to repeat: the key is unique, so a second call with the same key writes
+    nothing and returns None. The insert runs in a savepoint, so losing the race to a concurrent caller
+    does not abort the caller's transaction."""
+    try:
+        with transaction.atomic():
+            return enqueue(kind, user, to_address, idempotency_key=idempotency_key, context=context)
+    except IntegrityError:
+        return None
 
 
 def _link(row: EmailOutbox) -> str | None:

@@ -27,6 +27,16 @@ class EmailKind(models.TextChoices):
     EMAIL_CHANGE_REQUESTED_NOTICE = "email_change_requested_notice"
     EMAIL_CHANGED_NOTICE = "email_changed_notice"
     JOB_ALERT = "job_alert"
+    # Employer notifications (M2). Sent only to active members of the organisation concerned, and only while
+    # delivery is verified (see employers/notifications.py).
+    EMPLOYER_CLAIM_RECEIVED = "employer_claim_received"
+    EMPLOYER_CLAIM_APPROVED = "employer_claim_approved"
+    EMPLOYER_CLAIM_REJECTED = "employer_claim_rejected"
+    EMPLOYER_LISTING_SUBMITTED = "employer_listing_submitted"
+    EMPLOYER_LISTING_PUBLISHED = "employer_listing_published"
+    EMPLOYER_LISTING_REJECTED = "employer_listing_rejected"
+    EMPLOYER_LISTING_EXPIRING = "employer_listing_expiring"
+    EMPLOYER_LISTING_EXPIRED = "employer_listing_expired"
 
 
 class OutboxStatus(models.TextChoices):

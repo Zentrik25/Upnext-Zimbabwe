@@ -112,6 +112,12 @@ class UnsubscribeIpThrottle(IpRateThrottle):
     scope = "unsubscribe_ip"
 
 
+class ReportIpThrottle(IpRateThrottle):
+    """Public reports about listings: few per client per hour (database cache, shared by all workers)."""
+
+    scope = "report_ip"
+
+
 class ForYouThrottle(UserWriteThrottle):
     """The personalised feed reads up to a few hundred listings per request, so reads are limited per user."""
 

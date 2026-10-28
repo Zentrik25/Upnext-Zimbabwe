@@ -1,0 +1,7 @@
+Hello {{ display_name }},
+
+We received your request to act for {{ organisation_name }} on NextJob Zimbabwe. Our staff review each claim and may ask for more evidence. You do not need to do anything now.
+
+Until a claim is approved you cannot post listings. You can follow its progress here: {{ dashboard_url }}
+
+You get this service message because you made this request on NextJob Zimbabwe.

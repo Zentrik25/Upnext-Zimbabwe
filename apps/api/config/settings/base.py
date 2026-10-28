@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "employers",
     "profiles",
     "alerts",
+    "reports",
 ]
 
 MIDDLEWARE = [
@@ -190,6 +191,7 @@ REST_FRAMEWORK = {
         "listing_event_ip": get_str("UPNEXT_THROTTLE_LISTING_EVENT", "120/1m"),  # PROPOSED (Phase 6A)
         "for_you_user": get_str("UPNEXT_THROTTLE_FOR_YOU", "120/1m"),  # PROPOSED (Phase 6B)
         "unsubscribe_ip": get_str("UPNEXT_THROTTLE_UNSUBSCRIBE", "30/1h"),  # PROPOSED (Phase 6B)
+        "report_ip": get_str("UPNEXT_THROTTLE_REPORT", "5/1h"),  # PROPOSED (M2)
     },
     "URL_FORMAT_OVERRIDE": None,
 }
@@ -203,6 +205,12 @@ UPNEXT_RETENTION_OUTBOX_DEAD_DAYS = get_int("UPNEXT_RETENTION_OUTBOX_DEAD_DAYS",
 UPNEXT_RETENTION_REVOKED_SESSION_DAYS = get_int("UPNEXT_RETENTION_REVOKED_SESSION_DAYS", 30)
 # Daily listing counters (D-36): provisional 12 months, then deleted; subject to legal and privacy review.
 UPNEXT_RETENTION_LISTING_STATS_DAYS = get_int("UPNEXT_RETENTION_LISTING_STATS_DAYS", 365)
+# Reports (M2): the optional contact address and the repeat key of a closed report are cleared after this many
+# days (provisional, P-REPORT-02); one listing accepts at most this many new reports a day.
+UPNEXT_RETENTION_REPORT_CONTACT_DAYS = get_int("UPNEXT_RETENTION_REPORT_CONTACT_DAYS", 30)
+UPNEXT_REPORT_LISTING_DAILY_CAP = get_int("UPNEXT_REPORT_LISTING_DAILY_CAP", 30)
+# Employers are reminded this many days before a published listing closes (M2).
+UPNEXT_EXPIRY_REMINDER_DAYS = get_int("UPNEXT_EXPIRY_REMINDER_DAYS", 7)
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = get_int("UPNEXT_EMAIL_REQUEST_GAP_SECONDS", 60)  # PROPOSED
 UPNEXT_EMAIL_REQUESTS_PER_HOUR = get_int("UPNEXT_EMAIL_REQUESTS_PER_HOUR", 3)  # PROPOSED
 # Peppers the hashed throttle keys so raw e-mail addresses never reach the cache table.

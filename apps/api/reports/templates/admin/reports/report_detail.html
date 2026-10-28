@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> &rsaquo; <a href="{{ list_url }}">Listing reports</a> &rsaquo; {{ report.reference }}</div>
+{% endblock %}
+{% block content %}
+<div id="content-main">
+  <h1>Report {{ report.reference }} <small>({{ report.get_status_display }})</small></h1>
+  <p>A report is a concern raised by a member of the public. It never changes the listing by itself. Treat the text and the link below as unverified.</p>
+
+  <h2>What was reported</h2>
+  <table class="module" style="margin-bottom:1em">
+    <tr><th scope="row">Reason</th><td>{{ report.get_reason_display }}</td></tr>
+    <tr><th scope="row">Details (reporter's words)</th><td>{{ report.details|linebreaksbr }}</td></tr>
+    <tr><th scope="row">Evidence link</th><td>{% if evidence_url %}<a href="{{ evidence_url }}" rel="noopener noreferrer nofollow" target="_blank">{{ evidence_url }}</a> (opens a third-party site; not checked by us){% else %}-{% endif %}</td></tr>
+    <tr><th scope="row">Reporter contact</th><td>{% if report.contact_email %}{{ report.contact_email }} (removed after the report has been closed for a while){% else %}none given{% endif %}</td></tr>
+    <tr><th scope="row">Received</th><td>{{ report.created_at }}{% if report.duplicate_count %} &middot; repeated {{ report.duplicate_count }} time{{ report.duplicate_count|pluralize }} by the same reporter{% endif %}</td></tr>
+    <tr><th scope="row">Assigned to</th><td>{{ report.assigned_to.display_name|default:"-" }}</td></tr>
+    {% if report.closed_at %}<tr><th scope="row">Outcome</th><td>{{ report.get_resolution_display }} &middot; {{ report.closed_at }}</td></tr>{% endif %}
+  </table>
+
+  <h2>The listing</h2>
+  <table class="module" style="margin-bottom:1em">
+    <tr><th scope="row">Title when reported</th><td>{{ listing_title|default:"-" }}</td></tr>
+    <tr><th scope="row">Status now</th><td>{{ listing_obj.get_status_display|default:listing_obj.status }}</td></tr>
+    <tr><th scope="row">Links</th><td>{% if public_url %}<a href="{{ public_url }}" rel="noopener" target="_blank">Public page</a>{% endif %}{% if listing_admin_url %} &middot; <a href="{{ listing_admin_url }}">Staff record</a>{% endif %}</td></tr>
+  </table>
+  {% if participant %}<p class="errornote">You authored, submitted or created this listing, so you can add notes and escalate, but you cannot decide this report (separation of duties).</p>{% endif %}
+
+  {% if others %}
+  <h2>Other reports on this listing</h2>
+  <table class="module" style="margin-bottom:1em">
+    <thead><tr><th scope="col">Reference</th><th scope="col">Reason</th><th scope="col">Status</th><th scope="col">Received</th></tr></thead>
+    {% for o in others %}<tr><td><a href="{{ o.url }}">{{ o.reference }}</a></td><td>{{ o.reason }}</td><td>{{ o.status }}</td><td>{{ o.created_at }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+
+  {% if forms %}
+  <h2>Actions</h2>
+  {% for item in forms %}
+  <details{% if item.form.errors %} open{% endif %} style="margin-bottom:1em">
+    <summary><strong>{{ item.action.label }}</strong></summary>
+    <form method="post" action="{{ item.url }}" novalidate>
+      {% csrf_token %}
+      {{ item.form.non_field_errors }}
+      {% for hidden in item.form.hidden_fields %}{{ hidden }}{% endfor %}
+      <fieldset class="module aligned">
+        {% for field in item.form.visible_fields %}
+        <div class="form-row{% if field.errors %} errors{% endif %}">
+          {{ field.errors }}
+          {{ field.label_tag }} {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </fieldset>
+      <div class="submit-row"><input type="submit" value="{{ item.action.button }}"></div>
+    </form>
+  </details>
+  {% endfor %}
+  {% else %}
+  <p>No actions are available to you on this report.</p>
+  {% endif %}
+
+  <h2>History</h2>
+  <table class="module">
+    <thead><tr><th scope="col">When</th><th scope="col">Step</th><th scope="col">By</th><th scope="col">Status</th><th scope="col">Note</th></tr></thead>
+    {% for e in events %}
+    <tr><td>{{ e.created_at }}</td><td>{{ e.get_action_display }}</td><td>{{ e.actor.display_name|default:"Reporter" }}</td><td>{% if e.from_status %}{{ e.from_status }} &rarr; {% endif %}{{ e.to_status|default:"-" }}</td><td>{{ e.note|linebreaksbr }}</td></tr>
+    {% endfor %}
+  </table>
+  <p><a href="{{ list_url }}">&larr; Back to the report queue</a></p>
+</div>
+{% endblock %}

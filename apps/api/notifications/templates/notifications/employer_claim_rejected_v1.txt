@@ -1,0 +1,10 @@
+Hello {{ display_name }},
+
+Your request to act for {{ organisation_name }} on NextJob Zimbabwe was not approved.
+{% if reason %}
+The reason our staff gave:
+{{ reason }}
+{% endif %}
+You can send a new claim with more evidence from your employer page: {{ dashboard_url }}
+
+You get this service message because you made this request on NextJob Zimbabwe.

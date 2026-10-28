@@ -1,0 +1,7 @@
+Hello {{ display_name }},
+
+Your listing "{{ title }}" has closed{% if deadline_text %}; its deadline was {{ deadline_text }}{% endif %}. It stays visible as closed and no longer counts as open.
+
+See it: {{ listing_url }}
+
+You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.

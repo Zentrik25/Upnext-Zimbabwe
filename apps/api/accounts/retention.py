@@ -16,6 +16,7 @@ from django.utils import timezone
 from alerts import service as alert_service
 from employers.models import ListingDailyStat
 from notifications.models import EmailOutbox, OutboxStatus
+from reports import services as report_service
 
 from .models import AuthToken, UserSession
 
@@ -53,4 +54,5 @@ def run(now: datetime | None = None) -> dict[str, int]:
         day__lt=(now - timedelta(days=settings.UPNEXT_RETENTION_LISTING_STATS_DAYS)).date()
     ).delete()[0]
     counts["alert_ledger"] = alert_service.purge_ledger(now)
+    counts["report_contacts"] = report_service.purge_closed(now)
     return counts
