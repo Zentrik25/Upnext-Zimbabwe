@@ -174,6 +174,7 @@ describe("loading placeholders", () => {
     const region = screen.getByRole("status");
     expect(region.getAttribute("aria-busy")).toBe("true");
     expect(region.textContent).toContain("Loading opportunities…");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Loading opportunities…");
     expect(screen.getAllByTestId("skeleton-row")).toHaveLength(3);
     expect(container.querySelector("[aria-hidden='true']")).not.toBeNull();
     expect(await violations(container)).toEqual([]);
@@ -184,12 +185,9 @@ describe("loading placeholders", () => {
     expect(container.innerHTML).not.toMatch(/animate-|transition|shimmer|pulse/);
   });
 
-  it("exists for each data-driven route", () => {
+  it("exists for each private data-driven route and not for public ones", () => {
     const root = join(__dirname, "../../src/app");
     const need = [
-      "loading.tsx",
-      "opportunities/loading.tsx",
-      "opportunities/[slug]/loading.tsx",
       "for-you/loading.tsx",
       "saved/loading.tsx",
       "dashboard/loading.tsx",
@@ -201,7 +199,10 @@ describe("loading placeholders", () => {
       "global-error.tsx",
     ];
     for (const file of need) expect(statSync(join(root, file)).isFile(), file).toBe(true);
-    expect(readdirSync(root)).toContain("loading.tsx");
+    // Public routes must stay without one: it would turn an unknown listing's 404 into a streamed 200.
+    expect(readdirSync(root)).not.toContain("loading.tsx");
+    expect(readdirSync(join(root, "opportunities"))).not.toContain("loading.tsx");
+    expect(readdirSync(join(root, "opportunities/[slug]"))).not.toContain("loading.tsx");
   });
 });
 

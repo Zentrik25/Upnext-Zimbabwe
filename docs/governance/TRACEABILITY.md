@@ -385,7 +385,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | MOD-04 | Separation of duties: a person who authored, submitted or created the listing cannot resolve, dismiss or act on the listing through its report, but can note and escalate; escalated reports need an Administrator |
 | MOD-05 | Listing actions go through the publishing workflow in one transaction (expire, withdraw, take down), are audited and linked to the report, a refused action changes nothing, and two staff acting at once produce one decision |
 | STATE-01 | Reporting form: seven labelled reasons, no file input, client-side checks, server errors by field, rate-limit and unreachable messages, honeypot out of reach, axe clean |
-| STATE-02 | Loading skeletons announce once, hide decorative blocks, use no animation; every data-driven route has a loading file |
+| STATE-02 | Loading skeletons announce once, hide decorative blocks, use no animation; every private data-driven route has a loading file and public routes have none (so 404 and indexing stay correct) |
 | STATE-03 | Error views: accessible retry that calls reset, focus on the heading, only a reference shown (never error text), global error renders its own document; reporting journey at 320, 390 and desktop widths |
 | CAT-01 | The loaded v1 category schemas equal the drafts, the specification pack lists every field and required flag of each, and the pack and OQ-06 stay draft and open |
 | EMP-10 | Employer HTTP API: authentication, CSRF, validation and the whole journey |

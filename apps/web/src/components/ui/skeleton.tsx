@@ -6,6 +6,10 @@ import { cn } from "@/lib/cn";
  * reduced-motion exception), flat like the rest of the design, and take their colours from tokens so dark mode
  * works. The region announces itself once ("Loading …") and hides its decorative blocks from assistive
  * technology.
+ *
+ * Used only on private, signed-in routes. Public pages (search, listing, report) deliberately have no
+ * loading.tsx: a segment loading file streams a 200 response before the page runs, so an unknown listing
+ * could no longer answer 404 and crawlers would see a placeholder.
  */
 export function LoadingRegion({
   label,
@@ -19,7 +23,8 @@ export function LoadingRegion({
 }) {
   return (
     <div role="status" aria-busy="true" aria-live="polite" className={className} data-testid="loading">
-      <span className="sr-only">Loading {label}…</span>
+      {/* A page always has one h1, loading or not (WCAG 2.4.6); the real page replaces this one. */}
+      <h1 className="sr-only">Loading {label}…</h1>
       <div aria-hidden="true">{children}</div>
     </div>
   );
