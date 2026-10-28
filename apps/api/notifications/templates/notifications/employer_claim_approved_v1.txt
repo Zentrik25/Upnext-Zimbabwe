@@ -1,0 +1,7 @@
+Hello {{ display_name }},
+
+Your request to act for {{ organisation_name }} on NextJob Zimbabwe was approved. You can now draft and submit listings: {{ dashboard_url }}
+
+Every listing is still reviewed by NextJob staff before it appears, and applications always happen on your own channel.
+
+You get this service message because you made this request on NextJob Zimbabwe.

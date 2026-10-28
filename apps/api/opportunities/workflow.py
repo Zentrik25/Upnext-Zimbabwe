@@ -13,6 +13,7 @@ same invariants, so a bug here cannot publish unapproved content.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -58,7 +59,10 @@ from .models import (
     VerificationRecord,
     VersionState,
 )
+from .signals import transition_recorded
 from .validation import fee_lint_triggers, validate_publishable
+
+logger = logging.getLogger("upnext.workflow")
 
 REASON_CODES_TAKEDOWN = frozenset({"legal", "error", "fraud", "other"})
 _LEVEL_ORDER = {
@@ -185,7 +189,7 @@ def _record(
     extra: Mapping[str, Any] | None = None,
 ) -> None:
     """History + audit in the caller's transaction; a failure here rolls the transition back."""
-    PublishingEvent.objects.create(
+    event = PublishingEvent.objects.create(
         opportunity=opportunity,
         version=version,
         transition=ctx.transition,
@@ -214,6 +218,15 @@ def _record(
             **(extra or {}),
         },
     )
+    for receiver, outcome in transition_recorded.send_robust(
+        sender=Opportunity, event=event, opportunity=opportunity, version=version, reason=reason
+    ):
+        if isinstance(outcome, Exception):  # never let a listener block or undo an editorial decision
+            logger.error(
+                "transition listener failed",
+                extra={"event": "workflow.listener_failed", "listener": getattr(receiver, "__name__", "?")},
+                exc_info=outcome,
+            )
 
 
 def _bump(opportunity: Opportunity) -> None:

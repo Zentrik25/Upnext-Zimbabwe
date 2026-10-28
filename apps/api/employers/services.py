@@ -42,6 +42,7 @@ from opportunities.errors import (
     WorkflowError,
 )
 
+from . import notifications
 from .models import (
     ClaimStatus,
     EmployerMembership,
@@ -232,6 +233,7 @@ def submit_claim(user: User, data: Mapping[str, Any]) -> OrganisationClaim:
             actor_id=locked.pk,
             changes={"organisation_id": str(existing.pk) if existing else None},
         )
+        notifications.claim_received(claim)
         return claim
 
     return _run("employer.claim.submit", user, "organisation_claim", None, body)
@@ -299,6 +301,7 @@ def decide_claim(
                 actor_id=reviewer.pk,
                 severity=Severity.PRIVILEGED,
             )
+            notifications.claim_decided(claim)
             return claim
 
         if role not in MemberRole.values:
@@ -362,6 +365,7 @@ def decide_claim(
                 "verified_now": verification is not None,
             },
         )
+        notifications.claim_decided(claim)
         return claim
 
     return _run("employer.claim.decide", reviewer, "organisation_claim", _as_uuid(claim_id), body)

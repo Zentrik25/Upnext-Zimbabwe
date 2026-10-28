@@ -203,6 +203,8 @@ UPNEXT_RETENTION_OUTBOX_DEAD_DAYS = get_int("UPNEXT_RETENTION_OUTBOX_DEAD_DAYS",
 UPNEXT_RETENTION_REVOKED_SESSION_DAYS = get_int("UPNEXT_RETENTION_REVOKED_SESSION_DAYS", 30)
 # Daily listing counters (D-36): provisional 12 months, then deleted; subject to legal and privacy review.
 UPNEXT_RETENTION_LISTING_STATS_DAYS = get_int("UPNEXT_RETENTION_LISTING_STATS_DAYS", 365)
+# Employers are reminded this many days before a published listing closes (M2).
+UPNEXT_EXPIRY_REMINDER_DAYS = get_int("UPNEXT_EXPIRY_REMINDER_DAYS", 7)
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = get_int("UPNEXT_EMAIL_REQUEST_GAP_SECONDS", 60)  # PROPOSED
 UPNEXT_EMAIL_REQUESTS_PER_HOUR = get_int("UPNEXT_EMAIL_REQUESTS_PER_HOUR", 3)  # PROPOSED
 # Peppers the hashed throttle keys so raw e-mail addresses never reach the cache table.

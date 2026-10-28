@@ -15,6 +15,7 @@ from accounts import deletion, retention
 from alerts import service as alert_service
 from core import alerts as alert_catalogue
 from core.models import JobRun
+from employers import reminders
 from notifications.services import process_batch, status_summary
 from opportunities import expiry
 
@@ -52,6 +53,10 @@ class Command(BaseCommand):
                     expiry.run()
                 except Exception:  # an expiry problem must never stop the outbox or deletions
                     logger.exception("listing expiry failed", extra={"event": "expiry.failed"})
+                try:  # seven-day employer reminders: off while e-mail delivery is unverified (B-01)
+                    reminders.run()
+                except Exception:  # a reminder problem must never stop the outbox or deletions
+                    logger.exception("expiry reminders failed", extra={"event": "reminders.failed"})
                 if alerts := status_summary()["alerts"]:
                     logger.warning(
                         "outbox needs attention", extra={"event": "outbox.alert", "alerts": alerts}
