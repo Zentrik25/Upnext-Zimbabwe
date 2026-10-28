@@ -276,3 +276,12 @@ jobs:
         if: always()
         working-directory: infrastructure/compose
         run: docker compose -p upnext-tls -f compose.yaml -f compose.prod-like.yaml -f compose.tls.yaml down -v
+
+  production-stack:
+    name: Production Compose project (static validation, release migration, host handling, preflight; no VPS)
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Boot compose.production.yaml with throwaway values and check it
+        run: bash infrastructure/scripts/production-smoke.sh

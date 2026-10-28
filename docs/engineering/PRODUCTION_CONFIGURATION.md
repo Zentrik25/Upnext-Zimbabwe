@@ -41,7 +41,7 @@ Never set in production: `UPNEXT_DEMO_TOOLS`, `UPNEXT_DEMO_PASSWORD`, `UPNEXT_EN
 
 ## 3. E-mail provider
 
-No provider is chosen (OQ-03) and none is enabled. Until one is configured the default backend `none` sends nothing and messages wait in the outbox.
+Resend is the selected provider (D-34) but none is configured or enabled. Until one is configured the default backend `none` sends nothing and messages wait in the outbox.
 
 1. The application talks only to the `EmailSender` port (`notifications/sender.py`). `smtp` is a generic adapter (STARTTLS or implicit TLS, timeouts, `Reply-To`, `Auto-Submitted`, 5xx classed as permanent and 4xx as retryable). A provider's HTTP API adapter is added by writing a class with `send()` and calling `register("name", factory)`, then `UPNEXT_EMAIL_BACKEND=name`.
 2. Once the owner chooses a provider: create a sender identity and domain authentication (SPF, DKIM, DMARC) with them, put `UPNEXT_SMTP_HOST`, `UPNEXT_SMTP_PORT`, `UPNEXT_SMTP_SECURITY`, `UPNEXT_SMTP_USER`, `UPNEXT_SMTP_PASSWORD` and `UPNEXT_EMAIL_FROM` in the secret store, then run, from the worker container: `manage.py check_email_config --connect` and `manage.py check_email_config --send-test --to <address you control>`.
@@ -72,6 +72,10 @@ No provider is chosen (OQ-03) and none is enabled. Until one is configured the d
 
 **Demo data.** `seed_demo` refuses without `DEBUG` or `UPNEXT_DEMO_TOOLS=1`, which production refuses at start-up; the preflight flags demo accounts and fictional issuers in the database.
 
-## Addendum (D-33, D-34): identity and e-mail variables
+## Addendum (D-34, D-42): identity and e-mail variables
 
-Public origin `UPNEXT_PUBLIC_BASE_URL=https://nextjob.co.zw`; mailboxes `UPNEXT_CONTACT_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_JOBS_EMAIL`, `UPNEXT_PARTNERSHIPS_EMAIL` (shown only when set); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
+Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
+
+## Addendum (launch preparation): production Compose project
+
+`infrastructure/compose/compose.production.yaml` is the production stack definition (see `PRODUCTION_DEPLOYMENT_PLAN.md` §1). It sets the identity (`https://upnext.co.zw`, `info@upnext.co.zw` only) in the file itself, reads secrets from the environment with no defaults, runs the API and worker as the unprivileged database role, keeps migrations in a `release` profile that holds the owner credentials, and keeps e-mail at backend `none`. Validate without a server: `docker compose --env-file <file> -f compose.production.yaml config` and `pytest tests/test_production_compose.py`. **Not run on the VPS; not deployed.**

@@ -41,3 +41,9 @@ Staff with the Editor or Administrator role see **Organisation claims**, **Profi
 **Employer listings** arrive in the normal review queue and follow the normal rules: another person approves, then anyone permitted publishes. The listing carries an automatic source "Submitted by the employer through the NextJob employer portal" and starts as *not verified*: verifying the organisation does not verify the listing. Use the usual verification record if you check the content with the issuer. A returned or rejected listing shows your reason to the employer, so write it for them.
 
 **Withdrawing trust.** An Administrator can revoke an organisation's verification (members then cannot submit and the public profile is hidden; published listings stay until you take them down). Any reviewer can revoke a person's membership. Both are audited.
+
+## Addendum (D-43): scholarships and grants — who may apply from where
+`geographic_eligibility` is optional in the schema at launch. A reviewer does not approve a scholarship or grant listing that leaves it empty unless the source notice truly does not say; in that case the listing states that the eligibility is not stated in the source. Nothing is guessed or defaulted.
+
+## Addendum (D-43): the public-report queue
+The Administrator/Editor role holders named at staff onboarding read the public-report queue; the operating target is a first look by the next working day. Reports are handled under `PUBLIC_REPORTING.md`; no automatic alert exists for an unattended report.

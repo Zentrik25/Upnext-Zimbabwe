@@ -11,7 +11,15 @@ want="$(cat "$file.mac")"
 have="$(openssl dgst -sha256 -hmac "$(base64 -w0 < "$key")" -r "$file" | cut -d' ' -f1)"
 [ "$want" = "$have" ] || { echo "authentication of $file failed (wrong key, or the file was altered)" >&2; exit 3; }
 start=$(date +%s)
+# A database this script created is dropped again if the restore does not finish, so a failed or timed-out
+# restore never leaves a half-filled database that could be mistaken for a good one.
+created=no; done_ok=no
+cleanup() { if [ "$created" = yes ] && [ "$done_ok" != yes ]; then dropdb --if-exists "$target" || true; fi; }
+trap cleanup EXIT
+trap 'exit 143' TERM INT
 createdb "$target"
+created=yes
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -pass "file:$key" < "$file" \
   | pg_restore --no-owner --no-acl --exit-on-error --dbname="$target"
+done_ok=yes
 echo "restored into $target in $(( $(date +%s) - start )) s"

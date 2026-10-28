@@ -1,0 +1,14 @@
+# OPTIONAL overlay, to be written for real only after the shared proxy has been inspected read-only (OQ-10).
+# It attaches the UPNEXT proxy to the network the shared edge already uses, so the edge can reach it without a
+# published port. It changes nothing in the shared proxy: the router/service entry that points at
+# `proxy:80` is a separate, reviewed change to the edge's own configuration (PRODUCTION_DEPLOYMENT_PLAN §3.3).
+#   docker compose -f compose.production.yaml -f compose.production.edge.yaml ...
+# UPNEXT_EDGE_NETWORK names an EXISTING network; Compose fails if it does not exist, and never creates it.
+services:
+  proxy:
+    networks: [app, edge]
+    ports: !reset []
+networks:
+  edge:
+    name: ${UPNEXT_EDGE_NETWORK:?}
+    external: true

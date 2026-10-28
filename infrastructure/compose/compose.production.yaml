@@ -1,0 +1,227 @@
+# UPNEXT Careers — PRODUCTION Compose project (launch preparation, B-04/B-08). DRAFT: written and statically
+# validated only. It has NOT been run on the VPS, nothing is deployed, and it must not be started there without
+# the owner's written Phase 7 approval (docs/engineering/PRODUCTION_DEPLOYMENT_PLAN.md).
+#
+# Isolation from The Granite Post and anything else on the host:
+#   - its own Compose project (upnext-prod), explicitly named networks and volumes (upnext-prod-*), no container_name;
+#   - no service publishes a port except the proxy, and only on loopback;
+#   - it never attaches to an existing network; the edge hook-up is a separate, optional overlay
+#     (compose.production.edge.yaml) used only after the shared proxy has been inspected read-only (OQ-10);
+#   - secrets and addresses come from the environment (`:?` makes a missing value a hard error); no default secret.
+#
+#   docker compose --env-file /secure/path/upnext.env -f compose.production.yaml config          # static check
+#   docker compose --env-file ... -f compose.production.yaml --profile release run --rm migrate   # release step
+#   docker compose --env-file ... -f compose.production.yaml up -d db api worker web proxy
+name: upnext-prod
+
+x-hardening: &hardening
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "5"}
+
+x-api-env: &api-env
+  DJANGO_SETTINGS_MODULE: config.settings.prod
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+  UPNEXT_TOKEN_KEY: ${UPNEXT_TOKEN_KEY:?}
+  UPNEXT_THROTTLE_PEPPER: ${UPNEXT_THROTTLE_PEPPER:?}
+  UPNEXT_ENVIRONMENT: production
+  UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
+  DJANGO_ALLOWED_HOSTS: upnext.co.zw
+  DJANGO_CSRF_TRUSTED_ORIGINS: https://upnext.co.zw
+  DJANGO_HSTS_SECONDS: "31536000"
+  DJANGO_SSL_REDIRECT: "false" # TLS and the http->https redirect belong to the edge
+  UPNEXT_TRUST_PROXY_HEADERS: "true" # the proxy below overwrites X-Forwarded-Proto
+  UPNEXT_SECURE_COOKIES: "true"
+  UPNEXT_STAFF_MFA_REQUIRED: "true"
+  UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
+  UPNEXT_BRAND_DOMAIN: upnext.co.zw
+  UPNEXT_OFFICIAL_EMAIL: info@upnext.co.zw
+  UPNEXT_SUPPORT_EMAIL: info@upnext.co.zw
+  UPNEXT_EMAIL_FROM: UPNEXT Careers <info@upnext.co.zw>
+  UPNEXT_EMAIL_REPLY_TO: info@upnext.co.zw
+  # Sending stays off until B-01 is closed AND the owner approves; then set to smtp with the UPNEXT_SMTP_* values.
+  UPNEXT_EMAIL_BACKEND: ${UPNEXT_EMAIL_BACKEND:-none}
+  UPNEXT_SMTP_HOST: ${UPNEXT_SMTP_HOST:-}
+  UPNEXT_SMTP_PORT: ${UPNEXT_SMTP_PORT:-465}
+  UPNEXT_SMTP_SECURITY: ${UPNEXT_SMTP_SECURITY:-ssl}
+  UPNEXT_SMTP_USER: ${UPNEXT_SMTP_USER:-}
+  UPNEXT_SMTP_PASSWORD: ${UPNEXT_SMTP_PASSWORD:-}
+  UPNEXT_RESEND_WEBHOOK_SECRET: ${UPNEXT_RESEND_WEBHOOK_SECRET:-}
+  UPNEXT_ALERT_WEBHOOK_URL: ${UPNEXT_ALERT_WEBHOOK_URL:-}
+  UPNEXT_ALERT_CERT_HOST: upnext.co.zw:443
+  UPNEXT_BACKUP_EXPECTED: ${UPNEXT_BACKUP_EXPECTED:-1}
+  UPNEXT_ALERTS_EXPECT_JOBS: worker,housekeeping,expiry,expiry_reminders
+  POSTGRES_DB: ${POSTGRES_DB:?}
+  POSTGRES_HOST: db
+  # The running services connect as the unprivileged application role, never as the owner (P5-02).
+  POSTGRES_USER: upnext_app
+  POSTGRES_PASSWORD: ${UPNEXT_DB_APP_PASSWORD:?}
+
+services:
+  db:
+    <<: *hardening
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID] # what the official image needs to initialise its data directory
+    image: postgres:18.6-trixie@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    mem_limit: ${UPNEXT_DB_MEM:-1g}
+
+  # Release step (profile `release`): migrations and database roles with the OWNER credentials. The running
+  # services never hold them.
+  migrate:
+    <<: *hardening
+    restart: "no"
+    profiles: [release]
+    image: upnext-api:${UPNEXT_RELEASE:?}
+    build: {context: ../../apps/api, target: prod}
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py provision_db_roles"]
+    environment:
+      <<: *api-env
+      POSTGRES_USER: ${POSTGRES_MIGRATOR_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_MIGRATOR_PASSWORD:?}
+      UPNEXT_DB_APP_PASSWORD: ${UPNEXT_DB_APP_PASSWORD:?}
+      UPNEXT_DB_READONLY_PASSWORD: ${UPNEXT_DB_READONLY_PASSWORD:?}
+    user: "10001:10001"
+    networks: [data]
+    depends_on:
+      db: {condition: service_healthy}
+    mem_limit: 512m
+
+  api:
+    <<: *hardening
+    image: upnext-api:${UPNEXT_RELEASE:?}
+    build: {context: ../../apps/api, target: prod}
+    environment: *api-env
+    user: "10001:10001"
+    networks: [data, app]
+    depends_on:
+      db: {condition: service_healthy}
+    # ALLOWED_HOSTS is the one public host, so the probe must present it (the image's own HEALTHCHECK does not).
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/health/ready', headers={'Host': 'upnext.co.zw'}), timeout=2).status == 200 else 1)"]
+      interval: 15s
+      timeout: 4s
+      retries: 10
+      start_period: 30s
+    mem_limit: ${UPNEXT_API_MEM:-512m}
+    cpus: 1.0
+
+  worker:
+    <<: *hardening
+    image: upnext-api:${UPNEXT_RELEASE:?}
+    build: {context: ../../apps/api, target: prod}
+    command: ["python", "manage.py", "run_worker"]
+    environment:
+      <<: *api-env
+      UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat
+    user: "10001:10001"
+    networks: [data, egress] # egress: the mail provider and the alert webhook, once enabled
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -n \"$(find /tmp/worker-heartbeat -mmin -2 2>/dev/null)\""]
+      interval: 15s
+      timeout: 3s
+      retries: 6
+      start_period: 30s
+    mem_limit: 256m
+    cpus: 0.5
+
+  web:
+    <<: *hardening
+    image: upnext-web:${UPNEXT_RELEASE:?}
+    build: {context: ../../apps/web, target: prod}
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
+      UPNEXT_HSTS_SECONDS: "31536000"
+      NEXT_TELEMETRY_DISABLED: "1"
+    user: "1000:1000"
+    networks: [app]
+    depends_on:
+      api: {condition: service_healthy}
+    mem_limit: ${UPNEXT_WEB_MEM:-512m}
+    cpus: 1.0
+
+  proxy:
+    <<: *hardening
+    cap_add: [CHOWN, SETGID, SETUID, NET_BIND_SERVICE]
+    image: nginx:1.31.2-alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa
+    environment:
+      # Address range of the shared edge (Traefik) that is allowed to state the client address. No default:
+      # it is unknown until the shared proxy has been inspected read-only (OQ-10).
+      UPNEXT_EDGE_CIDR: ${UPNEXT_EDGE_CIDR:?}
+      NGINX_ENVSUBST_FILTER: UPNEXT_
+    ports:
+      - "127.0.0.1:${UPNEXT_PROXY_PORT:-8090}:80" # loopback only
+    volumes:
+      - ./nginx.production.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks: [app]
+    depends_on:
+      web: {condition: service_started}
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--header", "Host: upnext.co.zw", "http://127.0.0.1/health/live"]
+      interval: 15s
+      timeout: 3s
+      retries: 10
+    mem_limit: 128m
+    cpus: 0.5
+
+  # Backup job (profile `backup`), started by the host timer: `docker compose --profile backup run --rm backup`.
+  # Connects as the read-only role, writes an encrypted dump to the backups volume and, when configured, copies it
+  # off the server with verification (offsite.sh). The encryption key is a host file mounted read-only; it must
+  # also be escrowed somewhere that is not this server (B-07).
+  backup:
+    <<: *hardening
+    restart: "no"
+    profiles: [backup]
+    image: upnext-backup:${UPNEXT_RELEASE:?}
+    build: {context: ../backup}
+    environment:
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:?}
+      PGUSER: upnext_readonly
+      PGPASSWORD: ${UPNEXT_DB_READONLY_PASSWORD:?}
+      UPNEXT_BACKUP_DIR: /backups
+      UPNEXT_BACKUP_KEY_FILE: /run/upnext/backup.key
+      UPNEXT_BACKUP_UPLOAD_CMD: ${UPNEXT_BACKUP_UPLOAD_CMD:-}
+      UPNEXT_OFFSITE_KIND: ${UPNEXT_OFFSITE_KIND:-}
+      UPNEXT_OFFSITE_TARGET: ${UPNEXT_OFFSITE_TARGET:-}
+    volumes:
+      - backups:/backups
+      - ${UPNEXT_BACKUP_KEY_HOST_PATH:?}:/run/upnext/backup.key:ro
+    networks: [data, egress]
+    depends_on:
+      db: {condition: service_healthy}
+    mem_limit: 256m
+
+networks:
+  data: # database traffic only; no route to the outside
+    name: upnext-prod-data
+    internal: true
+  app:
+    name: upnext-prod-app
+  egress:
+    name: upnext-prod-egress
+
+volumes:
+  pgdata:
+    name: upnext-prod-pgdata
+  backups:
+    name: upnext-prod-backups

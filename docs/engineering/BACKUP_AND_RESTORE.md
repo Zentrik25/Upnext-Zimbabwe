@@ -29,3 +29,41 @@ A backup older than a deletion would bring a deleted person back. The worker log
 
 ## 7. Still required before launch (B-07)
 An off-server target and a recorded off-server restore on the real infrastructure with timing; the owner's decision on the key custodian and schedule; log retention for the deletion ledger; a quarterly rehearsal calendar.
+
+## 8. Off-server copy and measured restore (launch preparation, B-07) — DRAFT
+
+Status: DRAFT. **Prepared and tested without any external account. No off-server target exists, no backup has left a server, no measured restore on real infrastructure has been done, and B-07 stays open.**
+
+### 8.1 Off-server copy
+
+`infrastructure/backup/offsite.sh` is the owner's `UPNEXT_BACKUP_UPLOAD_CMD`. It chooses no provider; the owner picks the target (decision O-7, `LAUNCH_DECISIONS_TRIAGE.md`).
+
+```
+UPNEXT_BACKUP_UPLOAD_CMD='bash /tmp/backup/offsite.sh "$FILE"'
+UPNEXT_OFFSITE_KIND=dir|rsync|rclone
+UPNEXT_OFFSITE_TARGET=<mounted path | user@host:/path/ | remote:path>
+```
+
+The script copies the file, reads it back from the target and compares its SHA-256 with the local file. A mismatch, an absent target or an unknown kind exits non-zero, so `backup.sh` fails and records `failed`; `offsite=yes` is therefore never reported on trust. Backups are already AES-256 encrypted with a key that is kept apart (section 2), so the target sees only ciphertext plus a keyed MAC; the key must be held in a second place that is **not** the same server or the same storage account. Tested in `apps/api/tests/test_backup_offsite.py` (verified copy, no leftover partial file, missing target, unconfigured/unknown kind). The `rsync` and `rclone` branches are **not** exercised by any test: they need a real target.
+
+Target requirements to decide before launch: a location on different infrastructure from the VPS; credentials limited to write/list on that bucket or path only (no delete or overwrite, or object-lock/versioning on, so a compromised server cannot erase its own backups); region (cross-border transfer is legal question L-6); cost; who holds the credentials; who holds the key copy.
+
+### 8.2 Measured restore
+
+`infrastructure/backup/measure-restore.sh BACKUP.dump.enc TARGET_DB REPORT.json` wraps `restore.sh` and writes one JSON record: time, source (`UPNEXT_RESTORE_SOURCE=offsite` when the file was first fetched from the target), backup size, public table count, and whether the time is within `UPNEXT_RTO_SECONDS` (default 14400, the 4-hour RTO). Procedure for the evidence B-07 needs, on the real server once it exists:
+
+1. Run `backup.sh` with `UPNEXT_BACKUP_UPLOAD_CMD` set; confirm `offsite=yes`.
+2. On a **different** machine (or a clean container), fetch the file and its `.mac` from the target using only the documented credentials and the escrowed key.
+3. Run `measure-restore.sh` with `UPNEXT_RESTORE_SOURCE=offsite`; keep the JSON.
+4. Run `provision_db_roles`, `reapply_deletions`, `restore_check --expect … --smoke` (section 4).
+5. Record: date, operator, data volume, measured seconds, outcome. Repeat after any change of volume by a factor of ten and at least quarterly.
+
+The existing CI rehearsal (`rehearse.sh`) measures the script path on demo data only; its times say nothing about production.
+
+### 8.3 Alerting for backups
+
+Already implemented (`core/alerts.py`, `MONITORING_AND_ALERTING.md`): `backup.never_ok`, `backup.stale`, `backup.failed` (set `UPNEXT_BACKUP_EXPECTED=1` in production), `backup.local_only`, `restore.performed`. They are logged as `alert.fired` and POSTed to `UPNEXT_ALERT_WEBHOOK_URL` when set. **What is missing is only a destination:** a webhook-capable channel the owner reads (decision O-8). A launch is not safe until one real test alert has been received (`manage.py check_alerts --notify` after setting a test condition) and that is recorded.
+
+### 8.4 Remaining B-07 closure evidence (all external)
+
+Off-server target and credentials; key escrow; one successful off-server backup; one measured restore on the real server with the JSON attached; one real alert received; written backup retention decision (also L-4 and B-02).
