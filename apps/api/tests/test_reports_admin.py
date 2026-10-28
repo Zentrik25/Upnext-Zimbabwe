@@ -36,7 +36,7 @@ def listing(world: World, people: dict[str, User]) -> Opportunity:
 @pytest.fixture
 def report(listing: Opportunity) -> ListingReport:
     services.submit(
-        listing.slug,
+        str(listing.slug),
         {
             "reason": "payment_scam",
             "details": "They ask for a fee <script>alert(1)</script> before the interview.",
@@ -111,7 +111,7 @@ def test_repeat_filter_lists_listings_with_several_open_reports(
     client = logged_in(people["editor2"])
     assert report.reference not in client.get(CHANGELIST + "?repeat=yes").content.decode()
     services.submit(
-        listing.slug,
+        str(listing.slug),
         {"reason": "expired", "details": "The closing date passed last month."},
         client_ident="d",
     )
@@ -124,7 +124,7 @@ def test_escalated_reports_are_listed_first(
     listing: Opportunity, report: ListingReport, people: dict[str, User]
 ) -> None:
     services.submit(
-        listing.slug,
+        str(listing.slug),
         {"reason": "expired", "details": "The closing date passed last month."},
         client_ident="d",
     )
@@ -220,7 +220,7 @@ def test_participant_cannot_decide_through_the_admin(
     client = logged_in(people["author_editor"])
     response = act(client, report, "dismiss", resolution="spam", note=NOTE)
     assert response.status_code == 302
-    message = "".join(str(m) for m in response.wsgi_request._messages)  # type: ignore[attr-defined]
+    message = "".join(str(m) for m in response.wsgi_request._messages)
     assert "separation_of_duties" in message
     act(client, report, "listing", action="withdraw", reason=NOTE)
     listing.refresh_from_db()

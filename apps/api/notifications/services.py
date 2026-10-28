@@ -54,9 +54,9 @@ SUBJECTS = {
     EmailKind.EMPLOYER_CLAIM_RECEIVED: "We received your NextJob Zimbabwe organisation claim",
     EmailKind.EMPLOYER_CLAIM_APPROVED: "Your NextJob Zimbabwe organisation claim was approved",
     EmailKind.EMPLOYER_CLAIM_REJECTED: "Your NextJob Zimbabwe organisation claim was not approved",
-    EmailKind.EMPLOYER_LISTING_SUBMITTED: "Your listing was submitted for review",
+    EmailKind.EMPLOYER_LISTING_SUBMITTED: "Your NextJob Zimbabwe listing was submitted for review",
     EmailKind.EMPLOYER_LISTING_PUBLISHED: "Your listing is now published on NextJob Zimbabwe",
-    EmailKind.EMPLOYER_LISTING_REJECTED: "Your listing needs changes before it can be published",
+    EmailKind.EMPLOYER_LISTING_REJECTED: "Your NextJob Zimbabwe listing needs changes before publication",
     EmailKind.EMPLOYER_LISTING_EXPIRING: "Your NextJob Zimbabwe listing closes soon",
     EmailKind.EMPLOYER_LISTING_EXPIRED: "Your NextJob Zimbabwe listing has closed",
 }

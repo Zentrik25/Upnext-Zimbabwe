@@ -206,20 +206,20 @@ def test_repeat_after_closing_makes_a_new_report(
 def test_daily_cap_per_listing(listing: Opportunity, settings: Any) -> None:
     settings.UPNEXT_REPORT_LISTING_DAILY_CAP = 3
     for index in range(3):
-        services.submit(listing.slug, GOOD, client_ident=f"client-{index}")
+        services.submit(str(listing.slug), GOOD, client_ident=f"client-{index}")
     with pytest.raises(services.ReportCapped):
-        services.submit(listing.slug, GOOD, client_ident="client-9")
+        services.submit(str(listing.slug), GOOD, client_ident="client-9")
     # reports older than a day do not count
     ListingReport.objects.update(created_at=timezone.now() - timedelta(days=2))
-    assert services.submit(listing.slug, GOOD, client_ident="client-9").reference
+    assert services.submit(str(listing.slug), GOOD, client_ident="client-9").reference
 
 
 def test_slug_lookup_is_case_insensitive(listing: Opportunity) -> None:
-    assert services.submit(listing.slug.upper(), GOOD, client_ident="c").reference
+    assert services.submit(str(listing.slug).upper(), GOOD, client_ident="c").reference
 
 
 def test_reports_events_are_append_only(listing: Opportunity) -> None:
-    services.submit(listing.slug, GOOD, client_ident="c")
+    services.submit(str(listing.slug), GOOD, client_ident="c")
     event = ReportEvent.objects.get()
     from django.db import DatabaseError, transaction
 
@@ -232,7 +232,7 @@ def test_reports_events_are_append_only(listing: Opportunity) -> None:
 def test_database_refuses_inconsistent_report_rows(listing: Opportunity, people: dict[str, User]) -> None:
     from django.db import IntegrityError, transaction
 
-    services.submit(listing.slug, GOOD, client_ident="c")
+    services.submit(str(listing.slug), GOOD, client_ident="c")
     with pytest.raises(IntegrityError), transaction.atomic():
         ListingReport.objects.update(status="resolved")  # closed without outcome and closer
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -242,9 +242,9 @@ def test_database_refuses_inconsistent_report_rows(listing: Opportunity, people:
 def test_purge_clears_contact_and_key_of_old_closed_reports(
     listing: Opportunity, people: dict[str, User]
 ) -> None:
-    services.submit(listing.slug, {**GOOD, "contact_email": "a@example.org"}, client_ident="c1")
+    services.submit(str(listing.slug), {**GOOD, "contact_email": "a@example.org"}, client_ident="c1")
     services.submit(
-        listing.slug, {**GOOD, "reason": "expired", "contact_email": "b@example.org"}, client_ident="c2"
+        str(listing.slug), {**GOOD, "reason": "expired", "contact_email": "b@example.org"}, client_ident="c2"
     )
     old, fresh = ListingReport.objects.order_by("created_at")
     now = timezone.now()
@@ -261,7 +261,8 @@ def test_purge_clears_contact_and_key_of_old_closed_reports(
         closed_at=now - timedelta(days=2),
     )
     assert services.purge_closed(now) == 1
-    old.refresh_from_db(), fresh.refresh_from_db()
+    old.refresh_from_db()
+    fresh.refresh_from_db()
     assert old.contact_email is None and old.dedupe_key == ""
     assert fresh.contact_email == "b@example.org" and fresh.dedupe_key != ""
     assert services.purge_closed(now) == 0
@@ -273,9 +274,11 @@ def test_deleting_an_account_clears_its_address_from_reports(listing: Opportunit
     from accounts import deletion
 
     user = make_user(email="reporter@example.org")
-    services.submit(listing.slug, {**GOOD, "contact_email": "Reporter@Example.org"}, client_ident="a")
+    services.submit(str(listing.slug), {**GOOD, "contact_email": "Reporter@Example.org"}, client_ident="a")
     services.submit(
-        listing.slug, {**GOOD, "reason": "expired", "contact_email": "other@example.org"}, client_ident="b"
+        str(listing.slug),
+        {**GOOD, "reason": "expired", "contact_email": "other@example.org"},
+        client_ident="b",
     )
     user.deletion_requested_at = timezone.now() - td(days=30)
     user.save()

@@ -24,17 +24,19 @@ def listing(world: World, people: dict[str, User]) -> Opportunity:
 
 
 def test_the_same_client_reporting_at_once_makes_one_report(listing: Opportunity) -> None:
-    results = race(*[lambda: services.submit(listing.slug, GOOD, client_ident="same") for _ in range(6)])
+    results = race(*[lambda: services.submit(str(listing.slug), GOOD, client_ident="same") for _ in range(6)])
 
     assert not [r for r in results if isinstance(r, Exception)], results
-    assert len({r.reference for r in results}) == 1  # type: ignore[union-attr]
+    assert len({r.reference for r in results}) == 1
     report = ListingReport.objects.get()
     assert report.duplicate_count == 5
     assert report.events.filter(action="repeated").count() == 5
 
 
 def test_different_clients_at_once_each_get_their_own_report(listing: Opportunity) -> None:
-    results = race(*[lambda i=i: services.submit(listing.slug, GOOD, client_ident=f"c{i}") for i in range(5)])
+    results = race(
+        *[lambda i=i: services.submit(str(listing.slug), GOOD, client_ident=f"c{i}") for i in range(5)]
+    )
 
     assert not [r for r in results if isinstance(r, Exception)], results
     assert ListingReport.objects.count() == 5
@@ -43,7 +45,7 @@ def test_different_clients_at_once_each_get_their_own_report(listing: Opportunit
 def test_two_staff_deciding_the_same_report_at_once_one_wins(
     listing: Opportunity, people: dict[str, User]
 ) -> None:
-    services.submit(listing.slug, GOOD, client_ident="c")
+    services.submit(str(listing.slug), GOOD, client_ident="c")
     report = ListingReport.objects.get()
     version = report.row_version
 

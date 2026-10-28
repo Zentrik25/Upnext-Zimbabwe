@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -34,7 +35,7 @@ def listing(world: World, people: dict[str, User]) -> Opportunity:
 @pytest.fixture
 def report(listing: Opportunity) -> ListingReport:
     services.submit(
-        listing.slug,
+        str(listing.slug),
         {"reason": "fake_job", "details": "The company does not exist, I checked."},
         client_ident="c",
     )
@@ -184,14 +185,15 @@ def test_closed_reports_cannot_be_worked(report: ListingReport, people: dict[str
     moderation.dismiss(
         people["editor2"], report.pk, expected_row_version=v(report), resolution="spam", note=NOTE
     )
-    for call in (
+    calls: list[Callable[[], object]] = [
         lambda: moderation.investigate(people["editor2"], report.pk, expected_row_version=v(report)),
         lambda: moderation.add_note(people["editor2"], report.pk, expected_row_version=v(report), note=NOTE),
         lambda: moderation.escalate(people["editor2"], report.pk, expected_row_version=v(report), note=NOTE),
         lambda: moderation.dismiss(
             people["editor2"], report.pk, expected_row_version=v(report), resolution="spam", note=NOTE
         ),
-    ):
+    ]
+    for call in calls:
         with pytest.raises(InvalidTransition):
             call()
 
