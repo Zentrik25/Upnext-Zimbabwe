@@ -11,7 +11,10 @@ export function EmptyState({
   title: string;
   children?: ReactNode;
   className?: string;
-  /** Heading level: pages whose main content is this state use "h1". */
+  /**
+   * Heading level. The default "h3" is only right inside a section that has its own h2. Directly under the
+   * page h1 use "h2" (heading-order, WCAG 1.3.1); a page whose main content is this state uses "h1".
+   */
   as?: "h1" | "h2" | "h3";
 }) {
   return (

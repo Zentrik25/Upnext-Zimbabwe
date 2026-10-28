@@ -41,7 +41,7 @@ export default async function ProfilePage() {
       <Container className="pt-[18px] pb-[65px]">
         {profile === null ? (
           <div role="alert">
-            <EmptyState title="Your profile is unavailable">
+            <EmptyState as="h2" title="Your profile is unavailable">
               The service could not be reached. Try again shortly.
             </EmptyState>
           </div>
