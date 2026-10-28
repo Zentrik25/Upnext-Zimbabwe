@@ -477,6 +477,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | WF-14 | `apps/api/tests/test_concurrency.py` | executed (real threads on PostgreSQL 18.6) |
 | WF-15 | `apps/api/tests/test_admin.py::test_organisations_can_be_created_by_contributors_but_edited_only_by_editors` | executed (organisation merge is not implemented) |
 | WF-16 | `apps/api/tests/test_admin.py::test_every_cms_action_is_audited_with_the_acting_role; apps/api/tests/test_workflow.py` | executed |
+| JOB-01 | `apps/api/tests/test_expiry_job.py (scheduled run in the worker, overlap protection, job record and heartbeat, failure handling, monitoring alerts)` | executed |
 | SOD-01 | `apps/api/tests/test_workflow.py::test_author_cannot_approve_reject_or_verify_their_own_submission` | executed |
 | SOD-02 | `apps/api/tests/test_workflow.py::test_author_cannot_approve_reject_or_verify_their_own_submission` | executed |
 | SOD-04 | `apps/api/tests/test_workflow.py::test_two_people_are_enough_to_publish` | executed |

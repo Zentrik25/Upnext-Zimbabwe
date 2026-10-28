@@ -1,4 +1,5 @@
-"""The background worker: the e-mail outbox every cycle, account deletions and retention every few minutes."""
+"""The background worker: the e-mail outbox every cycle; account deletions, retention, job alerts and listing
+expiry every few minutes."""
 
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from alerts import service as alert_service
 from core import alerts as alert_catalogue
 from core.models import JobRun
 from notifications.services import process_batch, status_summary
+from opportunities import expiry
 
 logger = logging.getLogger("upnext.worker")
 HEARTBEAT = Path(os.environ.get("UPNEXT_WORKER_HEARTBEAT", "/tmp/upnext-worker-heartbeat"))  # noqa: S108
@@ -46,6 +48,10 @@ class Command(BaseCommand):
                     JobRun.record("alerts", detail=f"{ran.status} checked={ran.checked} queued={ran.queued}")
                 except Exception:  # an alert problem must never stop the outbox or deletions
                     logger.exception("job alerts failed", extra={"event": "alerts.pass_failed"})
+                try:  # listing expiry (T11): one run at a time, recorded in core_jobrun as "expiry"
+                    expiry.run()
+                except Exception:  # an expiry problem must never stop the outbox or deletions
+                    logger.exception("listing expiry failed", extra={"event": "expiry.failed"})
                 if alerts := status_summary()["alerts"]:
                     logger.warning(
                         "outbox needs attention", extra={"event": "outbox.alert", "alerts": alerts}

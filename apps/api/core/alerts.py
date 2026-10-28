@@ -66,7 +66,7 @@ def evaluate(now: datetime | None = None) -> list[Alert]:
         found.append(Alert("mail.stuck", CRITICAL, f"oldest waiting e-mail is {int(age)} s old", "mail"))
 
     expected = {x for x in os.environ.get("UPNEXT_ALERTS_EXPECT_JOBS", "").split(",") if x}
-    limits = {"worker": 120, "housekeeping": 900}
+    limits = {"worker": 120, "housekeeping": 900, "expiry": 900}
     rows = {r.name: r for r in JobRun.objects.filter(name__in=[*limits, "backup", "restore"])}
     for name, seconds in limits.items():
         row = rows.get(name)
