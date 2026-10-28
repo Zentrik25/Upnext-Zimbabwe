@@ -31,6 +31,16 @@ async function signIn(page: Page, email: string, password: string, next?: string
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
+/**
+ * Signing out is asynchronous: the button posts to /auth/logout and only then redirects to "/". The session stays
+ * valid until that finishes, and /sign-in sends a signed-in person on to /account, so navigating straight after
+ * the click races the request (CI run 40659263462). Wait for the signed-out header before doing anything else.
+ */
+async function signOut(page: Page) {
+  await page.getByRole("button", { name: "Sign out" }).first().click();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+}
+
 async function axeClean(page: Page) {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
@@ -199,8 +209,7 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   await page.getByRole("button", { name: "Cancel the request" }).click();
   await expect(page.getByRole("button", { name: "Delete my account…" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Sign out" }).first().click();
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await signOut(page);
   await page.goto("/account");
   await expect(page).toHaveURL(/\/sign-in/);
 });
@@ -248,7 +257,7 @@ test("7. sign-in only follows safe return addresses", async ({ page }) => {
   for (const next of ["https://evil.example/", "//evil.example", "/staff/", "/api/v1/me"]) {
     await signIn(page, EMAIL, THIRD_PASSWORD, next);
     await expect(page).toHaveURL(/\/account$/);
-    await page.getByRole("button", { name: "Sign out" }).first().click();
+    await signOut(page);
   }
 });
 
@@ -327,7 +336,7 @@ test("9b. change of e-mail address: the new address must confirm, the old one is
   expect(after.body).toContain("was changed");
 
   await page.goto("/account");
-  await page.getByRole("button", { name: "Sign out" }).first().click();
+  await signOut(page);
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page.getByRole("alert").filter({ hasText: "Error:" })).toContainText(
     "Incorrect e-mail or password.",
