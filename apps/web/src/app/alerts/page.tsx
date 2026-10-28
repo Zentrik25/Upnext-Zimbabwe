@@ -35,7 +35,7 @@ export default async function AlertsPage() {
       <Container className="pt-[18px] pb-[65px]">
         {alert === null ? (
           <div role="alert">
-            <EmptyState title="Alert settings are unavailable">
+            <EmptyState as="h2" title="Alert settings are unavailable">
               The service could not be reached. Try again shortly.
             </EmptyState>
           </div>
