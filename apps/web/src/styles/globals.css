@@ -5,6 +5,9 @@
   html {
     -webkit-text-size-adjust: 100%;
     color-scheme: light;
+    /* The header is sticky and wraps to 78px at 320px: keep in-page targets (#apply, #main, any URL fragment)
+       clear of it (WCAG 2.2 SC 2.4.11). */
+    scroll-padding-top: 5.5rem;
   }
   body {
     margin: 0;

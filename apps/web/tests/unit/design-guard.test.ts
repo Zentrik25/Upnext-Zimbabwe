@@ -40,6 +40,11 @@ describe("design system guard (VIS-04, D-39)", () => {
     expect(css).not.toMatch(/box-shadow:/);
   });
 
+  it("keeps in-page targets clear of the sticky header (SC 2.4.11)", () => {
+    const css = readFileSync(join(src, "styles/globals.css"), "utf8");
+    expect(css).toMatch(/scroll-padding-top:\s*5\.5rem/);
+  });
+
   it("application code never uses the reference-only colour tokens (they exist for tests)", () => {
     const offenders = sources.filter((f) =>
       /(?:text|bg|border|fill|stroke)-ref-/.test(readFileSync(f, "utf8")),
