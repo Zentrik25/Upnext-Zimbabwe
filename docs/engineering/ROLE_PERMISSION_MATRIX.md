@@ -102,8 +102,8 @@ Permissions are **codes**; roles are **sets of codes** in one registry (`apps/ap
 | Admin UI | state fields read-only; actions call services |
 | Tests | table-driven cases generated from this matrix (every role × capability × condition both allowed and denied) |
 
-Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, employer.verification.revoke, opp.withdraw_own, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
-Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, employer.verification.revoke`. Seekers hold `me.*`; everyone holds `opp.read_public`.
+Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, employer.verification.revoke, opp.withdraw_own, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, report.read, report.triage, report.resolve, report.resolve_escalated, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
+Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, report.read, report.triage, report.resolve`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, employer.verification.revoke, report.resolve_escalated`. Seekers hold `me.*`; everyone holds `opp.read_public`.
 
 ## Phase 6A addendum: verified employer members (D-35)
 
@@ -123,3 +123,17 @@ No new permission code and no new role. The seeker features sit behind the exist
 | Unsubscribe from an alert | with the signed link in the message | yes | no | no | no | no |
 
 Enforcement: every `/me/*` and `/discovery/for-you` view works on `request.user` only and no route carries an identifier that selects an account (`tests/test_profiles.py::test_no_url_exposes_a_seeker_profile_by_id`); `profiles` and `alerts` models are not registered in Django Admin (tested); the unsubscribe operation is on the reviewed public list in `tests/test_endpoint_review.py`.
+
+## M2 addendum: report moderation (public reports about listings)
+
+A report is a message to staff, written by anyone without an account. **It never changes a listing by itself**; a person acts on the listing through the publishing service, with the permissions in the tables above.
+
+| Capability | Contributor | Editor | Administrator |
+|---|---|---|---|
+| See reports and their history (`report.read`) | no | yes | yes |
+| Start an investigation, add notes, escalate (`report.triage`) | no | yes | yes |
+| Resolve or dismiss a report that is not escalated (`report.resolve`) | no | yes | yes |
+| Resolve or dismiss an **escalated** report; reopen a closed one (`report.resolve_escalated`) | no | no | yes |
+| Withdraw, mark as expired or take down the reported listing | per the listing tables (`opp.withdraw`, `opp.expire`, `opp.takedown`) | yes | yes |
+
+Separation of duties for reports: a person who **authored or submitted** any revision of the reported listing, or created it, cannot resolve or dismiss a report about it, nor take an action on the listing *through the report*; they can still add notes and escalate. Every step is recorded twice: in the report's append-only history and in the audit log. Taking a listing action from a report calls the same publishing-service transition as the listing screens, so the listing's own rules and audit apply unchanged.

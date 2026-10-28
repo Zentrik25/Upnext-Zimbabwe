@@ -30,6 +30,7 @@ REST_FRAMEWORK = {
         "listing_event_ip": "120/1m",
         "for_you_user": "120/1m",
         "unsubscribe_ip": "30/1h",
+        "report_ip": "5/1h",
     },
 }
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = 60

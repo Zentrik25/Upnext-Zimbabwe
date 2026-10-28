@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, employer_views, profile_views, public_views, views
+from api import account_views, employer_views, profile_views, public_views, report_views, views
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -107,6 +107,11 @@ urlpatterns = [
         r"^opportunities/(?P<slug>[^/]{1,200})/events$",
         employer_views.ListingEventView.as_view(),
         name="listing-event",
+    ),
+    re_path(
+        r"^opportunities/(?P<slug>[^/]{1,200})/reports$",
+        report_views.CreateListingReportView.as_view(),
+        name="listing-report",
     ),
     re_path(
         r"^opportunities/(?P<slug>[^/]{1,200})$",

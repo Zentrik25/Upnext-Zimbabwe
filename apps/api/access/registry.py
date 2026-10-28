@@ -46,6 +46,10 @@ class Permission(StrEnum):
     USER_ROLE_REVOKE = "user.role.revoke"
     USER_STATUS_CHANGE = "user.status.change"
     AUDIT_READ_ALL = "audit.read_all"
+    REPORT_READ = "report.read"
+    REPORT_TRIAGE = "report.triage"
+    REPORT_RESOLVE = "report.resolve"
+    REPORT_RESOLVE_ESCALATED = "report.resolve_escalated"
     SETTINGS_MANAGE = "settings.manage"
     ME_PROFILE = "me.profile"
     ME_SAVED = "me.saved"
@@ -75,6 +79,9 @@ _EDITOR_CODES = frozenset(
         P.ORG_CREATE,
         P.ORG_EDIT,
         P.EMPLOYER_REVIEW,
+        P.REPORT_READ,
+        P.REPORT_TRIAGE,
+        P.REPORT_RESOLVE,
     }
 )
 
@@ -117,6 +124,7 @@ _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
                 P.AUDIT_READ_ALL,
                 P.SETTINGS_MANAGE,
                 P.EMPLOYER_VERIFICATION_REVOKE,
+                P.REPORT_RESOLVE_ESCALATED,
             }
         ),
     }
