@@ -75,3 +75,7 @@ Resend is the selected provider (D-34) but none is configured or enabled. Until 
 ## Addendum (D-34, D-42): identity and e-mail variables
 
 Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
+
+## Addendum (launch preparation): production Compose project
+
+`infrastructure/compose/compose.production.yaml` is the production stack definition (see `PRODUCTION_DEPLOYMENT_PLAN.md` §1). It sets the identity (`https://upnext.co.zw`, `info@upnext.co.zw` only) in the file itself, reads secrets from the environment with no defaults, runs the API and worker as the unprivileged database role, keeps migrations in a `release` profile that holds the owner credentials, and keeps e-mail at backend `none`. Validate without a server: `docker compose --env-file <file> -f compose.production.yaml config` and `pytest tests/test_production_compose.py`. **Not run on the VPS; not deployed.**

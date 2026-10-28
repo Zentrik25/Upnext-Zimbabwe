@@ -16,10 +16,10 @@ The plan below is the **target**; sections marked **[depends on U-2]** change sh
 
 ## 1. Gaps in the repository that Phase 7 must close (honest list)
 
-1. There is no production Compose file. `compose.yaml` is the development stack; `compose.prod-like.yaml` and `compose.tls.yaml` are rehearsal overlays with demo data and a throwaway certificate. A production Compose project (name `upnext-prod`, its own network, volumes and no host port other than what the proxy needs) must be written and reviewed.
+1. **Production Compose project: written, statically validated, never run on the VPS.** `infrastructure/compose/compose.production.yaml` (project `upnext-prod`; networks `upnext-prod-data` (internal), `-app`, `-egress`; volume `upnext-prod-pgdata`; only the proxy publishes a port, on `127.0.0.1:${UPNEXT_PROXY_PORT:-8090}`), `nginx.production.conf.template` (serves only `upnext.co.zw`; any other Host, including `www`, gets no answer) and the optional `compose.production.edge.yaml` (attaches the proxy to an existing edge network named by `UPNEXT_EDGE_NETWORK`, written for real only after U-2). Tests: `apps/api/tests/test_production_compose.py` (isolation, no secrets in running services, required values, production settings accept the file's environment) and the CI job `production-stack` (`infrastructure/scripts/production-smoke.sh`: boots it with throwaway values on a CI runner). `UPNEXT_EDGE_CIDR` (the shared edge's address range, needed to trust the client address) has no default because it is unknown until U-2.
 2. Images: `prod` targets exist for API (gunicorn, health `/health/live`) and web; no registry or tag/digest process is defined. Choose: build on the VPS from a tagged commit, or push to a registry.
-3. Backups and worker containers for production, plus the scheduled backup job (cron/systemd timer) using `offsite.sh`.
-4. The Nginx server block for upnext.co.zw (modelled on `nginx.tls.conf`: `/api|health|staff|static` to the API, everything else to the web service, forwarded headers overwritten) **[depends on U-2]**.
+3. The scheduled backup job (the worker container is in the Compose project) (cron/systemd timer) using `offsite.sh`.
+4. The router/service entry in the shared edge that sends `Host(upnext.co.zw)` to `proxy:80` **[depends on U-2]**, and a runtime check of the hardening the static tests cannot see (read-only root file systems were deliberately not enabled: unverified without a real run).
 
 ## 2. Pre-deployment gates (all must be true; see `LAUNCH_BLOCKERS.md`)
 
