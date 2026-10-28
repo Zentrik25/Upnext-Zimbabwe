@@ -6,7 +6,7 @@ Status: DRAFT. **No verification has been performed and none is recorded.** E-ma
 
 | # | Check | Evidence to keep |
 |---|---|---|
-| 1 | Resend shows **nextjob.co.zw** as verified | dashboard screenshot with date |
+| 1 | Resend shows **upnext.co.zw** as verified | dashboard screenshot with date |
 | 2 | DKIM passes on a received message | the message's authentication results / headers |
 | 3 | SPF passes (alignment with the visible From domain) | same |
 | 4 | DMARC passes; policy chosen by the owner (start permissive, e.g. monitoring only, then tighten); reports mailbox decided | DMARC record, header result |

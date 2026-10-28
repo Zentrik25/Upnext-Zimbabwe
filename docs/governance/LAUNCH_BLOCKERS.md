@@ -1,6 +1,6 @@
 # Launch blockers and outstanding decisions — DRAFT
 
-Status: DRAFT for owner review, written at the end of Phase 4 and updated 2026-10-28 (M1) for Phases 5, 6A and 6B. It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
+Status: DRAFT for owner review, written at the end of Phase 4 and updated 2026-10-28 for Phases 5, 6A, 6B, M1, M2, the D-42 rebrand and launch preparation (section A5). It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
 
 Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A2 below) of `docs/phase5/PHASE5_REVISED_PLAN.md` (§WS7 maps each blocker to its closing work and evidence).
 
@@ -8,9 +8,9 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 
 | # | Blocker | Why | Who | Evidence |
 |---|---|---|---|---|
-| B-01 | **E-mail delivery not verified** (OQ-03; Resend selected, D-34) | Confirmation and password-reset links cannot be delivered; accounts cannot be created in practice. Production sends nothing by design | Owner creates the Resend account, adds nextjob.co.zw, adds the records Resend shows in DNS, sets the `UPNEXT_SMTP_*` secrets, runs `check_email_config --connect` and `--send-test`, and records the result (`docs/engineering/RESEND_INTEGRATION.md`, `EMAIL_DELIVERY_VERIFICATION.md`) | `docs/engineering/PRODUCTION_CONFIGURATION.md` §3 |
+| B-01 | **E-mail delivery not verified** (OQ-03; Resend selected, D-34) | Confirmation and password-reset links cannot be delivered; accounts cannot be created in practice. Production sends nothing by design | Owner creates the Resend account, adds upnext.co.zw (D-42), adds the records Resend shows in DNS, sets the `UPNEXT_SMTP_*` secrets, runs `check_email_config --connect` and `--send-test`, and records the result (`docs/engineering/RESEND_INTEGRATION.md`, `EMAIL_DELIVERY_VERIFICATION.md`) | `docs/engineering/PRODUCTION_CONFIGURATION.md` §3 |
 | B-02 | **Legal review of Privacy and Terms; operator identity** (OQ-09) | Both pages are drafts with bracketed gaps (operator, legal bases, rights routes, minimum age, transfers, liability, governing law). The legal framework for Zimbabwe has not been researched | Owner and a lawyer | `/privacy`, `/terms` |
-| B-03 | **Contact address** | The Contact page says details are not published; corrections and privacy requests have nowhere to go | Owner sets `UPNEXT_CONTACT_EMAIL` | `/contact` |
+| B-03 | **Contact address** (D-42: the only official address is info@upnext.co.zw) | The Contact page shows an address only when the mailbox is confirmed to receive mail; corrections and privacy requests need it | Owner confirms info@upnext.co.zw receives mail, then sets `UPNEXT_CONTACT_EMAIL` | `/contact` |
 | B-04 | **Domain, TLS and cookies** (OQ-01, OQ-10) | Origin, HSTS, secure cookies, the `__Host-` prefix and proxy header trust cannot be verified without the real front. Production refuses to start without HTTPS settings | Owner; Phase 7 read-only inspection | production safeguards, P4-08 |
 | B-05 | **Staff access policy** (OQ-13, OQ-16) | Who gets accounts, whether network restriction is also required, who holds the break-glass access, second administrator | Owner | `STAFF_ACCESS_RUNBOOK.md` |
 | B-06 | **Owner approval of provisional defaults that shape public content** | P2-01, P2-04, P2-07 to P2-10, P3-01 to P3-08, P4-01 to P4-11 are engineering defaults | Owner | decision register |
@@ -27,7 +27,7 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 |---|---|---|
 | B-01 | Provider-neutral signed bounce/complaint feed, delivery-verification record and gate, selection scorecard for Resend and Amazon SES (`EMAIL_PROVIDER_SELECTION.md`), change of e-mail built behind the gate | Resend is selected (D-34) and its webhook receiver, SMTP checks and branded templates exist; still needed: real account, domain verification, SPF/DKIM/DMARC, test mail in Gmail, Outlook and a Zimbabwean mailbox, `record_email_verification` run by a person. **Not done: no account, no DNS record, no real message sent; blocker stays open** |
 | B-02 | Data inventory with a completeness test, privacy and terms drafts v2, legal review pack, rights procedures | Lawyer's review and the owner's recorded approval; operator identity; provider names; retention decision (listing counters: provisional 12 months, D-36)s |
-| B-03 | Contact page and corrections route are ready to show an address | Mailbox names are approved (D-33: info@, support@, jobs@, partnerships@ nextjob.co.zw) but the owner must create and monitor them, then set `UPNEXT_CONTACT_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_JOBS_EMAIL`, `UPNEXT_PARTNERSHIPS_EMAIL` |
+| B-03 | Contact page and corrections route are ready to show an address | **Superseded by D-42:** the single official address is info@upnext.co.zw (the D-33 mailbox set no longer applies and no other mailbox is to be created). The owner must confirm it is monitored, then set `UPNEXT_CONTACT_EMAIL` (and the other address variables, all to that one address) |
 | B-04 | Local TLS rehearsal: production-mode API behind a throwaway certificate, preflight with 0 failures, whole browser suite passing over TLS | Real domain, real certificate, real front (Phase 7) |
 | B-05 | Staff runbook from Phase 4, two-step mandatory, no IP restriction (owner decision), role-change alert | Named people, a completed drill on the real setup, second administrator decision |
 | B-06 | One consolidated list of provisional defaults (register P2 to P5) | Owner approval or changes, recorded |
@@ -43,6 +43,38 @@ No blocker is closed. B-01 additionally gates **job alerts** (nothing is sent wh
 
 ## A4. Defects found by the repository audit and fixed in M1 (2026-10-28)
 No blocker is closed by this. (1) **A-01:** the unavailable states of `/profile` and `/alerts` rendered an `h3` directly under the page `h1`, and the listing page's unavailable state had no `h1`. At 320 px axe reported `heading-order` on `/profile`, which failed the jobseeker browser journey and turned the end-to-end CI job red on the Phase 6B merge commit (run 39176711994; the employer and editorial journeys were skipped in that run). Why the profile service call failed in that run was not established; the markup is now valid whether or not it fails. (2) **A-02:** the listing expiry job (`workflow.expire_due`, traceability JOB-01) was specified and tested but never scheduled, so a published listing never became `expired` in a running system; the worker now runs it every housekeeping cycle, one run at a time, and records it as the `expiry` job.
+
+## A5. Launch preparation (2026-10-28, release candidate 06dfafe) and GO/NO-GO gates
+
+Release candidate `06dfafe3dfc7287cd661074066e965ea14adf846` is accepted by the owner for launch preparation (six CI jobs green). **No blocker is closed by this work; nothing is deployed, no DNS or shared proxy is changed, no e-mail is sent.** PR #14 is outside this release.
+
+| # | Prepared in launch preparation | Still external / not done |
+|---|---|---|
+| B-01 | `EMAIL_PROVIDER_LAUNCH_CHECKLIST.md`; Resend, DNS and verification docs re-pointed to upnext.co.zw and info@upnext.co.zw only | Resend account and domain, DNS records, real test mail, webhook, recorded verification, approval to enable sending. Can be deferred: the site can launch with e-mail off |
+| B-02 | `docs/legal/OPERATOR_IDENTITY_AND_REVIEW_CHECKLIST.md` (facts I-1 to I-9, review items R-1 to R-12). No legal fact invented; review **not** done | Operator identity, lawyer's answers, recorded outcome, then removal of draft banners and enabling of profile collection |
+| B-03 | Superseded by D-42 (single address) | Owner confirms info@upnext.co.zw receives mail |
+| B-04 / B-08 | `PRODUCTION_DEPLOYMENT_PLAN.md`: DNS (apex only, no www, no redirect), proxy, TLS, verification, rollback | Read-only VPS and proxy inspection (OQ-10), DNS access, Phase 7 written approval |
+| B-05 | unchanged | Named staff, second administrator decision |
+| B-06 | `LAUNCH_DECISIONS_TRIAGE.md` separates 12 launch-critical decisions (O-1 to O-12) from enhancements | Owner decisions |
+| B-07 | `infrastructure/backup/offsite.sh` (copy with read-back verification, tested), `measure-restore.sh` (JSON timing record), `BACKUP_AND_RESTORE.md` §8, alert catalogue already complete | Off-server target and credentials, key escrow, a real off-server backup, a measured restore on real infrastructure, an alert channel with one real test alert |
+| B-09 | — | Real content, three named staff, approved categories (OQ-06) |
+| B-10 | — | Manual accessibility audit |
+| Brand | `docs/design/WORDMARK_VECTORISATION.md` | Vector wordmark from the designer, or owner acceptance of the typeset stand-in (O-5) |
+
+### GO / NO-GO gates (a launch is GO only when every NO-GO line below is cleared)
+
+| Gate | Cleared when | State |
+|---|---|---|
+| G1 Owner approval | Written Phase 7 approval and approval of provisional defaults (B-06, B-08) | NO-GO |
+| G2 Legal | B-02 recorded (privacy/terms reviewed, operator identity published) | NO-GO |
+| G3 Infrastructure | B-04: inspection done, DNS, TLS, proxy, V-1 to V-12 pass | NO-GO |
+| G4 Resilience | B-07: off-server backup, measured restore, real alert received | NO-GO |
+| G5 Access | B-05: named staff, two-step, drill | NO-GO |
+| G6 Content | B-09: real approved categories and listings by real editors; a named public-report reader (O-9) | NO-GO |
+| G7 Accessibility | B-10 manual audit report | NO-GO |
+| G8 Contact | B-03: info@upnext.co.zw confirmed monitored | NO-GO |
+| G9 E-mail | B-01 verified **or** the owner accepts launching with e-mail off (accounts cannot then be confirmed in practice; recorded decision needed) | NO-GO |
+| G10 Software | Six CI jobs green on the release commit; `check_production_config` clean on the real stack | GO on the candidate (CI); production check not yet possible |
 
 ## B. Owner decisions still needed
 
