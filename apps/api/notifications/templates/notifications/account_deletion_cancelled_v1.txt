@@ -1,7 +1,7 @@
 Hello {{ display_name }},
 
-Your request to delete your NextJob Zimbabwe account has been cancelled. Your account stays as it was.
+Your request to delete your {{ brand_name }} account has been cancelled. Your account stays as it was.
 
 If you did not cancel it, change your password now: {{ base_url }}/forgot-password
 
-NextJob Zimbabwe never asks for your password by e-mail.
+{{ brand_name }} never asks for your password by e-mail.

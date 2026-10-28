@@ -118,7 +118,7 @@ class SmtpSender:
         mime["From"], mime["To"], mime["Subject"] = self.sender, message.to, message.subject
         if self.reply_to:
             mime["Reply-To"] = self.reply_to
-        mime["Message-ID"] = f"<{message.idempotency_key}@nextjob>"
+        mime["Message-ID"] = f"<{message.idempotency_key}@{settings.UPNEXT_BRAND_DOMAIN}>"
         mime["Auto-Submitted"] = "auto-generated"
         for name, value in message.headers:
             mime[name] = value

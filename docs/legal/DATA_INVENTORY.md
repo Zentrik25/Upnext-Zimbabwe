@@ -72,7 +72,7 @@ Organisation names and web addresses (`catalog_organisation.name`, `catalog_orga
 
 ## D. Not collected
 
-Date of birth, gender, national identity numbers, photographs, CVs or other uploads, payment details, precise location, advertising or analytics identifiers (P4-04, amended by D-35: no analytics service and no tracking; only the session and CSRF cookies, plus anonymous per-listing counts of views and apply clicks). Profile data (qualification, skills, interests) is designed (D-31) but **not built and not collected**.
+Date of birth, gender, national identity numbers, photographs, CVs or other uploads, payment details, precise location, advertising or analytics identifiers (P4-04, amended by D-35: no analytics service and no tracking; only the session and CSRF cookies, plus anonymous per-listing counts of views and apply clicks; and, since D-40, the visitor's own Light or Dark colour-theme choice, kept in the browser's local storage only under `upnext-theme` and never sent to the server). Profile data (qualification, skills, interests) is designed (D-31) but **not built and not collected**.
 
 ## E. Processors and places the data goes (owner to complete)
 

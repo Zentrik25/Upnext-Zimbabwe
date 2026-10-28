@@ -53,7 +53,7 @@ export default async function EmployerDashboard() {
         </ButtonLink>
       </EmployerHeading>
       <p className="mt-1 text-base text-muted">
-        Everything you post is reviewed by NextJob editors before it is public. Being a verified organisation
+        Everything you post is reviewed by UPNEXT editors before it is public. Being a verified organisation
         does not make a listing verified.
       </p>
 
@@ -72,7 +72,7 @@ export default async function EmployerDashboard() {
             {waiting.map((claim) => (
               <li
                 key={claim.id}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 border border-border-panel p-3 text-base"
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card border border-border-panel p-3 text-base"
               >
                 <strong>{claim.organisation_name}</strong>
                 <ClaimTag status={claim.status} />
@@ -96,7 +96,7 @@ export default async function EmployerDashboard() {
           </h2>
           <ul className="m-0 mt-2 grid list-none gap-2 p-0">
             {decided.map((claim) => (
-              <li key={claim.id} className="border border-border-panel p-3 text-base">
+              <li key={claim.id} className="rounded-card border border-border-panel p-3 text-base">
                 <strong>{claim.organisation_name}</strong> <ClaimTag status={claim.status} />
                 {claim.decision_reason ? (
                   <p className="mt-1 text-small">Reason: {claim.decision_reason}</p>
@@ -145,7 +145,7 @@ export default async function EmployerDashboard() {
           {!org.verified ? (
             <p className="mt-3 text-base">
               The verification of this organisation was withdrawn, so you cannot submit new listings or
-              profile changes. Contact NextJob if you think this is a mistake.
+              profile changes. Contact UPNEXT if you think this is a mistake.
             </p>
           ) : null}
 
@@ -157,7 +157,11 @@ export default async function EmployerDashboard() {
               {rows.map((row) => {
                 const s = stats.get(row.id);
                 return (
-                  <li key={row.id} className="border border-border-panel p-3" data-testid="employer-listing">
+                  <li
+                    key={row.id}
+                    className="rounded-card border border-border-panel p-3"
+                    data-testid="employer-listing"
+                  >
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <Link
                         href={`/employer/listings/${row.id}`}

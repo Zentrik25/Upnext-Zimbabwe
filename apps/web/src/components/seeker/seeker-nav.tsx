@@ -16,7 +16,7 @@ export function SeekerNav({ current }: { current: SeekerSection }) {
   return (
     <Container>
       <Tabs
-        label="Your NextJob"
+        label="Your UPNEXT"
         items={ITEMS.map((item) => ({ href: item.href, label: item.label, current: item.id === current }))}
       />
     </Container>

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const result = await getEmployerProfile(slug);
   if (!result.ok || result.data === null) return { title: "Employer not found", robots: { index: false } };
   const profile = result.data;
-  const description = profile.tagline || `${profile.organisation.name} on NextJob Zimbabwe.`;
+  const description = profile.tagline || `${profile.organisation.name} on UPNEXT Careers.`;
   return {
     title: profile.organisation.name,
     description,
@@ -76,9 +76,9 @@ export default async function EmployerProfilePage({ params }: Props) {
             <Tag tone="good">Verified organisation</Tag>
           </p>
           <p className="mt-3 text-small text-muted">
-            This organisation was checked by NextJob editors. The text below is written by the organisation
-            and was reviewed before it was published. Verification of the organisation is separate from the
-            labels on its listings.
+            This organisation was checked by UPNEXT editors. The text below is written by the organisation and
+            was reviewed before it was published. Verification of the organisation is separate from the labels
+            on its listings.
           </p>
           <div className="mt-4 whitespace-pre-line text-base">{p.about}</div>
           {facts.length > 0 ? (

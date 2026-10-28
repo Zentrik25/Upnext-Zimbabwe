@@ -1,4 +1,4 @@
-"""NextJob Zimbabwe branding of transactional e-mail (D-33): text and HTML, no outdated name, safe HTML."""
+"""UPNEXT Careers branding of transactional e-mail (D-42): text and HTML, no former name, one official address."""
 
 from __future__ import annotations
 
@@ -42,10 +42,11 @@ def build(user: User, kind: EmailKind) -> Any:
 def test_every_message_is_branded_and_has_a_safe_html_alternative(
     kind: EmailKind, make_user: Callable[..., User], settings: Any
 ) -> None:
-    settings.UPNEXT_PUBLIC_BASE_URL = "https://nextjob.example.test"
+    settings.UPNEXT_PUBLIC_BASE_URL = "https://upnext.example.test"
     message = build(make_user(display_name="Tom & <b>Jerry</b>"), kind)
-    assert "UPNEXT" not in message.subject + message.body + (message.html or "")
-    assert "NextJob Zimbabwe" in message.subject
+    everything = message.subject + message.body + (message.html or "")
+    assert "nextjob" not in everything.lower()
+    assert "UPNEXT Careers" in message.subject
     assert message.html is not None and message.html.startswith("<!doctype html>")
     assert '<html lang="en">' in message.html and "<title>" in message.html
     # no tracking pixels, remote images, scripts or forms
@@ -58,26 +59,34 @@ def test_every_message_is_branded_and_has_a_safe_html_alternative(
 def test_token_links_use_the_configured_origin_and_html_matches_text(
     make_user: Callable[..., User], settings: Any
 ) -> None:
-    settings.UPNEXT_PUBLIC_BASE_URL = "https://nextjob.example.test/"
+    settings.UPNEXT_PUBLIC_BASE_URL = "https://upnext.example.test/"
     message = build(make_user(), EmailKind.PASSWORD_RESET)
-    link = re.search(r"https://nextjob\.example\.test/reset-password\?token=\S+", message.body)
+    link = re.search(r"https://upnext\.example\.test/reset-password\?token=\S+", message.body)
     assert link is not None
     assert f'href="{link.group(0)}"' in message.html
     assert "marketing" not in message.body.lower()
 
 
-def test_footer_names_the_support_mailbox_only_when_configured(settings: Any) -> None:
-    settings.UPNEXT_SUPPORT_EMAIL = ""
-    assert "mailto:" not in render_html(subject="S", body="Hello")
-    settings.UPNEXT_SUPPORT_EMAIL = "support@nextjob.example.test"
-    assert 'href="mailto:support@nextjob.example.test"' in render_html(subject="S", body="Hello")
+def test_footer_names_the_one_official_mailbox(settings: Any) -> None:
+    html = render_html(subject="S", body="Hello")
+    assert 'href="mailto:info@upnext.co.zw"' in html
+    assert "UPNEXT" in html and "CAREERS" in html and "Jobs and opportunities in Zimbabwe." in html
+    for invented in ("support@", "noreply@", "no-reply@", "careers@", "jobs@"):
+        assert invented not in html
+    settings.UPNEXT_SUPPORT_EMAIL = ""  # an operator may blank it: the official address is still shown
+    assert 'href="mailto:info@upnext.co.zw"' in render_html(subject="S", body="Hello")
+
+
+def test_sender_and_reply_to_are_the_official_identity(settings: Any) -> None:
+    assert settings.UPNEXT_EMAIL_FROM == "UPNEXT Careers <info@upnext.co.zw>"
+    assert settings.UPNEXT_EMAIL_REPLY_TO == "info@upnext.co.zw"
 
 
 def test_links_do_not_swallow_trailing_punctuation_and_text_is_escaped() -> None:
     html = render_html(
-        subject="S", body="See https://nextjob.example.test/a?x=1&y=2. <script>alert(1)</script>"
+        subject="S", body="See https://upnext.example.test/a?x=1&y=2. <script>alert(1)</script>"
     )
-    assert 'href="https://nextjob.example.test/a?x=1&amp;y=2"' in html
+    assert 'href="https://upnext.example.test/a?x=1&amp;y=2"' in html
     assert "<script>" not in html and "&lt;script&gt;" in html
 
 

@@ -99,14 +99,14 @@ test("2. registration and confirmation lead to a private profile that is optiona
   await register(page, EMAIL, NAME);
   await signIn(page, EMAIL, "/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Your NextJob", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your UPNEXT", level: 1 })).toBeVisible();
   // nothing is required: an empty profile still gets the newest open opportunities
   await expect(page.getByTestId("dash-profile-line")).toHaveText("Nothing added yet. It is optional.");
   await expect(page.getByTestId("dash-alert-line")).toHaveText("Off.");
   await expect(page.getByTestId("dash-foryou").getByRole("article").first()).toBeVisible();
   await shot(page, "seeker-01-dashboard-empty");
   await axeClean(page, "dashboard (empty)");
-  const nav = page.getByRole("navigation", { name: "Your NextJob" });
+  const nav = page.getByRole("navigation", { name: "Your UPNEXT" });
   await expect(nav.getByRole("link")).toHaveText(["Overview", "For you", "Saved", "Profile", "Alerts"]);
 
   await page.goto("/for-you");
@@ -263,12 +263,12 @@ test("6. alerts are set up with explicit consent, generated locally and never du
   // make the alert due and run a pass; the stack writes the message to a file, nothing leaves the machine
   expect(manage(`demo_alert_run --email ${EMAIL}`)).toContain("queued=1");
   const mail = await lastEmail(EMAIL, "job_alert");
-  expect(mail.subject).toMatch(/new opportunities matching your NextJob Zimbabwe alert/);
+  expect(mail.subject).toMatch(/new opportunities matching your UPNEXT Careers alert/);
   expect(mail.body).toContain(TOP_TITLE);
   expect(mail.body).toContain("/opportunities/");
   expect(mail.body).toContain("Stop these e-mails:");
   expect(mail.body).toContain("Change what you receive:");
-  expect(mail.body).not.toContain("UPNEXT");
+  expect(mail.body.toLowerCase()).not.toContain("nextjob");
   expect(mail.body).not.toMatch(/Public Health Programme Assistant[\s\S]*Public Health Programme Assistant/);
 
   // a second pass has nothing new and sends nothing

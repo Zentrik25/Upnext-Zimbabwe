@@ -6,8 +6,7 @@ import { VERIFICATION } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "About",
-  description:
-    "What NextJob Zimbabwe is, where its listings come from and what its verification labels mean.",
+  description: "What UPNEXT Careers is, where its listings come from and what its verification labels mean.",
   alternates: { canonical: "/about" },
   openGraph: openGraphFor("/about"),
 };
@@ -15,10 +14,10 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <ProsePage
-      title="About NextJob Zimbabwe"
-      intro="NextJob Zimbabwe helps people in Zimbabwe find jobs, internships, graduate programmes, scholarships, tenders and grants in one place."
+      title="About UPNEXT Careers"
+      intro="UPNEXT Careers helps people in Zimbabwe find jobs, internships, graduate programmes, scholarships, tenders and grants in one place."
     >
-      <Section title="What NextJob does">
+      <Section title="What UPNEXT does">
         <p>
           We collect opportunities published by employers, institutions and funders, check where each one came
           from, and present it with its source. You can browse and search without an account. An account lets
@@ -51,7 +50,7 @@ export default function AboutPage() {
       </Section>
       <Section title="How you apply">
         <p>
-          NextJob does not receive applications. Each listing tells you where to apply: the issuer&apos;s
+          UPNEXT does not receive applications. Each listing tells you where to apply: the issuer&apos;s
           website, an e-mail address or written instructions. Before you apply, check the details on the
           issuer&apos;s own channel, and be careful with any request that asks you to pay.
         </p>

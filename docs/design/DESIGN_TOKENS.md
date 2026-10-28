@@ -1,5 +1,8 @@
 # UPNEXT design tokens — extracted from the approved reference
 
+> **Superseded by D-39 (2026-10-28).** The web app now follows the Stripe-inspired design system. The live token values are in `apps/web/src/design/tokens.json` (generated into `tokens.generated.css`); the corrections to the system are in `ACCESSIBILITY_DEVIATIONS.md` section 0. Everything below describes the earlier flat reference and is kept as a historical record.
+
+
 **Status: DRAFT for owner sign-off.** Source of truth: `reference/approved-flat.html` (SHA-256 `77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8`, unchanged). Authority: DECISION_REGISTER D-08 (the reference is the definitive design source; blue accent, Arial, sizing, spacing and square corners are preserved) as amended by D-19 (accessibility takes precedence over exact fidelity where the reference conflicts with WCAG 2.2 AA; minimum corrections only). Reference values are exact measurements; the four **production deviations** are listed in `ACCESSIBILITY_DEVIATIONS.md` and in §1a. Nothing else is invented.
 
 **Method.** Values were read from the *computed* styles of the rendered reference in Chromium (Playwright) at 1440, 390 and 320px, then cross-checked against the CSS source. Raw output: `docs/design/evidence/reference-computed-styles.json`. The reference contains two CSS layers; the later "strict flat editorial UI" layer wins and is what is recorded below. Where a value could only be read from CSS source (an element not rendered in the sampled state), it is marked **(css)**.

@@ -409,14 +409,14 @@ def test_the_message_is_branded_has_working_links_and_both_unsubscribe_headers(
     from django.conf import settings as django_settings
 
     base = str(django_settings.UPNEXT_PUBLIC_BASE_URL).rstrip("/")
-    assert message.subject == "1 new opportunity matching your NextJob Zimbabwe alert"
+    assert message.subject == "1 new opportunity matching your UPNEXT Careers alert"
     assert "Hello Tendai," in message.body and "weekly" in message.body
     assert f"{base}/opportunities/{job.slug}" in message.body
     assert f"{base}/alerts\n" in message.body or f"{base}/alerts" in message.body
     assert f"{base}/alerts/unsubscribe?token=" in message.body
-    assert "NextJob does not receive applications" in message.body
-    assert "UPNEXT" not in message.body and "UPNEXT" not in (message.html or "")
-    assert message.html and "NextJob Zimbabwe" in message.html and "<script" not in message.html
+    assert "UPNEXT does not receive applications" in message.body
+    assert "nextjob" not in message.body.lower() and "nextjob" not in (message.html or "").lower()
+    assert message.html and "UPNEXT Careers" in message.html and "<script" not in message.html
     headers = dict(message.headers)
     assert headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert headers["List-Unsubscribe"].startswith(f"<{base}/api/v1/alerts/unsubscribe?token=")

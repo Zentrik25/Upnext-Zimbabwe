@@ -24,7 +24,7 @@ export function ProsePage({
           <div
             role="note"
             data-testid="draft-notice"
-            className="mt-4 border border-border-notice bg-surface-notice p-3 text-base"
+            className="mt-4 rounded-card border border-border-notice bg-surface-notice p-3 text-base"
           >
             <strong>Draft for owner and legal review.</strong> This text has not been approved by the owner or
             reviewed by a lawyer and is not legal advice. Items in [square brackets] are still to be decided.

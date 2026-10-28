@@ -9,4 +9,4 @@ Open it, make the changes and submit it again: {{ listing_url }}
 {% if amendment %}
 Until then the version that is already published stays as it is.
 {% endif %}
-You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.
+You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.

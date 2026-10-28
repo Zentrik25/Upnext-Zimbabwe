@@ -5,7 +5,7 @@ import { Bullets, ProsePage, Section } from "@/components/content/prose";
 
 export const metadata: Metadata = {
   title: "Privacy notice (draft)",
-  description: "Draft privacy notice for NextJob Zimbabwe, awaiting owner and legal review.",
+  description: "Draft privacy notice for UPNEXT Careers, awaiting owner and legal review.",
   alternates: { canonical: "/privacy" },
   openGraph: openGraphFor("/privacy"),
   // A draft is not published to search engines until the owner has approved it.
@@ -17,11 +17,11 @@ export default function PrivacyPage() {
     <ProsePage
       draft
       title="Privacy notice"
-      intro="What NextJob collects, why, how long it is kept and what you can do about it."
+      intro="What UPNEXT collects, why, how long it is kept and what you can do about it."
     >
       <Section title="Who is responsible">
         <p>
-          [Name, legal form and address of the operator of NextJob: to be provided by the owner.] Contact for
+          [Name, legal form and address of the operator of UPNEXT: to be provided by the owner.] Contact for
           privacy questions: see the{" "}
           <Link href="/contact" className="text-accent underline">
             contact page
@@ -73,6 +73,11 @@ export default function PrivacyPage() {
             "A security cookie that protects forms against forgery.",
           ]}
         />
+        <p>
+          If you choose the Light or Dark colour theme in the page footer, your choice is kept in your browser
+          only (local storage, not a cookie). It is never sent to us. Auto follows your device and stores
+          nothing.
+        </p>
         <p>There is nothing to accept or decline because nothing else is set.</p>
       </Section>
       <Section title="How long we keep it">
@@ -127,7 +132,7 @@ export default function PrivacyPage() {
       </Section>
       <Section title="Sharing">
         <p>
-          We do not sell your personal data. We use service providers to run NextJob: one to deliver e-mail,
+          We do not sell your personal data. We use service providers to run UPNEXT: one to deliver e-mail,
           one to host the service and one to store encrypted backups. They receive only what they need to do
           that. [Names, locations and the terms they work under: to be added here when they are chosen. No
           e-mail provider has been chosen yet.] Listings we show come from public sources and contain no

@@ -20,7 +20,7 @@ async function openFirst(page: Page, title: string) {
 test.describe("browse and search", () => {
   test("lists only public opportunities and names the count", async ({ page }) => {
     await page.goto("/opportunities");
-    await expect(page).toHaveTitle(/Opportunities · NextJob Zimbabwe/);
+    await expect(page).toHaveTitle(/Opportunities \| UPNEXT Careers/);
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
     await expect(page.getByTestId("result-count")).toHaveText("12 opportunities");
     const body = await page.locator("main").innerText();
@@ -114,10 +114,10 @@ test.describe("detail page", () => {
     await expect(page.getByLabel("Sources")).toContainText("checked");
   });
 
-  test("the apply link leaves NextJob safely and says so", async ({ page }) => {
+  test("the apply link leaves UPNEXT safely and says so", async ({ page }) => {
     await openFirst(page, "Graduate Electrical Engineer");
     const apply = page.getByTestId("apply");
-    await expect(apply).toContainText("You will leave NextJob");
+    await expect(apply).toContainText("You will leave UPNEXT");
     await expect(apply).toContainText("does not receive or track applications");
     const link = apply.getByRole("link");
     await expect(link).toHaveAttribute("href", /^https:\/\//);
@@ -205,7 +205,8 @@ test.describe("accessibility and design of the catalogue pages", () => {
           "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
-          const allowed = el.matches(controlSel) ? ["0px", "4px"] : ["0px"]; // D-29
+          const allowed = ["0px", "4px", "6px", "8px"]; // D-39 radius scale
+          void controlSel;
           if (
             [
               cs.borderTopLeftRadius,
@@ -215,8 +216,10 @@ test.describe("accessibility and design of the catalogue pages", () => {
             ].some((r) => !allowed.includes(r))
           )
             bad.push(`radius ${el.tagName}`);
-          if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}`);
-          if (cs.backgroundImage !== "none") bad.push(`bg-image ${el.tagName}`);
+          if (/rgba\(.*\) \d+px \d+px \d+px/.test(cs.boxShadow) === false && cs.boxShadow !== "none")
+            bad.push(`shadow ${el.tagName}`);
+          if (cs.backgroundImage !== "none" && el.getAttribute("aria-hidden") !== "true")
+            bad.push(`bg-image ${el.tagName}`);
         }
         return bad;
       });

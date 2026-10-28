@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -226,7 +227,7 @@ def due_ids(now: datetime) -> list[int]:
 def _headline(digest: Digest) -> tuple[str, str]:
     shown, total = len(digest.items), len(digest.items) + digest.more_count
     noun = "opportunity" if total == 1 else "opportunities"
-    subject = f"{total} new {noun} matching your NextJob Zimbabwe alert"
+    subject = f"{total} new {noun} matching your {settings.UPNEXT_BRAND_NAME} alert"
     headline = (
         f"{total} new {noun} matching your alert."
         if not digest.more_count

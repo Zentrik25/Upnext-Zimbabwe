@@ -7,9 +7,9 @@ import { getCurrentUser } from "@/lib/session";
 export async function SiteHeader() {
   const user = await getCurrentUser();
   return (
-    <header className="border-b border-line bg-surface">
-      <Container className="flex min-h-[58px] flex-wrap items-center justify-between gap-x-4 max-sm:min-h-[55px]">
-        <Link href="/" aria-label={`${BRAND.name} home`}>
+    <header className="sticky top-0 z-40 rounded-b-card border-b border-line bg-surface/90 backdrop-blur-md">
+      <Container className="flex min-h-[64px] flex-wrap items-center justify-between gap-x-4 max-sm:min-h-[56px]">
+        <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex min-h-[44px] items-center">
           <Logo />
         </Link>
         <nav
@@ -18,9 +18,15 @@ export async function SiteHeader() {
         >
           <Link
             href="/opportunities"
-            className="inline-flex min-h-[44px] items-center text-ctl text-nav-text"
+            className="inline-flex min-h-[44px] items-center text-ctl text-nav-text hover:underline"
           >
             Opportunities
+          </Link>
+          <Link
+            href="/employers"
+            className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text hover:underline max-sm:hidden"
+          >
+            For employers
           </Link>
           {user ? (
             <>
@@ -51,7 +57,7 @@ export async function SiteHeader() {
               </Link>
               <Link
                 href="/register"
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl font-medium text-accent"
+                className="inline-flex min-h-[36px] items-center whitespace-nowrap rounded-control border border-accent-solid bg-accent-solid px-3 text-ctl font-medium text-on-accent hover:border-accent-solid-hover hover:bg-accent-solid-hover"
               >
                 Register
               </Link>

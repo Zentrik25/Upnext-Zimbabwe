@@ -1,7 +1,7 @@
 Hello {{ display_name }},
 
-Someone asked to change the e-mail address of your NextJob Zimbabwe account to a different address. Nothing has changed yet: the new address must confirm first.
+Someone asked to change the e-mail address of your {{ brand_name }} account to a different address. Nothing has changed yet: the new address must confirm first.
 
 If this was you, no action is needed. If it was not you, sign in and change your password now, because the request needed your password.
 
-NextJob Zimbabwe never asks for your password by e-mail.
+{{ brand_name }} never asks for your password by e-mail.

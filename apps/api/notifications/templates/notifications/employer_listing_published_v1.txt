@@ -4,8 +4,8 @@ Hello {{ display_name }},
 {% if public_url %}
 See it as visitors do: {{ public_url }}
 {% endif %}
-Publishing does not mean NextJob has verified the opportunity with you; the page says what was checked. Applications happen on your own channel.
+Publishing does not mean {{ brand_short }} has verified the opportunity with you; the page says what was checked. Applications happen on your own channel.
 
 Manage the listing: {{ listing_url }}
 
-You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.
+You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.
