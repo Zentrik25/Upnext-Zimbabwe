@@ -212,4 +212,38 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39)", () => {
     await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#7a87a2"));
     await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
+
+  test.describe("dark theme (D-40)", () => {
+    test.use({ colorScheme: "dark" });
+
+    test("Auto follows a dark device and the stored choice overrides it", async ({ page }) => {
+      await page.goto("/");
+      const body = page.locator("body");
+      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
+      await expect(body).toHaveCSS("color", rgb("#e8ecf0"));
+      await page.getByRole("button", { name: "Light" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+      await page.reload();
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+      await page.getByRole("button", { name: "Auto" }).click();
+      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
+    });
+
+    test("the primary button keeps white text on the solid purple in dark", async ({ page }) => {
+      await page.goto("/design-system");
+      const primary = page.getByTestId("btn-primary");
+      await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
+      await expect(primary).toHaveCSS("color", rgb("#ffffff"));
+    });
+
+    test("no serious or critical accessibility violations on the home page in dark", async ({ page }) => {
+      await page.goto("/");
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze();
+      expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
+    });
+  });
 });

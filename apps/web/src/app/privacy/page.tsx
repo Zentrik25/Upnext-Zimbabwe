@@ -73,6 +73,11 @@ export default function PrivacyPage() {
             "A security cookie that protects forms against forgery.",
           ]}
         />
+        <p>
+          If you choose the Light or Dark colour theme in the page footer, your choice is kept in your browser
+          only (local storage, not a cookie). It is never sent to us. Auto follows your device and stores
+          nothing.
+        </p>
         <p>There is nothing to accept or decline because nothing else is set.</p>
       </Section>
       <Section title="How long we keep it">

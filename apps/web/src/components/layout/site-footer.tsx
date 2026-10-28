@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { Container } from "./container";
+import { ThemeToggle } from "./theme-toggle";
 
 const LINKS = [
   ["/about", "About"],
@@ -31,6 +32,7 @@ export function SiteFooter() {
             ))}
           </ul>
         </nav>
+        <ThemeToggle className="basis-full" />
       </Container>
     </footer>
   );

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import tokens from "../../src/design/tokens.json";
-import { colors, contrast, prod, readRepoFile, ref } from "./helpers";
+import { colors, contrast, dark, prod, readRepoFile, ref } from "./helpers";
 
 describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
   it("the colour tokens equal the Stripe-inspired design system values (D-39)", () => {
@@ -124,6 +124,70 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
     );
     expect(tokens.containers.page).toBe("1080px");
+  });
+
+  it("every colour token has a dark value and the generated CSS carries both dark blocks (D-40)", () => {
+    for (const [name, t] of Object.entries(colors)) expect(t.dark, name).toBeTruthy();
+    const css = readRepoFile("apps/web/src/styles/tokens.generated.css");
+    expect(css).toContain(':root[data-theme="dark"] {');
+    expect(css).toContain("@media (prefers-color-scheme: dark) {");
+    expect(css).toContain(':root:not([data-theme="light"]) {');
+    expect(css.match(/color-scheme: dark;/g)).toHaveLength(2);
+    expect(Object.keys(tokens.darkShadows)).toEqual(Object.keys(tokens.shadows));
+  });
+
+  it("dark text pairs meet WCAG 2.2 AA (A11Y-06)", () => {
+    const pairs: [string, string][] = [
+      ["ink", "surface"],
+      ["ink", "surface-pale"],
+      ["ink", "row-hover"],
+      ["muted", "surface"],
+      ["muted", "surface-notice"],
+      ["muted", "surface-pale"],
+      ["muted", "row-hover"],
+      ["meta", "tag-bg"],
+      ["company", "row-hover"],
+      ["accent", "surface"],
+      ["accent", "surface-pale"],
+      ["accent", "match-bg"],
+      ["white", "accent-solid"],
+      ["white", "accent-solid-hover"],
+      ["secondary-text", "surface"],
+      ["nav-text", "surface"],
+      ["eyebrow", "surface"],
+      ["tab-text", "surface"],
+      ["feed-tab-text", "surface"],
+      ["check-text", "surface"],
+      ["empty-text", "surface"],
+      ["good", "good-bg"],
+      ["urgent", "urgent-bg"],
+      ["urgent", "surface"],
+      ["avatar-text", "avatar-bg"],
+      ["brand-dark-text", "brand-dark"],
+    ];
+    const failing = pairs
+      .filter(([fg, bg]) => contrast(dark(fg), dark(bg)) < 4.5)
+      .map(([a, b]) => `${a}/${b}`);
+    expect(failing).toEqual([]);
+  });
+
+  it("dark non-text pairs meet 3:1 (A11Y-07)", () => {
+    const pairs: [string, string][] = [
+      ["control-border", "surface"],
+      ["control-border", "surface-pale"],
+      ["focus", "surface"],
+      ["focus", "surface-pale"],
+      ["save-on", "surface"],
+      ["save-idle", "surface"],
+      ["border-empty", "surface"],
+    ];
+    const failing = pairs.filter(([a, b]) => contrast(dark(a), dark(b)) < 3).map(([a, b]) => `${a}/${b}`);
+    expect(failing).toEqual([]);
+  });
+
+  it("the light solid button pairs still pass", () => {
+    expect(contrast("#ffffff", prod("accent-solid"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast("#ffffff", prod("accent-solid-hover"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("the generated Tailwind theme is up to date with tokens.json", () => {

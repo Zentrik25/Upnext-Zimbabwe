@@ -13,7 +13,8 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const base =
   "inline-flex rounded-control items-center justify-center border text-ctl font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-60";
 const variants: Record<ButtonVariant, string> = {
-  primary: "border-accent bg-accent text-white hover:bg-accent-hover",
+  primary:
+    "border-accent-solid bg-accent-solid text-white hover:border-accent-solid-hover hover:bg-accent-solid-hover",
   secondary: "border-border-strong bg-transparent text-secondary-text hover:bg-accent/5",
 };
 const sizes: Record<ButtonSize, string> = {
