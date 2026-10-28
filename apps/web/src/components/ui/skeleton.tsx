@@ -23,8 +23,11 @@ export function LoadingRegion({
 }) {
   return (
     <div role="status" aria-busy="true" aria-live="polite" className={className} data-testid="loading">
-      {/* A page always has one h1, loading or not (WCAG 2.4.6); the real page replaces this one. */}
-      <h1 className="sr-only">Loading {label}…</h1>
+      {/* A page always has a level-1 heading, loading or not (WCAG 2.4.6). It is a role, not an <h1>, so the
+          moment the real page's <h1> arrives there is still exactly one <h1> element in the document. */}
+      <div role="heading" aria-level={1} className="sr-only">
+        Loading {label}…
+      </div>
       <div aria-hidden="true">{children}</div>
     </div>
   );
