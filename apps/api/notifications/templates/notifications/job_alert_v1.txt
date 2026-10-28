@@ -8,7 +8,7 @@ Hello {{ display_name }},
 
 {% endfor %}{% if more_count %}See all of them: {{ search_url }}
 
-{% endif %}You get this {{ frequency }} e-mail because you switched on job alerts. We list only opportunities published since the last one, and we send nothing when there are none. Check each listing's source and apply on the official site; NextJob does not receive applications.
+{% endif %}You get this {{ frequency }} e-mail because you switched on job alerts. We list only opportunities published since the last one, and we send nothing when there are none. Check each listing's source and apply on the official site; {{ brand_short }} does not receive applications.
 
 Change what you receive: {{ manage_url }}
 Stop these e-mails: {{ unsubscribe_url }}

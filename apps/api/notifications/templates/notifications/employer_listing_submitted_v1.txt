@@ -4,4 +4,4 @@ Hello {{ display_name }},
 
 See where it stands: {{ listing_url }}
 
-You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.
+You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.

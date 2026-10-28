@@ -88,16 +88,16 @@ export const VERIFICATION: Record<VerificationLevel, { label: string; explanatio
   not_verified: {
     label: "Not verified",
     explanation:
-      "NextJob has recorded where this information came from but has not checked it against the source or the issuer.",
+      "UPNEXT has recorded where this information came from but has not checked it against the source or the issuer.",
   },
   source_checked: {
     label: "Source checked",
     explanation:
-      "NextJob compared this listing with its cited source. This is not confirmation from the issuing organisation.",
+      "UPNEXT compared this listing with its cited source. This is not confirmation from the issuing organisation.",
   },
   issuer_verified: {
     label: "Verified with the issuer",
-    explanation: "NextJob confirmed this listing directly with the issuing organisation.",
+    explanation: "UPNEXT confirmed this listing directly with the issuing organisation.",
   },
 };
 

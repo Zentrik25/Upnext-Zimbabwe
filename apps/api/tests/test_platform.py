@@ -25,7 +25,7 @@ API_DIR = Path(__file__).resolve().parents[1]
 def test_api_root_responds_through_api_v1(client: APIClient) -> None:
     response = client.get("/api/v1/")
     assert response.status_code == 200
-    assert response.json() == {"name": "NextJob API", "version": "v1", "status": "ok"}
+    assert response.json() == {"name": "UPNEXT API", "version": "v1", "status": "ok"}
     assert response["Content-Type"].startswith("application/json")
 
 

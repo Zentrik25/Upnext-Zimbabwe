@@ -243,7 +243,7 @@ export function ProfileForm({
           <p className="mt-1 text-small text-muted">
             {pending === "reset"
               ? "Categories, industries, places, employment types and where the work is done are cleared. The details at the top stay."
-              : "Everything above is removed from NextJob. Your account, saved opportunities and alerts are not affected."}
+              : "Everything above is removed from UPNEXT. Your account, saved opportunities and alerts are not affected."}
           </p>
           <div className="mt-3 flex gap-2">
             <Button onClick={() => confirm(pending)} disabled={busy}>

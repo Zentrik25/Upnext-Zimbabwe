@@ -39,26 +39,27 @@ BACKOFF = [
 MAX_ATTEMPTS = 6  # PROPOSED, OQ-17
 STUCK_AFTER = timedelta(minutes=5)
 
+BRAND = settings.UPNEXT_BRAND_NAME
 SUBJECTS = {
-    EmailKind.EMAIL_VERIFICATION: "Confirm your NextJob Zimbabwe e-mail address",
-    EmailKind.ACCOUNT_EXISTS: "You already have a NextJob Zimbabwe account",
-    EmailKind.PASSWORD_RESET: "Reset your NextJob Zimbabwe password",
-    EmailKind.PASSWORD_CHANGED_NOTICE: "Your NextJob Zimbabwe password was changed",
-    EmailKind.ACCOUNT_DELETION_NOTICE: "We received your NextJob Zimbabwe account deletion request",
-    EmailKind.ACCOUNT_DELETION_COMPLETED: "Your NextJob Zimbabwe account has been deleted",
-    EmailKind.ACCOUNT_DELETION_CANCELLED: "Your NextJob Zimbabwe account deletion request was cancelled",
-    EmailKind.EMAIL_CHANGE_CONFIRM: "Confirm your new NextJob Zimbabwe e-mail address",
-    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: "A change of your NextJob Zimbabwe e-mail address was requested",
-    EmailKind.EMAIL_CHANGED_NOTICE: "Your NextJob Zimbabwe e-mail address was changed",
-    EmailKind.JOB_ALERT: "New opportunities matching your NextJob Zimbabwe alert",
-    EmailKind.EMPLOYER_CLAIM_RECEIVED: "We received your NextJob Zimbabwe organisation claim",
-    EmailKind.EMPLOYER_CLAIM_APPROVED: "Your NextJob Zimbabwe organisation claim was approved",
-    EmailKind.EMPLOYER_CLAIM_REJECTED: "Your NextJob Zimbabwe organisation claim was not approved",
-    EmailKind.EMPLOYER_LISTING_SUBMITTED: "Your NextJob Zimbabwe listing was submitted for review",
-    EmailKind.EMPLOYER_LISTING_PUBLISHED: "Your listing is now published on NextJob Zimbabwe",
-    EmailKind.EMPLOYER_LISTING_REJECTED: "Your NextJob Zimbabwe listing needs changes before publication",
-    EmailKind.EMPLOYER_LISTING_EXPIRING: "Your NextJob Zimbabwe listing closes soon",
-    EmailKind.EMPLOYER_LISTING_EXPIRED: "Your NextJob Zimbabwe listing has closed",
+    EmailKind.EMAIL_VERIFICATION: f"Confirm your {BRAND} e-mail address",
+    EmailKind.ACCOUNT_EXISTS: f"You already have a {BRAND} account",
+    EmailKind.PASSWORD_RESET: f"Reset your {BRAND} password",
+    EmailKind.PASSWORD_CHANGED_NOTICE: f"Your {BRAND} password was changed",
+    EmailKind.ACCOUNT_DELETION_NOTICE: f"We received your {BRAND} account deletion request",
+    EmailKind.ACCOUNT_DELETION_COMPLETED: f"Your {BRAND} account has been deleted",
+    EmailKind.ACCOUNT_DELETION_CANCELLED: f"Your {BRAND} account deletion request was cancelled",
+    EmailKind.EMAIL_CHANGE_CONFIRM: f"Confirm your new {BRAND} e-mail address",
+    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: f"A change of your {BRAND} e-mail address was requested",
+    EmailKind.EMAIL_CHANGED_NOTICE: f"Your {BRAND} e-mail address was changed",
+    EmailKind.JOB_ALERT: f"New opportunities matching your {BRAND} alert",
+    EmailKind.EMPLOYER_CLAIM_RECEIVED: f"We received your {BRAND} organisation claim",
+    EmailKind.EMPLOYER_CLAIM_APPROVED: f"Your {BRAND} organisation claim was approved",
+    EmailKind.EMPLOYER_CLAIM_REJECTED: f"Your {BRAND} organisation claim was not approved",
+    EmailKind.EMPLOYER_LISTING_SUBMITTED: f"Your {BRAND} listing was submitted for review",
+    EmailKind.EMPLOYER_LISTING_PUBLISHED: f"Your listing is now published on {BRAND}",
+    EmailKind.EMPLOYER_LISTING_REJECTED: f"Your {BRAND} listing needs changes before publication",
+    EmailKind.EMPLOYER_LISTING_EXPIRING: f"Your {BRAND} listing closes soon",
+    EmailKind.EMPLOYER_LISTING_EXPIRED: f"Your {BRAND} listing has closed",
 }
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
@@ -129,7 +130,14 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
     link = _link(row)
     if row.kind in _TOKEN_PATHS and link is None:
         return None
-    context = {**row.payload, "link": link, "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/")}
+    context = {
+        **row.payload,
+        "link": link,
+        "base_url": settings.UPNEXT_PUBLIC_BASE_URL.rstrip("/"),
+        "brand_name": settings.UPNEXT_BRAND_NAME,
+        "brand_short": settings.UPNEXT_BRAND_SHORT,
+        "contact_email": settings.UPNEXT_OFFICIAL_EMAIL,
+    }
     headers: tuple[tuple[str, str], ...] = ()
     if row.kind == EmailKind.JOB_ALERT:
         from alerts import messages  # local import: alerts depends on this module

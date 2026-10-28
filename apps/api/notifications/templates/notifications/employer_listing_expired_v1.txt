@@ -4,4 +4,4 @@ Your listing "{{ title }}" has closed{% if deadline_text %}; its deadline was {{
 
 See it: {{ listing_url }}
 
-You get this service message because you act for {{ organisation_name }} on NextJob Zimbabwe.
+You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.

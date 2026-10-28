@@ -103,14 +103,11 @@ describe("JSON-LD output cannot break out of its element", () => {
 });
 
 describe("site settings", () => {
-  it("builds absolute addresses from the configured origin and never invents a contact", () => {
+  it("builds absolute addresses from the configured origin and always shows the one official address", () => {
     vi.stubEnv("UPNEXT_PUBLIC_BASE_URL", "https://example.test/");
     expect(siteUrl()).toBe("https://example.test");
     expect(absolute("/opportunities")).toBe("https://example.test/opportunities");
-    vi.stubEnv("UPNEXT_CONTACT_EMAIL", "");
-    expect(contactEmail()).toBeNull();
-    vi.stubEnv("UPNEXT_CONTACT_EMAIL", " hello@example.test ");
-    expect(contactEmail()).toBe("hello@example.test");
+    expect(contactEmail()).toBe("info@upnext.co.zw");
     vi.unstubAllEnvs();
   });
 });

@@ -53,7 +53,7 @@ export default async function EmployerDashboard() {
         </ButtonLink>
       </EmployerHeading>
       <p className="mt-1 text-base text-muted">
-        Everything you post is reviewed by NextJob editors before it is public. Being a verified organisation
+        Everything you post is reviewed by UPNEXT editors before it is public. Being a verified organisation
         does not make a listing verified.
       </p>
 
@@ -145,7 +145,7 @@ export default async function EmployerDashboard() {
           {!org.verified ? (
             <p className="mt-3 text-base">
               The verification of this organisation was withdrawn, so you cannot submit new listings or
-              profile changes. Contact NextJob if you think this is a mistake.
+              profile changes. Contact UPNEXT if you think this is a mistake.
             </p>
           ) : null}
 

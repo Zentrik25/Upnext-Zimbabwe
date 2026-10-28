@@ -11,7 +11,7 @@ export function SavedRow({ item }: { item: SavedItem }) {
         <div>
           <p className="text-title font-strong leading-title">This listing is no longer available</p>
           <p className="mt-1 text-small text-muted">
-            It was removed from NextJob, so its details are not shown. You can remove it from your list.
+            It was removed from UPNEXT, so its details are not shown. You can remove it from your list.
           </p>
           <p className="mt-2">
             <Tag>Unavailable</Tag>

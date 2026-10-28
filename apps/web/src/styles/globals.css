@@ -76,3 +76,8 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* On the black footer and employer band the dark focus colour would vanish: use white there (WCAG 2.4.7, 1.4.11). */
+.bg-brand-dark :focus-visible {
+  outline-color: #ffffff;
+}

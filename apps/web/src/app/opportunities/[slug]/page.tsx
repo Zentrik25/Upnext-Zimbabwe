@@ -299,7 +299,7 @@ function Fact({ term, value, hidden }: { term: string; value: string | null; hid
   );
 }
 
-/** NextJob never receives applications: this only says where to go, and says that it leaves NextJob. */
+/** UPNEXT never receives applications: this only says where to go, and says that it leaves UPNEXT. */
 function Apply({ listing }: { listing: OpportunityDetail }) {
   const { application } = listing;
   if (listing.status !== "published") {
@@ -316,15 +316,15 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
       {application.method === "external_url" && application.url && isHttps(application.url) ? (
         <>
           <p className="mt-1 text-base">
-            Applications are made on the issuer&apos;s website. You will leave NextJob; NextJob does not
-            receive or track applications.
+            Applications are made on the issuer&apos;s website. You will leave UPNEXT; UPNEXT does not receive
+            or track applications.
           </p>
           <a
             href={application.url}
             data-listing-apply
             rel="noopener noreferrer nofollow ugc"
             target="_blank"
-            className="mt-3 inline-flex rounded-control min-h-control items-center justify-center border border-accent-solid bg-accent-solid px-3 py-[7px] text-ctl font-medium text-white hover:bg-accent-solid-hover"
+            className="mt-3 inline-flex rounded-control min-h-control items-center justify-center border border-accent-solid bg-accent-solid px-3 py-[7px] text-ctl font-medium text-on-accent hover:bg-accent-solid-hover"
           >
             Go to {domainOf(application.url)} (new tab)
           </a>
@@ -332,7 +332,7 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
       ) : null}
       {application.method === "email" && application.email ? (
         <>
-          <p className="mt-1 text-base">Apply by e-mail. NextJob does not receive applications.</p>
+          <p className="mt-1 text-base">Apply by e-mail. UPNEXT does not receive applications.</p>
           <p className="mt-2 text-base">
             <a href={`mailto:${application.email}`} data-listing-apply className="text-accent underline">
               {application.email}
@@ -343,7 +343,7 @@ function Apply({ listing }: { listing: OpportunityDetail }) {
       {application.method === "instructions" && application.instructions ? (
         <>
           <p className="mt-1 text-small text-muted">
-            Follow the issuer&apos;s instructions. NextJob does not receive applications.
+            Follow the issuer&apos;s instructions. UPNEXT does not receive applications.
           </p>
           <p className="mt-2 whitespace-pre-line text-base">{application.instructions}</p>
         </>

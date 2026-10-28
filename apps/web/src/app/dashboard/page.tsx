@@ -9,7 +9,7 @@ import { EmptyState, Panel } from "@/components/ui";
 import { getCurrentUser, getForYou, getJobAlert, getProfile, getSaved } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Your NextJob", robots: { index: false } };
+export const metadata: Metadata = { title: "Your UPNEXT", robots: { index: false } };
 
 const FEW = new URLSearchParams({ limit: "3" });
 
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
       <section aria-labelledby="dash-title" className="border-b border-line py-[22px]">
         <Container>
           <h1 id="dash-title" className="text-section font-strong tracking-section">
-            Your NextJob
+            Your UPNEXT
           </h1>
           <p className="mt-1 text-base text-muted">
             Welcome, {user.display_name}.{" "}

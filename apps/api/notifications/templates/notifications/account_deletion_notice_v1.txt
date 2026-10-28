@@ -1,9 +1,9 @@
 Hello {{ display_name }},
 
-We received a request to delete your NextJob Zimbabwe account.
+We received a request to delete your {{ brand_name }} account.
 
 Nothing has been deleted yet. Your account will be deleted on or after {{ scheduled_date }}, {{ days }} days after the request. Until then you can change your mind: sign in and cancel the request on your account page ({{ base_url }}/account).
 
 If you did not make this request, cancel it and change your password now: {{ base_url }}/forgot-password
 
-NextJob Zimbabwe never asks for your password by e-mail.
+{{ brand_name }} never asks for your password by e-mail.

@@ -54,7 +54,9 @@ class ApiRootView(APIView):
 
     @extend_schema(operation_id="getApiRoot", responses=ApiRootSerializer, tags=["health"])
     def get(self, request: Request) -> Response:
-        return Response({"name": "NextJob API", "version": settings.API_VERSION, "status": "ok"})
+        return Response(
+            {"name": f"{settings.UPNEXT_BRAND_SHORT} API", "version": settings.API_VERSION, "status": "ok"}
+        )
 
 
 @method_decorator(never_cache, name="dispatch")

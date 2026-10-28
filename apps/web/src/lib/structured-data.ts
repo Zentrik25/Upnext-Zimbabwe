@@ -102,6 +102,8 @@ export function websiteFor(origin: string): Json[] {
       name: BRAND.name,
       alternateName: BRAND.short,
       url: origin,
+      logo: `${origin}${BRAND.assets.icon512}`,
+      email: BRAND.email,
     },
   ];
 }

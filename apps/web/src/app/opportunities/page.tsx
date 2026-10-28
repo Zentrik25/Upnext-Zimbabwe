@@ -1,3 +1,4 @@
+import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import type { Metadata } from "next";
 import { openGraphFor } from "@/lib/brand";
 import Link from "next/link";
@@ -58,25 +59,6 @@ function href(params: URLSearchParams, change: Record<string, string | null>): s
   const query = next.toString();
   return query ? `/opportunities?${query}` : "/opportunities";
 }
-
-const EMPLOYMENT = [
-  ["permanent", "Permanent"],
-  ["contract", "Contract"],
-  ["temporary", "Temporary"],
-  ["part_time", "Part time"],
-  ["internship", "Internship"],
-  ["trainee", "Trainee"],
-] as const;
-const MODES = [
-  ["on_site", "On site"],
-  ["hybrid", "Hybrid"],
-  ["remote", "Remote"],
-] as const;
-const DEADLINES = [
-  ["open", "Open"],
-  ["closing_soon", "Closing soon"],
-  ["unknown", "Deadline not stated"],
-] as const;
 
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<Search> }) {
   const raw = await searchParams;
@@ -332,7 +314,7 @@ async function Results({
         </nav>
       ) : null}
       <Notice className="mt-6 rounded-card border border-border-notice">
-        Verification labels describe what NextJob checked. A listing that is not verified still names its
+        Verification labels describe what UPNEXT checked. A listing that is not verified still names its
         source.
       </Notice>
     </>

@@ -224,14 +224,22 @@ UPNEXT_TOKEN_KEY = get_str("UPNEXT_TOKEN_KEY", SECRET_KEY)
 UPNEXT_ENVIRONMENT = get_str("UPNEXT_ENVIRONMENT", "development")
 UPNEXT_EMAIL_BACKEND = get_str("UPNEXT_EMAIL_BACKEND", "none")
 UPNEXT_EMAIL_FILE_DIR = get_str("UPNEXT_EMAIL_FILE_DIR", "/tmp/upnext-mail")  # noqa: S108
-UPNEXT_EMAIL_FROM = get_str("UPNEXT_EMAIL_FROM", "NextJob Zimbabwe <no-reply@example.invalid>")
+# Public identity (owner decision D-42): the brand, its domain and its one official mailbox. Everything the
+# API says in public (e-mail sender name, subjects, footers, admin titles) comes from these four values.
+UPNEXT_BRAND_NAME = get_str("UPNEXT_BRAND_NAME", "UPNEXT Careers")
+UPNEXT_BRAND_SHORT = get_str("UPNEXT_BRAND_SHORT", "UPNEXT")
+UPNEXT_BRAND_DOMAIN = get_str("UPNEXT_BRAND_DOMAIN", "upnext.co.zw")
+UPNEXT_OFFICIAL_EMAIL = get_str("UPNEXT_OFFICIAL_EMAIL", "info@upnext.co.zw")
+# Sender "UPNEXT Careers <info@upnext.co.zw>", reply-to the same mailbox. No other mailbox is invented. Real
+# sending stays off until the sender and domain are verified (delivery_verified, B-01).
+UPNEXT_EMAIL_FROM = get_str("UPNEXT_EMAIL_FROM", f"{UPNEXT_BRAND_NAME} <{UPNEXT_OFFICIAL_EMAIL}>")
 UPNEXT_SMTP_HOST = get_str("UPNEXT_SMTP_HOST", "")
 UPNEXT_SMTP_PORT = get_int("UPNEXT_SMTP_PORT", 587)
 UPNEXT_SMTP_SECURITY = get_str("UPNEXT_SMTP_SECURITY", "starttls")  # starttls | ssl | none (dev stubs only)
 UPNEXT_SMTP_TIMEOUT_SECONDS = get_int("UPNEXT_SMTP_TIMEOUT_SECONDS", 15)
-UPNEXT_EMAIL_REPLY_TO = get_str("UPNEXT_EMAIL_REPLY_TO", "")
-# Mailbox named in the footer of e-mails (D-33); empty = not shown. The owner verifies it exists.
-UPNEXT_SUPPORT_EMAIL = get_str("UPNEXT_SUPPORT_EMAIL", "")
+UPNEXT_EMAIL_REPLY_TO = get_str("UPNEXT_EMAIL_REPLY_TO", UPNEXT_OFFICIAL_EMAIL)
+# Mailbox named in the footer of e-mails: the official address (D-42).
+UPNEXT_SUPPORT_EMAIL = get_str("UPNEXT_SUPPORT_EMAIL", UPNEXT_OFFICIAL_EMAIL)
 UPNEXT_SMTP_USER = get_str("UPNEXT_SMTP_USER", "")
 UPNEXT_SMTP_PASSWORD = get_str("UPNEXT_SMTP_PASSWORD", "")
 # Origin used in e-mailed links; the public site is path-routed on one hostname (OQ-01).
@@ -241,7 +249,7 @@ UPNEXT_RESEND_WEBHOOK_SECRET = get_str("UPNEXT_RESEND_WEBHOOK_SECRET", "")
 UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "NextJob API",
+    "TITLE": f"{UPNEXT_BRAND_SHORT} Careers API",
     "DESCRIPTION": "Implemented subset of docs/engineering/openapi/openapi.yaml (Phase 1 foundation).",
     "VERSION": "1.0.0-phase1",
     "SERVE_INCLUDE_SCHEMA": False,

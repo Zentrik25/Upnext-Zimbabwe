@@ -12,6 +12,8 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
+from django.conf import settings
+
 from access.registry import EMPLOYER_CATEGORIES
 from accounts.models import User
 from catalog.models import Organisation
@@ -20,7 +22,7 @@ from opportunities.models import Opportunity, OpportunitySource, OpportunityVers
 
 from .models import EmployerListing, EmployerMembership, OrganisationVerification
 
-SOURCE_NAME = "Submitted by the employer through the NextJob employer portal"
+SOURCE_NAME = f"Submitted by the employer through the {settings.UPNEXT_BRAND_SHORT} employer portal"
 
 
 def is_employer(user: User) -> bool:

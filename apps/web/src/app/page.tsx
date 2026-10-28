@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout";
+import { CategoryGrid, EmployerSection, Hero, TrustSection } from "@/components/home/sections";
 import { OpportunityRow } from "@/components/opportunities/parts";
 import { JsonLd } from "@/components/seo/json-ld";
-import { Notice, SearchGroup } from "@/components/ui";
-import { listCategories, listOpportunities } from "@/lib/catalog";
+import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
@@ -13,14 +13,16 @@ import { websiteFor } from "@/lib/structured-data";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  title: { absolute: `${BRAND.name} · ${BRAND.tagline}` },
-  openGraph: openGraphFor("/"),
+  title: { absolute: BRAND.homeTitle },
+  description: BRAND.homeDescription,
+  openGraph: openGraphFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
 };
 
 export default async function HomePage() {
-  const [latest, categories, user] = await Promise.all([
+  const [latest, categories, locations, user] = await Promise.all([
     listOpportunities(new URLSearchParams({ limit: "6" })),
     listCategories(),
+    listLocations(),
     getCurrentUser(),
   ]);
   const rows = latest.ok ? latest.data.data : [];
@@ -30,85 +32,45 @@ export default async function HomePage() {
       {websiteFor(siteUrl()).map((block, index) => (
         <JsonLd key={index} data={block} />
       ))}
-      <Notice>Every listing names its source. Applications happen on the issuer&apos;s own channel.</Notice>
-      <section
-        aria-labelledby="home-title"
-        className="relative border-b border-line py-20 text-center max-sm:py-12"
-      >
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-ruby to-magenta"
-        />
-        <Container className="flex flex-col items-center">
-          <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
-            Opportunity discovery for Zimbabwe
-          </p>
-          <h1 id="home-title" className="mt-2 mb-[6px] text-hero font-strong leading-hero tracking-hero">
-            Discover what&apos;s next.
-          </h1>
-          <p className="max-w-[560px] text-title text-muted">
-            Jobs, internships, graduate programmes, scholarships, tenders and grants in one place.
-          </p>
-          <SearchGroup
-            action="/opportunities"
-            method="get"
-            aria-label="Search opportunities"
-            className="mt-8 w-full"
-          >
-            <label htmlFor="home-q" className="sr-only">
-              Search by title, organisation or keyword
-            </label>
-            <SearchGroup.Input
-              id="home-q"
-              name="q"
-              type="search"
-              maxLength={100}
-              placeholder="Title, organisation or keyword"
-            />
-          </SearchGroup>
-          {categories.length > 0 ? (
-            <nav aria-label="Browse by category" className="mt-6">
-              <ul className="m-0 flex list-none flex-wrap justify-center gap-2 p-0">
-                {categories.map((category) => (
-                  <li key={category.code}>
-                    <Link
-                      href={`/opportunities?category=${category.code}`}
-                      className="inline-block rounded-control border border-border-strong px-3 py-[7px] text-ctl text-secondary-text"
-                    >
-                      {category.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ) : null}
+      <Hero categories={categories} locations={locations} />
+      <section aria-labelledby="latest-title" className="border-b border-line py-14">
+        <Container>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 id="latest-title" className="text-display font-strong tracking-display">
+              Latest opportunities
+            </h2>
+            <Link
+              href="/opportunities"
+              className="inline-flex min-h-[24px] items-center text-ctl text-accent underline"
+            >
+              See all opportunities
+            </Link>
+          </div>
+          {rows.length > 0 ? (
+            <div
+              className="mt-6 rounded-feature border border-border-panel bg-surface px-5 max-sm:px-3"
+              data-testid="latest"
+            >
+              {rows.map((row) => (
+                <OpportunityRow
+                  key={row.id}
+                  row={row}
+                  save={{ signedIn: Boolean(user), saved: savedIds.has(row.id), returnTo: "/" }}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-base text-muted" data-testid="latest-empty">
+              {latest.ok
+                ? "New opportunities are added as they are checked."
+                : "Opportunities are unavailable right now. Try again shortly."}
+            </p>
+          )}
         </Container>
       </section>
-      <Container className="pt-[22px] pb-[65px]">
-        <h2 className="text-section font-strong tracking-section">Latest opportunities</h2>
-        {rows.length > 0 ? (
-          <div className="mt-2 border-t border-line" data-testid="latest">
-            {rows.map((row) => (
-              <OpportunityRow
-                key={row.id}
-                row={row}
-                save={{ signedIn: Boolean(user), saved: savedIds.has(row.id), returnTo: "/" }}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="mt-2 text-base text-muted" data-testid="latest-empty">
-            {latest.ok
-              ? "New opportunities are added as they are checked."
-              : "Opportunities are unavailable right now. Try again shortly."}
-          </p>
-        )}
-        <p className="mt-4 text-ctl">
-          <Link href="/opportunities" className="text-accent underline">
-            See all opportunities
-          </Link>
-        </p>
-      </Container>
+      <CategoryGrid categories={categories} />
+      <TrustSection />
+      <EmployerSection />
     </>
   );
 }

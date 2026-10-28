@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui";
 export const metadata: Metadata = {
   title: "For employers",
   description:
-    "Post jobs, internships and graduate programmes on NextJob Zimbabwe. Organisations are verified and every listing is reviewed by an editor before it is public.",
+    "Post jobs, internships and graduate programmes on UPNEXT Careers. Organisations are verified and every listing is reviewed by an editor before it is public.",
   alternates: { canonical: "/employers" },
   openGraph: openGraphFor("/employers", { title: "For employers" }),
 };

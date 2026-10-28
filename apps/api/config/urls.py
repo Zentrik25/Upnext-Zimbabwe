@@ -1,5 +1,6 @@
 """Root URL configuration."""
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -7,7 +8,7 @@ from core import staff_mfa, staff_views
 from core import views as core_views
 from core.admin_login import ThrottledAdminAuthenticationForm
 
-admin.site.site_header = "NextJob staff"
+admin.site.site_header = f"{settings.UPNEXT_BRAND_NAME} staff"
 admin.site.index_title = "Editorial workspace"
 admin.site.login_form = ThrottledAdminAuthenticationForm
 

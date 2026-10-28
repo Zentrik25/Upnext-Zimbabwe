@@ -1,28 +1,18 @@
 import "server-only";
 import { BRAND } from "./brand";
 
-/** Public origin used in canonical URLs, the sitemap and structured data. The domain is OPEN (OQ-01). */
+/**
+ * Public origin used in canonical URLs, the sitemap and structured data. Production sets
+ * `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw` (BRAND.canonicalOrigin, the apex domain); development and CI
+ * default to localhost so a preview never claims the production domain.
+ */
 export const siteUrl = (): string =>
   (process.env.UPNEXT_PUBLIC_BASE_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 export const absolute = (path: string): string => `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 
-/** Where people can reach the team. Unset until the owner provides it (never invented). */
-export const contactEmail = (): string | null => process.env.UPNEXT_CONTACT_EMAIL?.trim() || null;
-
-/**
- * The approved mailboxes (owner decision D-33). Each appears only when its address is configured, so an
- * address whose mailbox has not been created and verified is never shown to the public.
- */
-export function mailboxes(): { purpose: string; email: string }[] {
-  const rows: [string, string | undefined][] = [
-    ["General enquiries", process.env.UPNEXT_CONTACT_EMAIL],
-    ["Support and account help", process.env.UPNEXT_SUPPORT_EMAIL],
-    ["Listings and editorial enquiries", process.env.UPNEXT_JOBS_EMAIL],
-    ["Business partnerships", process.env.UPNEXT_PARTNERSHIPS_EMAIL],
-  ];
-  return rows.flatMap(([purpose, value]) => (value?.trim() ? [{ purpose, email: value.trim() }] : []));
-}
+/** The one official mailbox (owner decision D-42): contact, privacy enquiries and every system e-mail. */
+export const contactEmail = (): string => BRAND.email;
 
 export const SITE_NAME = BRAND.name;
 export const STATIC_PATHS = [

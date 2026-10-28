@@ -65,7 +65,7 @@ export function SignInForm({ next }: { next?: string }) {
           Forgot your password?
         </Link>
         <span>
-          New to NextJob?{" "}
+          New to UPNEXT?{" "}
           <Link href="/register" className="text-accent underline">
             Create an account
           </Link>

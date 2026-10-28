@@ -5,33 +5,32 @@ import tokens from "../../src/design/tokens.json";
 import { colors, contrast, dark, prod, readRepoFile, ref } from "./helpers";
 
 describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
-  it("the colour tokens equal the Stripe-inspired design system values (D-39)", () => {
+  it("the colour tokens equal the UPNEXT Careers monochrome palette (D-42)", () => {
     expect(
       Object.fromEntries(
         Object.entries(colors)
           .filter(([n]) =>
-            ["ink", "accent", "accent-hover", "line", "brand-dark", "ruby", "magenta"].includes(n),
+            ["ink", "accent", "accent-hover", "line", "brand-dark", "surface-pale", "muted"].includes(n),
           )
           .map(([n, t]) => [n, t.ref]),
       ),
     ).toEqual({
-      ink: "#061b31",
-      accent: "#533afd",
-      "accent-hover": "#4434d4",
-      line: "#e5edf5",
-      "brand-dark": "#1c1e54",
-      ruby: "#ea2261",
-      magenta: "#f96bee",
+      ink: "#101828",
+      muted: "#475467",
+      accent: "#000000",
+      "accent-hover": "#1d2939",
+      line: "#e4e7ec",
+      "surface-pale": "#f8fafc",
+      "brand-dark": "#000000",
     });
   });
 
-  it("the only production deviations are DEV-01…DEV-04 and match ACCESSIBILITY_DEVIATIONS.md", () => {
+  it("the only production deviations are DEV-02…DEV-04 (DEV-01 retired by D-42) and match ACCESSIBILITY_DEVIATIONS.md", () => {
     const deviating = Object.entries(colors).filter(([, t]) => t.prod);
     expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(
-      new Set(["DEV-01", "DEV-02", "DEV-03", "DEV-04"]),
+      new Set(["DEV-02", "DEV-03", "DEV-04"]),
     );
     expect(Object.fromEntries(deviating.map(([n, t]) => [n, t.dev]))).toMatchObject({
-      muted: "DEV-01",
       good: "DEV-02",
       urgent: "DEV-03",
       "control-border": "DEV-04",
@@ -46,7 +45,7 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
   });
 
   it("the DEV-04 control border is the corrected value", () => {
-    expect(colors["control-border"]?.prod).toBe("#7a87a2");
+    expect(colors["control-border"]?.prod).toBe("#667085");
   });
 
   it("production text pairs meet WCAG 2.2 AA (A11Y-06)", () => {
@@ -103,7 +102,6 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
 
   it("each deviation is the minimum necessary: the design-system value really fails, the corrected one passes", () => {
     const failsRef: [string, string, number][] = [
-      ["muted", "surface-pale", 4.5],
       ["good", "good-bg", 4.5],
       ["urgent", "urgent-bg", 4.5],
       ["control-border", "surface", 3],
@@ -115,13 +113,13 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
   });
 
   it("typography, radius, shadow and layout tokens equal the design system", () => {
-    expect(tokens.fontFamily).toMatch(/^"sohne-var", "SF Pro Display"/);
-    expect(tokens.fontSizes.hero).toBe("clamp(32px, 4.4vw, 48px)");
-    expect(tokens.fontWeights).toMatchObject({ light: "300", strong: "300", medium: "400" });
+    expect(tokens.fontFamily).toMatch(/^var\(--font-inter\), "Inter"/);
+    expect(tokens.fontSizes.hero).toBe("clamp(36px, 5.2vw, 60px)");
+    expect(tokens.fontWeights).toMatchObject({ light: "400", strong: "600", medium: "600" });
     expect(tokens.radii).toMatchObject({ control: "4px", card: "6px", feature: "8px" });
     expect(Object.keys(tokens.shadows)).toEqual(["subtle", "ambient", "elevated", "deep"]);
     expect(tokens.shadows.elevated).toBe(
-      "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
+      "rgba(16, 24, 40, 0.18) 0px 30px 45px -30px, rgba(0, 0, 0, 0.08) 0px 18px 36px -18px",
     );
     expect(tokens.containers.page).toBe("1080px");
   });
@@ -150,8 +148,8 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       ["accent", "surface"],
       ["accent", "surface-pale"],
       ["accent", "match-bg"],
-      ["white", "accent-solid"],
-      ["white", "accent-solid-hover"],
+      ["on-accent", "accent-solid"],
+      ["on-accent", "accent-solid-hover"],
       ["secondary-text", "surface"],
       ["nav-text", "surface"],
       ["eyebrow", "surface"],
