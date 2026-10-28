@@ -8,7 +8,8 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$root/infrastructure/compose"
 export COMPOSE_BAKE=false
 rnd() { python3 -c 'import secrets; print(secrets.token_urlsafe(int("'"$1"'")))'; }
-envfile="$(mktemp)"; trap 'docker compose --env-file "$envfile" -f compose.production.yaml --profile release down -v >/dev/null 2>&1 || true; rm -f "$envfile"' EXIT
+keyfile="$(mktemp)"; head -c 48 /dev/urandom > "$keyfile"; chmod 0644 "$keyfile"
+envfile="$(mktemp)"; trap 'docker compose --env-file "$envfile" -f compose.production.yaml --profile release down -v >/dev/null 2>&1 || true; rm -f "$envfile" "$keyfile"' EXIT
 cat > "$envfile" <<ENV
 POSTGRES_DB=upnext
 POSTGRES_USER=upnext_owner
@@ -23,6 +24,7 @@ UPNEXT_DB_READONLY_PASSWORD=$(rnd 24)
 UPNEXT_RELEASE=ci
 UPNEXT_EDGE_CIDR=172.16.0.0/12
 UPNEXT_PROXY_PORT=8090
+UPNEXT_BACKUP_KEY_HOST_PATH=$keyfile
 ENV
 # the migrator password must equal the bootstrap password
 pw="$(grep '^POSTGRES_PASSWORD=' "$envfile" | cut -d= -f2-)"
@@ -57,6 +59,15 @@ echo "== only loopback is published"
 published="$(docker ps --filter "label=com.docker.compose.project=upnext-prod" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"
 echo "$published"
 echo "$published" | grep -v '^127\.0\.0\.1:8090->80/tcp$' | grep -q . && fail "unexpected published port"
+
+echo "== deployment verification script against the loopback proxy"
+UPNEXT_VERIFY_BASE=http://127.0.0.1:8090 UPNEXT_VERIFY_HOST=upnext.co.zw bash ../deploy/verify.sh || fail "verify.sh"
+
+echo "== backup job (read-only role, encrypted dump, outcome recorded for the alerts)"
+UPNEXT_ENV_FILE="$envfile" bash ../deploy/backup-job.sh | tee /tmp/backup-job.out
+grep -q 'offsite=no' /tmp/backup-job.out || fail "backup did not report offsite=no"
+grep -q 'recorded backup: ok' /tmp/backup-job.out || fail "backup outcome not recorded"
+dc --profile backup run --rm --entrypoint bash backup -c 'f=$(ls /backups/upnext-*.dump.enc | head -1); test "$(wc -c < "$f")" -gt 1000; ! head -c 5 "$f" | grep -q PGDMP' || fail "backup file missing or not encrypted"
 
 echo "== production preflight inside the API container (real production mode)"
 dc exec -T api python manage.py check_production_config

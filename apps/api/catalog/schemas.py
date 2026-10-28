@@ -98,7 +98,7 @@ def validate_detail(category_code: str, version: int, detail: Any) -> dict[str, 
         return errors  # cross-field checks assume a structurally valid document
 
     # Money inside the detail: allowed currencies only (the schema cannot know the allow-list).
-    for fee_key in ("tender_fee", "application_fee"):
+    for fee_key in ("tender_fee",):
         fee = detail.get(fee_key)
         if isinstance(fee, dict):
             try:

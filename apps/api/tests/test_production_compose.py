@@ -40,6 +40,7 @@ REQUIRED = {
     "UPNEXT_DB_READONLY_PASSWORD": _random(),
     "UPNEXT_RELEASE": "test",
     "UPNEXT_EDGE_CIDR": "172.18.0.0/16",
+    "UPNEXT_BACKUP_KEY_HOST_PATH": "/etc/upnext/backup.key",
 }
 
 
@@ -56,7 +57,7 @@ def compose(
         if not k.startswith(("UPNEXT_", "POSTGRES_", "DJANGO_", "COMPOSE_"))
     }
     return subprocess.run(
-        [*cmd, "--profile", "release", *args],
+        [*cmd, "--profile", "release", "--profile", "backup", *args],
         env={**clean, **env},
         capture_output=True,
         text=True,
@@ -81,7 +82,7 @@ def test_project_networks_and_volumes_are_isolated_and_named(cfg: dict[str, Any]
     }
     assert all(not n.get("external") for n in cfg["networks"].values())
     assert cfg["networks"]["data"]["internal"] is True
-    assert [v["name"] for v in cfg["volumes"].values()] == ["upnext-prod-pgdata"]
+    assert sorted(v["name"] for v in cfg["volumes"].values()) == ["upnext-prod-backups", "upnext-prod-pgdata"]
     assert all("container_name" not in s for s in cfg["services"].values())
 
 
@@ -111,7 +112,7 @@ def test_every_service_is_hardened_and_images_are_pinned(cfg: dict[str, Any]) ->
         ), name
     for name in ("db", "proxy"):
         assert "@sha256:" in cfg["services"][name]["image"], name
-    for name in ("api", "worker", "web", "migrate"):
+    for name in ("api", "worker", "web", "migrate", "backup"):
         assert cfg["services"][name]["image"].endswith(":test"), name
         assert "latest" not in cfg["services"][name]["image"], name
     assert cfg["services"]["api"]["build"]["target"] == "prod"
@@ -184,3 +185,13 @@ def test_production_settings_accept_the_environment_the_compose_file_gives_the_a
     )
     assert result.returncode == 0, result.stderr[-1500:]
     assert result.stdout.strip() == "https://upnext.co.zw"
+
+
+def test_backup_job_uses_the_read_only_role_and_a_read_only_key_mount(cfg: dict[str, Any]) -> None:
+    backup = cfg["services"]["backup"]
+    assert backup["profiles"] == ["backup"]
+    assert backup["environment"]["PGUSER"] == "upnext_readonly"
+    assert set(backup["networks"]) == {"data", "egress"}
+    key = next(v for v in backup["volumes"] if v["target"] == "/run/upnext/backup.key")
+    assert key["read_only"] is True
+    assert REQUIRED["POSTGRES_PASSWORD"] not in json.dumps(backup)

@@ -183,6 +183,34 @@ services:
     mem_limit: 128m
     cpus: 0.5
 
+  # Backup job (profile `backup`), started by the host timer: `docker compose --profile backup run --rm backup`.
+  # Connects as the read-only role, writes an encrypted dump to the backups volume and, when configured, copies it
+  # off the server with verification (offsite.sh). The encryption key is a host file mounted read-only; it must
+  # also be escrowed somewhere that is not this server (B-07).
+  backup:
+    <<: *hardening
+    restart: "no"
+    profiles: [backup]
+    image: upnext-backup:${UPNEXT_RELEASE:?}
+    build: {context: ../backup}
+    environment:
+      PGHOST: db
+      PGDATABASE: ${POSTGRES_DB:?}
+      PGUSER: upnext_readonly
+      PGPASSWORD: ${UPNEXT_DB_READONLY_PASSWORD:?}
+      UPNEXT_BACKUP_DIR: /backups
+      UPNEXT_BACKUP_KEY_FILE: /run/upnext/backup.key
+      UPNEXT_BACKUP_UPLOAD_CMD: ${UPNEXT_BACKUP_UPLOAD_CMD:-}
+      UPNEXT_OFFSITE_KIND: ${UPNEXT_OFFSITE_KIND:-}
+      UPNEXT_OFFSITE_TARGET: ${UPNEXT_OFFSITE_TARGET:-}
+    volumes:
+      - backups:/backups
+      - ${UPNEXT_BACKUP_KEY_HOST_PATH:?}:/run/upnext/backup.key:ro
+    networks: [data, egress]
+    depends_on:
+      db: {condition: service_healthy}
+    mem_limit: 256m
+
 networks:
   data: # database traffic only; no route to the outside
     name: upnext-prod-data
@@ -195,3 +223,5 @@ networks:
 volumes:
   pgdata:
     name: upnext-prod-pgdata
+  backups:
+    name: upnext-prod-backups

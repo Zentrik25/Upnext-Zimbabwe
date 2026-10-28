@@ -80,3 +80,6 @@ Before DNS go-live, the rollback is simply "stop the `upnext-prod` project": not
 
 ## 5. Out of scope here
 www/alias hostnames; redirects from any domain; e-mail DNS; CDN; auto-scaling; Redis/Celery (ADR-0004); AI features; PR #14.
+
+## 6. Scripts (launch preparation)
+`infrastructure/deploy/`: `inspect-vps.sh` (read-only, section 0), `release.sh` and `rollback.sh` (guarded by `UPNEXT_DEPLOY_CONFIRM=upnext.co.zw`, touch only project `upnext-prod`), `verify.sh` (checks V-1…V-8 and the missing-`www` check), `backup-job.sh` with `upnext-backup.service`/`.timer`. `release.sh`/`rollback.sh` have not been run end to end; the CI job `production-stack` exercises the Compose project, `verify.sh` and the backup job. The consolidated status is `docs/governance/LAUNCH_REPORT.md`.
