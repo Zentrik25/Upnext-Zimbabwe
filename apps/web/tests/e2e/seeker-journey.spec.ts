@@ -176,6 +176,8 @@ test("4. For you follows the preferences and explains every recommendation", asy
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByText("Profile saved")).toBeVisible();
   await page.goto("/for-you");
+  // The route streams a loading placeholder first; read the titles only once the recommendations are there.
+  await expect(results.getByRole("article").first()).toBeVisible();
   const titles = await results.getByRole("article").getByRole("heading").allInnerTexts();
   expect(titles).toContain("Research Innovation Fund");
   const grant = results.getByRole("article").filter({ hasText: "Research Innovation Fund" });
