@@ -1,6 +1,6 @@
 # Launch blockers and outstanding decisions — DRAFT
 
-Status: DRAFT for owner review, written at the end of Phase 4. It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
+Status: DRAFT for owner review, written at the end of Phase 4 and updated 2026-10-28 (M1) for Phases 5, 6A and 6B. It lists what stops a public launch and which owner decisions are still needed, with the default the build currently uses. Nothing is deployed and none of the defaults is approved.
 
 Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A2 below) of `docs/phase5/PHASE5_REVISED_PLAN.md` (§WS7 maps each blocker to its closing work and evidence).
 
@@ -14,7 +14,7 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 | B-04 | **Domain, TLS and cookies** (OQ-01, OQ-10) | Origin, HSTS, secure cookies, the `__Host-` prefix and proxy header trust cannot be verified without the real front. Production refuses to start without HTTPS settings | Owner; Phase 7 read-only inspection | production safeguards, P4-08 |
 | B-05 | **Staff access policy** (OQ-13, OQ-16) | Who gets accounts, whether network restriction is also required, who holds the break-glass access, second administrator | Owner | `STAFF_ACCESS_RUNBOOK.md` |
 | B-06 | **Owner approval of provisional defaults that shape public content** | P2-01, P2-04, P2-07 to P2-10, P3-01 to P3-08, P4-01 to P4-11 are engineering defaults | Owner | decision register |
-| B-07 | **Backups, restore rehearsal, monitoring and alert routing** (OQ-11, OQ-26, OQ-27) | Not built (Phase 6). Dead-mail and stuck-mail alerts exist as commands and logs but nobody is notified | Owner and Phase 6 | `outbox_status`, `outbox.alert` log |
+| B-07 | **Backups, restore rehearsal, monitoring and alert routing** (OQ-11, OQ-26, OQ-27) | **Built and rehearsed, not operational.** Encrypted, tamper-refusing backups, a restore that re-applies deletions, job state and an alert catalogue exist and the backup and restore rehearsal passes in CI (section A2). Missing: an off-server storage target and key custody (no backup has ever been stored off a server), a restore measured on real infrastructure (RTO 4 hours unproven), an alert destination (alerts reach the log only, nobody is notified), error tracking and an uptime probe | Owner | `infrastructure/backup/`, `docs/engineering/BACKUP_AND_RESTORE.md`, `docs/engineering/MONITORING_AND_ALERTING.md`, CI job "Local TLS rehearsal" |
 | B-08 | **Deployment path** (Phase 7) | Not started; requires read-only inspection of the shared VPS and explicit approval | Owner | roadmap |
 | B-09 | **Real content and editorial staffing** | The catalogue holds only fictional demo data; no editors are assigned; category field lists are still drafts (OQ-06) | Owner | decision register |
 | B-10 | **Manual accessibility audit** (OQ-11) | Automated axe checks, keyboard and reflow checks pass on every page, but there has been no screen-reader or assistive-technology test and no audit by a person | Owner, Phase 6 | `docs/phase4/PHASE4_REPORT.md` |
@@ -37,7 +37,12 @@ Sequenced by D-31 into the Phase 5 workstreams (status after the work: section A
 | B-10 | Automated checks; manual audit plan and mobile budgets | Testers, real devices and screen readers; a report. **Not done: no manual accessibility testing has been performed** |
 
 ## A3. Phase 6B additions (D-38)
+Phase 6B is implemented and **merged** into the integration branch (PR #9, merge commit `0cfae74`, 2026-10-18 23:29 UTC, owner-approved per the commit message); nothing is deployed.
+
 No blocker is closed. B-01 additionally gates **job alerts** (nothing is sent while delivery is unverified) and B-02 additionally gates **collecting seeker profiles and alert consent in production** (privacy text, lawful basis, retention P6B-11, the consent wording `alerts-consent-v1`). B-09 still applies: For You quality cannot be judged on fictional demo listings. See `docs/phase6b/PHASE6B_REPORT.md`.
+
+## A4. Defects found by the repository audit and fixed in M1 (2026-10-28)
+No blocker is closed by this. (1) **A-01:** the unavailable states of `/profile` and `/alerts` rendered an `h3` directly under the page `h1`, and the listing page's unavailable state had no `h1`. At 320 px axe reported `heading-order` on `/profile`, which failed the jobseeker browser journey and turned the end-to-end CI job red on the Phase 6B merge commit (run 39176711994; the employer and editorial journeys were skipped in that run). Why the profile service call failed in that run was not established; the markup is now valid whether or not it fails. (2) **A-02:** the listing expiry job (`workflow.expire_due`, traceability JOB-01) was specified and tested but never scheduled, so a published listing never became `expired` in a running system; the worker now runs it every housekeeping cycle, one run at a time, and records it as the `expiry` job.
 
 ## B. Owner decisions still needed
 
@@ -50,10 +55,10 @@ No blocker is closed. B-01 additionally gates **job alerts** (nothing is sent wh
 | Category pages with their own addresses (OQ-20, P4-02) | category tabs are unindexed filters | decide once there is enough content to justify them |
 | Analytics and the outbound-click KPI (OQ-19, P4-04) | Phase 6A (D-35) added anonymous per-listing counts of views and apply clicks for employers; no analytics service | decide how to measure outbound clicks without tracking people, or accept not measuring |
 | Languages (OQ-18, P4-01) | English only | confirm; add Shona or Ndebele later only with owner-supplied translations |
-| "For employers" link, alerts, other reference features (OQ-24) | not built | confirm exclusion for launch |
+| "For employers" link, alerts, other reference features (OQ-24) | the employer portal and its link were built in Phase 6A, alerts in Phase 6B (gated by B-01); other reference features not built | confirm exclusion of the rest for launch |
 | Verification policy, duplicate rules, category schemas, taxonomies, currencies (OQ-06 to OQ-08, OQ-21, OQ-22, OQ-29) | Phase 2 defaults | approve or change before real content is entered |
-| Profile, For You, match display (OQ-23) | design approved (D-31); not built; Phase 6 | no action until the Phase 5 launch gate |
-| Change of e-mail address | not built | confirm it is wanted |
+| Profile, For You, match display (OQ-23) | built in Phase 6B and merged; profile collection in production waits for reviewed privacy text (B-02) | review the For You display on real content (B-09) before launch |
+| Change of e-mail address | built behind the verified-delivery gate (D-31, Phase 5); unavailable until B-01 closes | confirm it is wanted |
 
 ## C. Known limitations that are not blockers
 Timing of unknown-address answers is comparable, not identical; the staff site CSP still allows inline styles (Django Admin); staff pages on a phone need horizontal scrolling for wide tables; the outbox claim has no two-process concurrency test; the database-backed throttle store writes on every public read (Redis is deferred, ADR-0004); sessions created before Phase 3 are not tracked (development only); the list `total` is a count of all live listings per request (about 22 ms at 24,000 listings).

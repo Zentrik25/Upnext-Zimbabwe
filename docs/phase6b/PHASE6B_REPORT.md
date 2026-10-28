@@ -1,6 +1,6 @@
 # Phase 6B report — jobseeker profile, For You, saved opportunities and job alerts — DRAFT
 
-Status: DRAFT, awaiting owner review. Implemented on branch `claude/nextjob-zimbabwe-phase-6b-30bfc9` from the Phase 6A integration branch `claude/new-session-t9v0fd` (identical at the start: `106ce43`). Authorisation: D-38. Design record: ADR-0023. **Not merged, not deployed. No e-mail was sent; no provider was contacted.** CI result and final commit: see section 9 (filled in after the run).
+Status: DRAFT, awaiting owner review. **Update 2026-10-28 (M1): merged as PR #9, merge commit `0cfae74`, 2026-10-18 23:29 UTC (owner-approved merge per the commit message); the sections below describe the state before the merge and are not rewritten.** Implemented on branch `claude/nextjob-zimbabwe-phase-6b-30bfc9` from the Phase 6A integration branch `claude/new-session-t9v0fd` (identical at the start: `106ce43`). Authorisation: D-38. Design record: ADR-0023. **Not merged, not deployed. No e-mail was sent; no provider was contacted.** CI result and final commit: see section 9 (filled in after the run).
 
 ## 1. What was built
 | Area | Result |
