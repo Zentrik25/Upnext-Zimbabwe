@@ -83,3 +83,5 @@ Database tables, migrations, Django app names, `UPNEXT_*` variables, cookie name
 3. Production proxy: add the `www` to apex redirect and TLS for `upnext.co.zw` (not done here).
 4. Domain `upnext.co.zw` and mailbox `info@upnext.co.zw`: creation, SPF/DKIM/DMARC and sender verification (B-01).
 5. Privacy and terms text still say "[to be decided]" in places and remain drafts for legal review (B-02).
+
+Screenshots: `docs/design/brand/screenshots/`.
