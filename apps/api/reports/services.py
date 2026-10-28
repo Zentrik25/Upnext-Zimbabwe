@@ -224,6 +224,11 @@ def submit(slug: str, data: dict[str, Any], *, client_ident: str, now: datetime 
     raise WorkflowError("conflict", "Could not record the report; try again.")  # pragma: no cover
 
 
+def scrub_contact(address: str) -> int:
+    """Account deletion: a report whose optional contact address is the deleted account's loses it at once."""
+    return ListingReport.objects.filter(contact_email=address).update(contact_email=None)
+
+
 def purge_closed(now: datetime | None = None) -> int:
     """Privacy: clear the optional contact address and the repeat key of reports closed for a while
     (`UPNEXT_RETENTION_REPORT_CONTACT_DAYS`, provisional 30). The report and its history stay."""

@@ -19,6 +19,7 @@ SCOPE_PREFIXES = (
     "employers_",
     "profiles_",
     "alerts_",
+    "reports_",
 )
 # Columns that match the pattern but are not personal data of a person, with the reason.
 NOT_PERSONAL = {

@@ -265,3 +265,20 @@ def test_purge_clears_contact_and_key_of_old_closed_reports(
     assert old.contact_email is None and old.dedupe_key == ""
     assert fresh.contact_email == "b@example.org" and fresh.dedupe_key != ""
     assert services.purge_closed(now) == 0
+
+
+def test_deleting_an_account_clears_its_address_from_reports(listing: Opportunity, make_user: Any) -> None:
+    from datetime import timedelta as td
+
+    from accounts import deletion
+
+    user = make_user(email="reporter@example.org")
+    services.submit(listing.slug, {**GOOD, "contact_email": "Reporter@Example.org"}, client_ident="a")
+    services.submit(
+        listing.slug, {**GOOD, "reason": "expired", "contact_email": "other@example.org"}, client_ident="b"
+    )
+    user.deletion_requested_at = timezone.now() - td(days=30)
+    user.save()
+    assert deletion.execute(user.pk) is True
+    contacts = sorted(str(r.contact_email) for r in ListingReport.objects.all())
+    assert contacts == ["None", "other@example.org"]
