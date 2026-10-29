@@ -178,6 +178,63 @@ STATUS_TABS = (
 )
 
 
+QUEUES = ("review", "ready", "mine", "amendments")
+DEADLINES = ("soon", "past", "unknown")
+
+
+def apply_queue(
+    queryset: QuerySet[Opportunity], user: User, value: str | None
+) -> QuerySet[Opportunity] | None:
+    """The work queues of the list (also used by the staff API). `None` for an unknown value."""
+    open_states = [VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED]
+    if value == "review":
+        return awaiting_review(queryset, user)
+    if value == "ready":
+        return queryset.filter(pending_version__state=VersionState.APPROVED)
+    if value == "mine":
+        return queryset.filter(
+            pending_version__author=user,
+            pending_version__state__in=[VersionState.DRAFT, VersionState.REJECTED],
+        )
+    if value == "amendments":
+        return queryset.filter(
+            live_version__isnull=False,
+            pending_version__isnull=False,
+            pending_version__state__in=open_states,
+        )
+    return None
+
+
+def apply_deadline(queryset: QuerySet[Opportunity], value: str | None) -> QuerySet[Opportunity] | None:
+    now = timezone.now()
+    field = "live_version__deadline_at"
+    match value:
+        case "soon":
+            return queryset.filter(**{f"{field}__gt": now, f"{field}__lte": now + timedelta(days=7)})
+        case "past":
+            return queryset.filter(**{f"{field}__lte": now})
+        case "unknown":
+            return queryset.filter(live_version__isnull=False, **{f"{field}__isnull": True})
+    return None
+
+
+def search_listings(user: User, queryset: QuerySet[Opportunity], term: str) -> QuerySet[Opportunity]:
+    """Listings matching `term` by title, organisation, reference or slug, looking only at revisions the person
+    may see: another person's draft revision is never matched (its title would otherwise leak through search)."""
+    live = (
+        Q(slug__icontains=term)
+        | Q(live_version__title__icontains=term)
+        | Q(live_version__organisation__name__icontains=term)
+        | Q(live_version__reference_number__icontains=term)
+    )
+    pending = Q(pending_version__title__icontains=term) | Q(
+        pending_version__organisation__name__icontains=term
+    )
+    if not user.has_permission_code(Permission.AUDIT_READ_ALL):
+        pending &= ~Q(pending_version__state=VersionState.DRAFT) | Q(pending_version__author=user)
+    return queryset.filter(live | pending)
+
+
 # --- list filters --------------------------------------------------------------------------------------
 class QueueFilter(admin.SimpleListFilter):
     title = "work queue"
@@ -192,25 +249,7 @@ class QueueFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request: HttpRequest, queryset: QuerySet[Opportunity]) -> QuerySet[Opportunity] | None:
-        user = _user(request)
-        value = self.value()
-        open_states = [VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED]
-        if value == "review":
-            return awaiting_review(queryset, user)
-        if value == "ready":
-            return queryset.filter(pending_version__state=VersionState.APPROVED)
-        if value == "mine":
-            return queryset.filter(
-                pending_version__author=user,
-                pending_version__state__in=[VersionState.DRAFT, VersionState.REJECTED],
-            )
-        if value == "amendments":
-            return queryset.filter(
-                live_version__isnull=False,
-                pending_version__isnull=False,
-                pending_version__state__in=open_states,
-            )
-        return None
+        return apply_queue(queryset, _user(request), self.value())
 
 
 class DeadlineFilter(admin.SimpleListFilter):
@@ -221,16 +260,7 @@ class DeadlineFilter(admin.SimpleListFilter):
         return [("soon", "Within 7 days"), ("past", "Passed"), ("unknown", "Not stated")]
 
     def queryset(self, request: HttpRequest, queryset: QuerySet[Opportunity]) -> QuerySet[Opportunity] | None:
-        now = timezone.now()
-        field = "live_version__deadline_at"
-        match self.value():
-            case "soon":
-                return queryset.filter(**{f"{field}__gt": now, f"{field}__lte": now + timedelta(days=7)})
-            case "past":
-                return queryset.filter(**{f"{field}__lte": now})
-            case "unknown":
-                return queryset.filter(live_version__isnull=False, **{f"{field}__isnull": True})
-        return None
+        return apply_deadline(queryset, self.value())
 
 
 # --- read-only inlines ----------------------------------------------------------------------------------
@@ -810,23 +840,30 @@ ACTIONS: dict[str, Action] = {
 }  # fmt: skip
 
 
-def listing_action_links(user: User, obj: Opportunity) -> list[tuple[str, str]]:
-    """(url, label) for what `user` may attempt on the listing right now: edit own draft and the workflow
-    actions. Advisory only: every action view and every service call re-checks permission and separation of duties."""
+def listing_actions(user: User, obj: Opportunity) -> list[tuple[str, str]]:
+    """(name, label) for what `user` may attempt on the listing right now: "edit" for their own draft and the
+    workflow actions. Advisory only: every action view and every service call re-checks permission and
+    separation of duties."""
     names = workflow.allowed_actions(user, obj)
     if user.has_permission_code(Permission.OPP_VERIFY_RECORD) and (obj.pending_version or obj.live_version):
         names.append("verify")
     version = obj.pending_version
-    links: list[tuple[str, str]] = []
+    out: list[tuple[str, str]] = []
     if version and version.state == VersionState.DRAFT and version.author_id == user.pk:
-        links.append(
-            (reverse("admin:opportunities_opportunityversion_change", args=[version.pk]), "Edit the draft")
-        )
-    links += [
-        (reverse("admin:opportunities_opportunity_action", args=[obj.pk, name]), ACTIONS[name].label)
-        for name in names
-        if name in ACTIONS
-    ]
+        out.append(("edit", "Edit the draft"))
+    out += [(name, ACTIONS[name].label) for name in names if name in ACTIONS]
+    return out
+
+
+def listing_action_links(user: User, obj: Opportunity) -> list[tuple[str, str]]:
+    """(url, label) in the Django Admin for `listing_actions`."""
+    version = obj.pending_version
+    links: list[tuple[str, str]] = []
+    for name, label in listing_actions(user, obj):
+        if name == "edit" and version is not None:
+            links.append((reverse("admin:opportunities_opportunityversion_change", args=[version.pk]), label))
+        else:
+            links.append((reverse("admin:opportunities_opportunity_action", args=[obj.pk, name]), label))
     return links
 
 

@@ -27,6 +27,8 @@ tags:
   - name: discovery
   - name: alerts
     description: Job alerts (Phase 6B). Nothing is sent while e-mail delivery is unverified (B-01).
+  - name: staff
+    description: Staff workspace API (D-46). Signed-in staff with two-step verification only; all changes go through the publishing service.
   - name: editorial
     description: Staff only. x-status reserved — exposure depends on the staff-UI decision.
   - name: administration
@@ -1040,6 +1042,156 @@ paths:
         '200': { description: 'Ready', content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, const: ok } } } } } }
         '503': { description: 'Not ready' }
 
+  # --- Staff API (D-46). Every read starts from the visibility rule of the Django Admin list and every write calls the
+  # publishing service, which decides and audits; a staff role AND the second step are needed in the same session.
+  /staff/session:
+    get:
+      tags: [staff]
+      operationId: getStaffSession
+      summary: 'Who is signed in, their role and permissions, and whether two-step verification passed'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/two-step:
+    get:
+      tags: [staff]
+      operationId: getStaffTwoStep
+      summary: 'Two-step enrolment state (the setup key only while enrolling)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: verifyStaffTwoStep
+      summary: 'Verify or enrol the second step for this session'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/dashboard:
+    get:
+      tags: [staff]
+      operationId: getStaffDashboard
+      summary: 'Dashboard figures scoped to what the staff member may see'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/opportunities:
+    get:
+      tags: [staff]
+      operationId: listStaffOpportunities
+      summary: 'Visible listings with filters, status counts and paging'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: createStaffDraft
+      summary: 'Start a draft (workflow T01)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/opportunities/{opportunityId}:
+    get:
+      tags: [staff]
+      operationId: getStaffOpportunity
+      summary: 'A visible listing with its revisions, history and permitted actions'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/opportunities/{opportunityId}/draft:
+    patch:
+      tags: [staff]
+      operationId: saveStaffDraft
+      summary: 'Save your own draft (workflow T02)'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/opportunities/{opportunityId}/actions/{action}:
+    post:
+      tags: [staff]
+      operationId: runStaffAction
+      summary: 'Run one editorial action through the publishing service'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: action, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/activity:
+    get:
+      tags: [staff]
+      operationId: listStaffActivity
+      summary: 'Workflow transitions on visible listings'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/search:
+    get:
+      tags: [staff]
+      operationId: searchStaff
+      summary: 'Grouped suggestions for the staff search box'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/categories:
+    get:
+      tags: [staff]
+      operationId: listStaffCategories
+      summary: 'Categories with their active detail schema fields'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/organisations:
+    get:
+      tags: [staff]
+      operationId: listStaffOrganisations
+      summary: 'Organisations by name (people who may create organisations)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 components:
   securitySchemes:
     cookieAuth:

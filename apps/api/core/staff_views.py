@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from django.contrib import admin
-from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -14,7 +13,7 @@ from django.views.decorators.cache import never_cache
 from access.registry import Permission, Role
 from catalog.models import Organisation
 from opportunities import health
-from opportunities.admin import listings_visible_to
+from opportunities.admin import listings_visible_to, search_listings
 from opportunities.models import VersionState
 from reports.models import ListingReport
 
@@ -82,19 +81,7 @@ def search(request: HttpRequest) -> HttpResponse:
 
 
 def _listing_hits(user: Any, term: str) -> list[dict[str, str]]:
-    live = (
-        Q(slug__icontains=term)
-        | Q(live_version__title__icontains=term)
-        | Q(live_version__organisation__name__icontains=term)
-        | Q(live_version__reference_number__icontains=term)
-    )
-    pending = Q(pending_version__title__icontains=term) | Q(
-        pending_version__organisation__name__icontains=term
-    )
-    if not user.has_permission_code(Permission.AUDIT_READ_ALL):
-        # Not another person's draft (the change page says "A draft by another person is not shown").
-        pending &= ~Q(pending_version__state=VersionState.DRAFT) | Q(pending_version__author=user)
-    hits = listings_visible_to(user).filter(live | pending).order_by("-updated_at")
+    hits = search_listings(user, listings_visible_to(user), term).order_by("-updated_at")
     seen: set[str] = set()
     out: list[dict[str, str]] = []
     for opp in hits[: SEARCH_PER_GROUP * 3]:

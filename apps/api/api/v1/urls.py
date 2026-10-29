@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, employer_views, profile_views, public_views, report_views, views
+from api import account_views, employer_views, profile_views, public_views, report_views, staff_views, views
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -102,6 +102,29 @@ urlpatterns = [
         employer_views.AmendListingView.as_view(),
         name="employer-listing-amend",
     ),
+    path("staff/session", staff_views.SessionView.as_view(), name="staff-session"),
+    path("staff/two-step", staff_views.TwoStepView.as_view(), name="staff-two-step"),
+    path("staff/dashboard", staff_views.DashboardView.as_view(), name="staff-dashboard"),
+    path("staff/opportunities", staff_views.OpportunityListView.as_view(), name="staff-opportunities"),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>",
+        staff_views.OpportunityDetailView.as_view(),
+        name="staff-opportunity",
+    ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/draft",
+        staff_views.SaveDraftView.as_view(),
+        name="staff-opportunity-draft",
+    ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/actions/<slug:action>",
+        staff_views.ActionView.as_view(),
+        name="staff-opportunity-action",
+    ),
+    path("staff/activity", staff_views.ActivityView.as_view(), name="staff-activity"),
+    path("staff/search", staff_views.SearchView.as_view(), name="staff-search-api"),
+    path("staff/categories", staff_views.CategoryListView.as_view(), name="staff-categories"),
+    path("staff/organisations", staff_views.OrganisationListView.as_view(), name="staff-organisations"),
     path("employers/<slug:slug>", employer_views.PublicProfileView.as_view(), name="employer-public-profile"),
     re_path(
         r"^opportunities/(?P<slug>[^/]{1,200})/events$",

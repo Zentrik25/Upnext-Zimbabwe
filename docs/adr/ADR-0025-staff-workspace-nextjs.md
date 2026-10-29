@@ -1,0 +1,19 @@
+# ADR-0025 — Staff workspace in Next.js on a staff API (D-46) — DRAFT
+
+Status: DRAFT. Owner instruction of 2026-10-29 ("I need next js staff app"). Not merged, not deployed. It amends P2-06 and OQ-16 for the staff UI only.
+
+## Context
+ADR-0024 re-skinned the Django Admin because P2-06 fixed it as the staff interface with no editorial or administration API. The owner then asked for a Next.js staff app. A browser application cannot call Django Admin views, so the staff operations need an API. The risk to manage is a second authorisation surface next to the workflow service.
+
+## Decision
+1. **A thin staff API, no new rules.** `apps/api/api/staff_views.py` under `/api/v1/staff/`. It reads through `opportunities.admin.listings_visible_to` (the one definition of what a staff member may see, shared with the Django Admin) and writes only through `opportunities.workflow` (`create_draft`, `save_draft` and the action table of the Django Admin). Permission, separation of duties, the exact-revision rule, audit and the database triggers are therefore unchanged and still decide.
+2. **Access.** Signed-in, active, with a staff role, *and* the second step in the same session (`two_step_required` otherwise). The second step is satisfied only by `POST /staff/two-step` or the Django `/staff/mfa/` page. Unsafe methods need the CSRF header (shared session authentication); writes are throttled per user. Another person's draft revision is never matched by search or shown by the detail endpoint ("A draft by another person is not shown"), and an unavailable action answers 403 `action_unavailable`.
+3. **Workspace.** `apps/web/src/app/workspace/` (`/workspace`): server components fetch the API with the browser's cookie; client components only hold form state and post to the API. The public header and footer are not rendered there (`x-pathname` from the proxy), pages are `noindex`, the path is in `robots.txt`, and CSP nonces apply as everywhere else. `/staff/` stays with Django (Traefik/Nginx are untouched).
+4. **Design.** The same Tailwind token set as the public site (D-45), light default, dark by explicit choice (shared `upnext-theme` key), brand-dark sidebar that becomes a drawer below 1100 px, no inline styles of its own, outline icons drawn for UPNEXT.
+5. **Editor.** `DraftEditor` sends the same `content` object the workflow already validates; category details are rendered from the active JSON schema (`GET /staff/categories`), so the form cannot drift from the schema. Fields the editor does not show (skills, other locations, a deadline whose day is unchanged) are sent back unchanged. Deadlines are end-of-day Harare date-only.
+6. **Classic staff site stays.** Organisations, claims, reports, taxonomy, users and roles, audit, outgoing e-mail and content health are still Django Admin pages (the sidebar links to them) until they are ported; porting each is a separate, reviewed change.
+
+## Consequences
+- The attack surface grows by 13 operations (`docs/engineering/openapi/openapi.yaml`, traceability R-55). Each is covered by `apps/api/tests/test_staff_api.py` (anonymous, seeker, missing second step, CSRF, scoping, separation of duties, stale row version, create and save, search and activity).
+- Two staff UIs exist during the transition; both go through the same services, so neither can bypass the workflow.
+- Open for the owner: whether to retire the Django Admin once every page is ported (it is also the break-glass interface, `STAFF_ACCESS_RUNBOOK.md`), and the legal and security review of the new endpoints before any deployment.

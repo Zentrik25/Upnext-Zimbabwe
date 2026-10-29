@@ -62,7 +62,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-52 | Route-level loading states, reusable static skeletons, global error handling with an accessible retry, responsive from 320px | M2 (owner instruction 2026-10-28); D-19 | — | — | STATE-01, STATE-02, STATE-03 | — |
 | R-53 | Category specifications are reviewed against the loaded schemas and stay a proposal: no schema, migration or published-listing meaning changes before the owner approves OQ-06 | M2 (owner instruction 2026-10-28); D-21; P2-07 | — | — | CAT-01 | OQ-06 |
 | R-54 | Public identity is UPNEXT Careers: flat black-and-white UN monogram and wordmark, monochrome Stripe-inspired design with Inter, the one official mailbox info@upnext.co.zw, canonical domain upnext.co.zw, branded e-mail and metadata, homepage and staff site, without changing architecture, security or the editorial workflow | D-42 (owner instruction 2026-10-28); D-39; D-40; D-33 (superseded naming) | SC-01 | — | BRAND-01, BRAND-02, BRAND-03, BRAND-04 | B-01; B-02 |
-| R-55 | Staff interface follows the Stripe design system with a permission-scoped dashboard, sidebar, search, activity log, light and dark themes and mobile drawer; no new write path | D-46; D-45; P2-06; D-18; D-22 | staff dashboard, opportunity list | — (Django Admin; `/staff/search/` read-only) | `apps/api/tests/test_staff_dashboard.py` | P-STAFFUI-01 |
+| R-55 | Staff workspace (Next.js) on a staff API, in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, themes, mobile drawer; no new write path and no bypass of the workflow | D-46; D-45; ADR-0025; D-18; D-22 | `/workspace` pages | getStaffSession … listStaffOrganisations (section 3) | `apps/api/tests/test_staff_api.py`, `apps/api/tests/test_staff_dashboard.py`, `apps/web/tests/unit/workspace.test.tsx` | — |
 
 ## 2. Screen register
 
@@ -165,6 +165,19 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `retryOutbox` | POST `/admin/email-outbox/{outbox_id}/retry` | administration | R-18, R-20 |
 | `healthLive` | GET `/health/live` | health | R-24 |
 | `healthReady` | GET `/health/ready` | health | R-24 |
+| `getStaffSession` | GET `/staff/session` | staff | R-55 |
+| `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
+| `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `getStaffDashboard` | GET `/staff/dashboard` | staff | R-55 |
+| `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
+| `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
+| `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
+| `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
+| `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
+| `listStaffActivity` | GET `/staff/activity` | staff | R-55 |
+| `searchStaff` | GET `/staff/search` | staff | R-55 |
+| `listStaffCategories` | GET `/staff/categories` | staff | R-55 |
+| `listStaffOrganisations` | GET `/staff/organisations` | staff | R-55 |
 
 ## 4. Test catalogue (planned)
 

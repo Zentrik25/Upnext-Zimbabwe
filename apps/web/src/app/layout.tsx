@@ -59,7 +59,10 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Reading request headers opts the tree into dynamic rendering so the per-request CSP nonce (proxy.ts)
   // is applied to Next.js' own scripts.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // The staff workspace (D-46) has its own shell: no public header, footer or skip link from the site.
+  const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
@@ -67,10 +70,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <SkipLink />
-        <SiteHeader />
-        <main id="main">{children}</main>
-        <SiteFooter />
+        {workspace ? (
+          children
+        ) : (
+          <>
+            <SkipLink />
+            <SiteHeader />
+            <main id="main">{children}</main>
+            <SiteFooter />
+          </>
+        )}
       </body>
     </html>
   );

@@ -13,6 +13,9 @@ const ALLOWED = [
   /^\/employer(\/claim)?$/,
   /^\/employer\/listings\/[0-9a-f-]{36}$/,
   /^\/employer\/organisations\/[0-9a-f-]{36}\/profile$/,
+  // Staff workspace (D-46): only these pages; the API and the two-step page decide who may see them.
+  /^\/workspace(\/(opportunities|activity))?$/,
+  /^\/workspace\/opportunities\/(new|[0-9a-f-]{36}(\/edit)?)$/,
 ];
 
 export function safeNext(value: string | string[] | null | undefined, fallback = "/account"): string {

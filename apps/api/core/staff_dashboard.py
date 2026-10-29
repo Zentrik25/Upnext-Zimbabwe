@@ -72,6 +72,7 @@ class Attention:
 
 @dataclass(frozen=True)
 class Activity:
+    opportunity_id: str
     subject: str
     verb: str
     actor: str
@@ -241,6 +242,7 @@ def recent_activity(user: User, limit: int = ACTIVITY_ROWS) -> list[Activity]:
         who = event.actor.display_name if event.actor is not None else "System"
         rows.append(
             Activity(
+                opportunity_id=str(event.opportunity_id),
                 subject=_title(event.version),
                 verb=TRANSITION_LABELS.get(event.transition, event.to_status.replace("_", " ")),
                 actor=who,
