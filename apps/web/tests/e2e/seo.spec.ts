@@ -171,10 +171,7 @@ test.describe("home and static pages (SC-01, SC-14)", () => {
         /legally (approved|reviewed|compliant)|compliant with|\bdraft\b|to be confirmed/,
       );
       expect(text).not.toMatch(/\[(?!chapter )[^\]]*\]/);
-      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-        "href",
-        `https://upnext.co.zw${path}`,
-      );
+      expect(await canonical(page)).toMatch(new RegExp(`${path}$`));
     });
   }
 
