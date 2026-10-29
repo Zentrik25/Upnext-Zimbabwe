@@ -11,6 +11,10 @@ test.use({ viewport: { width: 390, height: 800 }, deviceScaleFactor: 2, isMobile
 
 const BUDGETS = { lcpMs: 2500, cls: 0.1, transferKiB: 250, scriptKiB: 150 };
 const PAGES = ["/", "/opportunities", "/sign-in"];
+// The home page carries the owner-supplied illustration (22 KB) and the bold headline font (8 KB) of D-47, and the
+// sign-in page the form-size illustration (12 KB), so these two have their own transfer allowance (the CI runner
+// measures about 4% above a local machine). Every other page keeps 250 KiB; script and LCP budgets are unchanged.
+const TRANSFER_KIB: Record<string, number> = { "/": 300, "/sign-in": 270 };
 
 for (const path of [...PAGES, "DETAIL"]) {
   test(`budget on ${path}`, async ({ page, request }, info) => {
@@ -63,7 +67,7 @@ for (const path of [...PAGES, "DETAIL"]) {
     );
     expect(metrics.lcp, "LCP").toBeLessThanOrEqual(BUDGETS.lcpMs);
     expect(metrics.cls, "CLS").toBeLessThanOrEqual(BUDGETS.cls);
-    expect(transferred, "transfer KiB").toBeLessThanOrEqual(BUDGETS.transferKiB);
+    expect(transferred, "transfer KiB").toBeLessThanOrEqual(TRANSFER_KIB[path] ?? BUDGETS.transferKiB);
     expect(scripts, "script KiB").toBeLessThanOrEqual(BUDGETS.scriptKiB);
   });
 }
