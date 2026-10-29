@@ -102,7 +102,7 @@ test("1. a Contributor starts a draft and fills it in", async ({ browser }) => {
   await page.goto("/staff/opportunities/opportunity/add/");
   await shot(page, "cms-03-start-listing");
   await page.getByLabel("Category").selectOption({ label: "Jobs" });
-  await page.getByLabel("Organisation", { exact: true }).selectOption({ label: "Example Water Authority" });
+  await page.getByLabel(/^Organisation:?$/).selectOption({ label: "Example Water Authority" });
   await page.getByLabel("Title").fill(TITLE);
   await page.getByRole("button", { name: "Create draft" }).click();
   await expect(page.getByText("Draft created")).toBeVisible();
@@ -147,7 +147,7 @@ test("3. self-approval is refused even for someone who holds an editor role", as
   contexts.push(context);
   await page.goto("/staff/opportunities/opportunity/add/");
   await page.getByLabel("Category").selectOption({ label: "Jobs" });
-  await page.getByLabel("Organisation", { exact: true }).selectOption({ label: "Example Health Alliance" });
+  await page.getByLabel(/^Organisation:?$/).selectOption({ label: "Example Health Alliance" });
   await page.getByLabel("Title").fill(`${TITLE} (self-review attempt)`);
   await page.getByRole("button", { name: "Create draft" }).click();
   await fillDraft(page, `${TAG}-self`);
