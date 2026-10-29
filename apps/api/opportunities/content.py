@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, date, datetime
@@ -49,6 +50,10 @@ ALLOWED_KEYS = frozenset(
         "summary",
         "description_md",
         "requirements_md",
+        "responsibilities_md",
+        "seo_title",
+        "seo_description",
+        "slug_request",
         "locations",
         "location_text",
         "geographic_eligibility",
@@ -80,8 +85,17 @@ SINGLE_LINE = {
     "geographic_eligibility": 500,
     "reference_number": 100,
     "contact_details": 500,
+    "seo_title": 70,
+    "seo_description": 160,
+    "slug_request": 80,
 }
-MULTI_LINE = {"description_md": 20000, "requirements_md": 10000, "application_instructions": 2000}
+MULTI_LINE = {
+    "description_md": 20000,
+    "requirements_md": 10000,
+    "responsibilities_md": 10000,
+    "application_instructions": 2000,
+}
+SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 ENUMS: dict[str, type[Any]] = {
     "work_mode": WorkMode,
     "employment_type": EmploymentType,
@@ -91,6 +105,10 @@ ENUMS: dict[str, type[Any]] = {
 # Fields that may be cleared with null; others (title, summary, description, organisation) cannot be null.
 NULLABLE = {
     "requirements_md",
+    "responsibilities_md",
+    "seo_title",
+    "seo_description",
+    "slug_request",
     "location_text",
     "geographic_eligibility",
     "work_mode",
@@ -175,6 +193,8 @@ def clean_draft(content: Mapping[str, Any]) -> tuple[dict[str, Any], FieldErrors
                 if len(cleaned) > limit:
                     _err(errors, key, "too_long", f"At most {limit} characters.")
                 out[key] = cleaned or (None if key in NULLABLE else "")
+    if out.get("slug_request") is not None and not SLUG_PATTERN.match(out["slug_request"]):
+        _err(errors, "slug_request", "invalid_format", "Use lower-case letters, digits and single hyphens.")
     for key, limit in MULTI_LINE.items():
         if key in content:
             value = content[key]
@@ -531,6 +551,11 @@ COPIED_COLUMNS = (
 )
 
 
+# Added by D-46. They join the snapshot (and so the hash) only when set, so every revision hashed before they
+# existed still verifies.
+OPTIONAL_COLUMNS = ("responsibilities_md", "seo_title", "seo_description", "slug_request")
+
+
 def _json_default(value: Any) -> Any:
     if isinstance(value, Decimal):
         return f"{value:.2f}"
@@ -549,6 +574,10 @@ def snapshot(version: OpportunityVersion) -> dict[str, Any]:
         if column == "deadline_at" and value is not None:
             value = value.astimezone(UTC).isoformat()
         data[column] = value
+    for column in OPTIONAL_COLUMNS:
+        value = getattr(version, column)
+        if value:
+            data[column] = value
     data["duplicate_acknowledgement"] = version.duplicate_acknowledgement
     data["locations"] = sorted((str(r.location_id), r.is_primary) for r in version.locations.all())
     data["skills"] = sorted((str(r.skill_id), r.is_required) for r in version.skills.all())

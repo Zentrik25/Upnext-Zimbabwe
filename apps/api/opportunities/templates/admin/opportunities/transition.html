@@ -8,7 +8,7 @@
   <p>{{ description }}</p>
   {% if summary %}<p><strong>{{ summary }}</strong></p>{% endif %}
   {% if warnings %}<ul class="messagelist">{% for w in warnings %}<li class="warning">{{ w }}</li>{% endfor %}</ul>{% endif %}
-  <form method="post" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
     <fieldset class="module aligned">

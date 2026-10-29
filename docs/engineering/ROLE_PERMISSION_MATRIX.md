@@ -9,13 +9,13 @@ Status: approved baseline for implementation. Phase 1 implements the role/permis
 | Anonymous | none | — | no account |
 | Seeker | account | self-registration | any active, verified account; no staff row |
 | Contributor | staff, additive | Administrator | creates and edits **own** drafts, submits, opens amendments |
-| Editor | staff, additive | Administrator | approves or rejects submissions they did not author, records verification, **publishes approved listings**, and takes down/withdraws/expires/archives |
+| Editor | staff, additive | Administrator | approves or rejects submissions they did not author, records verification, **publishes approved listings**, takes down/withdraws/expires/archives, and (D-46) **writes and directly publishes staff-created listings** |
 | Administrator | staff, additive | Administrator `[OQ-13]` | the same approval and publication authority as an Editor (same guards) plus user, role, taxonomy and settings management |
 | System | non-human | — | scheduled jobs with narrowly scoped permissions |
 
 **No Publisher role exists in the initial implementation (D-23).** The registry is built so a future role is a configuration addition (new role value + permission set + tests), not a change to the guards.
 
-Terms: **approval authority** = **publication authority** = Editor or Administrator. A person may hold several roles. No role implies Contributor: only Contributors create and edit drafts.
+Terms: **approval authority** = **publication authority** = Editor or Administrator. A person may hold several roles. Since D-46 an Editor or Administrator also holds the draft codes and `opp.publish_direct`, so they can create, edit and publish their own staff-created listings in one step (transition T16). A Contributor still cannot publish, and nobody can use T16 on an employer-originated listing or on someone else's draft; the review workflow (T02–T08) is unchanged for those cases.
 
 ## 2. Matrix
 
@@ -102,8 +102,8 @@ Permissions are **codes**; roles are **sets of codes** in one registry (`apps/ap
 | Admin UI | state fields read-only; actions call services |
 | Tests | table-driven cases generated from this matrix (every role × capability × condition both allowed and denied) |
 
-Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, employer.verification.revoke, opp.withdraw_own, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, report.read, report.triage, report.resolve, report.resolve_escalated, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
-Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, report.read, report.triage, report.resolve`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, employer.verification.revoke, report.resolve_escalated`. Seekers hold `me.*`; everyone holds `opp.read_public`.
+Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.publish_direct, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, employer.verification.revoke, opp.withdraw_own, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, report.read, report.triage, report.resolve, report.resolve_escalated, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
+Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.publish_direct, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, report.read, report.triage, report.resolve`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, employer.verification.revoke, report.resolve_escalated`. Seekers hold `me.*`; everyone holds `opp.read_public`.
 
 ## Phase 6A addendum: verified employer members (D-35)
 

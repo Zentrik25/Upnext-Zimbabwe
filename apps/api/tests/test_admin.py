@@ -177,10 +177,8 @@ def test_contributor_starts_a_draft_and_the_category_is_fixed(world: World, peop
     client = logged_in(people["author"])
     add = "/staff/opportunities/opportunity/add/"
     assert client.get(add).status_code == 200
-    assert (
-        logged_in(people["editor"]).get(add).status_code == 404
-        or logged_in(people["editor"]).get(add).status_code == 403
-    )
+    assert logged_in(people["editor"]).get(add).status_code == 200  # D-46: Editors write their own listings
+    assert logged_in(people["seeker"]).get(add).status_code in (302, 403, 404)
     category = next(iter(world.organisations))  # placeholder to keep the dict used
     assert category
     from catalog.models import Category
@@ -588,3 +586,86 @@ def test_listing_queue_does_not_query_per_row(world: World, people: dict[str, Us
     for example in ("jobs-1", "internships-1", "scholarships-1"):
         published(world, people["author_editor"], people["editor"], example=example)
     assert count() == one
+
+
+# --- direct staff publishing (D-46) -----------------------------------------------------------------------
+def png_upload(name: str = "logo.png") -> Any:
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (80, 80), (20, 90, 200)).save(out, format="PNG")
+    return SimpleUploadedFile(name, out.getvalue(), content_type="image/png")
+
+
+def test_an_editor_starts_a_listing_for_a_manually_entered_unverified_organisation_with_a_logo(
+    world: World, people: dict[str, User]
+) -> None:
+    from catalog.models import Category, Organisation
+
+    client = logged_in(people["editor"])
+    response = client.post(
+        "/staff/opportunities/opportunity/add/",
+        {
+            "category": Category.objects.get(code="jobs").pk,
+            "new_organisation_name": "Brand New Employer (Pvt) Ltd",
+            "new_organisation_website": "https://brand-new.example.org",
+            "organisation_logo": png_upload(),
+            "title": "Operations Officer",
+        },
+    )
+    assert response.status_code == 302, response.content.decode()[:400]
+    org = Organisation.objects.get(name="Brand New Employer (Pvt) Ltd")
+    assert org.logo_data and org.logo_data.startswith("data:image/png;base64,")
+    assert org.website_url == "https://brand-new.example.org"
+    assert not org.verifications.exists() and not org.employer_listings.exists()
+
+
+def test_a_logo_that_is_not_an_image_is_refused_in_the_form(world: World, people: dict[str, User]) -> None:
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from catalog.models import Category, Organisation
+
+    response = logged_in(people["editor"]).post(
+        "/staff/opportunities/opportunity/add/",
+        {
+            "category": Category.objects.get(code="jobs").pk,
+            "new_organisation_name": "Script Org",
+            "organisation_logo": SimpleUploadedFile("x.svg", b"<svg><script>1</script></svg>"),
+            "title": "T",
+        },
+    )
+    assert response.status_code == 200 and not Organisation.objects.filter(name="Script Org").exists()
+
+
+def test_an_editor_publishes_their_own_draft_from_the_cms_and_it_is_live(
+    world: World, people: dict[str, User]
+) -> None:
+    opp = new_draft(world, people["editor"], "jobs-1", **varied(world, "jobs-1", "cms"))
+    client = logged_in(people["editor"])
+    assert (
+        "Publish now"
+        in client.get(reverse("admin:opportunities_opportunity_change", args=[opp.pk])).content.decode()
+    )
+    response = client.post(action_url(opp, "publish_direct"), {"row_version": opp.row_version})
+    assert response.status_code == 302
+    opp.refresh_from_db()
+    assert opp.status == ListingStatus.PUBLISHED and opp.live_version is not None
+    assert opp.live_version.published_directly
+    from rest_framework.test import APIClient
+
+    assert APIClient().get(f"/api/v1/opportunities/{opp.slug}").status_code == 200
+
+
+def test_a_contributor_has_no_publish_now_action(world: World, people: dict[str, User]) -> None:
+    opp = new_draft(world, people["author"])
+    client = logged_in(people["author"])
+    assert (
+        "Publish now"
+        not in client.get(reverse("admin:opportunities_opportunity_change", args=[opp.pk])).content.decode()
+    )
+    client.post(action_url(opp, "publish_direct"), {"row_version": opp.row_version})
+    opp.refresh_from_db()
+    assert opp.status == ListingStatus.DRAFT

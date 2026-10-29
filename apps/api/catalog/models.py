@@ -98,6 +98,10 @@ class Organisation(models.Model):
     name = models.CharField(max_length=200)
     name_normalized = models.CharField(max_length=200, editable=False)
     website_url = models.URLField(max_length=2048, null=True, blank=True)
+    # A small re-encoded PNG or WebP stored as a data URI (D-46): no file storage, no SVG, nothing fetched
+    # from a third party, and the page's img-src (self, data:) already allows it. Set only through
+    # `catalog.logo`.
+    logo_data = models.TextField(null=True, blank=True, editable=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", editable=False
     )

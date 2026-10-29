@@ -1187,7 +1187,7 @@ components:
         title: { type: string }
         summary: { type: string }
         category: { $ref: '#/components/schemas/Category' }
-        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string }, profile_slug: { type: [string, 'null'], description: 'Detail only: slug of the approved company profile of a verified organisation (Phase 6A)' } } }
+        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string }, profile_slug: { type: [string, 'null'], description: 'Detail only: slug of the approved company profile of a verified organisation (Phase 6A)' }, website_url: { type: [string, 'null'], description: 'Detail only (D-46): website of the organisation' }, logo: { type: [string, 'null'], description: 'Detail only (D-46): re-encoded PNG as a data URI, at most about 80 KB' } } }
         locations:
           type: array
           items: { type: object, required: [slug, name, is_primary], properties: { slug: { type: string }, name: { type: string }, is_primary: { type: boolean } } }
@@ -1207,7 +1207,10 @@ components:
           required: [description_html, application, sources, canonical_path, updated_at]
           properties:
             description_html: { type: string, description: 'Server-sanitised HTML from the Markdown subset' }
+            responsibilities_html: { type: [string, 'null'], description: 'D-46: server-sanitised HTML from the Markdown subset' }
             requirements_html: { type: [string, 'null'] }
+            seo_title: { type: [string, 'null'], description: 'D-46: staff-written page title, at most 70 characters' }
+            seo_description: { type: [string, 'null'], description: 'D-46: staff-written meta description, at most 160 characters' }
             geographic_eligibility: { type: [string, 'null'] }
             location_text: { type: [string, 'null'] }
             experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }

@@ -87,6 +87,8 @@ class SummaryOrganisationSerializer(serializers.Serializer[None]):
     id = serializers.UUIDField()
     name = serializers.CharField()
     profile_slug = serializers.CharField(allow_null=True, required=False)  # detail only (Phase 6A)
+    website_url = serializers.CharField(allow_null=True, required=False)  # detail only (D-46)
+    logo = serializers.CharField(allow_null=True, required=False)  # detail only (D-46): data URI
 
 
 class OpportunitySummarySerializer(serializers.Serializer[None]):
@@ -122,7 +124,10 @@ class DetailSkillSerializer(serializers.Serializer[None]):
 
 class OpportunityDetailSerializer(OpportunitySummarySerializer):
     description_html = serializers.CharField()
+    responsibilities_html = serializers.CharField(allow_null=True)
     requirements_html = serializers.CharField(allow_null=True)
+    seo_title = serializers.CharField(allow_null=True)
+    seo_description = serializers.CharField(allow_null=True)
     geographic_eligibility = serializers.CharField(allow_null=True)
     location_text = serializers.CharField(allow_null=True)
     experience_level = serializers.ChoiceField(choices=ExperienceLevel.values, allow_null=True)

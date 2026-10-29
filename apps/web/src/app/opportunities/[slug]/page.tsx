@@ -36,10 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!result.ok || result.data === null) return { title: "Opportunity not found", robots: { index: false } };
   const listing = result.data;
   return {
-    title: `${listing.title} · ${listing.organisation.name}`,
-    description: listing.summary,
+    title: listing.seo_title ?? `${listing.title} · ${listing.organisation.name}`,
+    description: listing.seo_description ?? listing.summary,
     alternates: { canonical: listing.canonical_path },
-    openGraph: openGraphFor(listing.canonical_path, { title: listing.title, description: listing.summary }),
+    openGraph: openGraphFor(listing.canonical_path, {
+      title: listing.seo_title ?? listing.title,
+      description: listing.seo_description ?? listing.summary,
+    }),
     // Expired and withdrawn listings stay readable but are not promoted by search engines (OQ-20 default).
     robots: listing.status === "published" ? undefined : { index: false },
   };
@@ -112,7 +115,18 @@ export default async function OpportunityPage({ params }: Props) {
             <h1 id="listing-title" className="mt-1 text-section font-strong leading-title tracking-section">
               {listing.title}
             </h1>
-            <p className="mt-1 text-title text-company">
+            <p className="mt-1 flex items-center gap-2 text-title text-company">
+              {listing.organisation.logo ? (
+                // A small re-encoded PNG held by the API as a data URI (D-46); next/image cannot optimise it.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={listing.organisation.logo}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-control object-contain"
+                />
+              ) : null}
               {listing.organisation.profile_slug ? (
                 <Link href={`/employers/${listing.organisation.profile_slug}`} className="underline">
                   {listing.organisation.name}
@@ -120,6 +134,15 @@ export default async function OpportunityPage({ params }: Props) {
               ) : (
                 listing.organisation.name
               )}
+              {listing.organisation.website_url ? (
+                <a
+                  href={listing.organisation.website_url}
+                  rel="noopener noreferrer nofollow"
+                  className="text-small text-accent underline"
+                >
+                  Website
+                </a>
+              ) : null}
             </p>
             {listing.status === "published" || isSaved ? (
               <SaveToggle
@@ -164,6 +187,11 @@ export default async function OpportunityPage({ params }: Props) {
             <Section title="About this opportunity">
               <SafeHtml html={listing.description_html} />
             </Section>
+            {listing.responsibilities_html ? (
+              <Section title="Responsibilities">
+                <SafeHtml html={listing.responsibilities_html} />
+              </Section>
+            ) : null}
             {listing.requirements_html ? (
               <Section title="Requirements">
                 <SafeHtml html={listing.requirements_html} />

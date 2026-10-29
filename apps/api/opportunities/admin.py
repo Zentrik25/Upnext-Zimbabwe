@@ -29,10 +29,12 @@ from django.utils.safestring import SafeString, mark_safe
 from access.registry import DEFAULT_REGISTRY, Permission
 from accounts.models import User
 from audit import services as audit
+from catalog.models import Organisation
+from catalog.text import normalise_name
 from catalog.validators import date_only_deadline
 
 from . import admin_forms, workflow
-from .errors import WorkflowError
+from .errors import PermissionDeniedError, WorkflowError
 from .models import (
     ListingStatus,
     Opportunity,
@@ -491,14 +493,15 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     def _create_view(self, request: HttpRequest) -> HttpResponse:
         if not self.has_add_permission(request):
             raise Http404
-        form = admin_forms.CreateDraftForm(request.POST or None)
+        form = admin_forms.CreateDraftForm(request.POST or None, request.FILES or None)
         if request.method == "POST" and form.is_valid():
             data = form.cleaned_data
             try:
+                organisation = self._organisation_for(request, data)
                 opp = workflow.create_draft(
                     _user(request),
                     category_code=data["category"].code,
-                    content={"organisation_id": str(data["organisation"].pk), "title": data["title"]},
+                    content={"organisation_id": str(organisation.pk), "title": data["title"]},
                 )
             except WorkflowError as exc:
                 messages.error(request, describe(exc))
@@ -522,6 +525,29 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             "opts": self.model._meta,
         }
         return TemplateResponse(request, "admin/opportunities/transition.html", context)
+
+    @staticmethod
+    def _organisation_for(request: HttpRequest, data: dict[str, Any]) -> Organisation:
+        """The selected organisation, or a manually entered one. A manual organisation is never marked
+        verified (no verification record exists for it); an existing one with the same normalised name is
+        reused instead of creating a duplicate. A logo is applied only when the organisation has none."""
+        user = _user(request)
+        organisation = data.get("organisation")
+        if organisation is None:
+            name = data["new_organisation_name"].strip()
+            if not _can(request, Permission.ORG_CREATE):
+                raise PermissionDeniedError()
+            organisation = Organisation.objects.filter(
+                name_normalized=normalise_name(name), merged_into__isnull=True
+            ).first() or Organisation.objects.create(
+                name=name, website_url=data.get("new_organisation_website") or None, created_by=user
+            )
+        if data.get("logo_data") and not organisation.logo_data:
+            if not _can(request, Permission.ORG_EDIT):
+                raise PermissionDeniedError()
+            organisation.logo_data = data["logo_data"]
+            organisation.save(update_fields=["logo_data"])
+        return organisation
 
     def get_urls(self) -> list[Any]:
         custom = [
@@ -605,6 +631,19 @@ def _submit(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
     workflow.submit(user, opp.pk, expected_row_version=opp.row_version, duplicate_acknowledgement=ack)
 
 
+def _publish_direct(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
+    ack = None
+    if data.get("duplicate_of"):
+        ack = {"duplicate_of": data["duplicate_of"], "reason": data.get("duplicate_reason", "")}
+    workflow.publish_direct(
+        user,
+        opp.pk,
+        expected_row_version=opp.row_version,
+        duplicate_acknowledgement=ack,
+        applicant_payment_reviewed=bool(data.get("applicant_payment_reviewed")),
+    )
+
+
 def _approve(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
     checklist = {
         "source_reviewed": True,
@@ -632,6 +671,7 @@ def _verify(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
 
 ACTIONS: dict[str, Action] = {
     "submit": Action("Submit for review", "Freezes this revision and sends it to the review queue. After this it cannot be edited.", admin_forms.SubmitForm, _submit),
+    "publish_direct": Action("Publish now", "Publish your own draft of a staff-created listing immediately, with no second approver. The publisher, time, source and exact revision are recorded. Employer submissions cannot be published this way.", admin_forms.DirectPublishForm, _publish_direct),
     "approve": Action("Approve", "Approve this exact revision. Anyone who wrote or submitted it cannot do this.", admin_forms.ApproveForm, _approve),
     "reject": Action("Reject", "Return the revision to its author with reasons.", admin_forms.ReasonCodeForm, _simple("reject", reason_code="reason_code", reason="reason")),
     "return": Action("Return (withdraw approval)", "Void the approval and send the revision back with reasons.", admin_forms.ReasonCodeForm, _simple("return_approved", reason_code="reason_code", reason="reason")),
@@ -709,7 +749,8 @@ class VersionForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = OpportunityVersion
         fields = (
-            "organisation", "title", "summary", "description_md", "requirements_md", "location_text",
+            "organisation", "title", "summary", "description_md", "responsibilities_md", "requirements_md",
+            "seo_title", "seo_description", "slug_request", "location_text",
             "geographic_eligibility", "work_mode", "employment_type", "experience_level", "salary_min",
             "salary_max", "salary_currency", "salary_period", "funding_min", "funding_max",
             "funding_currency", "funding_period", "deadline_timezone", "deadline_is_date_only",
@@ -743,7 +784,8 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     inlines = [LocationInline, SkillInline, SectorInline, SourceInline]
     fieldsets = (
         ("Status", {"fields": ("state_display", "author_display", "fingerprint")}),
-        ("What and who", {"fields": ("organisation", "title", "summary", "description_md", "requirements_md")}),
+        ("What and who", {"fields": ("organisation", "title", "summary", "description_md", "responsibilities_md", "requirements_md")}),
+        ("Search appearance (optional; the address is fixed at first publication)", {"fields": ("seo_title", "seo_description", "slug_request")}),
         ("Where and when", {"fields": ("location_text", "geographic_eligibility", "work_mode", "employment_type", "experience_level")}),
         ("Pay or funding (leave blank when not stated; never estimated)", {"fields": (("salary_min", "salary_max", "salary_currency", "salary_period"), ("funding_min", "funding_max", "funding_currency", "funding_period"))}),
         ("Deadline (leave blank when not stated)", {"fields": ("deadline_date", "deadline_time", "deadline_timezone", "deadline_is_date_only")}),
@@ -917,7 +959,11 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             "title": data["title"],
             "summary": data["summary"],
             "description_md": data["description_md"],
+            "responsibilities_md": text("responsibilities_md"),
             "requirements_md": text("requirements_md"),
+            "seo_title": text("seo_title"),
+            "seo_description": text("seo_description"),
+            "slug_request": text("slug_request"),
             "location_text": text("location_text"),
             "geographic_eligibility": text("geographic_eligibility"),
             "work_mode": text("work_mode"),

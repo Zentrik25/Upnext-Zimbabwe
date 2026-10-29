@@ -19,7 +19,13 @@ export type OpportunitySummary = {
   title: string;
   summary: string;
   category: Category;
-  organisation: { id: string; name: string; profile_slug?: string | null };
+  organisation: {
+    id: string;
+    name: string;
+    profile_slug?: string | null;
+    website_url?: string | null;
+    logo?: string | null;
+  };
   locations: { slug: string; name: string; is_primary: boolean }[];
   work_mode: string | null;
   employment_type: string | null;
@@ -43,7 +49,10 @@ export type Source = {
 
 export type OpportunityDetail = OpportunitySummary & {
   description_html: string;
+  responsibilities_html: string | null;
   requirements_html: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
   geographic_eligibility: string | null;
   location_text: string | null;
   experience_level: string | null;
