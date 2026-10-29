@@ -51,22 +51,15 @@ for (const [k, v] of Object.entries(tokens.heights)) lines.push(`  --spacing-${k
 for (const [k, v] of Object.entries(tokens.breakpoints))
   if (!k.startsWith("$")) lines.push(`  --breakpoint-${k}: ${v};`);
 lines.push("}", "");
-// Dark theme (D-40): the same tokens redefined on :root, for an explicit choice (data-theme="dark") and for the
-// system setting when no explicit light choice was made. Tailwind utilities read these variables at run time.
+// Dark theme (D-40): the same tokens redefined on :root for an explicit choice only (data-theme="dark"). The default
+// is the light theme on every device: the device's colour-scheme setting is deliberately NOT followed (owner, 2026-10-29).
+// Tailwind utilities read these variables at run time.
 const darkVars = [
   ...Object.entries(tokens.colors).map(([name, v]) => `  --color-${name}: ${v.dark};`),
   ...Object.entries(tokens.darkShadows).map(([k, v]) => `  --shadow-${k}: ${v};`),
   "  color-scheme: dark;",
 ];
 lines.push(':root[data-theme="dark"] {', ...darkVars, "}", "");
-lines.push(
-  "@media (prefers-color-scheme: dark) {",
-  '  :root:not([data-theme="light"]) {',
-  ...darkVars.map((l) => `  ${l}`),
-  "  }",
-  "}",
-  "",
-);
 const css = lines.join("\n");
 
 if (process.argv.includes("--check")) {

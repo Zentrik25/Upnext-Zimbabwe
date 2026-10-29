@@ -19,6 +19,8 @@ Other points where the design system was applied as written and checked: purple 
 
 ### 0a. Dark theme (D-40)
 
+**Default theme (owner, 2026-10-29): light on every device.** The device's colour-scheme setting is not followed; dark applies only when a visitor chooses Dark in the footer (remembered in that browser only). The toggle has two options, Light and Dark.
+
 The dark palette is derived for this project; it is not a Stripe specification, so it has no deviations to list. Every pair is enforced by `tests/unit/tokens.test.ts`: text at 4.5:1 or more and non-text (control border, focus ring, saved state, dashed empty-state border) at 3:1 or more. Measured examples: ink `#e8ecf0` on `#0e0f2e` 15.7:1; muted `#9ba6ba` on `#14163a` 7.1:1; link `#9d98ff` on `#0e0f2e` 7.43:1; white on solid button `#533afd` 6.19:1 and on hover `#6654ff` 4.91:1; success `#4cdf80` on `#0f3322` 8.03:1; warning `#e3b261` on `#34270f` 7.49:1; control border `#7d88b0` on `#0e0f2e` 5.34:1. Link and active-tab text use the lighter dark accent `#9d98ff`; filled buttons use `accent-solid` (`#533afd`) in both themes. In dark the muted text is not corrected, because the design-system value passes.
 
 

@@ -9,9 +9,20 @@ describe("ThemeToggle (D-40)", () => {
   });
   afterEach(cleanup);
 
-  it("starts on Auto, which sets nothing", () => {
+  it("starts on Light, which sets nothing, whatever the device prefers", () => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("dark"),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+      onchange: null,
+    })) as typeof window.matchMedia;
     render(<ThemeToggle />);
-    expect(screen.getByRole("button", { name: "Auto" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Light" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("button", { name: "Auto" })).toBeNull();
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
@@ -23,11 +34,11 @@ describe("ThemeToggle (D-40)", () => {
     expect(screen.getByRole("button", { name: "Dark" }).getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("Auto removes the attribute and the stored value", () => {
+  it("Light removes the attribute and the stored value", () => {
     render(<ThemeToggle />);
+    fireEvent.click(screen.getByRole("button", { name: "Dark" }));
+    expect(document.documentElement.dataset.theme).toBe("dark");
     fireEvent.click(screen.getByRole("button", { name: "Light" }));
-    expect(document.documentElement.dataset.theme).toBe("light");
-    fireEvent.click(screen.getByRole("button", { name: "Auto" }));
     expect(document.documentElement.dataset.theme).toBeUndefined();
     expect(window.localStorage.getItem(THEME_KEY)).toBeNull();
   });
