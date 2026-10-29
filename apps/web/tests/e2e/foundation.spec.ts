@@ -213,26 +213,32 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
     await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
 
-  test.describe("dark theme (D-40)", () => {
+  test.describe("dark theme (D-40; light is the default, owner 2026-10-29)", () => {
+    // A dark device setting must NOT turn the site dark: only an explicit choice does.
     test.use({ colorScheme: "dark" });
 
-    test("Auto follows a dark device and the stored choice overrides it", async ({ page }) => {
+    test("the default is light even on a dark device; Dark is explicit and remembered; Light returns", async ({
+      page,
+    }) => {
       await page.goto("/");
       const body = page.locator("body");
+      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+      await expect(body).toHaveCSS("color", rgb("#101828"));
+      await page.getByRole("button", { name: "Dark" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       await expect(body).toHaveCSS("background-color", rgb("#0b0c0e"));
       await expect(body).toHaveCSS("color", rgb("#f2f4f7"));
-      await page.getByRole("button", { name: "Light" }).click();
-      await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
       await page.reload();
-      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
-      await page.getByRole("button", { name: "Auto" }).click();
-      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
       await expect(body).toHaveCSS("background-color", rgb("#0b0c0e"));
+      await page.getByRole("button", { name: "Light" }).click();
+      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
     });
 
     test("the primary button inverts in dark: black text on the white solid", async ({ page }) => {
       await page.goto("/design-system");
+      await page.getByRole("button", { name: "Dark" }).first().click();
       const primary = page.getByTestId("btn-primary");
       await expect(primary).toHaveCSS("background-color", rgb("#ffffff"));
       await expect(primary).toHaveCSS("color", rgb("#000000"));
@@ -240,6 +246,8 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
 
     test("no serious or critical accessibility violations on the home page in dark", async ({ page }) => {
       await page.goto("/");
+      await page.getByRole("button", { name: "Dark" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
         .analyze();

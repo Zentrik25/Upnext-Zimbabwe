@@ -3,10 +3,9 @@
 import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 
-export type ThemeChoice = "system" | "light" | "dark";
+export type ThemeChoice = "light" | "dark";
 export const THEME_KEY = "upnext-theme";
 const CHOICES: { value: ThemeChoice; label: string }[] = [
-  { value: "system", label: "Auto" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ];
@@ -14,9 +13,9 @@ const CHOICES: { value: ThemeChoice; label: string }[] = [
 function stored(): ThemeChoice {
   try {
     const value = window.localStorage.getItem(THEME_KEY);
-    return value === "light" || value === "dark" ? value : "system";
+    return value === "dark" ? "dark" : "light";
   } catch {
-    return "system";
+    return "light";
   }
 }
 
@@ -32,10 +31,11 @@ function subscribe(listener: () => void) {
 
 export function applyTheme(choice: ThemeChoice) {
   const root = document.documentElement;
-  if (choice === "system") delete root.dataset.theme;
+  if (choice === "light")
+    delete root.dataset.theme; // light is the default and needs no attribute
   else root.dataset.theme = choice;
   try {
-    if (choice === "system") window.localStorage.removeItem(THEME_KEY);
+    if (choice === "light") window.localStorage.removeItem(THEME_KEY);
     else window.localStorage.setItem(THEME_KEY, choice);
   } catch {
     /* storage can be blocked: the choice then lasts for this page view only */
@@ -43,9 +43,9 @@ export function applyTheme(choice: ThemeChoice) {
   listeners.forEach((listener) => listener());
 }
 
-/** Auto follows the device setting; Light and Dark are remembered in this browser only (no cookie, nothing sent). */
+/** Light is the default on every device; choosing Dark is remembered in this browser only (no cookie, nothing sent). */
 export function ThemeToggle({ className }: { className?: string }) {
-  const choice = useSyncExternalStore(subscribe, stored, () => "system" as ThemeChoice);
+  const choice = useSyncExternalStore(subscribe, stored, () => "light" as ThemeChoice);
   return (
     <div role="group" aria-label="Colour theme" className={cn("flex items-center gap-1", className)}>
       <span className="mr-1" aria-hidden="true">
