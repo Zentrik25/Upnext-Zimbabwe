@@ -180,12 +180,15 @@ test("5. the table searches, filters and withdraws according to permission", asy
     .getByRole("link")
     .click();
   await expect(page).toHaveURL(/sort=title/);
-  const row = page.getByRole("row", { name: new RegExp(DIRECT_TITLE) });
-  await row.getByRole("button", { name: "Withdraw" }).click();
-  const dialog = page.locator("dialog[open]");
-  await dialog.getByLabel("Explanation").fill("Withdrawn at the issuer's request.");
-  await dialog.getByRole("button", { name: "Withdraw" }).click();
-  await expect(page.getByRole("row", { name: new RegExp(DIRECT_TITLE) })).toContainText("Withdrawn");
+  // Both listings this journey published are withdrawn, so the public counts the other specs expect are unchanged.
+  for (const title of [DIRECT_TITLE, SUBMITTED_TITLE]) {
+    const row = page.getByRole("row", { name: new RegExp(title) });
+    await row.getByRole("button", { name: "Withdraw" }).click();
+    const dialog = page.locator("dialog[open]");
+    await dialog.getByLabel("Explanation").fill("Withdrawn at the issuer's request.");
+    await dialog.getByRole("button", { name: "Withdraw" }).click();
+    await expect(page.getByRole("row", { name: new RegExp(title) })).toContainText("Withdrawn");
+  }
 });
 
 test("6. an Administrator reads the audit trail, staff and settings", async ({ browser }) => {
