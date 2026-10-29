@@ -331,6 +331,7 @@ test("9. direct publishing (D-46): an Editor writes and publishes a listing with
   await e.page.locator("input[name=_save]").click();
   await expect(e.page).toHaveURL(/\/opportunity\/[0-9a-f-]+\/change\/$/);
   await shot(e.page, "cms-28-direct-draft-saved");
+  const directListing = e.page.url();
   await e.page.getByRole("link", { name: "Publish now" }).click();
   await shot(e.page, "cms-29-direct-publish-form");
   await e.page.getByRole("button", { name: "Publish now" }).click();
@@ -346,4 +347,10 @@ test("9. direct publishing (D-46): an Editor writes and publishes a listing with
   await shot(visitor, "cms-30-direct-published-public");
   const slug = new URL(visitor.url()).pathname.split("/").pop() ?? "";
   expect(await (await visitor.request.get("/sitemap.xml")).text()).toContain(`/opportunities/${slug}`);
+  // Leave the shared stack as found: later specs count the public listings.
+  await e.page.goto(directListing);
+  await e.page.getByRole("link", { name: "Withdraw" }).click();
+  await e.page.locator("#id_reason").fill("Journey clean-up: this listing was created only for the test.");
+  await e.page.getByRole("button", { name: "Withdraw" }).click();
+  await expect(e.page.getByText("Done: Withdraw")).toBeVisible();
 });
