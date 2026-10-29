@@ -37,7 +37,7 @@ export default async function HomePage() {
       <section aria-labelledby="latest-title" className="border-b border-line py-10">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="latest-title" className="font-headline text-sub tracking-sub">
+            <h2 id="latest-title" className="font-headline text-title tracking-title">
               Latest opportunities
             </h2>
             <Link

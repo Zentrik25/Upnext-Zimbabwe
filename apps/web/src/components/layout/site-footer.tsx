@@ -51,10 +51,10 @@ export function SiteFooter() {
           </div>
           <nav
             aria-label="Footer"
-            className="col-span-3 grid grid-cols-3 gap-8 max-md:col-span-1 max-md:grid-cols-2 max-sm:grid-cols-1"
+            className="col-span-3 grid grid-cols-3 gap-8 max-md:col-span-1 max-md:grid-cols-2 max-sm:block max-sm:columns-2 max-sm:gap-x-4"
           >
             {COLUMNS.map((column) => (
-              <div key={column.title}>
+              <div key={column.title} className="max-sm:mb-6 max-sm:break-inside-avoid">
                 <h2 className="text-small font-strong text-white">{column.title}</h2>
                 <ul className="m-0 mt-2 grid list-none gap-1 p-0">
                   {column.links.map(([href, label]) => (
