@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout";
-import { CategoryGrid, EmployerSection, Hero, TrustSection } from "@/components/home/sections";
+import { CategoryGrid, Hero, TrustSection } from "@/components/home/sections";
+import { Icon } from "@/components/ui/icons";
 import { OpportunityRow } from "@/components/opportunities/parts";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
@@ -41,9 +42,10 @@ export default async function HomePage() {
             </h2>
             <Link
               href="/opportunities"
-              className="inline-flex min-h-[24px] items-center text-ctl text-accent underline"
+              className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline"
             >
-              See all opportunities
+              View all
+              <Icon name="arrowRight" className="h-4 w-4" />
             </Link>
           </div>
           {rows.length > 0 ? (
@@ -70,7 +72,6 @@ export default async function HomePage() {
       </section>
       <CategoryGrid categories={categories} />
       <TrustSection />
-      <EmployerSection />
     </>
   );
 }

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { Button, Field, TextInput } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { IconField } from "./auth-parts";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
 import { FormError, FormSuccess } from "./parts";
 import { ResendVerification } from "./resend-verification";
@@ -55,50 +56,46 @@ export function RegisterForm() {
   return (
     <form onSubmit={submit} className="grid gap-4" noValidate={false}>
       {failure ? <FormError>{failure}</FormError> : null}
-      <Field
+      <IconField
         id="display_name"
+        name="display_name"
         label="Name"
+        icon="user"
+        placeholder="Your name"
         hint="How we address you. 1 to 80 characters."
         error={errors.display_name?.[0]}
-      >
-        <TextInput
-          id="display_name"
-          name="display_name"
-          autoComplete="name"
-          required
-          maxLength={80}
-          invalid={Boolean(errors.display_name)}
-        />
-      </Field>
-      <Field id="email" label="E-mail address" error={errors.email?.[0]}>
-        <TextInput
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          maxLength={254}
-          invalid={Boolean(errors.email)}
-        />
-      </Field>
-      <Field
+        autoComplete="name"
+        required
+        maxLength={80}
+      />
+      <IconField
+        id="email"
+        name="email"
+        label="E-mail address"
+        icon="mail"
+        type="email"
+        placeholder="you@example.com"
+        error={errors.email?.[0]}
+        autoComplete="email"
+        required
+        maxLength={254}
+      />
+      <IconField
         id="password"
+        name="password"
         label="Password"
+        icon="lock"
+        type="password"
+        reveal
+        placeholder="At least 10 characters"
         hint="At least 10 characters. Choose something not easy to guess; a few unrelated words work well."
         error={errors.password?.[0]}
-      >
-        <TextInput
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
-          maxLength={128}
-          invalid={Boolean(errors.password)}
-        />
-      </Field>
-      <Button type="submit" disabled={busy}>
+        autoComplete="new-password"
+        required
+        minLength={10}
+        maxLength={128}
+      />
+      <Button type="submit" disabled={busy} className="min-h-field">
         {busy ? "Creating account…" : "Create account"}
       </Button>
       <p className="text-small text-muted" data-testid="legal-notice">
@@ -112,7 +109,7 @@ export function RegisterForm() {
         </Link>
         . This does not sign you up for any e-mail alerts.
       </p>
-      <p className="text-ctl">
+      <p className="text-center text-ctl">
         Already have an account?{" "}
         <Link href="/sign-in" className="text-accent underline">
           Sign in
