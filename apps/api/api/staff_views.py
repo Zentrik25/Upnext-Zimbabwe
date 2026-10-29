@@ -29,12 +29,22 @@ from rest_framework.views import APIView
 from access.registry import DEFAULT_REGISTRY, Permission, Role
 from accounts import mfa
 from accounts.models import User
+from audit import services as audit
 from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
 from core.staff_mfa import SESSION_FLAG, _mark_verified
-from opportunities import workflow
-from opportunities.admin import (
+from opportunities import health, workflow
+from opportunities.errors import WorkflowError
+from opportunities.models import (
+    ListingStatus,
+    Opportunity,
+    OpportunityVersion,
+    PublishingEvent,
+    VerificationLevel,
+    VersionState,
+)
+from opportunities.staff import (
     ACTIONS,
     DEADLINES,
     QUEUES,
@@ -46,15 +56,6 @@ from opportunities.admin import (
     listings_scope,
     listings_visible_to,
     search_listings,
-)
-from opportunities.errors import WorkflowError
-from opportunities.models import (
-    ListingStatus,
-    Opportunity,
-    OpportunityVersion,
-    PublishingEvent,
-    VerificationLevel,
-    VersionState,
 )
 from opportunities.validation import fee_lint_triggers
 from reports.models import ListingReport
@@ -418,12 +419,14 @@ class OpportunityListView(StaffView):
         return _detail(user, opp)
 
 
-def _form_fields(form_class: type[forms.Form]) -> list[dict[str, Any]]:
+def _form_fields(form_class: type[forms.BaseForm]) -> list[dict[str, Any]]:
     out = []
     for name, field in form_class().fields.items():
         if name == "row_version":
             continue
-        if isinstance(field, forms.BooleanField):
+        if isinstance(field, forms.ModelChoiceField):
+            kind = "reference"  # a record picked by search (organisations, locations), never listed whole
+        elif isinstance(field, forms.BooleanField):
             kind = "boolean"
         elif isinstance(field, forms.ChoiceField):
             kind = "choice"
@@ -598,6 +601,16 @@ class OpportunityDetailView(StaffView):
         opp = _visible_listing(user, opportunity_id)
         if opp is None:
             return _not_found()
+        version = opp.pending_version
+        if version is not None and version.state == VersionState.DRAFT and version.author_id != user.pk:
+            audit.record(  # an Administrator reading another person's draft is support access, and is audited
+                action="opportunity.view_draft",
+                object_type="opportunity",
+                object_id=opp.pk,
+                actor_id=user.pk,
+                severity="privileged",
+                changes={"reason": "support read-only access"},
+            )
         return Response(_detail(user, opp))
 
 
@@ -825,3 +838,21 @@ class OrganisationListView(StaffView):
         if term:
             qs = qs.filter(name__icontains=term)
         return Response({"data": [{"id": str(o.pk), "name": o.name} for o in qs.order_by("name")[:20]]})
+
+
+class ContentHealthView(StaffView):
+    @extend_schema(
+        operation_id="getStaffContentHealth",
+        tags=["staff"],
+        responses={200: OpenApiResponse(description="Launch target and freshness figures"), 403: None},
+    )
+    def get(self, request: Request) -> Response:
+        user = self.user_of(request)
+        if not user.has_permission_code(Permission.OPP_REVIEW_APPROVE):  # editors and administrators
+            return error_response("permission_denied", "You do not have access to this page.", 403)
+        data = health.report()
+        data["live_per_category"] = [
+            {"code": code, "live": n} for code, n in sorted(data["live_per_category"].items())
+        ]
+        data["pipeline"] = [{"status": k, "count": v} for k, v in sorted(data["pipeline"].items())]
+        return Response(data)

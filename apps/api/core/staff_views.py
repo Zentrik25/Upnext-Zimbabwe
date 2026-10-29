@@ -13,8 +13,8 @@ from django.views.decorators.cache import never_cache
 from access.registry import Permission, Role
 from catalog.models import Organisation
 from opportunities import health
-from opportunities.admin import listings_visible_to, search_listings
 from opportunities.models import VersionState
+from opportunities.staff import listings_visible_to, search_listings
 from reports.models import ListingReport
 
 

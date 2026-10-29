@@ -28,8 +28,8 @@ from .models import (
     OrganisationVerification,
     ProfileRevision,
     ProfileState,
-    VerificationMethod,
 )
+from .staff_forms import ClaimDecisionForm, ProfileDecisionForm, RevokeForm
 
 
 def _user(request: HttpRequest) -> User:
@@ -138,41 +138,6 @@ class ReadOnlyAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
 
 # --- claims ---
-class ClaimDecisionForm(forms.Form):
-    decision = forms.ChoiceField(
-        choices=[("approve", "Approve"), ("reject", "Reject")], widget=forms.RadioSelect
-    )
-    reason = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 3}),
-        max_length=2000,
-        help_text="Required (10 characters or more) when rejecting.",
-    )
-    organisation = forms.ModelChoiceField(
-        queryset=Organisation.objects.filter(merged_into__isnull=True),
-        required=False,
-        help_text=(
-            "Choose an existing organisation. Leave empty to create a new one with the claimed name "
-            "(check for duplicates first)."
-        ),
-    )
-    role = forms.ChoiceField(choices=MemberRole.choices, initial=MemberRole.OWNER, required=False)
-    method = forms.ChoiceField(
-        choices=[("", "---"), *VerificationMethod.choices],
-        required=False,
-        help_text="How you verified the organisation. Required when it is not yet verified.",
-    )
-    evidence_note = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 3}),
-        max_length=2000,
-        help_text=(
-            "What you saw or did (10 characters or more). Required when it is not yet verified. "
-            "Do not paste documents."
-        ),
-    )
-
-
 @admin.register(OrganisationClaim)
 class OrganisationClaimAdmin(ReadOnlyAdmin):
     decide_label = "Decide"
@@ -235,18 +200,6 @@ class OrganisationClaimAdmin(ReadOnlyAdmin):
 
 
 # --- company profile revisions ---
-class ProfileDecisionForm(forms.Form):
-    decision = forms.ChoiceField(
-        choices=[("approve", "Approve"), ("reject", "Reject")], widget=forms.RadioSelect
-    )
-    reason = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 3}),
-        max_length=2000,
-        help_text="Required (10 characters or more) when rejecting. Shown to the employer.",
-    )
-
-
 @admin.register(ProfileRevision)
 class ProfileRevisionAdmin(ReadOnlyAdmin):
     decide_label = "Review"
@@ -302,10 +255,6 @@ class ProfileRevisionAdmin(ReadOnlyAdmin):
 
 
 # --- verification and membership: view, and revoke ---
-class RevokeForm(forms.Form):
-    reason = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), min_length=10, max_length=2000)
-
-
 @admin.register(OrganisationVerification)
 class OrganisationVerificationAdmin(ReadOnlyAdmin):
     permission_code = Permission.EMPLOYER_REVIEW

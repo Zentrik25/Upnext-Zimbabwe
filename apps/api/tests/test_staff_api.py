@@ -214,3 +214,23 @@ def test_dashboard_search_and_activity(world: World, people: dict[str, User]) ->
     assert editor.get(f"{S}/activity").json()["data"][0]["what"] == "Submitted for review"
     session = editor.get(f"{S}/session").json()
     assert session["user"]["role"] == "editor" and "opp.review.approve" in session["permissions"]
+
+
+def test_an_administrator_reading_someone_elses_draft_is_audited(
+    world: World, people: dict[str, User]
+) -> None:
+    from audit.models import AuditEvent
+
+    draft = new_draft(world, people["author"], "grants-1", **varied(world, "grants-1", "audited"))
+    signed_in(people["author"]).get(f"{S}/opportunities/{draft.pk}")  # the author's own view is not an event
+    assert not AuditEvent.objects.filter(action="opportunity.view_draft").exists()
+    assert signed_in(people["admin"]).get(f"{S}/opportunities/{draft.pk}").status_code == 200
+    event = AuditEvent.objects.get(action="opportunity.view_draft")
+    assert event.actor_ref == people["admin"].pk and event.object_id == draft.pk
+
+
+def test_content_health_is_for_editors_and_administrators(people: dict[str, User]) -> None:
+    assert signed_in(people["author"]).get(f"{S}/content-health").status_code == 403
+    body = signed_in(people["editor"]).get(f"{S}/content-health").json()
+    assert body["target"]["listings"]["goal"] >= 1 and body["sod_violations"] == []
+    assert isinstance(body["live_per_category"], list)

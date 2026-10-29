@@ -178,6 +178,17 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `searchStaff` | GET `/staff/search` | staff | R-55 |
 | `listStaffCategories` | GET `/staff/categories` | staff | R-55 |
 | `listStaffOrganisations` | GET `/staff/organisations` | staff | R-55 |
+| `listStaffRecordKinds` | GET `/staff/records` | staff | R-55 |
+| `listStaffRecords` | GET `/staff/records/{kind}` | staff | R-55 |
+| `getStaffRecord` | GET `/staff/records/{kind}/{recordId}` | staff | R-55 |
+| `runStaffRecordAction` | POST `/staff/records/{kind}/{recordId}/actions/{action}` | staff | R-55 |
+| `getStaffContentHealth` | GET `/staff/content-health` | staff | R-55 |
+| `listStaffCatalogKinds` | GET `/staff/catalog` | staff | R-55 |
+| `listStaffCatalog` | GET `/staff/catalog/{kind}` | staff | R-55 |
+| `createStaffCatalogRecord` | POST `/staff/catalog/{kind}` | staff | R-55 |
+| `getStaffCatalogRecord` | GET `/staff/catalog/{kind}/{recordId}` | staff | R-55 |
+| `updateStaffCatalogRecord` | PATCH `/staff/catalog/{kind}/{recordId}` | staff | R-55 |
+| `lookupStaffReference` | GET `/staff/lookup/{what}` | staff | R-55 |
 
 ## 4. Test catalogue (planned)
 

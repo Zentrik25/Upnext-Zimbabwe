@@ -17,7 +17,10 @@ ignore = ["S101", "RUF012", "DJ001"]
 "tests/*" = ["S105", "S106", "S311", "PT018", "E501", "S603"]
 "config/settings/*" = ["F403", "F405"]
 "opportunities/admin.py" = ["E501"]  # declarative action/fieldset tables read better unwrapped
-"opportunities/admin_forms.py" = ["E501"]
+"opportunities/staff_forms.py" = ["E501"]
+"opportunities/staff.py" = ["E501"]  # declarative action table
+"api/staff_records.py" = ["E501"]  # declarative resource table
+"api/staff_catalog.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.14"

@@ -1192,6 +1192,148 @@ paths:
         '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/records:
+    get:
+      tags: [staff]
+      operationId: listStaffRecordKinds
+      summary: 'listStaffRecordKinds'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/records/{kind}:
+    get:
+      tags: [staff]
+      operationId: listStaffRecords
+      summary: 'listStaffRecords'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/records/{kind}/{recordId}:
+    get:
+      tags: [staff]
+      operationId: getStaffRecord
+      summary: 'getStaffRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/records/{kind}/{recordId}/actions/{action}:
+    post:
+      tags: [staff]
+      operationId: runStaffRecordAction
+      summary: 'runStaffRecordAction'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+        - { name: action, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /staff/content-health:
+    get:
+      tags: [staff]
+      operationId: getStaffContentHealth
+      summary: 'getStaffContentHealth'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/catalog:
+    get:
+      tags: [staff]
+      operationId: listStaffCatalogKinds
+      summary: 'listStaffCatalogKinds'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/catalog/{kind}:
+    get:
+      tags: [staff]
+      operationId: listStaffCatalog
+      summary: 'listStaffCatalog'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [staff]
+      operationId: createStaffCatalogRecord
+      summary: 'createStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/catalog/{kind}/{recordId}:
+    get:
+      tags: [staff]
+      operationId: getStaffCatalogRecord
+      summary: 'getStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [staff]
+      operationId: updateStaffCatalogRecord
+      summary: 'updateStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /staff/lookup/{what}:
+    get:
+      tags: [staff]
+      operationId: lookupStaffReference
+      summary: 'Small pickers for reference fields: organisations and locations by name.'
+      parameters:
+        - { name: what, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
     cookieAuth:

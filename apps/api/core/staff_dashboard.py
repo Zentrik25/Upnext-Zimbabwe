@@ -19,19 +19,19 @@ from django.utils import timezone
 
 from access.registry import Permission
 from employers.models import ClaimStatus, OrganisationClaim, ProfileRevision, ProfileState
-from opportunities.admin import (
-    STATUS_TONES,
-    TRANSITION_LABELS,
-    awaiting_review,
-    listing_action_links,
-    listings_scope,
-    listings_visible_to,
-)
+from opportunities.admin import listing_action_links  # transitional: removed with the Django Admin
 from opportunities.models import (
     ListingStatus,
     OpportunityVersion,
     PublishingEvent,
     VersionState,
+)
+from opportunities.staff import (
+    STATUS_TONES,
+    TRANSITION_LABELS,
+    awaiting_review,
+    listings_scope,
+    listings_visible_to,
 )
 from reports.models import OPEN_STATUSES, ListingReport
 

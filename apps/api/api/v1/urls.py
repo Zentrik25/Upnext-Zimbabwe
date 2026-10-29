@@ -4,7 +4,17 @@ from django.conf import settings
 from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, employer_views, profile_views, public_views, report_views, staff_views, views
+from api import (
+    account_views,
+    employer_views,
+    profile_views,
+    public_views,
+    report_views,
+    staff_catalog,
+    staff_records,
+    staff_views,
+    views,
+)
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -121,6 +131,27 @@ urlpatterns = [
         staff_views.ActionView.as_view(),
         name="staff-opportunity-action",
     ),
+    path("staff/records", staff_records.RecordsIndexView.as_view(), name="staff-records"),
+    path("staff/records/<slug:kind>", staff_records.RecordListView.as_view(), name="staff-record-list"),
+    path(
+        "staff/records/<slug:kind>/<slug:record_id>",
+        staff_records.RecordDetailView.as_view(),
+        name="staff-record",
+    ),
+    path(
+        "staff/records/<slug:kind>/<slug:record_id>/actions/<slug:action>",
+        staff_records.RecordActionView.as_view(),
+        name="staff-record-action",
+    ),
+    path("staff/content-health", staff_views.ContentHealthView.as_view(), name="staff-content-health-api"),
+    path("staff/catalog", staff_catalog.CatalogIndexView.as_view(), name="staff-catalog"),
+    path("staff/catalog/<slug:kind>", staff_catalog.CatalogListView.as_view(), name="staff-catalog-list"),
+    path(
+        "staff/catalog/<slug:kind>/<slug:record_id>",
+        staff_catalog.CatalogDetailView.as_view(),
+        name="staff-catalog-record",
+    ),
+    path("staff/lookup/<slug:what>", staff_catalog.LookupView.as_view(), name="staff-lookup"),
     path("staff/activity", staff_views.ActivityView.as_view(), name="staff-activity"),
     path("staff/search", staff_views.SearchView.as_view(), name="staff-search-api"),
     path("staff/categories", staff_views.CategoryListView.as_view(), name="staff-categories"),
