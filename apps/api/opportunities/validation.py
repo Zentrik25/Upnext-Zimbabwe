@@ -58,7 +58,16 @@ def fee_lint_triggers(version: OpportunityVersion) -> bool:
     if version.opportunity.category.code == "tenders":
         return False
     text = " ".join(
-        filter(None, [version.title, version.summary, version.description_md, version.requirements_md])
+        filter(
+            None,
+            [
+                version.title,
+                version.summary,
+                version.description_md,
+                version.requirements_md,
+                version.responsibilities_md,
+            ],
+        )
     )
     return bool(_FEE_WORDS.search(text))
 
@@ -76,7 +85,7 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         _add(errors, "title", "invalid_format", "The title must not contain a web address.")
     _length(errors, "summary", version.summary, 20, 300)
     _length(errors, "description_md", version.description_md, 50, 20000)
-    for field in ("description_md", "requirements_md"):
+    for field in ("description_md", "requirements_md", "responsibilities_md"):
         value = getattr(version, field)
         if value:
             try:
@@ -85,6 +94,12 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
                 _add(errors, field, exc.code, str(exc))
     if version.requirements_md is not None:
         _length(errors, "requirements_md", version.requirements_md, 0, 10000)
+    if version.responsibilities_md is not None:
+        _length(errors, "responsibilities_md", version.responsibilities_md, 0, 10000)
+    if version.seo_title is not None:
+        _length(errors, "seo_title", version.seo_title, 0, 70)
+    if version.seo_description is not None:
+        _length(errors, "seo_description", version.seo_description, 0, 160)
 
     locations = list(version.locations.all())
     if not locations:

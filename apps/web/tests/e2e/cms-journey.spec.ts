@@ -102,7 +102,7 @@ test("1. a Contributor starts a draft and fills it in", async ({ browser }) => {
   await page.goto("/staff/opportunities/opportunity/add/");
   await shot(page, "cms-03-start-listing");
   await page.getByLabel("Category").selectOption({ label: "Jobs" });
-  await page.getByLabel("Organisation").selectOption({ label: "Example Water Authority" });
+  await page.getByLabel(/^Organisation:?$/).selectOption({ label: "Example Water Authority" });
   await page.getByLabel("Title").fill(TITLE);
   await page.getByRole("button", { name: "Create draft" }).click();
   await expect(page.getByText("Draft created")).toBeVisible();
@@ -147,7 +147,7 @@ test("3. self-approval is refused even for someone who holds an editor role", as
   contexts.push(context);
   await page.goto("/staff/opportunities/opportunity/add/");
   await page.getByLabel("Category").selectOption({ label: "Jobs" });
-  await page.getByLabel("Organisation").selectOption({ label: "Example Health Alliance" });
+  await page.getByLabel(/^Organisation:?$/).selectOption({ label: "Example Health Alliance" });
   await page.getByLabel("Title").fill(`${TITLE} (self-review attempt)`);
   await page.getByRole("button", { name: "Create draft" }).click();
   await fillDraft(page, `${TAG}-self`);
@@ -307,4 +307,50 @@ test("8. administrators see the audit trail; mobile layout of the staff pages", 
   await shot(mobile.page, "cms-26-mobile-listings");
   await mobile.page.goto(state.listingUrl);
   await shot(mobile.page, "cms-27-mobile-listing");
+});
+
+test("9. direct publishing (D-46): an Editor writes and publishes a listing without a second approver", async ({
+  browser,
+}) => {
+  const e = await login(browser, "editor");
+  const anon = await browser.newContext({ baseURL: BASE });
+  contexts.push(e.context, anon);
+  const title = `Programme Officer ${TAG}`;
+  await e.page.goto("/staff/opportunities/opportunity/add/");
+  await e.page.getByLabel("Category").selectOption({ label: "Jobs" });
+  await e.page.getByLabel("New organisation name").fill(`Direct Publishing Trust ${TAG}`);
+  await e.page.getByLabel("Organisation website").fill("https://direct-trust.example.org");
+  await e.page.getByLabel("Title").fill(title);
+  await e.page.getByRole("button", { name: "Create draft" }).click();
+  await expect(e.page.getByText("Draft created")).toBeVisible();
+  await fillDraft(e.page, `${TAG}-direct`);
+  await e.page
+    .locator("#id_responsibilities_md")
+    .fill("Coordinate the programme and report to the director.");
+  await e.page.locator("#id_seo_title").fill(`Programme Officer at Direct Publishing Trust ${TAG}`);
+  await e.page.locator("input[name=_save]").click();
+  await expect(e.page).toHaveURL(/\/opportunity\/[0-9a-f-]+\/change\/$/);
+  await shot(e.page, "cms-28-direct-draft-saved");
+  const directListing = e.page.url();
+  await e.page.getByRole("link", { name: "Publish now" }).click();
+  await shot(e.page, "cms-29-direct-publish-form");
+  await e.page.getByRole("button", { name: "Publish now" }).click();
+  await expect(e.page.getByText("Done: Publish now")).toBeVisible();
+  // No second staff member approved it, and it is live straight away.
+  const visitor = await anon.newPage();
+  await visitor.goto("/opportunities?q=" + encodeURIComponent(title));
+  await expect(visitor.getByRole("link", { name: title, exact: true })).toBeVisible();
+  await visitor.getByRole("link", { name: title, exact: true }).click();
+  await expect(visitor.getByRole("heading", { level: 1, name: title })).toBeVisible();
+  await expect(visitor.getByRole("heading", { name: "Responsibilities" })).toBeVisible();
+  await expect(visitor).toHaveTitle(new RegExp(`Programme Officer at Direct Publishing Trust ${TAG}`));
+  await shot(visitor, "cms-30-direct-published-public");
+  const slug = new URL(visitor.url()).pathname.split("/").pop() ?? "";
+  expect(await (await visitor.request.get("/sitemap.xml")).text()).toContain(`/opportunities/${slug}`);
+  // Leave the shared stack as found: later specs count the public listings.
+  await e.page.goto(directListing);
+  await e.page.getByRole("link", { name: "Withdraw" }).click();
+  await e.page.locator("#id_reason").fill("Journey clean-up: this listing was created only for the test.");
+  await e.page.getByRole("button", { name: "Withdraw" }).click();
+  await expect(e.page.getByText("Done: Withdraw")).toBeVisible();
 });

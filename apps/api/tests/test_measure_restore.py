@@ -3,6 +3,7 @@
 openssl is real, so the encryption, the keyed MAC and the tamper refusal are the production ones. The stubs record
 what the scripts asked of PostgreSQL (createdb, pg_restore, dropdb) so cleanup after failures can be asserted."""
 
+import base64
 import json
 import os
 import shutil
@@ -18,6 +19,12 @@ OPENSSL = shutil.which("openssl") or "/usr/bin/openssl"
 pytestmark = pytest.mark.skipif(not shutil.which("openssl"), reason="openssl is required")
 
 
+def _key_bytes() -> bytes:
+    """A 48-byte passphrase without line breaks: `openssl -pass file:` reads only the first line, so raw random
+    bytes occasionally produced an empty or truncated passphrase and a flaky failure."""
+    return base64.b64encode(os.urandom(36))
+
+
 def _stub(path: Path, body: str) -> None:
     path.write_text(f"#!{BASH}\n{body}\n")
     path.chmod(0o755)
@@ -30,7 +37,7 @@ class Rig:
         self.bin.mkdir()
         self.calls = root / "calls.log"
         self.key = root / "key"
-        self.key.write_bytes(os.urandom(48))
+        self.key.write_bytes(_key_bytes())
         self.backup = root / "upnext-1.dump.enc"
         self.report = root / "report.json"
         _stub(self.bin / "createdb", 'echo "createdb $*" >> "$CALLS"')
@@ -59,8 +66,6 @@ class Rig:
         self.write_mac(self.key)
 
     def write_mac(self, key: Path) -> None:
-        import base64
-
         secret = base64.b64encode(key.read_bytes()).decode()
         mac = subprocess.run(
             [OPENSSL, "dgst", "-sha256", "-hmac", secret, "-r", str(self.backup)],
@@ -153,7 +158,7 @@ def test_altered_backup_is_refused_before_any_database_is_created(rig: Rig) -> N
 
 def test_wrong_key_is_refused(rig: Rig) -> None:
     rig.make_backup()
-    rig.key.write_bytes(os.urandom(48))
+    rig.key.write_bytes(_key_bytes())
     result = rig.run()
     assert result.returncode != 0
     assert rig.record()["status"] == "failed"

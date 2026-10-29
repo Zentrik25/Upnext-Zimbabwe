@@ -5,10 +5,13 @@ plain facts. They contain no database access so they can be (a) unit-tested exha
 called by the Phase 2 publishing service *inside* its transaction after locking the listing row —
 the service must pass facts it has just read under that lock, never cached ones.
 
-Rules (D-18, D-22):
+Rules (D-18, D-22, amended by D-46):
 * Nobody approves, rejects, returns or verifies a revision they authored or submitted.
-* Publication requires that a *different* authorised person approved the *exact* revision (same
-  content hash). Who publishes — approver, author or a third person — does not matter.
+* Publication through the review pipeline requires that a *different* authorised person approved the *exact*
+  revision (same content hash). Who publishes — approver, author or a third person — does not matter.
+* Direct publication (D-46) is the one exception: a holder of `opp.publish_direct` (Editor, Administrator)
+  may publish their own draft of a *staff-created* listing in one step. It is refused for any listing that
+  came from an employer, for any actor without the permission, and for anything that is not an open draft.
 """
 
 from __future__ import annotations
@@ -131,4 +134,29 @@ def can_publish(
         return _deny(Reason.SEPARATION_OF_DUTIES)
     if facts.approved_hash != facts.content_hash:
         return _deny(Reason.APPROVAL_STALE)
+    return ALLOW
+
+
+@dataclass(frozen=True)
+class DirectFacts:
+    """Facts for a direct publication, read under the listing lock."""
+
+    state: str
+    author_id: Hashable
+    employer_listing: bool
+    category_allowed: bool = True
+
+
+def can_publish_direct(
+    actor: Actor, facts: DirectFacts, registry: PermissionRegistry = DEFAULT_REGISTRY
+) -> Decision:
+    """D-46: Editors and Administrators publish their own draft of a staff-created listing directly."""
+    denied = _check(actor, Permission.OPP_PUBLISH_DIRECT, registry)
+    if denied is not None:
+        return denied
+    if facts.employer_listing:
+        # Employer submissions are always moderated: direct publishing must never bypass that.
+        return _deny(Reason.SEPARATION_OF_DUTIES)
+    if facts.state != "draft" or facts.author_id != actor.user_id:
+        return _deny(Reason.INVALID_TRANSITION)
     return ALLOW

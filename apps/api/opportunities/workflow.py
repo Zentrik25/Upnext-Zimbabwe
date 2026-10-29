@@ -600,6 +600,144 @@ def publish(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_versio
     return _run(ctx, actor, opportunity_id, body)
 
 
+# --- T16 direct publication (D-46) ---------------------------------------------------------------
+def publish_direct(
+    actor: User,
+    opportunity_id: uuid.UUID | str,
+    *,
+    expected_row_version: int,
+    duplicate_acknowledgement: Mapping[str, Any] | None = None,
+    applicant_payment_reviewed: bool = False,
+) -> Opportunity:
+    """Publish the actor's own open draft of a staff-created listing in one step.
+
+    Only a holder of `opp.publish_direct` (Editor, Administrator) may use it, only on listings that did not
+    come from an employer, and only on the actor's own draft. Everything else a publication needs is
+    unchanged: the revision must pass the full publishability rules (including the cited primary source), a
+    hard duplicate needs an explained acknowledgement, and a mention of applicant payments needs an explicit
+    confirmation.
+    The revision is hashed and frozen exactly as at submission, no organisation is marked verified, and the
+    publisher, time, source and revision are recorded in the history, the audit log and on the revision."""
+    ctx = Context("T16", "opportunity.publish_direct", Permission.OPP_PUBLISH_DIRECT)
+
+    def body() -> Opportunity:
+        employer = _require(actor, ctx.permission)
+        if employer:  # an employer-only authority can never reach here: the permission is staff-only
+            raise PermissionDeniedError()
+        opportunity = _lock(opportunity_id, expected_row_version)
+        if opportunity.status == ListingStatus.ARCHIVED:
+            raise InvalidTransition()
+        version = _version(opportunity, opportunity.pending_version_id)
+        _enforce(
+            policy.can_publish_direct(
+                _actor(actor),
+                policy.DirectFacts(
+                    state=version.state,
+                    author_id=version.author_id,
+                    employer_listing=employer_capability.is_employer_listing(opportunity),
+                ),
+            )
+        )
+        errors = validate_publishable(version)
+        duplicates = find_duplicates(version)
+        hard = [d for d in duplicates if d.level == "hard"]
+        if hard:
+            ack = duplicate_acknowledgement or {}
+            reason = str(ack.get("reason", "")).strip()
+            if str(ack.get("duplicate_of", "")) not in {d.opportunity_id for d in hard} or len(reason) < 10:
+                named = "; ".join(f"{d.title or 'untitled'} ({d.opportunity_id}): {d.reason}" for d in hard)
+                errors.setdefault("duplicate_acknowledgement", []).append(
+                    (
+                        "duplicate_detected",
+                        f"This looks like an existing listing: {named}. If it is a separate listing, give "
+                        "its id and explain why.",
+                    )
+                )
+            else:
+                version.duplicate_acknowledgement = {
+                    "duplicate_of": str(ack["duplicate_of"]),
+                    "reason": reason,
+                }
+                version.save()
+        if fee_lint_triggers(version) and not applicant_payment_reviewed:
+            errors.setdefault("applicant_payment_reviewed", []).append(
+                (
+                    "required",
+                    "The text mentions applicant payments; confirm you reviewed it, or remove the mention.",
+                )
+            )
+        if errors:
+            codes = {c for items in errors.values() for c, _ in items}
+            if codes == {"duplicate_detected"}:
+                raise WorkflowError("duplicate_detected", "Possible duplicate listing.", fields=errors)
+            if set(errors) == {"deadline_at"} and {c for c, _ in errors["deadline_at"]} == {"in_past"}:
+                raise WorkflowError(
+                    "deadline_in_past", "The deadline has passed; change it before publishing.", fields=errors
+                )
+            raise ValidationFailed(errors)
+        slug = _requested_slug(opportunity, version)
+        now = timezone.now()
+        before = opportunity.status
+        previous = opportunity.live_version
+        if previous is not None:
+            previous.state = VersionState.SUPERSEDED
+            previous.save()
+        version.content_hash = content_mod.content_hash(version)
+        version.submitted_by = actor
+        version.submitted_at = now
+        version.published_directly = True
+        version.published_by = actor
+        version.published_at = now
+        version.state = VersionState.PUBLISHED
+        version.save()
+        _index(version)
+        if opportunity.slug is None:
+            opportunity.slug = slug or _assign_slug(opportunity, version.title)
+            opportunity.first_published_at = now
+        opportunity.status = ListingStatus.PUBLISHED
+        opportunity.live_version = version
+        opportunity.pending_version = None
+        opportunity.last_published_at = now
+        opportunity.closed_at = None
+        _apply_verification(opportunity, version)
+        _bump(opportunity)
+        primary = version.sources.filter(is_primary=True).first() or version.sources.first()
+        _record(
+            ctx,
+            actor,
+            opportunity,
+            version,
+            before,
+            extra={
+                "direct": True,
+                "published_by": str(actor.pk),
+                "published_at": now.isoformat(),
+                "source": primary.name if primary else None,
+                "source_url": primary.url if primary else None,
+                "content_hash": bytes(version.content_hash).hex(),
+                "organisation_id": str(version.organisation_id),
+            },
+        )
+        return opportunity
+
+    return _run(ctx, actor, opportunity_id, body)
+
+
+def _requested_slug(opportunity: Opportunity, version: OpportunityVersion) -> str | None:
+    """The slug staff asked for, if this is the first publication and it is free; never silently replaced."""
+    if opportunity.slug is not None or not version.slug_request:
+        return None
+    if Opportunity.objects.filter(slug=version.slug_request).exists():
+        raise ValidationFailed(
+            {
+                "slug_request": [
+                    ("slug_taken", "That address is already used by another listing; choose another.")
+                ]
+            }
+        )
+    return version.slug_request
+
+
 def _assign_slug(opportunity: Opportunity, title: str) -> str:
     for _ in range(8):
         slug = make_slug(title)
@@ -909,6 +1047,11 @@ def _copy_version(opportunity: Opportunity, source: OpportunityVersion, actor: U
         or 0
     ) + 1
     values = {c: getattr(source, c) for c in content_mod.COPIED_COLUMNS}
+    values.update(
+        {
+            c: getattr(source, c) for c in content_mod.OPTIONAL_COLUMNS if c != "slug_request"
+        }  # the slug is final
+    )
     values["detail_schema_version"] = _active_schema_version(opportunity.category)
     draft = OpportunityVersion.objects.create(
         opportunity=opportunity, version_no=next_no, author=actor, based_on_version=source, **values
@@ -1003,6 +1146,15 @@ def allowed_actions(actor: User, opportunity: Opportunity) -> list[str]:
         if version.state == VersionState.DRAFT and version.author_id == actor.pk:
             if has(Permission.OPP_SUBMIT):
                 out.append("submit")
+            if policy.can_publish_direct(
+                me,
+                policy.DirectFacts(
+                    state=version.state,
+                    author_id=version.author_id,
+                    employer_listing=employer_capability.is_employer_listing(opportunity),
+                ),
+            ):
+                out.append("publish_direct")
             if has(Permission.OPP_DISCARD_OWN):
                 out.append("discard")
         if version.state == VersionState.REJECTED and version.author_id == actor.pk:
@@ -1046,6 +1198,7 @@ __all__ = [
     "expire",
     "expire_due",
     "publish",
+    "publish_direct",
     "record_verification",
     "refresh_search_vectors_for_organisation",
     "reject",

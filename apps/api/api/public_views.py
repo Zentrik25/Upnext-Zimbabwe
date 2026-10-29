@@ -107,10 +107,16 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
         .values_list("slug", flat=True)
         .first()
     )
+    organisation = version.organisation
+    out["organisation"]["website_url"] = organisation.website_url
+    out["organisation"]["logo"] = organisation.logo_data
     out.update(
         {
             "description_html": public.render_html(version.description_md) or "",
+            "responsibilities_html": public.render_html(version.responsibilities_md),
             "requirements_html": public.render_html(version.requirements_md),
+            "seo_title": version.seo_title,
+            "seo_description": version.seo_description,
             "geographic_eligibility": version.geographic_eligibility,
             "location_text": version.location_text,
             "experience_level": version.experience_level,

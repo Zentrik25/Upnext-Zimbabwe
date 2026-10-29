@@ -46,7 +46,8 @@ stateDiagram-v2
     withdrawn --> archived: T12 archive (Editor or Administrator) [housekeeping]
     expired --> archived: T09 takedown (Editor or Administrator) [takedown]
     withdrawn --> archived: T09 takedown (Editor or Administrator) [takedown]
-    published --> published: T15 amend → T03…T07 on a new version
+    draft --> published: T16 publish_direct (Editor or Administrator; own draft of a staff-created listing, D-46)
+    published --> published: T15 amend → T03…T07 on a new version, or T16 for the staff author
     expired --> published: T15 amend, approved and published (new deadline)
     withdrawn --> published: T15 amend, approved and published (reinstated)
     archived --> [*]
@@ -75,9 +76,12 @@ Actor roles are defined in `ROLE_PERMISSION_MATRIX.md`. "Author" means the user 
 | T13 | discard | draft, rejected → archived | author | never published; or discards a pending amendment (version → `discarded`, listing status unchanged) | `archive_reason=abandoned` (new listing) | `opportunity.discard` |
 | T14 | reopen | rejected → draft | author | — | new draft version `n+1` copied from the rejected one; old stays `rejected` | `opportunity.reopen` |
 | T15 | amend | published, expired, withdrawn (no open amendment) | Contributor (any; becomes the amendment's author) | at most one open pipeline version per listing | new draft version copied from the live one (`based_on_version_id`); listing status unchanged; then T03→T07 apply to the amendment | `opportunity.amend` |
+| T16 | publish_direct (D-46) | draft → published | Editor or Administrator (`opp.publish_direct`) | the actor is the author of the draft; the listing is **not** employer-originated; full publishability rules; hard duplicate needs an explained acknowledgement; applicant-payment mentions need confirmation; slug request honoured at first publication only if free | hash and freeze the revision; `published_directly`, `published_by`, `published_at` set, no approver; previous live → `superseded`; listing `published`; index refreshed; publisher, source, hash audited | `opportunity.publish_direct` |
 | V01 | record_verification (not a status change) | version in_review/approved/published | Editor or Administrator | actor ≠ author of that version; evidence note ≥20 chars | `verification_record`; recompute `opportunity.verification_level` if live | `verification.record` |
 
 ## 4. Invariants (tested)
+
+**D-46 exception.** Invariants 1 and 2 describe the review workflow. T16 is the single, bounded exception: an Editor or Administrator may publish their **own** draft of a **staff-created** listing without a second approver. It is refused on employer-originated listings and on anyone else's draft, and the database re-asserts it.
 
 1. **Nobody approves their own work:** the author of any version in the chain, and the submitter, can never approve, reject, return or verify it. This is the whole separation-of-duties rule for approval.
 2. **Publication requires another person's approval of the exact revision (D-22).** Only an Editor or Administrator can publish. They may publish a listing they approved, a listing someone else authored, or a listing they authored themselves — but never a revision that has not been approved by a different authorised person, and never a revision whose hash differs from the one approved. Self-approval is impossible, so an author-publisher always needs a second person's approval first.
@@ -105,7 +109,7 @@ Contributor: own drafts and rejected items. Editor and Administrator: the `in_re
 
 ## 8. Implementation notes (Phase 2)
 
-Implemented in `apps/api/opportunities/workflow.py` with the pure rules in `apps/api/access/policy.py` and database triggers (ERD §8). T01-T07 and T09-T15 and V01 exist; **T08 (scheduled publishing) is not implemented** (default P2-05, OQ-14 open).
+Implemented in `apps/api/opportunities/workflow.py` with the pure rules in `apps/api/access/policy.py` and database triggers (ERD §8). T01-T07, T09-T16 and V01 exist; **T08 (scheduled publishing) is not implemented** (default P2-05, OQ-14 open).
 
 - **Review chain.** "Author of any version in the chain" is computed by walking `based_on_version_id` from the revision under review, collecting each revision's author and submitter, and stopping at the first revision that is already published or superseded. A reopened rejected revision therefore keeps its predecessors' authors in the chain, while an amendment of a published listing starts a new chain (its author and submitter only). The same walk exists in SQL (`upnext_chain_authors`) so the database agrees.
 - **Exact revision.** The content hash covers every material field (core text, searchable facts, money, deadline, application, category and detail with its schema version, locations, skills, sectors, sources, duplicate acknowledgement). It is set at submit, re-computed and compared at approve and at publish (`approval_stale` on mismatch) and recorded in the review decision.

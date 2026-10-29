@@ -208,6 +208,13 @@ class OpportunityVersion(models.Model):
     summary = models.CharField(max_length=300, blank=True, default="")
     description_md = models.TextField(blank=True, default="")
     requirements_md = models.TextField(null=True, blank=True)
+    responsibilities_md = models.TextField(null=True, blank=True)
+
+    # search-engine presentation chosen by staff (D-46); the slug request is honoured once, at first
+    # publication
+    seo_title = models.CharField(max_length=70, null=True, blank=True)
+    seo_description = models.CharField(max_length=160, null=True, blank=True)
+    slug_request = models.CharField(max_length=80, null=True, blank=True)
 
     # searchable facts
     work_mode = models.CharField(max_length=10, choices=WorkMode.choices, null=True, blank=True)
@@ -266,6 +273,9 @@ class OpportunityVersion(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     published_at = models.DateTimeField(null=True, blank=True)
+    # True only for a revision an Editor or Administrator published in one step (D-46, T16): it then has no
+    # approver, and `published_by` is its author. The database refuses the flag on any other path.
+    published_directly = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

@@ -31,6 +31,7 @@ class Permission(StrEnum):
     OPP_REVIEW_RETURN = "opp.review.return"
     OPP_VERIFY_RECORD = "opp.verify.record"
     OPP_PUBLISH = "opp.publish"
+    OPP_PUBLISH_DIRECT = "opp.publish_direct"
     OPP_SCHEDULE = "opp.schedule"
     OPP_TAKEDOWN = "opp.takedown"
     OPP_WITHDRAW = "opp.withdraw"
@@ -66,6 +67,15 @@ ACCOUNT_PERMISSIONS: frozenset[str] = frozenset({P.ME_PROFILE, P.ME_SAVED, P.ME_
 
 _EDITOR_CODES = frozenset(
     {
+        # Direct staff publishing (D-46): an Editor or Administrator writes, previews and publishes a
+        # staff-created listing without a second person. Contributors and employers never hold
+        # OPP_PUBLISH_DIRECT.
+        P.OPP_DRAFT_CREATE,
+        P.OPP_DRAFT_EDIT_OWN,
+        P.OPP_SUBMIT,
+        P.OPP_DISCARD_OWN,
+        P.OPP_AMEND,
+        P.OPP_PUBLISH_DIRECT,
         P.OPP_REVIEW_APPROVE,
         P.OPP_REVIEW_REJECT,
         P.OPP_REVIEW_RETURN,

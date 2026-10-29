@@ -43,6 +43,14 @@ def _check_member_and_verified(actor: User, organisation_id: Any) -> None:
         raise PermissionDeniedError("organisation_not_verified", "The organisation is not verified.")
 
 
+def is_employer_listing(opportunity: Opportunity) -> bool:
+    """True when the listing came from an employer (it then always goes through moderation, D-46)."""
+    return EmployerListing.objects.filter(opportunity=opportunity).exists()
+
+
+STAFF_ONLY_FIELDS = frozenset({"seo_title", "seo_description", "slug_request"})
+
+
 def enforce_create(actor: User, category_code: str, organisation: Organisation) -> None:
     if category_code not in EMPLOYER_CATEGORIES:
         raise PermissionDeniedError(
@@ -75,6 +83,10 @@ def check_content(
     if "sources" in raw:
         raise PermissionDeniedError(
             "sources_not_allowed", "Sources are recorded automatically for employers."
+        )
+    if STAFF_ONLY_FIELDS & set(raw):
+        raise PermissionDeniedError(
+            "staff_only_field", "Search-engine title, description and address are set by our editors."
         )
     organisation = cleaned.get("organisation")
     if binding is not None and organisation is not None and organisation.pk != binding.organisation_id:
