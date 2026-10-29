@@ -30,23 +30,17 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
   const shortcuts = categories.slice(0, 4);
   return (
     <section aria-labelledby="home-title" className="border-b border-line bg-surface-pale">
-      <Container className="pt-6 pb-6 max-sm:pt-5">
-        <div className="grid grid-cols-[1fr_1fr] items-center gap-4 max-sm:gap-2">
-          <div>
-            <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
-              Opportunities across Zimbabwe
-            </p>
-            <h1
-              id="home-title"
-              className="font-headline mt-2 text-display leading-[1.05] tracking-display text-ink max-sm:text-[34px]"
-            >
-              Find your next opportunity.
-            </h1>
-            <p className="mt-3 max-w-[460px] text-lead leading-body text-muted max-sm:text-ctl">
-              Explore jobs, internships, scholarships and more, all in one place.
-            </p>
-          </div>
-          <JobSeekerArt priority className="mx-auto max-w-[440px] max-sm:max-w-full" />
+      <Container className="pt-6 pb-6 max-sm:pt-4">
+        <div className="grid grid-cols-[1.3fr_1fr] items-center gap-4 max-md:grid-cols-1 max-md:gap-2">
+          {/* Exactly two lines at every width: the first never wraps and the size follows the screen width. */}
+          <h1
+            id="home-title"
+            className="font-headline text-[clamp(16px,5.6vw,34px)] leading-[1.12] tracking-display text-ink"
+          >
+            <span className="block whitespace-nowrap">Find your next opportunity </span>
+            <span className="block">in Zimbabwe</span>
+          </h1>
+          <JobSeekerArt priority className="mx-auto max-w-[400px] max-md:max-w-[230px]" />
         </div>
 
         <SearchForm
@@ -174,7 +168,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
     <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-10">
       <Container>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 id="categories-title" className="font-headline text-sub tracking-sub">
+          <h2 id="categories-title" className="font-headline text-title tracking-title">
             Featured categories
           </h2>
           <Link
