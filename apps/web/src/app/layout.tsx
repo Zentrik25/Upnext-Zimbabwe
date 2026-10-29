@@ -44,10 +44,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0c0e" },
-  ],
+  themeColor: "#ffffff", // light is the default theme; an explicit dark choice does not change the browser chrome colour
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

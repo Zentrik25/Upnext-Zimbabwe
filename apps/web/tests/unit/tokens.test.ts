@@ -122,13 +122,12 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     expect(tokens.containers.page).toBe("1080px");
   });
 
-  it("every colour token has a dark value and the generated CSS carries both dark blocks (D-40)", () => {
+  it("every colour token has a dark value; dark applies only on an explicit choice, never from the device setting (D-40)", () => {
     for (const [name, t] of Object.entries(colors)) expect(t.dark, name).toBeTruthy();
     const css = readRepoFile("apps/web/src/styles/tokens.generated.css");
     expect(css).toContain(':root[data-theme="dark"] {');
-    expect(css).toContain("@media (prefers-color-scheme: dark) {");
-    expect(css).toContain(':root:not([data-theme="light"]) {');
-    expect(css.match(/color-scheme: dark;/g)).toHaveLength(2);
+    expect(css).not.toContain("prefers-color-scheme");
+    expect(css.match(/color-scheme: dark;/g)).toHaveLength(1);
     expect(Object.keys(tokens.darkShadows)).toEqual(Object.keys(tokens.shadows));
   });
 
