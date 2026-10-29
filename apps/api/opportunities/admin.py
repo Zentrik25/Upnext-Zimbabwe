@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 from django import forms
 from django.contrib import admin, messages
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -50,14 +50,14 @@ from .validation import fee_lint_triggers
 _request: contextvars.ContextVar[HttpRequest | None] = contextvars.ContextVar("admin_request", default=None)
 
 STATUS_TONES: dict[str, tuple[str, str]] = {
-    ListingStatus.DRAFT: ("Draft", "#e9eef5"),
-    ListingStatus.IN_REVIEW: ("In review", "#fdf1c7"),
-    ListingStatus.APPROVED: ("Approved - ready to publish", "#d9f0dc"),
-    ListingStatus.REJECTED: ("Rejected", "#f8d9d9"),
-    ListingStatus.PUBLISHED: ("Published", "#cfe3fb"),
-    ListingStatus.EXPIRED: ("Expired", "#e6e6e6"),
-    ListingStatus.WITHDRAWN: ("Withdrawn", "#e6e6e6"),
-    ListingStatus.ARCHIVED: ("Archived", "#e6e6e6"),
+    ListingStatus.DRAFT: ("Draft", "neutral"),
+    ListingStatus.IN_REVIEW: ("In review", "warning"),
+    ListingStatus.APPROVED: ("Approved - ready to publish", "info"),
+    ListingStatus.REJECTED: ("Rejected", "danger"),
+    ListingStatus.PUBLISHED: ("Published", "success"),
+    ListingStatus.EXPIRED: ("Expired", "muted"),
+    ListingStatus.WITHDRAWN: ("Withdrawn", "muted"),
+    ListingStatus.ARCHIVED: ("Archived", "muted"),
 }
 VERIFICATION_LABELS = {
     "not_verified": "Not verified",
@@ -90,17 +90,14 @@ def _words(value: str | None) -> str:
     return value.replace("_", " ") if value else "-"
 
 
-def badge(text: str, colour: str) -> SafeString:
-    return format_html(
-        '<span style="display:inline-block;padding:1px 6px;border:1px solid #1b2a3a;background:{};color:#1b2a3a">{}</span>',
-        colour,
-        text,
-    )
+def badge(text: str, tone: str) -> SafeString:
+    """A status badge; colour comes from the design tokens through the `u-badge--*` classes in staff.css."""
+    return format_html('<span class="u-badge u-badge--{}">{}</span>', tone, text)
 
 
 def status_badge(status: str) -> SafeString:
-    label, colour = STATUS_TONES.get(status, (status, "#e9eef5"))
-    return badge(label, colour)
+    label, tone = STATUS_TONES.get(status, (status, "neutral"))
+    return badge(label, tone)
 
 
 class ServiceRefused(Exception):
@@ -127,6 +124,60 @@ def _visible_versions(request: HttpRequest) -> QuerySet[OpportunityVersion]:
     return base.filter(mine)
 
 
+def awaiting_review(queryset: QuerySet[Opportunity], user: User) -> QuerySet[Opportunity]:
+    """Listings in review that `user` did not author or submit (the service re-checks the whole chain).
+    Shared by the work-queue filter and the staff dashboard so both count the same thing."""
+    return queryset.filter(pending_version__state=VersionState.IN_REVIEW).exclude(
+        Q(pending_version__author=user)
+        | Q(pending_version__submitted_by=user)
+        | Q(pending_version__based_on_version__author=user)
+    )
+
+
+def listings_visible_to(user: User) -> QuerySet[Opportunity]:
+    """The listings a staff member may see in the staff site (matrix: drafts are private to their author,
+    except for Administrators). One definition for the list, the dashboard and the search box."""
+    qs = Opportunity.objects.select_related(
+        "category",
+        "pending_version__organisation",
+        "pending_version__author",
+        "pending_version__submitted_by",
+        "live_version__organisation",
+        "live_version__author",
+    )
+    if user.has_permission_code(
+        Permission.AUDIT_READ_ALL
+    ):  # Administrators only (drafts, read-only, audited)
+        return qs
+    if user.has_permission_code(Permission.OPP_REVIEW_APPROVE):
+        hidden_drafts = Q(pending_version__state=VersionState.DRAFT, live_version__isnull=True) & ~Q(
+            pending_version__author=user
+        )
+        return qs.exclude(hidden_drafts)
+    return qs.filter(
+        Q(created_by=user) | Q(pending_version__author=user) | Q(versions__author=user)
+    ).distinct()
+
+
+def listings_scope(user: User) -> QuerySet[Opportunity]:
+    """`listings_visible_to` in a form that is safe to aggregate: a DISTINCT query is wrapped in a subquery."""
+    visible = listings_visible_to(user)
+    if visible.query.distinct:
+        return Opportunity.objects.filter(pk__in=visible.values("pk"))
+    return visible
+
+
+STATUS_TABS = (
+    ("", "All"),
+    (ListingStatus.DRAFT, "Drafts"),
+    (ListingStatus.IN_REVIEW, "In review"),
+    (ListingStatus.APPROVED, "Approved"),
+    (ListingStatus.PUBLISHED, "Published"),
+    (ListingStatus.EXPIRED, "Expired"),
+    (ListingStatus.REJECTED, "Rejected"),
+)
+
+
 # --- list filters --------------------------------------------------------------------------------------
 class QueueFilter(admin.SimpleListFilter):
     title = "work queue"
@@ -144,12 +195,8 @@ class QueueFilter(admin.SimpleListFilter):
         user = _user(request)
         value = self.value()
         open_states = [VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED]
-        if value == "review":  # excludes what I authored or submitted (the service re-checks the whole chain)
-            return queryset.filter(pending_version__state=VersionState.IN_REVIEW).exclude(
-                Q(pending_version__author=user)
-                | Q(pending_version__submitted_by=user)
-                | Q(pending_version__based_on_version__author=user)
-            )
+        if value == "review":
+            return awaiting_review(queryset, user)
         if value == "ready":
             return queryset.filter(pending_version__state=VersionState.APPROVED)
         if value == "mine":
@@ -205,7 +252,7 @@ class ReadOnlyInline(admin.TabularInline):  # type: ignore[type-arg]
         return _is_staff(request)
 
 
-_TRANSITION_LABELS = {
+TRANSITION_LABELS = {
     "T01": "Draft created",
     "T02": "Draft saved",
     "T03": "Submitted for review",
@@ -232,10 +279,71 @@ class PublishingEventInline(ReadOnlyInline):
 
     @admin.display(description="What happened")
     def what(self, obj: PublishingEvent) -> str:
-        return _TRANSITION_LABELS.get(obj.transition, obj.transition)
+        return TRANSITION_LABELS.get(obj.transition, obj.transition)
 
     @admin.display(description="Who")
     def actor_name(self, obj: PublishingEvent) -> str:
+        return "System" if obj.actor_type == "system" or obj.actor is None else obj.actor.display_name
+
+
+@admin.register(PublishingEvent)
+class ActivityLogAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    """Read-only activity log of listing transitions (who did what, when) for the listings the person can see.
+
+    It shows the typed history the workflow already writes with every audit event; it adds no new data and
+    offers no way to change anything. The full audit log stays an Administrator-only page (`audit.read_all`).
+    """
+
+    list_display = ("when", "what", "listing", "transition_path", "who")
+    list_display_links = None
+    list_filter = ("to_status",)
+    list_select_related = ("opportunity", "version", "actor")
+    date_hierarchy = "occurred_at"
+    ordering = ("-occurred_at",)
+    list_per_page = 50
+
+    def get_model_perms(self, request: HttpRequest) -> dict[str, bool]:
+        return {"view": True} if _is_staff(request) else {}
+
+    def has_module_permission(self, request: HttpRequest) -> bool:
+        return _is_staff(request)
+
+    def has_view_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return _is_staff(request)
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[PublishingEvent]:
+        visible = listings_visible_to(_user(request)).values("pk")
+        return super().get_queryset(request).filter(opportunity__in=visible)
+
+    @admin.display(description="When", ordering="occurred_at")
+    def when(self, obj: PublishingEvent) -> str:
+        return f"{obj.occurred_at:%d %b %Y %H:%M} UTC"
+
+    @admin.display(description="What happened")
+    def what(self, obj: PublishingEvent) -> str:
+        return TRANSITION_LABELS.get(obj.transition, obj.transition)
+
+    @admin.display(description="Listing")
+    def listing(self, obj: PublishingEvent) -> SafeString | str:
+        title = (obj.version.title if obj.version and obj.version.title else "") or "Untitled draft"
+        url = reverse("admin:opportunities_opportunity_change", args=[obj.opportunity_id])
+        return format_html('<a href="{}">{}</a>', url, title[:90])
+
+    @admin.display(description="Status change")
+    def transition_path(self, obj: PublishingEvent) -> str:
+        return f"{_words(obj.from_status)} to {_words(obj.to_status)}"
+
+    @admin.display(description="Who")
+    def who(self, obj: PublishingEvent) -> str:
         return "System" if obj.actor_type == "system" or obj.actor is None else obj.actor.display_name
 
 
@@ -255,13 +363,23 @@ class VerificationInline(ReadOnlyInline):
 class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = (
         "title_display",
-        "category",
         "organisation_display",
-        "status_display",
+        "location_display",
+        "type_display",
+        "deadline_short",
         "verification_display",
-        "deadline_display",
-        "author_display",
-        "updated_at",
+        "status_display",
+        "row_actions",
+    )
+    # The review and ready-to-publish queues show who submitted a revision, when, and how far it is verified.
+    queue_display = (
+        "title_display",
+        "organisation_display",
+        "submitter_display",
+        "submitted_display",
+        "verification_display",
+        "status_display",
+        "row_actions",
     )
     list_display_links = ("title_display",)
     list_filter = (QueueFilter, "status", "category", "verification_level", DeadlineFilter, "created_at")
@@ -312,28 +430,41 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         return False
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Opportunity]:
-        user = _user(request)
-        qs = (
-            super()
-            .get_queryset(request)
-            .select_related(
-                "category",
-                "pending_version__organisation",
-                "pending_version__author",
-                "live_version__organisation",
-                "live_version__author",
+        qs = listings_visible_to(_user(request))
+        match = getattr(request, "resolver_match", None)
+        if match is not None and match.url_name == "opportunities_opportunity_changelist":
+            qs = qs.prefetch_related(
+                "pending_version__locations__location", "live_version__locations__location"
             )
-        )
-        if _sees_all_drafts(request):
-            return qs
-        if _can(request, Permission.OPP_REVIEW_APPROVE):
-            hidden_drafts = Q(pending_version__state=VersionState.DRAFT, live_version__isnull=True) & ~Q(
-                pending_version__author=user
-            )
-            return qs.exclude(hidden_drafts)
-        return qs.filter(
-            Q(created_by=user) | Q(pending_version__author=user) | Q(versions__author=user)
-        ).distinct()
+        return qs
+
+    def get_list_display(self, request: HttpRequest) -> Any:
+        return self.queue_display if request.GET.get("queue") in ("review", "ready") else self.list_display
+
+    def changelist_view(self, request: HttpRequest, extra_context: Any = None) -> HttpResponse:
+        token = _request.set(request)
+        try:
+            extra = {**(extra_context or {}), "status_tabs": self._status_tabs(request)}
+            response = super().changelist_view(request, extra)
+            if isinstance(response, TemplateResponse):
+                response.render()  # the action menus read the request while rendering; do it before it is reset
+            return response
+        finally:
+            _request.reset(token)
+
+    def _status_tabs(self, request: HttpRequest) -> list[dict[str, Any]]:
+        counts = dict(listings_scope(_user(request)).values_list("status").annotate(n=Count("pk")))
+        current = request.GET.get("status__exact", "") if "queue" not in request.GET else None
+        url = reverse("admin:opportunities_opportunity_changelist")
+        return [
+            {
+                "label": label,
+                "count": sum(counts.values()) if not status else counts.get(status, 0),
+                "href": f"{url}?status__exact={status}" if status else url,
+                "current": current is not None and current == status,
+            }
+            for status, label in STATUS_TABS
+        ]
 
     # -- columns
     @admin.display(description="Title", ordering="pending_version__title")
@@ -364,6 +495,51 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             return "Not stated"
         return version.deadline_at.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
 
+    @admin.display(description="Closing date", ordering="live_version__deadline_at")
+    def deadline_short(self, obj: Opportunity) -> str:
+        version = obj.live_version or obj.pending_version
+        return f"{version.deadline_at:%d %b %Y}" if version and version.deadline_at else "Not stated"
+
+    @admin.display(description="Location")
+    def location_display(self, obj: Opportunity) -> str:
+        version = obj.live_version or obj.pending_version
+        if version is None:
+            return "-"
+        rows = list(version.locations.all())
+        chosen = next((r for r in rows if r.is_primary), rows[0] if rows else None)
+        return chosen.location.name if chosen else (version.location_text or "-")
+
+    @admin.display(description="Type", ordering="category__name")
+    def type_display(self, obj: Opportunity) -> str:
+        return obj.category.name
+
+    @admin.display(description="Submitted by")
+    def submitter_display(self, obj: Opportunity) -> str:
+        version = obj.pending_version or obj.live_version
+        who = version.submitted_by or version.author if version else None
+        return who.display_name if who else "-"
+
+    @admin.display(description="Submitted", ordering="pending_version__submitted_at")
+    def submitted_display(self, obj: Opportunity) -> str:
+        version = obj.pending_version or obj.live_version
+        return f"{version.submitted_at:%d %b %Y %H:%M} UTC" if version and version.submitted_at else "-"
+
+    @admin.display(description="Actions")
+    def row_actions(self, obj: Opportunity) -> SafeString | str:
+        request = _request.get()
+        if request is None:
+            return ""
+        title = self.title_display(obj)
+        links = [(reverse("admin:opportunities_opportunity_change", args=[obj.pk]), "View details")]
+        links += listing_action_links(_user(request), obj)
+        return format_html(
+            '<details class="menu menu--row" data-menu><summary class="icon-btn menu__button" aria-label="Actions for {}">'
+            '<svg class="icon" aria-hidden="true"><use href="#i-more"/></svg></summary>'
+            '<div class="menu__panel menu__panel--right"><ul class="menu__list">{}</ul></div></details>',
+            title,
+            format_html_join("", '<li><a href="{}"><span>{}</span></a></li>', links),
+        )
+
     @admin.display(description="Author")
     def author_display(self, obj: Opportunity) -> str:
         version = obj.pending_version or obj.live_version
@@ -379,20 +555,7 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         request = _request.get()
         if request is None:
             return ""
-        user = _user(request)
-        names = workflow.allowed_actions(user, obj)
-        if _can(request, Permission.OPP_VERIFY_RECORD) and (obj.pending_version or obj.live_version):
-            names.append("verify")
-        version = obj.pending_version
-        links: list[tuple[str, str]] = []
-        if version and version.state == VersionState.DRAFT and version.author_id == user.pk:
-            url = reverse("admin:opportunities_opportunityversion_change", args=[version.pk])
-            links.append((url, "Edit the draft"))
-        links += [
-            (reverse("admin:opportunities_opportunity_action", args=[obj.pk, name]), ACTIONS[name].label)
-            for name in names
-            if name in ACTIONS
-        ]
+        links = listing_action_links(_user(request), obj)
         if not links:
             return (
                 "No actions are available to you on this listing right now. Review and approval need a different "
@@ -645,6 +808,26 @@ ACTIONS: dict[str, Action] = {
     "amend": Action("Start an amendment", "Create a new draft from the live revision. The public keeps seeing the live one until the amendment is approved and published.", admin_forms.ConfirmForm, _simple("amend")),
     "verify": Action("Record verification", "Record a check of the content. Verification is separate from the source and from publication.", admin_forms.VerificationForm, _verify),
 }  # fmt: skip
+
+
+def listing_action_links(user: User, obj: Opportunity) -> list[tuple[str, str]]:
+    """(url, label) for what `user` may attempt on the listing right now: edit own draft and the workflow
+    actions. Advisory only: every action view and every service call re-checks permission and separation of duties."""
+    names = workflow.allowed_actions(user, obj)
+    if user.has_permission_code(Permission.OPP_VERIFY_RECORD) and (obj.pending_version or obj.live_version):
+        names.append("verify")
+    version = obj.pending_version
+    links: list[tuple[str, str]] = []
+    if version and version.state == VersionState.DRAFT and version.author_id == user.pk:
+        links.append(
+            (reverse("admin:opportunities_opportunityversion_change", args=[version.pk]), "Edit the draft")
+        )
+    links += [
+        (reverse("admin:opportunities_opportunity_action", args=[obj.pk, name]), ACTIONS[name].label)
+        for name in names
+        if name in ACTIONS
+    ]
+    return links
 
 
 # --- revisions: drafts are edited here, everything else is read-only ------------------------------------

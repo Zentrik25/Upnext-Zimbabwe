@@ -22,6 +22,7 @@ urlpatterns = [
         admin.site.admin_view(staff_views.content_health),
         name="staff-content-health",
     ),
+    path("staff/search/", admin.site.admin_view(staff_views.search), name="staff-search"),
     path("staff/", admin.site.urls),
     path("api/v1/", include("api.v1.urls")),
 ]

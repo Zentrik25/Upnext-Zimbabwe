@@ -13,7 +13,7 @@ DEBUG = get_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = get_list("DJANGO_ALLOWED_HOSTS", [])
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "core.admin_config.StaffAdminConfig",  # django.contrib.admin plus the UPNEXT staff site
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
