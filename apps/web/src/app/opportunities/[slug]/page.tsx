@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ListingEvents } from "@/components/opportunities/listing-events";
+import { ShareLink } from "@/components/opportunities/share-link";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
 import { getOpportunity } from "@/lib/catalog";
@@ -22,6 +22,7 @@ import {
   labelFor,
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
+import { listingMetadata } from "@/lib/social";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor, jobPostingFor } from "@/lib/structured-data";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
@@ -34,18 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await getOpportunity(slug);
   if (!result.ok || result.data === null) return { title: "Opportunity not found", robots: { index: false } };
-  const listing = result.data;
-  return {
-    title: listing.seo_title ?? `${listing.title} · ${listing.organisation.name}`,
-    description: listing.seo_description ?? listing.summary,
-    alternates: { canonical: listing.canonical_path },
-    openGraph: openGraphFor(listing.canonical_path, {
-      title: listing.seo_title ?? listing.title,
-      description: listing.seo_description ?? listing.summary,
-    }),
-    // Expired and withdrawn listings stay readable but are not promoted by search engines (OQ-20 default).
-    robots: listing.status === "published" ? undefined : { index: false },
-  };
+  return listingMetadata(result.data);
 }
 
 export default async function OpportunityPage({ params }: Props) {
@@ -62,6 +52,7 @@ export default async function OpportunityPage({ params }: Props) {
       </Container>
     );
   }
+  if (result.movedTo) permanentRedirect(`/opportunities/${result.movedTo}`);
   if (result.data === null) notFound();
   const listing = result.data;
   const deadline = deadlineView(listing.deadline, listing.status);
@@ -182,6 +173,21 @@ export default async function OpportunityPage({ params }: Props) {
                   How to apply
                 </a>
               </p>
+            ) : null}
+
+            {listing.featured_image ? (
+              // The editor's own picture, served by the API from the same origin (D-47).
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={listing.featured_image.url}
+                alt={listing.featured_image.alt}
+                width={listing.featured_image.width}
+                height={listing.featured_image.height}
+                className="mt-4 h-auto w-full rounded-card border border-line"
+              />
+            ) : null}
+            {listing.status === "published" ? (
+              <ShareLink url={absolute(listing.canonical_path)} title={listing.title} />
             ) : null}
 
             <Section title="About this opportunity">

@@ -207,6 +207,7 @@ def version_post(opp: Opportunity, **overrides: Any) -> dict[str, Any]:
         "summary": "Support distribution projects and site inspections at an electricity services company.",
         "description_md": "Example Power Services is recruiting a **Graduate Electrical Engineer** to assist engineers on network projects.",
         "requirements_md": "",
+        "featured_image_alt": version.featured_image_alt or "",
         "location_text": "",
         "geographic_eligibility": "",
         "work_mode": "on_site",

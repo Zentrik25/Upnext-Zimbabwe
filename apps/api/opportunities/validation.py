@@ -72,6 +72,14 @@ def fee_lint_triggers(version: OpportunityVersion) -> bool:
     return bool(_FEE_WORDS.search(text))
 
 
+def _from_employer(version: OpportunityVersion) -> bool:
+    """Employer listings have no image upload in the employer portal; they keep their moderation path as it
+    was and are shown with the site's default sharing card."""
+    from employers.models import EmployerListing
+
+    return EmployerListing.objects.filter(opportunity_id=version.opportunity_id).exists()
+
+
 def validate_publishable(version: OpportunityVersion, *, now: datetime | None = None) -> FieldErrors:
     now = now or datetime.now(UTC)
     errors: FieldErrors = {}
@@ -100,6 +108,25 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         _length(errors, "seo_title", version.seo_title, 0, 70)
     if version.seo_description is not None:
         _length(errors, "seo_description", version.seo_description, 0, 160)
+    if version.og_title is not None:
+        _length(errors, "og_title", version.og_title, 0, 95)
+    if version.og_description is not None:
+        _length(errors, "og_description", version.og_description, 0, 200)
+    if version.featured_image_id is not None and not (version.featured_image_alt or "").strip():
+        _add(
+            errors,
+            "featured_image_alt",
+            "required",
+            "Describe the featured image for people who cannot see it.",
+        )
+    if version.social_image_id is not None and not (version.social_image_alt or "").strip():
+        _add(errors, "social_image_alt", "required", "Describe the social sharing image.")
+    if (
+        version.featured_image_id is None
+        and version.opportunity.first_published_at is None
+        and not _from_employer(version)
+    ):
+        _add(errors, "featured_image_id", "required", "Upload a featured image before publishing.")
 
     locations = list(version.locations.all())
     if not locations:

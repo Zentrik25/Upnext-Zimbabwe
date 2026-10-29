@@ -9,9 +9,11 @@ from typing import Any
 from django.conf import settings
 from django.core.cache import caches
 from django.db.models import Case, When
+from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_safe
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.request import Request
@@ -23,7 +25,7 @@ from access.registry import Permission
 from catalog.models import Category, Location, Sector, Skill
 from catalog.text import TextError, clean_single_line
 from employers.models import EmployerProfile
-from opportunities import public
+from opportunities import public, social
 from opportunities.models import OpportunityVersion
 
 from .errors import error_response
@@ -108,6 +110,7 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
         .first()
     )
     organisation = version.organisation
+    out.update(social.resolved(version))
     out["organisation"]["website_url"] = organisation.website_url
     out["organisation"]["logo"] = organisation.logo_data
     out.update(
@@ -233,6 +236,7 @@ class OpportunityDetailView(PublicView):
         tags=["public"],
         responses={
             200: OpportunityDetailSerializer,
+            301: OpenApiResponse(description="moved: the listing has a new address"),
             404: OpenApiResponse(description="not_found"),
             429: OpenApiResponse(description="rate_limited"),
         },
@@ -242,6 +246,14 @@ class OpportunityDetailView(PublicView):
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
         version = public.get_detail(slug)
         if version is None:
+            moved = public.moved_to(slug)
+            if moved is not None:  # an address the listing used to have (D-47): permanent redirect
+                response = Response(
+                    {"error": {"code": "moved", "message": "This listing has a new address."}, "slug": moved},
+                    status=status.HTTP_301_MOVED_PERMANENTLY,
+                )
+                response["Location"] = f"/api/v1/opportunities/{moved}"
+                return response
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
         return Response(detail_of(version, timezone.now()))
 
@@ -328,3 +340,28 @@ class SkillSearchView(PublicView):
             .order_by("prefix_rank", "name")[: int(raw_limit)]
         )
         return Response({"data": [{"id": str(s.pk), "name": s.name} for s in rows]})
+
+
+@require_safe
+def media_view(request: HttpRequest, name: str) -> HttpResponse:
+    """A listing image by content hash (D-47). Public and unauthenticated so social crawlers can fetch it, but
+    only while a publicly readable listing shows it: nothing from a draft, a rejected or an archived listing,
+    and no other stored media, is reachable. Content-addressed, so it is cacheable for good."""
+    sha, _, extension = name.partition(".")
+    if not re.fullmatch(r"[0-9a-f]{64}", sha) or extension not in ("jpg", "png"):
+        return HttpResponse(status=404)
+    asset = public.public_asset(sha)
+    if asset is None or asset.extension != extension:
+        return HttpResponse(status=404)
+    if request.headers.get("If-None-Match") == f'"{sha}"':
+        response = HttpResponse(status=304)
+    else:
+        data = bytes(asset.data)
+        response = HttpResponse(data if request.method == "GET" else b"", content_type=asset.content_type)
+        response["Content-Length"] = str(len(data))
+    response["ETag"] = f'"{sha}"'
+    response["Cache-Control"] = "public, max-age=31536000, immutable"
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Content-Disposition"] = "inline"
+    response["Cross-Origin-Resource-Policy"] = "cross-origin"
+    return response

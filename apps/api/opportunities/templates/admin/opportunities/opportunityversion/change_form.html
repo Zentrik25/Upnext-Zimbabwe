@@ -1,0 +1,38 @@
+{% extends "admin/change_form.html" %}
+{% block after_field_sets %}
+{{ block.super }}
+{% if social_config and adminform.form.fields.og_title %}
+{{ social_config|json_script:"social-config" }}
+<section id="social-preview" class="social-preview" aria-labelledby="social-preview-title">
+  <h2 id="social-preview-title">Social sharing preview</h2>
+  <p class="sp-note">
+    Approximate previews built from the fields above. Each platform decides its own final layout and keeps its own
+    cache (WhatsApp and Facebook may show an older card until they refresh), so treat these as a guide, not a
+    guarantee.
+  </p>
+  <p id="sp-image-note" class="sp-warning" role="status" hidden></p>
+  <div class="sp-grid">
+    <article class="sp-card sp-whatsapp" data-platform="whatsapp" aria-label="WhatsApp preview">
+      <h3>WhatsApp</h3>
+      <div class="sp-body"><div class="sp-img" role="img" aria-label="Selected sharing image"></div>
+      <div class="sp-text"><p class="sp-title"></p><p class="sp-desc"></p><p class="sp-domain"></p></div></div>
+    </article>
+    <article class="sp-card sp-facebook" data-platform="facebook" aria-label="Facebook preview">
+      <h3>Facebook</h3>
+      <div class="sp-img" role="img" aria-label="Selected sharing image"></div>
+      <div class="sp-text"><p class="sp-domain"></p><p class="sp-title"></p><p class="sp-desc"></p></div>
+    </article>
+    <article class="sp-card sp-linkedin" data-platform="linkedin" aria-label="LinkedIn preview">
+      <h3>LinkedIn</h3>
+      <div class="sp-img" role="img" aria-label="Selected sharing image"></div>
+      <div class="sp-text"><p class="sp-title"></p><p class="sp-domain"></p></div>
+    </article>
+    <article class="sp-card sp-x" data-platform="x" aria-label="X preview">
+      <h3>X</h3>
+      <div class="sp-img" role="img" aria-label="Selected sharing image"><span class="sp-domain-chip"></span></div>
+      <div class="sp-text"><p class="sp-title"></p></div>
+    </article>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

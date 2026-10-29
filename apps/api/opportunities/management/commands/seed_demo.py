@@ -96,6 +96,7 @@ class Command(BaseCommand):
                 skill_ids=skills,
                 today=today,
             )
+            content.update(demo.demo_image_fields(admin_user))
             opp = workflow.create_draft(contributor, category_code=category, content=content)
             opp.refresh_from_db()
             workflow.submit(contributor, opp.pk, expected_row_version=opp.row_version)
@@ -145,6 +146,7 @@ class Command(BaseCommand):
                 skill_ids=skills,
                 today=today,
             )
+            content.update(demo.demo_image_fields(contributor))
             content["title"] = f"{content['title']} (demo, {steps})"
             # Distinct addresses so these separate demo items are not flagged as hard duplicates.
             for source in content["sources"]:

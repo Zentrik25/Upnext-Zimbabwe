@@ -17,9 +17,10 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import Q, QuerySet
-from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
@@ -29,11 +30,13 @@ from django.utils.safestring import SafeString, mark_safe
 from access.registry import DEFAULT_REGISTRY, Permission
 from accounts.models import User
 from audit import services as audit
-from catalog.models import Organisation
+from catalog import media
+from catalog.media import ProcessedImage
+from catalog.models import MediaAsset, Organisation
 from catalog.text import normalise_name
 from catalog.validators import date_only_deadline
 
-from . import admin_forms, workflow
+from . import admin_forms, slugs, social, workflow
 from .errors import PermissionDeniedError, WorkflowError
 from .models import (
     ListingStatus,
@@ -400,7 +403,18 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
                 "No actions are available to you on this listing right now. Review and approval need a different "
                 "person from whoever wrote or submitted it."
             )
-        return format_html_join(" ", '<a class="button" href="{}">{}</a>', links)
+        buttons = format_html_join(" ", '<a class="button" href="{}">{}</a>', links)
+        if obj.slug and obj.status in (
+            ListingStatus.PUBLISHED, ListingStatus.EXPIRED, ListingStatus.WITHDRAWN
+        ):  # fmt: skip
+            url = f"{str(settings.UPNEXT_PUBLIC_BASE_URL).rstrip('/')}/opportunities/{obj.slug}"
+            buttons = format_html(
+                '{} <button type="button" class="button js-copy-link" data-url="{}">Copy public link</button>'
+                ' <span class="js-copy-status" role="status"></span>',
+                buttons,
+                url,
+            )
+        return buttons
 
     def _preview(self, version: OpportunityVersion | None, request: HttpRequest | None) -> SafeString | str:
         if version is None:
@@ -549,13 +563,44 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             organisation.save(update_fields=["logo_data"])
         return organisation
 
+    class Media:
+        js = ("opportunities/staff_social.js",)
+
+    def slug_check_view(self, request: HttpRequest) -> JsonResponse:
+        """Inline availability check for the address field (D-47). 200 when free, 409 when taken, 400 when the
+        address cannot be used at all. Staff only."""
+        if not self.has_view_permission(request):
+            raise Http404
+        slug = (request.GET.get("slug") or "").strip().lower()
+        exclude = request.GET.get("exclude") or None
+        try:
+            exclude_id = uuid.UUID(exclude) if exclude else None
+        except ValueError:
+            exclude_id = None
+        problem = slugs.format_error(slug)
+        if problem:
+            return JsonResponse(
+                {"slug": slug, "available": False, "code": "invalid_format", "message": problem}, status=400
+            )
+        if slugs.is_taken(slug, exclude_opportunity_id=exclude_id):
+            return JsonResponse(
+                {"slug": slug, "available": False, "code": "slug_taken", "message": slugs.SLUG_TAKEN_MESSAGE},
+                status=409,
+            )
+        return JsonResponse({"slug": slug, "available": True})
+
     def get_urls(self) -> list[Any]:
         custom = [
+            path(
+                "slug-check/",
+                self.admin_site.admin_view(self.slug_check_view),
+                name="opportunities_opportunity_slug_check",
+            ),
             path(
                 "<uuid:pk>/action/<slug:action>/",
                 self.admin_site.admin_view(self.action_view),
                 name="opportunities_opportunity_action",
-            )
+            ),
         ]
         return custom + super().get_urls()
 
@@ -579,7 +624,11 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             messages.error(request, "That action is not available to you right now.")
             return HttpResponseRedirect(back)
         initial = {"row_version": opp.row_version}
-        form = spec.form(request.POST or None, initial=initial)
+        extra: dict[str, Any] = {"opportunity": opp} if getattr(spec.form, "needs_opportunity", False) else {}
+        form = spec.form(request.POST or None, initial=initial, **extra)
+        conflict = False
+        if request.method == "POST" and not form.is_valid():
+            conflict = any(e.code == "slug_taken" for e in form.errors.as_data().get("slug", []))
         if request.method == "POST" and form.is_valid():
             if form.cleaned_data["row_version"] != opp.row_version:
                 messages.error(
@@ -589,7 +638,11 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             try:
                 spec.run(_user(request), opp, form.cleaned_data)
             except WorkflowError as exc:
-                messages.error(request, describe(exc))
+                if "slug" in (exc.fields or {}) and any(c == "slug_taken" for c, _ in exc.fields["slug"]):
+                    form.add_error("slug", slugs.SLUG_TAKEN_MESSAGE)
+                    conflict = True
+                else:
+                    messages.error(request, describe(exc))
             else:
                 messages.success(request, f"Done: {spec.label}.")
                 return HttpResponseRedirect(back)
@@ -611,7 +664,10 @@ class OpportunityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             "summary": self.title_display(opp),
             "opts": self.model._meta,
         }
-        return TemplateResponse(request, "admin/opportunities/transition.html", context)
+        response = TemplateResponse(request, "admin/opportunities/transition.html", context)
+        if conflict:
+            response.status_code = 409  # the submission conflicts with an existing address
+        return response
 
 
 # --- action table --------------------------------------------------------------------------------------
@@ -642,6 +698,10 @@ def _publish_direct(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
         duplicate_acknowledgement=ack,
         applicant_payment_reviewed=bool(data.get("applicant_payment_reviewed")),
     )
+
+
+def _change_slug(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
+    workflow.change_slug(user, opp.pk, new_slug=data["slug"], expected_row_version=opp.row_version)
 
 
 def _approve(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
@@ -683,6 +743,7 @@ ACTIONS: dict[str, Action] = {
     "discard": Action("Discard", "Abandon this draft or rejected revision.", admin_forms.ConfirmForm, _simple("discard")),
     "reopen": Action("Reopen as a new draft", "Start a new draft from the rejected revision.", admin_forms.ConfirmForm, _simple("reopen")),
     "amend": Action("Start an amendment", "Create a new draft from the live revision. The public keeps seeing the live one until the amendment is approved and published.", admin_forms.ConfirmForm, _simple("amend")),
+    "change_slug": Action("Change web address", "Give the listing a new slug. The old address stays reserved and redirects permanently to the new one, so shared links keep working.", admin_forms.ChangeSlugForm, _change_slug),
     "verify": Action("Record verification", "Record a check of the content. Verification is separate from the source and from publication.", admin_forms.VerificationForm, _verify),
 }  # fmt: skip
 
@@ -738,7 +799,39 @@ class SourceInline(DraftChildInline):
     verbose_name_plural = "Sources (provenance: where the information came from; one primary)"
 
 
+FORM_ONLY_FIELDS = (
+    "featured_image_file", "remove_featured_image", "social_image_source", "social_image_file", "crop_social",
+)  # fmt: skip
+
+
 class VersionForm(forms.ModelForm):  # type: ignore[type-arg]
+    """The revision editor. Image uploads are validated here (real content, size, pixels) and turned into
+    stored assets when the draft is saved through the publishing service."""
+
+    featured_image_file = forms.FileField(
+        required=False,
+        label="Upload or replace",
+        help_text="JPEG, PNG or WebP, up to 5 MB. Shown at the top of the public page.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+    remove_featured_image = forms.BooleanField(required=False, label="Remove the featured image")
+    social_image_source = forms.ChoiceField(
+        required=False,
+        label="Link-preview image",
+        choices=[("featured", "Use the featured image"), ("custom", "Upload a custom social image")],
+        widget=forms.RadioSelect,
+    )
+    social_image_file = forms.FileField(
+        required=False,
+        label="Upload or replace the social image",
+        help_text="Recommended 1200 x 630 pixels (1.91:1). JPEG, PNG or WebP, up to 5 MB.",
+        widget=forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+    crop_social = forms.BooleanField(
+        required=False,
+        label="Crop the social image to 1200 x 630 (centre)",
+        help_text="Only when you tick this is the picture cropped; otherwise it is kept as uploaded.",
+    )
     deadline_date = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     deadline_time = forms.TimeField(
         required=False,
@@ -750,13 +843,32 @@ class VersionForm(forms.ModelForm):  # type: ignore[type-arg]
         model = OpportunityVersion
         fields = (
             "organisation", "title", "summary", "description_md", "responsibilities_md", "requirements_md",
-            "seo_title", "seo_description", "slug_request", "location_text",
-            "geographic_eligibility", "work_mode", "employment_type", "experience_level", "salary_min",
+            "seo_title", "seo_description", "slug_request", "og_title", "og_description",
+            "featured_image_alt", "social_image_alt", "location_text", "geographic_eligibility", "work_mode", "employment_type", "experience_level", "salary_min",
             "salary_max", "salary_currency", "salary_period", "funding_min", "funding_max",
             "funding_currency", "funding_period", "deadline_timezone", "deadline_is_date_only",
             "application_method", "application_url", "application_email", "application_instructions",
             "reference_number", "contact_details", "detail",
         )  # fmt: skip
+        labels = {
+            "slug_request": "Web address (slug)",
+            "seo_title": "SEO title",
+            "seo_description": "SEO meta description",
+            "og_title": "Open Graph title",
+            "og_description": "Open Graph description",
+            "featured_image_alt": "Featured image alt text",
+            "social_image_alt": "Social image alt text",
+        }
+        help_texts = {
+            "slug_request": "Lower-case letters, digits and hyphens, 8-80 characters. Unique; fixed at first publication, "
+            "changeable later with a permanent redirect from the old address.",
+            "seo_title": "Up to 70 characters. Blank: the page title is built from the job title and organisation.",
+            "seo_description": "Up to 160 characters. Blank: the summary is used.",
+            "og_title": "Up to 95 characters. Blank: the suggestion shown is used and follows later edits.",
+            "og_description": "Up to 200 characters. Blank: the suggestion shown is used and follows later edits.",
+            "featured_image_alt": "Describe the picture for people who cannot see it. Required to publish.",
+            "social_image_alt": "Describe the sharing image. Required when a separate image is used.",
+        }  # fmt: skip
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -776,6 +888,42 @@ class VersionForm(forms.ModelForm):  # type: ignore[type-arg]
             self.fields[
                 "deadline_timezone"
             ].help_text = "IANA name, e.g. Africa/Harare. The time below is in this zone."
+        if "social_image_source" in self.fields and instance is not None:
+            self.fields["social_image_source"].initial = "custom" if instance.social_image_id else "featured"
+        self.featured_upload: ProcessedImage | None = None
+        self.social_upload: ProcessedImage | None = None
+
+    def clean_slug_request(self) -> str | None:
+        value = (self.cleaned_data.get("slug_request") or "").strip().lower() or None
+        if value is None:
+            return None
+        problem = slugs.format_error(value)
+        if problem:
+            raise forms.ValidationError(problem, code="invalid_format")
+        instance = self.instance
+        own = instance.opportunity_id if instance is not None and instance.pk else None
+        if slugs.is_taken(value, exclude_opportunity_id=own):
+            raise forms.ValidationError(slugs.SLUG_TAKEN_MESSAGE, code="slug_taken")
+        return value
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean() or {}
+        for field, remember, crop in (
+            ("featured_image_file", "featured_upload", False),
+            ("social_image_file", "social_upload", bool(data.get("crop_social"))),
+        ):
+            upload = data.get(field)
+            if not upload:
+                continue
+            try:
+                setattr(self, remember, media.process(upload.read(), crop_to_social=crop))
+            except media.ImageError as exc:
+                self.add_error(field, str(exc))
+        if data.get("social_image_source") == "custom":
+            has_existing = bool(self.instance and self.instance.social_image_id)
+            if self.social_upload is None and not has_existing and "social_image_file" not in self.errors:
+                self.add_error("social_image_file", "Upload a social image, or choose the featured image.")
+        return data
 
 
 @admin.register(OpportunityVersion)
@@ -785,15 +933,23 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     fieldsets = (
         ("Status", {"fields": ("state_display", "author_display", "fingerprint")}),
         ("What and who", {"fields": ("organisation", "title", "summary", "description_md", "responsibilities_md", "requirements_md")}),
-        ("Search appearance (optional; the address is fixed at first publication)", {"fields": ("seo_title", "seo_description", "slug_request")}),
+        ("Featured image (required before a new listing is published)", {"fields": ("featured_image_current", "featured_image_file", "remove_featured_image", "featured_image_alt")}),
+        ("Social & SEO", {"fields": ("slug_request", "canonical_preview", "seo_title", "seo_description", "og_title", "og_description", "social_image_source", "social_image_current", "social_image_file", "crop_social", "social_image_alt")}),
         ("Where and when", {"fields": ("location_text", "geographic_eligibility", "work_mode", "employment_type", "experience_level")}),
         ("Pay or funding (leave blank when not stated; never estimated)", {"fields": (("salary_min", "salary_max", "salary_currency", "salary_period"), ("funding_min", "funding_max", "funding_currency", "funding_period"))}),
         ("Deadline (leave blank when not stated)", {"fields": ("deadline_date", "deadline_time", "deadline_timezone", "deadline_is_date_only")}),
         ("How to apply (applications happen on the issuer's channel)", {"fields": ("application_method", "application_url", "application_email", "application_instructions", "reference_number", "contact_details")}),
         ("Category details (validated against the category schema)", {"fields": ("detail",)}),
     )  # fmt: skip
-    readonly_fields = ("state_display", "author_display", "fingerprint")
+    readonly_fields = (
+        "state_display", "author_display", "fingerprint", "featured_image_current", "social_image_current",
+        "canonical_preview",
+    )  # fmt: skip
     autocomplete_fields = ("organisation",)
+
+    class Media:
+        js = ("opportunities/staff_social.js",)
+        css = {"all": ("opportunities/staff_social.css",)}
 
     def get_model_perms(self, request: HttpRequest) -> dict[str, bool]:
         return {}  # reached from listings, not listed on the index
@@ -857,11 +1013,53 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
                 f
                 for f in options["fields"]
                 if f not in ("deadline_date", "deadline_time", "deadline_timezone", "deadline_is_date_only")
+                and f not in FORM_ONLY_FIELDS
             ]
             if title.startswith("Deadline"):
                 fields = ["deadline_display"]
             out.append((title, {**options, "fields": fields}))
         return out
+
+    @staticmethod
+    def _image_html(asset: MediaAsset | None, alt: str | None, empty: str) -> SafeString | str:
+        if asset is None:
+            return empty
+        import base64
+
+        uri = f"data:{asset.content_type};base64,{base64.b64encode(bytes(asset.data)).decode('ascii')}"
+        warnings = social.warnings_for(asset)
+        extra = format_html_join("", '<li class="warning">{}</li>', [(w,) for w in warnings])
+        return format_html(
+            '<div class="social-image-current"><img src="{}" alt="{}" width="240">'
+            "<p>{} x {} pixels, {} KB, {}</p><ul>{}</ul></div>",
+            uri, alt or "", asset.width, asset.height, round(asset.size / 1024), asset.content_type, extra,
+        )  # fmt: skip
+
+    @admin.display(description="Current featured image")
+    def featured_image_current(self, obj: OpportunityVersion | None) -> SafeString | str:
+        asset = obj.featured_image if obj is not None and obj.pk else None
+        return self._image_html(
+            asset, obj.featured_image_alt if obj else None, "No image yet. Drafts may be saved without one."
+        )
+
+    @admin.display(description="Current social sharing image")
+    def social_image_current(self, obj: OpportunityVersion | None) -> SafeString | str:
+        if obj is None or not obj.pk:
+            return "Not set: the featured image is shared."
+        if obj.social_image is None:
+            return "Not set: the featured image is shared."
+        return self._image_html(obj.social_image, obj.social_image_alt, "")
+
+    @admin.display(description="Canonical URL")
+    def canonical_preview(self, obj: OpportunityVersion | None) -> SafeString:
+        base = str(settings.UPNEXT_PUBLIC_BASE_URL).rstrip("/")
+        slug = ""
+        if obj is not None and obj.pk:
+            slug = obj.opportunity.slug or obj.slug_request or ""
+        return format_html(
+            '<code class="js-canonical" data-base="{}/opportunities/">{}/opportunities/{}</code>',
+            base, base, slug or "(set at publication)",
+        )  # fmt: skip
 
     @admin.display(description="Deadline")
     def deadline_display(self, obj: OpportunityVersion) -> str:
@@ -892,11 +1090,48 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
                 action="opportunity.view_draft", object_type="opportunity", object_id=version.opportunity_id,
                 actor_id=_user(request).pk, severity="privileged", changes={"reason": "support read-only access"},
             )  # fmt: skip
+        extra = {**(extra_context or {}), "social_config": self._social_config(request, version)}
         try:
-            return super().changeform_view(request, object_id, form_url, extra_context)
+            response = super().changeform_view(request, object_id, form_url, extra)
         except ServiceRefused as refused:
+            fields = refused.error.fields or {}
+            if any(c == "slug_taken" for c, _ in fields.get("slug_request", [])):
+                messages.error(request, slugs.SLUG_TAKEN_MESSAGE)
+                return HttpResponse(slugs.SLUG_TAKEN_MESSAGE, status=409, content_type="text/plain")
             messages.error(request, describe(refused.error))
             return HttpResponseRedirect(request.path)
+        context = getattr(response, "context_data", None) or {}
+        adminform = context.get("adminform")
+        if request.method == "POST" and adminform is not None:
+            codes = [e.code for e in adminform.form.errors.as_data().get("slug_request", [])]
+            if "slug_taken" in codes:
+                response.status_code = 409  # a conflicting address is a conflict, not a malformed request
+        return response
+
+    def _social_config(self, request: HttpRequest, version: OpportunityVersion | None) -> dict[str, Any]:
+        """Data for the Social & SEO panel (read by staff_social.js through a JSON script element)."""
+        import base64
+
+        def uri(asset: MediaAsset | None) -> str | None:
+            if asset is None:
+                return None
+            return f"data:{asset.content_type};base64,{base64.b64encode(bytes(asset.data)).decode('ascii')}"
+
+        base = str(settings.UPNEXT_PUBLIC_BASE_URL).rstrip("/")
+        return {
+            "baseUrl": base,
+            "domain": settings.UPNEXT_BRAND_DOMAIN,
+            "brand": settings.UPNEXT_BRAND_NAME,
+            "checkUrl": reverse("admin:opportunities_opportunity_slug_check"),
+            "opportunityId": str(version.opportunity_id) if version else None,
+            "currentSlug": version.opportunity.slug if version else None,
+            "category": version.opportunity.category.code if version else None,
+            "featuredUri": uri(version.featured_image) if version else None,
+            "socialUri": uri(version.social_image) if version else None,
+            "jobCategories": sorted(social.JOB_CATEGORIES),
+            "titleMax": social.TITLE_MAX,
+            "descriptionMax": social.DESCRIPTION_MAX,
+        }
 
     def save_model(self, request: HttpRequest, obj: OpportunityVersion, form: Any, change: bool) -> None:
         """Deliberately empty: persistence happens in `save_related` through the publishing service."""
@@ -904,7 +1139,7 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     def save_related(self, request: HttpRequest, form: Any, formsets: list[Any], change: bool) -> None:
         version: OpportunityVersion = form.instance
         data = form.cleaned_data
-        content = self._content(data, formsets)
+        content = self._content(data, formsets, form, request)
         opportunity = Opportunity.objects.get(pk=version.opportunity_id)
         try:
             workflow.save_draft(
@@ -938,7 +1173,9 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             out["period"] = period or None
         return out
 
-    def _content(self, data: dict[str, Any], formsets: list[Any]) -> dict[str, Any]:
+    def _content(
+        self, data: dict[str, Any], formsets: list[Any], form: Any = None, request: HttpRequest | None = None
+    ) -> dict[str, Any]:
         def text(key: str) -> str | None:
             value = data.get(key)
             return value if value not in ("", None) else None
@@ -964,6 +1201,9 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             "seo_title": text("seo_title"),
             "seo_description": text("seo_description"),
             "slug_request": text("slug_request"),
+            "og_title": text("og_title"),
+            "og_description": text("og_description"),
+            **self._images(data, form, request),
             "location_text": text("location_text"),
             "geographic_eligibility": text("geographic_eligibility"),
             "work_mode": text("work_mode"),
@@ -1001,6 +1241,53 @@ class OpportunityVersionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
             ],
         }  # fmt: skip
         return content
+
+    @staticmethod
+    def _asset(request: HttpRequest, image: ProcessedImage) -> MediaAsset:
+        asset, _ = MediaAsset.objects.get_or_create(
+            sha256=image.sha256,
+            defaults={
+                "content_type": image.content_type,
+                "width": image.width,
+                "height": image.height,
+                "data": image.data,
+                "created_by": _user(request),
+            },
+        )
+        return asset
+
+    def _images(self, data: dict[str, Any], form: Any, request: HttpRequest | None) -> dict[str, Any]:
+        """Image references for the draft: a new upload, the one already attached, or none. A social image is
+        kept only while 'custom' is chosen; otherwise the featured image is what gets shared."""
+        if form is None or request is None:
+            return {}
+        version: OpportunityVersion = form.instance
+
+        def alt(key: str) -> str | None:
+            value = (data.get(key) or "").strip()
+            return value or None
+
+        if form.featured_upload is not None:
+            featured: MediaAsset | None = self._asset(request, form.featured_upload)
+        elif data.get("remove_featured_image"):
+            featured = None
+        else:
+            featured = version.featured_image
+        source = data.get("social_image_source") or ("custom" if version.social_image_id else "featured")
+        if source == "custom":
+            social_asset = (
+                self._asset(request, form.social_upload)
+                if form.social_upload is not None
+                else version.social_image
+            )
+        else:
+            social_asset = None
+        return {
+            "featured_image_id": str(featured.pk) if featured else None,
+            "featured_image_alt": alt("featured_image_alt") if featured else None,
+            "social_image_id": str(social_asset.pk) if social_asset else None,
+            "social_image_alt": alt("social_image_alt") if social_asset else None,
+        }
 
     @staticmethod
     def _live_row(form: Any) -> bool:

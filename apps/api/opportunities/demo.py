@@ -84,3 +84,29 @@ def build_content(
         if key == "expected_start" and isinstance(value, str):
             detail[key] = (date.fromisoformat(value) + timedelta(days=days)).isoformat()
     return category, example
+
+
+def demo_image_fields(created_by: Any) -> dict[str, str]:
+    """A plain solid-colour 1200 x 630 JPEG for fictional demo listings and tests only. Real listings always
+    carry an image an editor uploaded; nothing in production generates one."""
+    import io
+
+    from PIL import Image
+
+    from catalog.media import process
+    from catalog.models import MediaAsset
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (1200, 630), (83, 58, 253)).save(buffer, format="PNG")
+    processed = process(buffer.getvalue())
+    asset, _ = MediaAsset.objects.get_or_create(
+        sha256=processed.sha256,
+        defaults={
+            "content_type": processed.content_type,
+            "width": processed.width,
+            "height": processed.height,
+            "data": processed.data,
+            "created_by": created_by,
+        },
+    )
+    return {"featured_image_id": str(asset.pk), "featured_image_alt": "Plain demo image (fictional data)"}

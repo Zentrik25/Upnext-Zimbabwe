@@ -24,6 +24,12 @@ class ValidationFailed(WorkflowError):
         super().__init__("validation_failed", message, fields=fields)
 
 
+class SlugTaken(ValidationFailed):
+    """The requested web address belongs to another listing, now or in the past (D-47): HTTP 409."""
+
+    http_status = 409
+
+
 class PermissionDeniedError(WorkflowError):
     http_status = 403
 

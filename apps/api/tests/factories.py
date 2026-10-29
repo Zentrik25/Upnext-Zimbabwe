@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import importlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
@@ -26,6 +26,15 @@ class World:
     sectors: dict[str, str]
     skills: dict[str, str]
     creator: User
+    image_fields: dict[str, str] = field(default_factory=dict)
+
+    def employer_content(self, example: str, **overrides: Any) -> tuple[str, dict[str, Any]]:
+        """Content as an employer submits it: staff-only fields (images, search text, address) are not theirs."""
+        category, content = self.content(example)
+        for key in self.image_fields:
+            content.pop(key, None)
+        content.update(overrides)
+        return category, content
 
     def content(self, example: str, **overrides: Any) -> tuple[str, dict[str, Any]]:
         category, content = demo.build_content(
@@ -36,6 +45,7 @@ class World:
             skill_ids=self.skills,
             today=timezone.now().date(),
         )
+        content.update(self.image_fields)
         content.update(overrides)
         return category, content
 
@@ -61,6 +71,7 @@ def build_world(creator: User) -> World:
         sectors={slug: str(pk) for slug, pk in Sector.objects.values_list("slug", "pk")},
         skills={slugify_skill(n): str(pk) for n, pk in Skill.objects.values_list("name", "pk")},
         creator=creator,
+        image_fields=demo.demo_image_fields(creator),
     )
 
 

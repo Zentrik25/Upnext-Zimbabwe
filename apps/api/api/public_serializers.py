@@ -122,12 +122,24 @@ class DetailSkillSerializer(serializers.Serializer[None]):
     is_required = serializers.BooleanField()
 
 
+class ListingImageSerializer(serializers.Serializer[None]):
+    url = serializers.CharField()
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+    content_type = serializers.CharField()
+    alt = serializers.CharField()
+
+
 class OpportunityDetailSerializer(OpportunitySummarySerializer):
     description_html = serializers.CharField()
     responsibilities_html = serializers.CharField(allow_null=True)
     requirements_html = serializers.CharField(allow_null=True)
     seo_title = serializers.CharField(allow_null=True)
     seo_description = serializers.CharField(allow_null=True)
+    og_title = serializers.CharField()
+    og_description = serializers.CharField()
+    featured_image = ListingImageSerializer(allow_null=True)
+    social_image = ListingImageSerializer(allow_null=True)
     geographic_eligibility = serializers.CharField(allow_null=True)
     location_text = serializers.CharField(allow_null=True)
     experience_level = serializers.ChoiceField(choices=ExperienceLevel.values, allow_null=True)

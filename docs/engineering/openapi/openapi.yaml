@@ -98,6 +98,9 @@ paths:
         '200':
           description: Detail
           content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } }
+        '301':
+          description: 'D-47: the listing has a new address. Location is the new API path; the body names the new slug.'
+          headers: { Location: { schema: { type: string } } }
         '404': { $ref: '#/components/responses/NotFound' }
         '429': { $ref: '#/components/responses/RateLimited' }
   # --- Phase 6A employer portal (D-35). Every id is resolved through the caller's memberships: someone else's id is 404.
@@ -1200,6 +1203,16 @@ components:
         status: { type: string, enum: [published, expired, withdrawn] }
         published_at: { type: string, format: date-time }
         is_saved: { type: [boolean, 'null'], description: 'null for anonymous callers' }
+    ListingImage:
+      type: object
+      required: [url, width, height, content_type, alt]
+      description: 'D-47: a staff-uploaded image. url is a same-origin path (/api/v1/media/<sha256>.<jpg|png>) that is public while a publicly readable listing shows it.'
+      properties:
+        url: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+        content_type: { type: string, enum: [image/jpeg, image/png] }
+        alt: { type: string }
     OpportunityDetail:
       allOf:
         - $ref: '#/components/schemas/OpportunitySummary'
@@ -1211,6 +1224,10 @@ components:
             requirements_html: { type: [string, 'null'] }
             seo_title: { type: [string, 'null'], description: 'D-46: staff-written page title, at most 70 characters' }
             seo_description: { type: [string, 'null'], description: 'D-46: staff-written meta description, at most 160 characters' }
+            og_title: { type: string, description: 'D-47: Open Graph title; the editor text, or the suggestion built from the listing when none was typed' }
+            og_description: { type: string, description: 'D-47: Open Graph description, resolved like og_title' }
+            featured_image: { oneOf: [ { $ref: '#/components/schemas/ListingImage' }, { type: 'null' } ] }
+            social_image: { oneOf: [ { $ref: '#/components/schemas/ListingImage' }, { type: 'null' } ], description: 'D-47: the image a shared link shows; the featured image when no separate one was uploaded' }
             geographic_eligibility: { type: [string, 'null'] }
             location_text: { type: [string, 'null'] }
             experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }

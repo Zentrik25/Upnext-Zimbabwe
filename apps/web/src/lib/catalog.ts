@@ -69,9 +69,31 @@ export function listOpportunities(params: URLSearchParams) {
 }
 
 /** `null` data means the listing is not public (404); other failures keep their reason. */
-export async function getOpportunity(slug: string): Promise<Result<OpportunityDetail | null>> {
-  const response = await get(`opportunities/${encodeURIComponent(slug)}`);
+export async function getOpportunity(
+  slug: string,
+): Promise<Result<OpportunityDetail | null> & { movedTo?: string }> {
+  let response: Response | null;
+  try {
+    // Not followed: a 301 means the listing has a new address and the page must redirect there (D-47).
+    response = await fetch(`${base()}/api/v1/opportunities/${encodeURIComponent(slug)}`, {
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(4000),
+      headers: { Accept: "application/json" },
+    });
+  } catch {
+    response = null;
+  }
   if (response === null) return { ok: false, reason: "unreachable" };
+  if (response.status === 301) {
+    try {
+      const body = (await response.json()) as { slug?: string };
+      if (typeof body.slug === "string") return { ok: true, data: null, movedTo: body.slug };
+    } catch {
+      /* fall through to unexpected */
+    }
+    return { ok: false, reason: "unexpected-response" };
+  }
   if (response.status === 404) return { ok: true, data: null };
   if (response.status === 429) return { ok: false, reason: "rate-limited" };
   if (!response.ok) return { ok: false, reason: "unexpected-response" };

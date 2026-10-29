@@ -32,6 +32,7 @@ class Permission(StrEnum):
     OPP_VERIFY_RECORD = "opp.verify.record"
     OPP_PUBLISH = "opp.publish"
     OPP_PUBLISH_DIRECT = "opp.publish_direct"
+    OPP_SLUG_CHANGE = "opp.slug_change"
     OPP_SCHEDULE = "opp.schedule"
     OPP_TAKEDOWN = "opp.takedown"
     OPP_WITHDRAW = "opp.withdraw"
@@ -76,6 +77,7 @@ _EDITOR_CODES = frozenset(
         P.OPP_DISCARD_OWN,
         P.OPP_AMEND,
         P.OPP_PUBLISH_DIRECT,
+        P.OPP_SLUG_CHANGE,
         P.OPP_REVIEW_APPROVE,
         P.OPP_REVIEW_REJECT,
         P.OPP_REVIEW_RETURN,

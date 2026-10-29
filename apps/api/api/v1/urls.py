@@ -118,6 +118,7 @@ urlpatterns = [
         public_views.OpportunityDetailView.as_view(),
         name="opportunity-detail",
     ),
+    re_path(r"^media/(?P<name>[0-9a-f]{64}\.(?:jpg|png))$", public_views.media_view, name="media"),
     path("sitemap", public_views.SitemapView.as_view(), name="sitemap"),
     path("categories", public_views.CategoryListView.as_view(), name="category-list"),
     path("locations", public_views.LocationListView.as_view(), name="location-list"),
