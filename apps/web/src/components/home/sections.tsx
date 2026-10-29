@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { JobSearchArt } from "@/components/brand/job-search-art";
 import { Container } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { SearchForm } from "@/components/ui/search-form";
 import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { BRAND } from "@/lib/brand";
@@ -79,10 +80,10 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
           </div>
         </div>
 
-        <form
+        <SearchForm
+          bare
           action="/opportunities"
           method="get"
-          role="search"
           aria-label="Search opportunities"
           className="mt-5 grid gap-3"
         >
@@ -152,7 +153,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
             <Icon name="search" className="h-[18px] w-[18px]" />
             Find opportunities
           </Button>
-        </form>
+        </SearchForm>
 
         {categories.length > 0 ? (
           <nav aria-label="Quick categories" className="mt-4">
