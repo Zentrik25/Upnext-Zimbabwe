@@ -101,6 +101,17 @@ export function RegisterForm() {
       <Button type="submit" disabled={busy}>
         {busy ? "Creating account…" : "Create account"}
       </Button>
+      <p className="text-small text-muted" data-testid="legal-notice">
+        By creating an account you agree to the{" "}
+        <Link href="/terms" className="text-accent underline">
+          Terms of Service
+        </Link>{" "}
+        and acknowledge the{" "}
+        <Link href="/privacy" className="text-accent underline">
+          Privacy Policy
+        </Link>
+        . This does not sign you up for any e-mail alerts.
+      </p>
       <p className="text-ctl">
         Already have an account?{" "}
         <Link href="/sign-in" className="text-accent underline">

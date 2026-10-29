@@ -1,3 +1,4 @@
+import { OPERATOR } from "@/content/legal/operator";
 import type { Metadata } from "next";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { ProsePage, Section } from "@/components/content/prose";
@@ -15,12 +16,22 @@ export default function ContactPage() {
     <ProsePage title="Contact" intro="Questions, corrections and privacy requests.">
       <Section title="E-mail">
         <p>
-          Write to{" "}
+          General questions and listing corrections:{" "}
           <a href={`mailto:${BRAND.email}`} className="text-accent underline" data-testid="contact-email">
             {BRAND.email}
           </a>
-          . It is the only address we use, for general questions, listing corrections, help with an account
-          and privacy requests.
+          .
+        </p>
+        <p>
+          Help with an account and privacy requests:{" "}
+          <a
+            href={`mailto:${OPERATOR.privacyEmail}`}
+            className="text-accent underline"
+            data-testid="contact-support-email"
+          >
+            {OPERATOR.privacyEmail}
+          </a>
+          . UPNEXT Careers is operated by {OPERATOR.legalName}, Zimbabwe.
         </p>
       </Section>
       <Section title="What to include">

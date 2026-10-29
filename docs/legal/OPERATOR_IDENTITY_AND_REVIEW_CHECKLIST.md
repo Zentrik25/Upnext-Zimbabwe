@@ -1,6 +1,6 @@
 # Legal operator identity and privacy/terms review checklist (B-02) — DRAFT
 
-Status: DRAFT, prepared in launch preparation. **It contains no legal conclusion and no legal fact about the operator. Every blank below is for the owner or the owner's lawyer; none has been filled, guessed or inferred, and legal review is NOT complete.** B-02 stays open until the owner records the outcome in the decision register. The review package itself is `LEGAL_REVIEW_PACK.md` (questions L-1 to L-12); this page is the work list that closes it.
+Status: DRAFT, prepared in launch preparation. **Superseded in part on 2026-10-29: the full Privacy Policy and Terms of Service now exist and the working checklist is `LEGAL_APPROVAL_CHECKLIST.md` (research: `LEGAL_RESEARCH.md`). Operator facts supplied by the owner on that date: I-1 the legal operator is Zentrik Solutions (Pvt) Ltd, Zimbabwe; I-4 the privacy and support contact is support@upnext.co.zw (D-44). I-2, I-3, I-5 to I-9 remain unsupplied.** **It contains no legal conclusion and no legal fact about the operator. Every blank below is for the owner or the owner's lawyer; none has been filled, guessed or inferred, and legal review is NOT complete.** B-02 stays open until the owner records the outcome in the decision register. The review package itself is `LEGAL_REVIEW_PACK.md` (questions L-1 to L-12); this page is the work list that closes it.
 
 ## 1. Operator identity — facts the owner must supply (OQ-09)
 

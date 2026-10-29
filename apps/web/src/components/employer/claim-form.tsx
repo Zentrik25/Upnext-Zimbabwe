@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Button, Field, Textarea, TextInput } from "@/components/ui";
 import { FormError } from "@/components/account/parts";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
@@ -157,6 +158,17 @@ export function ClaimForm() {
           invalid={Boolean(errors.evidence_note)}
         />
       </Field>
+      <p className="text-small text-muted" data-testid="legal-notice">
+        By sending this claim you confirm you may act for the organisation and agree to section 6 of the{" "}
+        <Link href="/terms#employers" className="text-accent underline">
+          Terms of Service
+        </Link>
+        . See the{" "}
+        <Link href="/privacy#information-we-collect" className="text-accent underline">
+          Privacy Policy
+        </Link>{" "}
+        for what we keep about your claim.
+      </p>
       <Button type="submit" disabled={busy}>
         {busy ? "Sending…" : "Send claim for review"}
       </Button>

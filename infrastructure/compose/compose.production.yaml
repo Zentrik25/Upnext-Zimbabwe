@@ -151,6 +151,7 @@ services:
       UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
       UPNEXT_HSTS_SECONDS: "31536000"
       NEXT_TELEMETRY_DISABLED: "1"
+      UPNEXT_LEGAL_APPROVED: ${UPNEXT_LEGAL_APPROVED:-false} # owner-controlled publication gate for /privacy and /terms (D-44)
     user: "1000:1000"
     networks: [app]
     depends_on:
