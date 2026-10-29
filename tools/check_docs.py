@@ -101,7 +101,7 @@ for ident in set(re.findall(r"x-open: (OQ-\d+)", read("docs/engineering/openapi/
 # --- accessibility values agree --------------------------------------------------
 tokens = json.loads(read("apps/web/src/design/tokens.json"))
 deviations = {n: t for n, t in tokens["colors"].items() if "prod" in t}
-check({t["dev"] for t in deviations.values()} == {"DEV-02", "DEV-03", "DEV-04"}, "token deviations differ from DEV-02…DEV-04 (DEV-01 retired by D-42)")
+check({t["dev"] for t in deviations.values()} == {"DEV-02", "DEV-03", "DEV-04", "DEV-05", "DEV-06"}, "token deviations differ from DEV-02…DEV-06 (DEV-01 retired by D-42; DEV-05, DEV-06 added by D-45)")
 deviation_doc = read("docs/design/ACCESSIBILITY_DEVIATIONS.md")
 for name, tok in deviations.items():
     row = next((ln for ln in deviation_doc.splitlines() if ln.startswith(f"| {tok['dev']} ")), "")

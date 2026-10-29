@@ -106,7 +106,7 @@ export default async function OpportunityPage({ params }: Props) {
           className="mt-3 grid grid-cols-[1fr_300px] gap-8 max-md:grid-cols-1"
         >
           <div className="min-w-0">
-            <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
+            <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
               {listing.category.name}
             </p>
             <h1 id="listing-title" className="mt-1 text-section font-strong leading-title tracking-section">

@@ -101,7 +101,7 @@ export function ReportForm({ slug, title }: { slug: string; title: string }) {
           ref={summary}
           tabIndex={-1}
           role="alert"
-          className="border border-urgent p-[10px] text-base text-urgent outline-none"
+          className="border border-danger p-[10px] text-base text-danger outline-none"
         >
           <p className="font-strong">Check the form: {messages.length} to fix.</p>
           <ul className="m-0 mt-1 list-disc pl-5">
@@ -128,7 +128,7 @@ export function ReportForm({ slug, title }: { slug: string; title: string }) {
           </label>
         ))}
         {errors.reason ? (
-          <p id="reason-error" role="alert" className="text-small text-urgent">
+          <p id="reason-error" role="alert" className="text-small text-danger">
             <span className="font-strong">Error:</span> {errors.reason[0]}
           </p>
         ) : null}

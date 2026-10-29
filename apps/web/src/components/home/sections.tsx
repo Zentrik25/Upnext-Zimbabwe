@@ -12,9 +12,15 @@ import { VERIFICATION } from "@/lib/format";
 export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
   return (
     <section aria-labelledby="home-title" className="relative overflow-hidden border-b border-line">
+      {/* Decorative ruby-to-magenta accent (Stripe design system, hero decoration only): hidden from assistive
+          technology and simplified away on phones. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 -right-40 h-[460px] w-[640px] rotate-[16deg] rounded-feature bg-linear-to-br from-ruby/15 via-magenta/15 to-magenta/0 max-md:hidden"
+      />
       <Monogram className="pointer-events-none absolute -right-16 -bottom-20 h-[340px] w-auto text-surface-pale max-md:hidden" />
       <Container className="relative pt-16 pb-14 max-sm:pt-10 max-sm:pb-10">
-        <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">
+        <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
           Opportunities across Zimbabwe
         </p>
         <h1

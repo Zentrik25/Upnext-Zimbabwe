@@ -4,7 +4,7 @@ Authority: D-19 / ADR-0012. Where `reference/approved-flat.html` conflicts with 
 
 **Evidence.** Computed from the rendered reference in Chromium (alpha-composited effective backgrounds) across 7 UI states × 2 viewports (1440, 390) — 47 distinct text/background pairs measured — plus axe-core 4.10.2 (WCAG 2.0/2.1/2.2 A/AA + best-practice rules). Raw data: `docs/design/evidence/reference-accessibility-audit.json`. Reference unchanged (SHA-256 `77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8`). Limits: automated checks find roughly a third of accessibility issues; manual keyboard and screen-reader review (A11Y-02…A11Y-05) is still required on the built product, and the prototype states reachable without a backend were the only ones sampled.
 
-## 0. Current deviations (D-39, retuned by D-42) — the complete list for the UPNEXT Careers design system
+## 0. Current deviations (D-39, retuned by D-42, replaced by the Stripe design system in D-45) — the complete list
 
 D-39 replaced the flat reference with the Stripe-inspired design system (`DESIGN_TOKENS.md`). The same rule applies: accessibility takes precedence (D-19), and only the minimum corrections are made. The rows below are the complete current list (DEV-01 was retired by D-42 because the new muted colour passes on its own); the table in section 1 is historical (IDs renamed `HIST-01` to `HIST-04`).
 
@@ -13,15 +13,17 @@ D-39 replaced the flat reference with the Stripe-inspired design system (`DESIGN
 | DEV-01 | retired (D-42)          | none: the UPNEXT Careers muted text `#475467` already passes (7.69:1 on white, 7.35:1 on `#f8fafc`) | n/a                | n/a            | n/a                                            | no deviation any more                                                                        |
 | DEV-02 | 1.4.3                    | success text (`good`) on `#e3f6ea`                                                         | `#108c3d`          | `#0d7a35`      | 3.85 → 4.84                                    | slightly deeper green                                                                        |
 | DEV-03 | 1.4.3                    | warning text (`urgent`) on `#fdf4e7`                                                       | `#9b6829`          | `#8a5a22`      | 4.37 → 5.40                                    | slightly deeper amber                                                                        |
-| DEV-04 | 1.4.11 Non-text Contrast | borders of text inputs, selects and the search-group outline                               | `#e4e7ec` (1.24:1) | `#667085`, 1px | 1.24 → 4.97 on white (4.75 on `#f8fafc`)        | **visible**: control outlines become a mid grey instead of the near-white hairline            |
+| DEV-04 | 1.4.11 Non-text Contrast | borders of text inputs, selects and the search-group outline                               | `#e5edf5` (1.18:1) | `#64748d`, 1px | 1.18 → 4.75 on white                            | **visible**: control outlines use the design system's slate instead of the pale hairline        |
+| DEV-05 | 1.4.3                    | secondary text (`muted`, eyebrows, meta, tabs, company, empty state) on `#f6f9fc` and on the match tint | `#64748d`          | `#5a6a82`      | 4.49 → 5.20 on `#f6f9fc` (4.15 → 4.85 on `#f1effe`) | slightly deeper slate; on plain white the design value (4.75) already passes |
+| DEV-06 | 1.4.3                    | error text (`danger`) on white                                                             | `#ea2261`          | `#c01a4f`      | 4.29 → 6.00                                     | deeper ruby for text; the ruby ring and border (`#ea2261`) are unchanged                      |
 
 Other points where the design system was applied as written and checked: purple `#533afd` on white 6.19:1, white on `#533afd` 6.19:1, white on hover `#4434d4` 7.81:1, `#b9b9f9` text on `#1c1e54` 8.34:1, white on `#1c1e54` 15.41:1. Weight 300 is used for headings and body text as specified; with the system font fallback it renders at 300 where the font has it and at 400 otherwise. Decorative ruby/magenta gradients carry no information. The design-system keyboard focus ring (2px `#533afd`) is 6.19:1 on white.
 
-### 0a. Dark theme (D-40)
+### 0a. Dark theme (D-40, values from the owner's dark preview, D-45)
 
 **Default theme (owner, 2026-10-29): light on every device.** The device's colour-scheme setting is not followed; dark applies only when a visitor chooses Dark in the footer (remembered in that browser only). The toggle has two options, Light and Dark.
 
-The dark palette is derived for this project; it is not a Stripe specification, so it has no deviations to list. Every pair is enforced by `tests/unit/tokens.test.ts`: text at 4.5:1 or more and non-text (control border, focus ring, saved state, dashed empty-state border) at 3:1 or more. Measured examples: ink `#e8ecf0` on `#0e0f2e` 15.7:1; muted `#9ba6ba` on `#14163a` 7.1:1; link `#9d98ff` on `#0e0f2e` 7.43:1; white on solid button `#533afd` 6.19:1 and on hover `#6654ff` 4.91:1; success `#4cdf80` on `#0f3322` 8.03:1; warning `#e3b261` on `#34270f` 7.49:1; control border `#7d88b0` on `#0e0f2e` 5.34:1. Link and active-tab text use the lighter dark accent `#9d98ff`; filled buttons use `accent-solid` (`#533afd`) in both themes. In dark the muted text is not corrected, because the design-system value passes.
+The dark palette is the owner's Stripe dark preview (surface `#0e0f2e`, text `#e8ecf0`, purple `#665efd`); where a preview pair misses AA the value is adjusted (primary-button hover `#5a51f5`, because white on the preview's lighter hover `#7a73ff` measures 3.67:1; control border `#76809a`, because the preview's 10% white hairline is far below 3:1). Every pair is enforced by `tests/unit/tokens.test.ts`: text at 4.5:1 or more and non-text (control border, focus ring, saved state, dashed empty-state border) at 3:1 or more. Measured examples: ink `#e8ecf0` on `#0e0f2e` 15.7:1; muted `#9ba6ba` on `#14163a` 7.1:1; link `#9d98ff` on `#0e0f2e` 7.43:1; white on solid button `#533afd` 6.19:1 and on hover `#6654ff` 4.91:1; success `#4cdf80` on `#0f3322` 8.03:1; warning `#e3b261` on `#34270f` 7.49:1; control border `#7d88b0` on `#0e0f2e` 5.34:1. Link and active-tab text use the lighter dark accent `#9d98ff`; filled buttons use `accent-solid` (`#533afd`) in both themes. In dark the muted text is not corrected, because the design-system value passes.
 
 
 ## 1. Deviations (visual) — the complete list
@@ -61,7 +63,7 @@ axe findings on the prototype markup are not binding structure (the prototype is
 
 | axe rule                 | Prototype finding                                                 | Production requirement                                                                                                      |
 | ------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| color-contrast (serious) | the pairs above                                                   | DEV-01…DEV-03                                                                                                               |
+| color-contrast (serious) | the pairs above                                                   | DEV-02…DEV-06                                                                                                               |
 | heading-order            | h3 follows h1 without h2                                          | one h1 per page; sequential headings                                                                                        |
 | landmark-unique          | several `<nav>`/`<aside>` without distinct labels                 | label repeated landmarks (`aria-label`)                                                                                     |
 | region                   | content outside landmarks (notice strip, eyebrow)                 | all content inside `header / nav / main / aside / footer` landmarks                                                         |
@@ -75,6 +77,6 @@ axe findings on the prototype markup are not binding structure (the prototype is
 ## 4. Process
 
 1. Tokens: `DESIGN_TOKENS.md` lists the reference value and the production value side by side; Tailwind theme keys use the production value.
-2. Tests: A11Y-06 computes contrast for every token pair; A11Y-07 asserts control-border and focus-ring ratios; A11Y-08 diffs computed styles of built pages against the reference and fails on any change outside DEV-01…DEV-04; A11Y-01…A11Y-05 as before.
+2. Tests: A11Y-06 computes contrast for every token pair; A11Y-07 asserts control-border and focus-ring ratios; A11Y-08 diffs computed styles of built pages against the reference and fails on any change outside DEV-02…DEV-06; A11Y-01…A11Y-05 as before.
 3. Any new component derived from tokens (pagination, forms, banners, badges) must pass the same checks before approval; any further deviation needs a new DEV entry approved by the owner.
 4. Open owner confirmation (approval checklist item): DEV-04 visibility, and the heart-glyph classification.

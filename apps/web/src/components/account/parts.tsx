@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 /** Page-level error: text starts with "Error:" so colour is never the only cue. */
 export function FormError({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <div id={id} role="alert" className="border border-urgent p-[10px] text-base text-urgent">
+    <div id={id} role="alert" className="border border-danger p-[10px] text-base text-danger">
       <span className="font-strong">Error:</span> {children}
     </div>
   );

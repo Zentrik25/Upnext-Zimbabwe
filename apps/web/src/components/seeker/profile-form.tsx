@@ -166,7 +166,7 @@ export function ProfileForm({
         </div>
         <SkillPicker value={skills} onChange={setSkills} />
         {errors.skills ? (
-          <p role="alert" className="text-small text-urgent">
+          <p role="alert" className="text-small text-danger">
             <span className="font-strong">Error:</span> {errors.skills[0]}
           </p>
         ) : null}

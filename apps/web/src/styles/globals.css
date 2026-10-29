@@ -36,6 +36,12 @@
   }
   h1,
   h2,
+  h3,
+  h4 {
+    line-height: var(--leading-title);
+  }
+  h1,
+  h2,
   h3 {
     color: var(--color-ink);
     font-weight: var(--font-weight-light);
@@ -89,4 +95,19 @@
 /* On the black footer and employer band the dark focus colour would vanish: use white there (WCAG 2.4.7, 1.4.11). */
 .bg-brand-dark :focus-visible {
   outline-color: #ffffff;
+}
+
+/* Stripe design system (D-45): weight 300 is the headline voice. Utility classes such as `font-strong` (weight 400,
+   for labels and links) must not thicken a heading, so this rule is deliberately outside the layers. */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--font-weight-light);
+}
+
+/* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */
+.tnum {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
 }

@@ -67,7 +67,7 @@ export default async function EmployerProfilePage({ params }: Props) {
       />
       <Container className="pt-8 pb-[65px]">
         <article className="max-w-[720px]" aria-labelledby="employer-title">
-          <p className="text-micro font-semi uppercase tracking-eyebrow text-eyebrow">Employer</p>
+          <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">Employer</p>
           <h1 id="employer-title" className="mt-1 text-section font-strong tracking-section">
             {p.organisation.name}
           </h1>
