@@ -22,6 +22,7 @@ const PATHS = {
     "M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.2 4M6.5 6.6C3.6 8.4 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2",
   arrowRight: "M5 12h14m-6-6 6 6-6 6",
   signIn: "M10 4H5v16h5m3-12 4 4-4 4m4-4H9",
+  calendar: "M4 6h16v14H4V6Zm0 5h16M8 3v4m8-4v4",
   chevronDown: "m6 9 6 6 6-6",
 } as const;
 

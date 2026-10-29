@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { BRAND } from "@/lib/brand";
-import { CATEGORY_SUMMARY, EMPLOYMENT } from "@/lib/filters";
+import { EMPLOYMENT } from "@/lib/filters";
 import { VERIFICATION } from "@/lib/format";
 
 const FIELD =
   "block min-h-field w-full rounded-control border border-control-border bg-surface pl-10 pr-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
+const FIELD_SM = FIELD.replace("pl-10 pr-3", "pl-9 pr-1 max-sm:pl-8 max-sm:text-small");
 
 function IconControl({ icon, children }: { icon: IconName; children: ReactNode }) {
   return (
@@ -23,28 +24,59 @@ function IconControl({ icon, children }: { icon: IconName; children: ReactNode }
   );
 }
 
+const CHIP_TONES = [
+  "bg-match-bg text-secondary-text border-border-interest",
+  "bg-good-bg text-good border-good/30",
+  "bg-urgent-bg text-urgent border-urgent/30",
+];
+
 /** Hero: headline, one honest sentence, the search that works against the real API and the category shortcuts. */
 export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+  const floating = categories.slice(0, 3);
+  const shortcuts = categories.slice(0, 4);
   return (
     <section aria-labelledby="home-title" className="border-b border-line bg-surface-pale">
-      <Container className="pt-10 pb-8 max-sm:pt-6 max-sm:pb-6">
-        <div className="grid grid-cols-[1.15fr_1fr] items-center gap-6 max-md:grid-cols-1">
+      <Container className="pt-6 pb-6 max-sm:pt-5">
+        <div className="grid grid-cols-[1fr_1fr] items-center gap-4 max-sm:gap-2">
           <div>
             <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
               Opportunities across Zimbabwe
             </p>
             <h1
               id="home-title"
-              className="mt-3 max-w-[560px] text-hero font-strong leading-hero tracking-hero text-ink"
+              className="font-headline mt-2 text-display leading-[1.05] tracking-display text-ink max-sm:text-[34px]"
             >
               Find your next opportunity.
             </h1>
-            <p className="mt-4 max-w-[520px] text-lead leading-body text-muted">
-              Explore jobs, internships, scholarships and more, all in one place. Every listing names its
-              source.
+            <p className="mt-3 max-w-[460px] text-lead leading-body text-muted max-sm:text-ctl">
+              Explore jobs, internships, scholarships and more, all in one place.
             </p>
           </div>
-          <JobSearchArt className="mx-auto h-auto w-full max-w-[380px] max-md:max-w-[260px]" />
+          <div className="relative mx-auto w-full max-w-[420px] rounded-feature bg-match-bg p-3 max-sm:p-1">
+            <JobSearchArt className="h-auto w-full" />
+            <ul className="m-0 list-none p-0" aria-label="Popular categories">
+              {floating.map((c, i) => (
+                <li
+                  key={c.code}
+                  className={
+                    i === 0
+                      ? "absolute top-3 left-0 max-sm:hidden"
+                      : i === 1
+                        ? "absolute top-[34%] right-0 max-sm:hidden"
+                        : "absolute bottom-3 right-3 max-sm:hidden"
+                  }
+                >
+                  <Link
+                    href={`/opportunities?category=${c.code}`}
+                    className={`inline-flex min-h-[36px] items-center gap-2 rounded-card border px-3 text-small shadow-subtle ${CHIP_TONES[i] ?? CHIP_TONES[0]}`}
+                  >
+                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-4 w-4" />
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <form
@@ -52,7 +84,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
           method="get"
           role="search"
           aria-label="Search opportunities"
-          className="mt-7 grid gap-3"
+          className="mt-5 grid gap-3"
         >
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
@@ -67,14 +99,14 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
               className={FIELD}
             />
           </IconControl>
-          <div className="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+          <div className="grid grid-cols-3 gap-3 max-sm:gap-2">
             <div>
               <label htmlFor="home-location" className="sr-only">
                 Location
               </label>
               <IconControl icon="pin">
-                <select id="home-location" name="location" defaultValue="" className={FIELD}>
-                  <option value="">Any location</option>
+                <select id="home-location" name="location" defaultValue="" className={FIELD_SM}>
+                  <option value="">Location</option>
                   {locations
                     .filter((l) => l.kind !== "remote" && l.kind !== "country")
                     .map((l) => (
@@ -90,8 +122,8 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
                 Category
               </label>
               <IconControl icon="grid">
-                <select id="home-category" name="category" defaultValue="" className={FIELD}>
-                  <option value="">All categories</option>
+                <select id="home-category" name="category" defaultValue="" className={FIELD_SM}>
+                  <option value="">Category</option>
                   {categories.map((c) => (
                     <option key={c.code} value={c.code}>
                       {c.name}
@@ -105,8 +137,8 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
                 Type of work
               </label>
               <IconControl icon="briefcase">
-                <select id="home-type" name="employment_type" defaultValue="" className={FIELD}>
-                  <option value="">Any type</option>
+                <select id="home-type" name="employment_type" defaultValue="" className={FIELD_SM}>
+                  <option value="">Type</option>
                   {EMPLOYMENT.map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
@@ -123,28 +155,37 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
         </form>
 
         {categories.length > 0 ? (
-          <nav aria-label="Quick categories" className="mt-5">
-            <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1">
-              <li className="shrink-0">
+          <nav aria-label="Quick categories" className="mt-4">
+            <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-6 [&>li]:min-w-[96px] [&>li]:flex-1">
+              <li>
                 <Link
                   href="/opportunities"
-                  className="flex min-h-[64px] min-w-[96px] flex-col items-center justify-center gap-1 rounded-card border border-border-interest bg-match-bg px-3 text-center text-small text-secondary-text"
+                  className={`${TILE} border-border-interest bg-match-bg text-secondary-text`}
                 >
-                  <Icon name="briefcase" />
+                  <Icon name="briefcase" className="h-6 w-6" />
                   All
                 </Link>
               </li>
-              {categories.map((c) => (
-                <li key={c.code} className="shrink-0">
+              {shortcuts.map((c) => (
+                <li key={c.code}>
                   <Link
                     href={`/opportunities?category=${c.code}`}
-                    className="flex min-h-[64px] min-w-[96px] flex-col items-center justify-center gap-1 rounded-card border border-border-panel bg-surface px-3 text-center text-small text-ink hover:bg-row-hover"
+                    className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
                   >
-                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-5 w-5 text-accent" />
+                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-6 w-6 text-accent" />
                     {c.name}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="#categories"
+                  className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
+                >
+                  <Icon name="grid" className="h-6 w-6 text-accent" />
+                  More
+                </Link>
+              </li>
             </ul>
           </nav>
         ) : null}
@@ -153,36 +194,42 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
   );
 }
 
-/** The six categories, with the names the API returns. */
+const TILE =
+  "flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-card border px-2 text-center text-small leading-tight";
+
+/** Featured categories: one tile per category, same destinations as the list filter. */
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) return null;
   return (
-    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-14">
+    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-10">
       <Container>
-        <h2 id="categories-title" className="text-display font-strong tracking-display">
-          Browse by category
-        </h2>
-        <p className="mt-2 max-w-[560px] text-base text-muted">
-          Six kinds of opportunity, each with the same labelled sources and deadlines.
-        </p>
-        <nav aria-label="Browse by category" className="mt-6">
-          <ul className="m-0 grid list-none grid-cols-3 gap-4 p-0 max-md:grid-cols-2 max-sm:grid-cols-1">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 id="categories-title" className="font-headline text-sub tracking-sub">
+            Featured categories
+          </h2>
+          <Link
+            href="/opportunities"
+            className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline"
+          >
+            View all
+            <Icon name="arrowRight" className="h-4 w-4" />
+          </Link>
+        </div>
+        <nav aria-label="Browse by category" className="mt-5">
+          <ul className="m-0 grid list-none grid-cols-6 gap-3 p-0 max-lg:grid-cols-3 max-sm:grid-cols-2">
             {categories.map((category) => (
               <li key={category.code}>
                 <Link
                   href={`/opportunities?category=${category.code}`}
-                  className="group block h-full rounded-card border border-border-panel bg-surface p-5 hover:border-ink hover:bg-row-hover"
+                  className="flex min-h-[112px] flex-col justify-between rounded-card bg-brand-dark p-4 text-white hover:bg-ink"
                 >
-                  <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-control bg-match-bg text-accent">
-                    <Icon name={CATEGORY_ICON[category.code] ?? "grid"} />
-                  </span>
-                  <span className="block text-title font-strong text-ink">{category.name}</span>
-                  {CATEGORY_SUMMARY[category.code] ? (
-                    <span className="mt-1 block text-base text-muted">{CATEGORY_SUMMARY[category.code]}</span>
-                  ) : null}
-                  <span className="mt-4 inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline">
-                    View {category.name.toLowerCase()}
-                    <Icon name="arrowRight" className="h-4 w-4" />
+                  <Icon
+                    name={CATEGORY_ICON[category.code] ?? "grid"}
+                    className="h-6 w-6 text-brand-dark-text"
+                  />
+                  <span className="flex items-end justify-between gap-2 text-ctl font-medium leading-tight">
+                    {category.name}
+                    <Icon name="arrowRight" className="h-4 w-4 shrink-0" />
                   </span>
                 </Link>
               </li>

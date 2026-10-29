@@ -117,6 +117,13 @@ h4 {
   font-weight: var(--font-weight-light);
 }
 
+/* Home page headlines (owner instruction 2026-10-29, D-47): bold Inter. Outside the layers on purpose, like the
+   heading rule above, so it wins over the light-weight heading default. */
+.font-headline {
+  font-family: var(--font-inter-bold), var(--font-sans);
+  font-weight: 700;
+}
+
 /* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */
 .tnum {
   font-feature-settings: "tnum" 1;

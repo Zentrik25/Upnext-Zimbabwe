@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout";
 import { CategoryGrid, Hero, TrustSection } from "@/components/home/sections";
 import { Icon } from "@/components/ui/icons";
-import { OpportunityRow } from "@/components/opportunities/parts";
+import { HomeListingRow } from "@/components/home/home-row";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
@@ -34,10 +34,10 @@ export default async function HomePage() {
         <JsonLd key={index} data={block} />
       ))}
       <Hero categories={categories} locations={locations} />
-      <section aria-labelledby="latest-title" className="border-b border-line py-14">
+      <section aria-labelledby="latest-title" className="border-b border-line py-10">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="latest-title" className="text-display font-strong tracking-display">
+            <h2 id="latest-title" className="font-headline text-sub tracking-sub">
               Latest opportunities
             </h2>
             <Link
@@ -50,11 +50,11 @@ export default async function HomePage() {
           </div>
           {rows.length > 0 ? (
             <div
-              className="mt-6 rounded-feature border border-border-panel bg-surface px-5 max-sm:px-3"
+              className="mt-6 overflow-hidden rounded-feature border border-border-panel bg-surface"
               data-testid="latest"
             >
               {rows.map((row) => (
-                <OpportunityRow
+                <HomeListingRow
                   key={row.id}
                   row={row}
                   save={{ signedIn: Boolean(user), saved: savedIds.has(row.id), returnTo: "/" }}
