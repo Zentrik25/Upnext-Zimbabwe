@@ -18,7 +18,9 @@ const TABS: { href: string; label: string; icon: IconName; match: (path: string)
   },
 ];
 
-/** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu. */
+/** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
+ *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
+ *  would multiply API load (and trip the per-address read limit in the browser suite). */
 export function BottomNav() {
   const pathname = usePathname();
   return (
@@ -34,6 +36,7 @@ export function BottomNav() {
               <li key={tab.label}>
                 <Link
                   href={tab.href}
+                  prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-[56px] flex-col items-center justify-center gap-0.5 border-t-2 text-small",
