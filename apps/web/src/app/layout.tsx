@@ -17,13 +17,13 @@ const inter = localFont({
   variable: "--font-inter",
   display: "swap",
 });
+// One weight (500, the design system's code and label weight) and no preload: pages that show no mono label
+// never fetch it (mobile transfer budget, P5-08).
 const sourceCode = localFont({
-  src: [
-    { path: "../fonts/source-code-pro-latin-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/source-code-pro-latin-500.woff2", weight: "500", style: "normal" },
-  ],
+  src: [{ path: "../fonts/source-code-pro-latin-500.woff2", weight: "500", style: "normal" }],
   variable: "--font-source-code",
   display: "swap",
+  preload: false,
 });
 
 // Applies a remembered Light or Dark choice before the first paint (no flash). Auto leaves the attribute off.
