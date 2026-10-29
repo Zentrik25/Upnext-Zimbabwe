@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type InputHTMLAttributes, type ReactNode } from "react";
-import { JobSearchArt } from "@/components/brand/job-search-art";
+import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Icon, type IconName } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
@@ -20,7 +20,7 @@ export function AuthPage({
       <div className="mx-auto w-full max-w-[460px] px-6 pt-8 pb-14 max-sm:px-4">
         <h1 className="text-center text-section font-strong tracking-section max-sm:text-sub">{title}</h1>
         <p className="mt-2 text-center text-base text-muted">{intro}</p>
-        <JobSearchArt className="mx-auto my-4 h-auto w-full max-w-[220px]" />
+        <JobSeekerArt className="mx-auto my-3 max-w-[260px]" />
         <div className="rounded-feature border border-border-panel bg-surface p-6 shadow-subtle max-sm:p-4">
           {children}
         </div>

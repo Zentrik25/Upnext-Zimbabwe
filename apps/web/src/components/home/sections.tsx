@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { JobSearchArt } from "@/components/brand/job-search-art";
+import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { SearchForm } from "@/components/ui/search-form";
@@ -25,15 +25,8 @@ function IconControl({ icon, children }: { icon: IconName; children: ReactNode }
   );
 }
 
-const CHIP_TONES = [
-  "bg-match-bg text-secondary-text border-border-interest",
-  "bg-good-bg text-good border-good/30",
-  "bg-urgent-bg text-urgent border-urgent/30",
-];
-
 /** Hero: headline, one honest sentence, the search that works against the real API and the category shortcuts. */
 export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
-  const floating = categories.slice(0, 3);
   const shortcuts = categories.slice(0, 4);
   return (
     <section aria-labelledby="home-title" className="border-b border-line bg-surface-pale">
@@ -53,31 +46,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
               Explore jobs, internships, scholarships and more, all in one place.
             </p>
           </div>
-          <div className="relative mx-auto w-full max-w-[420px] rounded-feature bg-match-bg p-3 max-sm:p-1">
-            <JobSearchArt className="h-auto w-full" />
-            <ul className="m-0 list-none p-0" aria-label="Popular categories">
-              {floating.map((c, i) => (
-                <li
-                  key={c.code}
-                  className={
-                    i === 0
-                      ? "absolute top-3 left-0 max-sm:hidden"
-                      : i === 1
-                        ? "absolute top-[34%] right-0 max-sm:hidden"
-                        : "absolute bottom-3 right-3 max-sm:hidden"
-                  }
-                >
-                  <Link
-                    href={`/opportunities?category=${c.code}`}
-                    className={`inline-flex min-h-[36px] items-center gap-2 rounded-card border px-3 text-small shadow-subtle ${CHIP_TONES[i] ?? CHIP_TONES[0]}`}
-                  >
-                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-4 w-4" />
-                    {c.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <JobSeekerArt priority className="mx-auto max-w-[440px] max-sm:max-w-full" />
         </div>
 
         <SearchForm
