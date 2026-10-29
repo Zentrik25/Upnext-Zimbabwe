@@ -23,6 +23,7 @@ export function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
+  headers.set("x-pathname", request.nextUrl.pathname); // the root layout drops the public chrome on /staff
   headers.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy", csp);
@@ -38,7 +39,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!api/|health/|staff/|static/|_next/static|_next/image|favicon.ico).*)",
+      source: "/((?!api/|health/|django-admin/|static/|_next/static|_next/image|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

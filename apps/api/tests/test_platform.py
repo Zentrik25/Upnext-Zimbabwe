@@ -256,6 +256,6 @@ def test_missing_secret_key_is_a_startup_error() -> None:
 
 
 def test_staff_and_api_responses_are_marked_noindex(client: APIClient) -> None:
-    for path in ("/api/v1/", "/health/live", "/staff/login/"):
+    for path in ("/api/v1/", "/health/live", "/django-admin/login/"):
         response = client.get(path)
         assert response["X-Robots-Tag"] == "noindex, nofollow", path

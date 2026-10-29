@@ -1,7 +1,7 @@
 """Routes under /api/v1/ (paths match docs/engineering/openapi/openapi.yaml)."""
 
 from django.conf import settings
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
 from api import account_views, employer_views, profile_views, public_views, report_views, views
@@ -118,6 +118,7 @@ urlpatterns = [
         public_views.OpportunityDetailView.as_view(),
         name="opportunity-detail",
     ),
+    path("staff/", include("staffapi.urls")),
     path("sitemap", public_views.SitemapView.as_view(), name="sitemap"),
     path("categories", public_views.CategoryListView.as_view(), name="category-list"),
     path("locations", public_views.LocationListView.as_view(), name="location-list"),

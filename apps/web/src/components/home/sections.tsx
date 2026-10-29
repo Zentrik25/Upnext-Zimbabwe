@@ -1,128 +1,205 @@
 import Link from "next/link";
-import { Monogram } from "@/components/brand/logo";
+import type { ReactNode } from "react";
+import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
-import { ButtonLink, SearchGroup } from "@/components/ui";
 import { Button } from "@/components/ui/button";
+import { SearchForm } from "@/components/ui/search-form";
+import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { BRAND } from "@/lib/brand";
-import { CATEGORY_SUMMARY, EMPLOYMENT } from "@/lib/filters";
+import { EMPLOYMENT } from "@/lib/filters";
 import { VERIFICATION } from "@/lib/format";
 
-/** Hero: headline, one honest sentence, and the search that works against the real API. */
-export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+const FIELD =
+  "block min-h-field w-full rounded-control border border-control-border bg-surface pl-10 pr-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
+const FIELD_SM = FIELD.replace("pl-10 pr-3", "pl-9 pr-1 max-sm:pl-8 max-sm:text-small");
+
+function IconControl({ icon, children }: { icon: IconName; children: ReactNode }) {
   return (
-    <section aria-labelledby="home-title" className="relative overflow-hidden border-b border-line">
-      {/* Decorative ruby-to-magenta accent (Stripe design system, hero decoration only): hidden from assistive
-          technology and simplified away on phones. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -right-40 h-[460px] w-[640px] rotate-[16deg] rounded-feature bg-linear-to-br from-ruby/15 via-magenta/15 to-magenta/0 max-md:hidden"
-      />
-      <Monogram className="pointer-events-none absolute -right-16 -bottom-20 h-[340px] w-auto text-surface-pale max-md:hidden" />
-      <Container className="relative pt-16 pb-14 max-sm:pt-10 max-sm:pb-10">
-        <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
-          Opportunities across Zimbabwe
-        </p>
-        <h1
-          id="home-title"
-          className="mt-3 max-w-[760px] text-hero font-strong leading-hero tracking-hero text-ink"
-        >
-          Your next opportunity starts here.
-        </h1>
-        <p className="mt-4 max-w-[600px] text-title leading-body text-muted">
-          Explore jobs, internships and career opportunities across Zimbabwe, all in one place.
-        </p>
-        <SearchGroup
+    <div className="relative">
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">
+        <Icon name={icon} className="h-[18px] w-[18px]" />
+      </span>
+      {children}
+    </div>
+  );
+}
+
+/** Hero: headline, one honest sentence, the search that works against the real API and the category shortcuts. */
+export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+  const shortcuts = categories.slice(0, 4);
+  return (
+    <section aria-labelledby="home-title" className="border-b border-line bg-surface-pale">
+      <Container className="pt-6 pb-6 max-sm:pt-5">
+        <div className="grid grid-cols-[1fr_1fr] items-center gap-4 max-sm:gap-2">
+          <div>
+            <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
+              Opportunities across Zimbabwe
+            </p>
+            <h1
+              id="home-title"
+              className="font-headline mt-2 text-display leading-[1.05] tracking-display text-ink max-sm:text-[34px]"
+            >
+              Find your next opportunity.
+            </h1>
+            <p className="mt-3 max-w-[460px] text-lead leading-body text-muted max-sm:text-ctl">
+              Explore jobs, internships, scholarships and more, all in one place.
+            </p>
+          </div>
+          <JobSeekerArt priority className="mx-auto max-w-[440px] max-sm:max-w-full" />
+        </div>
+
+        <SearchForm
+          bare
           action="/opportunities"
           method="get"
           aria-label="Search opportunities"
-          className="mt-8 max-w-none bg-surface"
+          className="mt-5 grid gap-3"
         >
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
           </label>
-          <SearchGroup.Input
-            id="home-q"
-            name="q"
-            type="search"
-            maxLength={100}
-            placeholder="Title, organisation or keyword"
-          />
-          <label htmlFor="home-category" className="sr-only">
-            Category
-          </label>
-          <SearchGroup.Select id="home-category" name="category" defaultValue="">
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </SearchGroup.Select>
-          <label htmlFor="home-location" className="sr-only">
-            Location
-          </label>
-          <SearchGroup.Select id="home-location" name="location" defaultValue="">
-            <option value="">Any location</option>
-            {locations
-              .filter((l) => l.kind !== "remote" && l.kind !== "country")
-              .map((l) => (
-                <option key={l.slug} value={l.slug}>
-                  {l.name}
-                </option>
-              ))}
-          </SearchGroup.Select>
-          <label htmlFor="home-type" className="sr-only">
-            Type of work
-          </label>
-          <SearchGroup.Select id="home-type" name="employment_type" defaultValue="">
-            <option value="">Any type</option>
-            {EMPLOYMENT.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </SearchGroup.Select>
-          <Button type="submit" size="search" className="max-sm:w-full">
+          <IconControl icon="search">
+            <input
+              id="home-q"
+              name="q"
+              type="search"
+              maxLength={100}
+              placeholder="Job title, organisation or keyword"
+              className={FIELD}
+            />
+          </IconControl>
+          <div className="grid grid-cols-3 gap-3 max-sm:gap-2">
+            <div>
+              <label htmlFor="home-location" className="sr-only">
+                Location
+              </label>
+              <IconControl icon="pin">
+                <select id="home-location" name="location" defaultValue="" className={FIELD_SM}>
+                  <option value="">Location</option>
+                  {locations
+                    .filter((l) => l.kind !== "remote" && l.kind !== "country")
+                    .map((l) => (
+                      <option key={l.slug} value={l.slug}>
+                        {l.name}
+                      </option>
+                    ))}
+                </select>
+              </IconControl>
+            </div>
+            <div>
+              <label htmlFor="home-category" className="sr-only">
+                Category
+              </label>
+              <IconControl icon="grid">
+                <select id="home-category" name="category" defaultValue="" className={FIELD_SM}>
+                  <option value="">Category</option>
+                  {categories.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </IconControl>
+            </div>
+            <div>
+              <label htmlFor="home-type" className="sr-only">
+                Type of work
+              </label>
+              <IconControl icon="briefcase">
+                <select id="home-type" name="employment_type" defaultValue="" className={FIELD_SM}>
+                  <option value="">Type</option>
+                  {EMPLOYMENT.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </IconControl>
+            </div>
+          </div>
+          <Button type="submit" className="min-h-field w-full gap-2">
+            <Icon name="search" className="h-[18px] w-[18px]" />
             Find opportunities
           </Button>
-        </SearchGroup>
-        <p className="mt-5">
-          <ButtonLink href="#categories" variant="secondary">
-            Explore categories
-          </ButtonLink>
-        </p>
+        </SearchForm>
+
+        {categories.length > 0 ? (
+          <nav aria-label="Quick categories" className="mt-4">
+            <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-6 [&>li]:min-w-[96px] [&>li]:flex-1">
+              <li>
+                <Link
+                  href="/opportunities"
+                  className={`${TILE} border-border-interest bg-match-bg text-secondary-text`}
+                >
+                  <Icon name="briefcase" className="h-6 w-6" />
+                  All
+                </Link>
+              </li>
+              {shortcuts.map((c) => (
+                <li key={c.code}>
+                  <Link
+                    href={`/opportunities?category=${c.code}`}
+                    className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
+                  >
+                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-6 w-6 text-accent" />
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href="#categories"
+                  className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
+                >
+                  <Icon name="grid" className="h-6 w-6 text-accent" />
+                  More
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        ) : null}
       </Container>
     </section>
   );
 }
 
-/** The six categories, with the names the API returns. */
+const TILE =
+  "flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-card border px-2 text-center text-small leading-tight";
+
+/** Featured categories: one tile per category, same destinations as the list filter. */
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) return null;
   return (
-    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-14">
+    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-10">
       <Container>
-        <h2 id="categories-title" className="text-display font-strong tracking-display">
-          Browse by category
-        </h2>
-        <p className="mt-2 max-w-[560px] text-base text-muted">
-          Six kinds of opportunity, each with the same labelled sources and deadlines.
-        </p>
-        <nav aria-label="Browse by category" className="mt-6">
-          <ul className="m-0 grid list-none grid-cols-3 gap-4 p-0 max-md:grid-cols-2 max-sm:grid-cols-1">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 id="categories-title" className="font-headline text-sub tracking-sub">
+            Featured categories
+          </h2>
+          <Link
+            href="/opportunities"
+            className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline"
+          >
+            View all
+            <Icon name="arrowRight" className="h-4 w-4" />
+          </Link>
+        </div>
+        <nav aria-label="Browse by category" className="mt-5">
+          <ul className="m-0 grid list-none grid-cols-6 gap-3 p-0 max-lg:grid-cols-3 max-sm:grid-cols-2">
             {categories.map((category) => (
               <li key={category.code}>
                 <Link
                   href={`/opportunities?category=${category.code}`}
-                  className="group block h-full rounded-card border border-border-panel bg-surface p-5 hover:border-ink hover:bg-row-hover"
+                  className="flex min-h-[112px] flex-col justify-between rounded-card bg-brand-dark p-4 text-white hover:bg-ink"
                 >
-                  <span className="block text-title font-strong text-ink">{category.name}</span>
-                  {CATEGORY_SUMMARY[category.code] ? (
-                    <span className="mt-1 block text-base text-muted">{CATEGORY_SUMMARY[category.code]}</span>
-                  ) : null}
-                  <span className="mt-4 inline-flex min-h-[24px] items-center text-ctl text-accent underline">
-                    View {category.name.toLowerCase()}
+                  <Icon
+                    name={CATEGORY_ICON[category.code] ?? "grid"}
+                    className="h-6 w-6 text-brand-dark-text"
+                  />
+                  <span className="flex items-end justify-between gap-2 text-ctl font-medium leading-tight">
+                    {category.name}
+                    <Icon name="arrowRight" className="h-4 w-4 shrink-0" />
                   </span>
                 </Link>
               </li>
@@ -185,48 +262,6 @@ export function TrustSection() {
           <strong className="text-ink">Report this opportunity</strong> link. A report is read by staff; it
           does not remove a listing by itself.
         </p>
-      </Container>
-    </section>
-  );
-}
-
-/** The employer portal as it exists: claim, review, post, track. */
-export function EmployerSection() {
-  return (
-    <section aria-labelledby="employer-title" className="bg-brand-dark py-14 text-brand-dark-text">
-      <Container className="grid grid-cols-[1.2fr_1fr] items-center gap-10 max-md:grid-cols-1">
-        <div>
-          <h2 id="employer-title" className="text-display font-strong tracking-display text-white">
-            For employers and organisations
-          </h2>
-          <p className="mt-3 max-w-[560px] text-title text-brand-dark-text">
-            Claim your organisation, get it verified by our editors and submit listings for review.
-            Applications stay on your own channel.
-          </p>
-          <p className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink href="/employers" variant="inverse">
-              Employer services
-            </ButtonLink>
-            <ButtonLink href="/employer" variant="outline-inverse">
-              Employer sign-in
-            </ButtonLink>
-          </p>
-        </div>
-        <ul className="m-0 grid list-none gap-3 p-0 text-base">
-          {[
-            "Organisation verification by an editor, with the method recorded",
-            "Draft, submit and amend listings; an editor publishes them",
-            "See each listing's status and its aggregate views and apply clicks",
-            "A public company profile once it has been reviewed",
-          ].map((line) => (
-            <li key={line} className="flex gap-3 border-t border-white/20 pt-3">
-              <span aria-hidden="true" className="text-white">
-                •
-              </span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
       </Container>
     </section>
   );

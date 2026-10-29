@@ -20,7 +20,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/UPNEXT Careers/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your next opportunity starts here.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Find your next opportunity.");
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Browse by category" })).toBeVisible();
@@ -41,8 +41,15 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     expect((await missing.json()).error.code).toBe("not_found");
   });
 
-  test("the staff sign-in page renders with its stylesheet through the proxy", async ({ page, request }) => {
-    const response = await page.goto("/staff/login/");
+  test("the staff console sign-in renders in the app shell and the administrator tool keeps its stylesheet", async ({
+    page,
+    request,
+  }) => {
+    const staff = await page.goto("/staff/sign-in");
+    expect(staff?.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "Staff sign-in" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Skip to main content" })).toHaveCount(0); // no public chrome
+    const response = await page.goto("/django-admin/login/");
     expect(response?.status()).toBe(200);
     await expect(page.locator("#id_username")).toBeVisible();
     const css = page.locator('link[rel="stylesheet"]').first();

@@ -22,7 +22,7 @@ from tests.factories import CHECKLIST, World, approved, new_draft, published, su
 
 pytestmark = pytest.mark.django_db
 
-CHANGELIST = "/staff/opportunities/opportunity/"
+CHANGELIST = "/django-admin/opportunities/opportunity/"
 
 
 def logged_in(user: User) -> Client:
@@ -52,9 +52,9 @@ def titles_in(client: Client, query: str = "") -> str:
 # --- access ------------------------------------------------------------------------------------------
 def test_only_staff_reach_the_staff_site(people: dict[str, User]) -> None:
     anonymous = Client().get(CHANGELIST)
-    assert anonymous.status_code == 302 and "/staff/login/" in anonymous["Location"]
+    assert anonymous.status_code == 302 and "/django-admin/login/" in anonymous["Location"]
     seeker = logged_in(people["seeker"]).get(CHANGELIST)
-    assert seeker.status_code == 302 and "/staff/login/" in seeker["Location"]
+    assert seeker.status_code == 302 and "/django-admin/login/" in seeker["Location"]
     assert logged_in(people["author"]).get(CHANGELIST).status_code == 200
 
 
@@ -74,25 +74,27 @@ def test_listing_page_is_read_only_and_state_cannot_be_posted(world: World, peop
 
 def test_taxonomies_are_for_administrators_only(people: dict[str, User]) -> None:
     for who, code in (("author", 403), ("editor", 403), ("admin", 200)):
-        assert logged_in(people[who]).get("/staff/catalog/sector/add/").status_code == code, who
-    assert logged_in(people["admin"]).get("/staff/catalog/detailschema/add/").status_code == 403
+        assert logged_in(people[who]).get("/django-admin/catalog/sector/add/").status_code == code, who
+    assert logged_in(people["admin"]).get("/django-admin/catalog/detailschema/add/").status_code == 403
 
 
 def test_organisations_can_be_created_by_contributors_but_edited_only_by_editors(
     world: World, people: dict[str, User]
 ) -> None:
     contributor = logged_in(people["author"])
-    assert contributor.get("/staff/catalog/organisation/add/").status_code == 200
+    assert contributor.get("/django-admin/catalog/organisation/add/").status_code == 200
     org_id = next(iter(world.organisations.values()))
     assert (
-        contributor.get(f"/staff/catalog/organisation/{org_id}/change/").status_code == 200
+        contributor.get(f"/django-admin/catalog/organisation/{org_id}/change/").status_code == 200
     )  # read-only view
     assert (
-        contributor.post(f"/staff/catalog/organisation/{org_id}/change/", {"name": "Hijack"}).status_code
+        contributor.post(
+            f"/django-admin/catalog/organisation/{org_id}/change/", {"name": "Hijack"}
+        ).status_code
         == 403
     )
     response = logged_in(people["editor"]).post(
-        f"/staff/catalog/organisation/{org_id}/change/",
+        f"/django-admin/catalog/organisation/{org_id}/change/",
         {"name": "Example Power Services Ltd", "website_url": ""},
     )
     assert response.status_code == 302
@@ -175,12 +177,10 @@ def test_titles_are_escaped_in_the_staff_interface(world: World, people: dict[st
 # --- creating and editing drafts ---------------------------------------------------------------------------
 def test_contributor_starts_a_draft_and_the_category_is_fixed(world: World, people: dict[str, User]) -> None:
     client = logged_in(people["author"])
-    add = "/staff/opportunities/opportunity/add/"
+    add = "/django-admin/opportunities/opportunity/add/"
     assert client.get(add).status_code == 200
-    assert (
-        logged_in(people["editor"]).get(add).status_code == 404
-        or logged_in(people["editor"]).get(add).status_code == 403
-    )
+    assert logged_in(people["editor"]).get(add).status_code == 200  # D-46: Editors author listings too
+    assert logged_in(people["seeker"]).get(add).status_code in (302, 403, 404)
     category = next(iter(world.organisations))  # placeholder to keep the dict used
     assert category
     from catalog.models import Category
@@ -469,7 +469,7 @@ def test_every_cms_action_is_audited_with_the_acting_role(world: World, people: 
 def test_staff_login_is_throttled_and_does_not_reveal_which_part_was_wrong(people: dict[str, User]) -> None:
     cache.clear()
     client = Client()
-    login = "/staff/login/?next=/staff/"
+    login = "/django-admin/login/?next=/django-admin/"
     statuses = []
     for _ in range(7):
         response = client.post(login, {"username": people["admin"].email, "password": "wrong-password-123"})

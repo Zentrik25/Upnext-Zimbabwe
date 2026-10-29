@@ -240,7 +240,7 @@ def test_the_staff_page_is_for_editors_and_administrators_only(
             s = c.session
             s["mfa_ok"] = True
             s.save()
-        return c.get("/staff/content-health/", secure=True)
+        return c.get("/django-admin/content-health/", secure=True)
 
     assert get(None).status_code == 302  # to the staff sign-in
     assert get(people["seeker"]).status_code in (302, 403)

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
@@ -16,6 +17,14 @@ const inter = localFont({
   ],
   variable: "--font-inter",
   display: "swap",
+});
+// The home page headline weight (700, owner instruction 2026-10-29, D-47): its own font, never preloaded, so the
+// other pages do not pay for it.
+const interBold = localFont({
+  src: [{ path: "../fonts/inter-latin-700.woff2", weight: "700", style: "normal" }],
+  variable: "--font-inter-bold",
+  display: "swap",
+  preload: false,
 });
 // One weight (500, the design system's code and label weight) and no preload: pages that show no mono label
 // never fetch it (mobile transfer budget, P5-08).
@@ -59,18 +68,32 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Reading request headers opts the tree into dynamic rendering so the per-request CSP nonce (proxy.ts)
   // is applied to Next.js' own scripts.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  // The staff console (/staff) is a separate application shell: no public header, footer or skip link.
+  const staff = (requestHeaders.get("x-pathname") ?? "").startsWith("/staff");
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
-    <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${interBold.variable} ${sourceCode.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        <SkipLink />
-        <SiteHeader />
-        <main id="main">{children}</main>
-        <SiteFooter />
+        {staff ? (
+          children
+        ) : (
+          <>
+            <SkipLink />
+            <SiteHeader />
+            <main id="main">{children}</main>
+            <SiteFooter />
+            <BottomNav />
+          </>
+        )}
       </body>
     </html>
   );

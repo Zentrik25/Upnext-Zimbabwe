@@ -321,12 +321,12 @@ def test_administrators_see_a_masked_outbox_and_can_retry_with_an_audit_trail(
     EmailOutbox.objects.filter(pk=row.pk).update(status=OutboxStatus.DEAD, last_error="smtp_error")
     client = Client()
     client.force_login(admin)
-    page = client.get("/staff/notifications/emailoutbox/").content.decode()
+    page = client.get("/django-admin/notifications/emailoutbox/").content.decode()
     assert "p***@e***" in page and "private.person" not in page
-    detail = client.get(f"/staff/notifications/emailoutbox/{row.pk}/change/").content.decode()
+    detail = client.get(f"/django-admin/notifications/emailoutbox/{row.pk}/change/").content.decode()
     assert "private.person" not in detail
     response = client.post(
-        "/staff/notifications/emailoutbox/",
+        "/django-admin/notifications/emailoutbox/",
         {"action": "retry_selected", "_selected_action": [str(row.pk)]},
         follow=True,
     )
@@ -336,8 +336,8 @@ def test_administrators_see_a_masked_outbox_and_can_retry_with_an_audit_trail(
     assert AuditEvent.objects.filter(action="outbox.retry", object_id=row.pk, actor_ref=admin.pk).exists()
     other = Client()
     other.force_login(editor)
-    assert other.get("/staff/notifications/emailoutbox/").status_code in (302, 403, 404)
-    assert Client().get("/staff/notifications/emailoutbox/").status_code == 302
+    assert other.get("/django-admin/notifications/emailoutbox/").status_code in (302, 403, 404)
+    assert Client().get("/django-admin/notifications/emailoutbox/").status_code == 302
 
 
 # --- signed bounce/complaint feed (P5-01) ---------------------------------------------------------------------------

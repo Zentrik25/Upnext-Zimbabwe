@@ -65,14 +65,15 @@ class StaffHardeningMiddleware:
     """Keeps the staff interface and the API out of search indexes, applies session lifetime limits and sends
     the staff Content-Security-Policy.
 
-    * `X-Robots-Tag: noindex, nofollow` on /staff/, /api/ and /health/ (the public pages live in Next.js).
+    * `X-Robots-Tag: noindex, nofollow` on /django-admin/, /api/ and /health/ (the pages live in Next.js).
     * Idle and absolute session limits (SECURITY_ARCHITECTURE §3, PROPOSED values, OQ-17): seekers 7 days idle
       and 30 days absolute; any account holding a staff role 30 minutes idle and 8 hours absolute. An expired
       session is logged out and the request continues as anonymous.
-    * `Content-Security-Policy` on /staff/ (Django Admin): scripts only from this origin.
+    * `Content-Security-Policy` on /django-admin/ (Django Admin): scripts only from this origin. The /staff/
+      console is a Next.js page with its own nonce policy.
     """
 
-    PREFIXES = ("/staff/", "/api/", "/health/")
+    PREFIXES = ("/django-admin/", "/api/", "/health/")
     TOUCH_EVERY = 60  # seconds between writes of the activity stamp
     STAFF_CSP = (
         "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
@@ -120,6 +121,6 @@ class StaffHardeningMiddleware:
         response = self.get_response(request)
         if request.path.startswith(self.PREFIXES):
             response["X-Robots-Tag"] = "noindex, nofollow"
-        if request.path.startswith("/staff/"):
+        if request.path.startswith("/django-admin/"):
             response["Content-Security-Policy"] = self.STAFF_CSP
         return response

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/account/sign-in-form";
-import { FormPage } from "@/components/account/parts";
+import { AuthPage } from "@/components/account/auth-parts";
 import { safeNext } from "@/lib/safe-next";
 import { getCurrentUser } from "@/lib/session";
 
@@ -16,8 +16,11 @@ export default async function SignInPage({
   const next = safeNext((await searchParams).next);
   if (await getCurrentUser()) redirect(next);
   return (
-    <FormPage title="Sign in" intro="Welcome back.">
+    <AuthPage
+      title="Welcome back"
+      intro="Sign in to your account to save opportunities and come back to them."
+    >
       <SignInForm next={next} />
-    </FormPage>
+    </AuthPage>
   );
 }

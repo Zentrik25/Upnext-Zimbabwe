@@ -216,7 +216,7 @@ def test_the_staff_site_sends_a_content_security_policy_and_noindex(
 ) -> None:
     from django.test import Client
 
-    response = Client().get("/staff/login/")
+    response = Client().get("/django-admin/login/")
     csp = response["Content-Security-Policy"]
     assert "script-src 'self'" in csp and "frame-ancestors 'none'" in csp and "unsafe-eval" not in csp
     assert "'unsafe-inline'" not in csp.split("script-src")[1].split(";")[0]
