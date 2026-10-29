@@ -25,7 +25,7 @@ from django.http import QueryDict
 from django.utils import timezone
 
 from catalog import markdown
-from catalog.models import Category, Location
+from catalog.models import Category, Location, MediaAsset
 from catalog.text import TextError, clean_single_line
 
 from .models import (
@@ -33,6 +33,7 @@ from .models import (
     ExperienceLevel,
     ListingStatus,
     OpportunityVersion,
+    SlugRedirect,
     VersionState,
     WorkMode,
 )
@@ -341,6 +342,24 @@ def get_detail(slug: str) -> OpportunityVersion | None:
         .prefetch_related("locations__location", "skills__skill", "sectors__sector", "sources")
         .first()
     )
+
+
+def moved_to(slug: str) -> str | None:
+    """The current address of a listing that used to be at `slug`, if that listing is publicly readable."""
+    redirect = SlugRedirect.objects.filter(old_slug__iexact=slug).select_related("opportunity").first()
+    if redirect is None or redirect.opportunity.slug is None:
+        return None
+    visible = visible_versions(detail=True).filter(opportunity=redirect.opportunity).exists()
+    return redirect.opportunity.slug if visible else None
+
+
+def public_asset(sha256: str) -> MediaAsset | None:
+    """An image, only if a publicly readable listing's live revision shows it (featured or social)."""
+    asset = MediaAsset.objects.filter(sha256=sha256).first()
+    if asset is None:
+        return None
+    shown = visible_versions(detail=True).filter(Q(featured_image=asset) | Q(social_image=asset))
+    return asset if shown.exists() else None
 
 
 def render_html(markdown_source: str | None) -> str | None:

@@ -87,6 +87,35 @@ class DirectPublishForm(ActionForm):
     )
 
 
+class ChangeSlugForm(ActionForm):
+    """Give a listing a new web address; the old one keeps redirecting to it (D-47)."""
+
+    needs_opportunity = True
+    slug = forms.CharField(max_length=80, label="New web address (slug)")
+
+    def __init__(self, *args: Any, opportunity: Any = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.opportunity = opportunity
+        if opportunity is not None and not self.is_bound:
+            self.fields["slug"].initial = opportunity.slug
+            self.fields[
+                "slug"
+            ].help_text = f"Now: {opportunity.slug}. Old links keep working through a permanent redirect."
+
+    def clean_slug(self) -> str:
+        from . import slugs
+
+        value = self.cleaned_data["slug"].strip().lower()
+        problem = slugs.format_error(value)
+        if problem:
+            raise forms.ValidationError(problem, code="invalid_format")
+        if self.opportunity is not None and value == self.opportunity.slug:
+            raise forms.ValidationError("That is already this listing's address.", code="unchanged")
+        if slugs.is_taken(value, exclude_opportunity_id=getattr(self.opportunity, "pk", None)):
+            raise forms.ValidationError(slugs.SLUG_TAKEN_MESSAGE, code="slug_taken")
+        return str(value)
+
+
 class CreateDraftForm(forms.Form):
     category = forms.ModelChoiceField(queryset=Category.objects.none())
     organisation = forms.ModelChoiceField(

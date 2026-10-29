@@ -22,6 +22,7 @@ from opportunities.errors import (
     InvalidTransition,
     PermissionDeniedError,
     SeparationOfDuties,
+    SlugTaken,
     ValidationFailed,
     WorkflowError,
 )
@@ -171,11 +172,14 @@ def test_a_requested_slug_is_honoured_at_first_publication(world: World, people:
 
 def test_a_taken_slug_is_refused_never_replaced(world: World, people: dict[str, User]) -> None:
     direct(world, people["editor"], "a", slug_request="same-address")
-    other = new_draft(
-        world, people["editor"], "jobs-1", **varied(world, "jobs-1", "b", slug_request="same-address")
+    with pytest.raises(SlugTaken) as caught:
+        new_draft(
+            world, people["editor"], "jobs-1", **varied(world, "jobs-1", "b", slug_request="Same-Address")
+        )
+    assert caught.value.http_status == 409
+    assert (
+        caught.value.fields["slug_request"][0][1] == "This slug already exists. Please enter a unique slug."
     )
-    with pytest.raises(ValidationFailed):
-        workflow.publish_direct(people["editor"], other.pk, expected_row_version=other.row_version)
 
 
 def test_an_invalid_slug_is_rejected_when_the_draft_is_saved(world: World, people: dict[str, User]) -> None:

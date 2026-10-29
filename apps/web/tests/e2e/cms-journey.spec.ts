@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { demoCode } from "./exec";
+import { solidPng, upload } from "./png";
 
 /**
  * Browser-level review of the Django Admin editorial CMS (/staff/) with the fictional demo staff accounts.
@@ -80,6 +81,11 @@ async function fillDraft(page: Page, tag: string) {
   await page.locator("#id_sources-0-url").fill(`https://water.example.org/vacancies/${tag}`);
   await page.locator("#id_sources-0-observed_on").fill(new Date().toISOString().slice(0, 10));
   await page.locator("#id_sources-0-is_primary").check();
+  // A new staff-created listing needs a featured image with alt text before it can be published (D-47).
+  await page
+    .locator("#id_featured_image_file")
+    .setInputFiles(upload("featured.png", solidPng(1200, 630, [83, 58, 253])));
+  await page.locator("#id_featured_image_alt").fill("Plain purple test picture");
 }
 
 const state: { editUrl: string; listingUrl: string; slug: string } = {
@@ -328,6 +334,24 @@ test("9. direct publishing (D-46): an Editor writes and publishes a listing with
     .locator("#id_responsibilities_md")
     .fill("Coordinate the programme and report to the director.");
   await e.page.locator("#id_seo_title").fill(`Programme Officer at Direct Publishing Trust ${TAG}`);
+  // Social & SEO: a separate social image, the editor's own wording and a unique address, with a live preview.
+  const address = `programme-officer-direct-${TAG}`;
+  const ogTitle = `Join Direct Publishing Trust as Programme Officer ${TAG}`;
+  const ogDescription = `We are hiring a Programme Officer ${TAG}. See the requirements and closing date.`;
+  await e.page.locator("#id_og_title").fill(ogTitle);
+  await e.page.locator("#id_og_description").fill(ogDescription);
+  await e.page.locator("input[name=social_image_source][value=custom]").check();
+  await e.page
+    .locator("#id_social_image_file")
+    .setInputFiles(upload("social.png", solidPng(1200, 630, [6, 27, 49])));
+  await e.page.locator("#id_social_image_alt").fill("Plain navy test card");
+  await e.page.locator("#id_slug_request").fill(address);
+  await expect(e.page.locator(".slug-status")).toHaveText("Available.");
+  for (const platform of ["whatsapp", "facebook", "linkedin", "x"])
+    await expect(e.page.locator(`.sp-${platform} .sp-title`)).toHaveText(ogTitle);
+  await expect(e.page.locator(".sp-facebook .sp-desc")).toHaveText(ogDescription);
+  await expect(e.page.locator(".sp-facebook .sp-domain")).toHaveText(/\S/);
+  await shot(e.page, "cms-27a-social-seo-editor");
   await e.page.locator("input[name=_save]").click();
   await expect(e.page).toHaveURL(/\/opportunity\/[0-9a-f-]+\/change\/$/);
   await shot(e.page, "cms-28-direct-draft-saved");
@@ -346,7 +370,36 @@ test("9. direct publishing (D-46): an Editor writes and publishes a listing with
   await expect(visitor).toHaveTitle(new RegExp(`Programme Officer at Direct Publishing Trust ${TAG}`));
   await shot(visitor, "cms-30-direct-published-public");
   const slug = new URL(visitor.url()).pathname.split("/").pop() ?? "";
+  expect(slug).toBe(address);
+  // The initial HTML (no JavaScript) carries the editor's Open Graph tags and the uploaded social image.
+  const html = await (await visitor.request.get(`/opportunities/${slug}`)).text();
+  const meta = (property: string) =>
+    new RegExp(`<meta[^>]+(?:property|name)="${property}"[^>]+content="([^"]*)"`).exec(html)?.[1];
+  expect(meta("og:title")).toBe(ogTitle);
+  expect(meta("og:description")).toBe(ogDescription);
+  expect(meta("og:type")).toBe("website");
+  expect(meta("og:url")).toContain(`/opportunities/${slug}`);
+  expect(meta("og:image:width")).toBe("1200");
+  expect(meta("og:image:height")).toBe("630");
+  expect(meta("og:image:alt")).toBe("Plain navy test card");
+  expect(meta("twitter:card")).toBe("summary_large_image");
+  expect(meta("twitter:title")).toBe(ogTitle);
+  const imageUrl = meta("og:image") ?? "";
+  expect(imageUrl).toMatch(/\/api\/v1\/media\/[0-9a-f]{64}\.(jpg|png)$/);
+  const image = await visitor.request.get(new URL(imageUrl).pathname);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toMatch(/^image\/(jpeg|png)$/);
+  await expect(visitor.getByRole("img", { name: "Plain purple test picture" })).toBeVisible();
+  await expect(visitor.getByRole("button", { name: "Copy link" })).toBeVisible();
   expect(await (await visitor.request.get("/sitemap.xml")).text()).toContain(`/opportunities/${slug}`);
+  // The address is taken now: the staff availability check answers 409 with the field message.
+  const taken = await e.page.request.get(
+    `/staff/opportunities/opportunity/slug-check/?slug=${address.toUpperCase()}`,
+  );
+  expect(taken.status()).toBe(409);
+  expect((await taken.json()).message).toBe("This slug already exists. Please enter a unique slug.");
+  await e.page.goto(directListing);
+  await expect(e.page.getByRole("button", { name: "Copy public link" })).toBeVisible();
   // Leave the shared stack as found: later specs count the public listings.
   await e.page.goto(directListing);
   await e.page.getByRole("link", { name: "Withdraw" }).click();

@@ -1,0 +1,17 @@
+og:title = Graduate Electrical Engineer at ABC Engineering mvtjgy3g | UPNEXT Careers
+og:description = ABC Engineering mvtjgy3g is recruiting a Graduate Electrical Engineer in Harare, Zimbabwe. View requirements, closing date and application details on UPNEXT Careers.
+og:url = http://localhost:3000/opportunities/graduate-electrical-engineer-abc-mvtjgy3g
+og:site_name = UPNEXT Careers
+og:locale = en
+og:image = http://localhost:3000/api/v1/media/b3bfae96ac2fe9c423a1874cbdf296936a296d5a6b0f18d4fe6c4bc980355481.jpg
+og:image:type = image/jpeg
+og:image:width = 1200
+og:image:height = 630
+og:image:alt = Test card: navy to pink gradient
+og:type = website
+twitter:card = summary_large_image
+twitter:title = Graduate Electrical Engineer at ABC Engineering mvtjgy3g | UPNEXT Careers
+twitter:description = ABC Engineering mvtjgy3g is recruiting a Graduate Electrical Engineer in Harare, Zimbabwe. View requirements, closing date and application details on UPNEXT Careers.
+twitter:image = http://localhost:3000/api/v1/media/b3bfae96ac2fe9c423a1874cbdf296936a296d5a6b0f18d4fe6c4bc980355481.jpg
+twitter:image:alt = Test card: navy to pink gradient
+canonical = http://localhost:3000/opportunities/graduate-electrical-engineer-abc-mvtjgy3g

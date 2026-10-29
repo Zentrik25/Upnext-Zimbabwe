@@ -47,7 +47,19 @@ export type Source = {
   is_primary: boolean;
 };
 
+export type ListingImage = {
+  url: string;
+  width: number;
+  height: number;
+  content_type: string;
+  alt: string;
+};
+
 export type OpportunityDetail = OpportunitySummary & {
+  og_title: string;
+  og_description: string;
+  featured_image: ListingImage | null;
+  social_image: ListingImage | null;
   description_html: string;
   responsibilities_html: string | null;
   requirements_html: string | null;

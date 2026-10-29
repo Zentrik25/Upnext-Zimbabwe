@@ -155,3 +155,37 @@ class DetailSchema(models.Model):
 
     def __str__(self) -> str:
         return f"{self.category_id}:v{self.version}"
+
+
+class MediaAsset(models.Model):
+    """An uploaded listing image, content-addressed and never changed or deleted (D-47).
+
+    Revisions of a listing refer to assets, so replacing an image on a new revision leaves the old one intact
+    for the revisions that still show it. Public access goes through `/api/v1/media/<sha256>` and only for an
+    asset that a publicly visible listing uses; nothing here is reachable otherwise."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sha256 = models.CharField(max_length=64, unique=True, editable=False)
+    content_type = models.CharField(max_length=20, editable=False)
+    width = models.PositiveIntegerField(editable=False)
+    height = models.PositiveIntegerField(editable=False)
+    data = models.BinaryField(editable=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", editable=False
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.sha256[:12]} {self.width}x{self.height}"
+
+    @property
+    def extension(self) -> str:
+        return "png" if self.content_type == "image/png" else "jpg"
+
+    @property
+    def public_path(self) -> str:
+        return f"/api/v1/media/{self.sha256}.{self.extension}"
+
+    @property
+    def size(self) -> int:
+        return len(bytes(self.data))

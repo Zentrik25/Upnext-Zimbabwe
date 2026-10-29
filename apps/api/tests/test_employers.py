@@ -79,7 +79,7 @@ def verified_member(
 def content(
     world: World, org: Organisation, example: str = "jobs-1", **over: Any
 ) -> tuple[str, dict[str, Any]]:
-    category, data = world.content(example, organisation_id=str(org.pk), **over)
+    category, data = world.employer_content(example, organisation_id=str(org.pk), **over)
     data.pop("sources", None)
     return category, data
 
@@ -362,7 +362,7 @@ def test_an_employer_cannot_post_for_another_organisation_or_in_other_categories
             content={"organisation_id": str(other.pk)},
         )
     assert organisation_fixed.value.code == "organisation_fixed"
-    _, tender = world.content("tenders-1", organisation_id=str(org.pk))
+    _, tender = world.employer_content("tenders-1", organisation_id=str(org.pk))
     tender.pop("sources", None)
     with pytest.raises(PermissionDeniedError) as scope:
         workflow.create_draft(employer, category_code="tenders", content=tender)

@@ -18,7 +18,7 @@ from typing import Any
 
 from django.utils.dateparse import parse_datetime
 
-from catalog.models import Location, Organisation, Sector, Skill
+from catalog.models import Location, MediaAsset, Organisation, Sector, Skill
 from catalog.text import TextError, clean_multiline, clean_single_line
 from catalog.validators import (
     parse_amount,
@@ -28,6 +28,7 @@ from catalog.validators import (
     validate_url,
 )
 
+from . import slugs
 from .errors import FieldErrors, ValidationFailed
 from .models import (
     ApplicationMethod,
@@ -54,6 +55,12 @@ ALLOWED_KEYS = frozenset(
         "seo_title",
         "seo_description",
         "slug_request",
+        "featured_image_id",
+        "featured_image_alt",
+        "social_image_id",
+        "social_image_alt",
+        "og_title",
+        "og_description",
         "locations",
         "location_text",
         "geographic_eligibility",
@@ -88,6 +95,10 @@ SINGLE_LINE = {
     "seo_title": 70,
     "seo_description": 160,
     "slug_request": 80,
+    "featured_image_alt": 200,
+    "social_image_alt": 200,
+    "og_title": 95,
+    "og_description": 200,
 }
 MULTI_LINE = {
     "description_md": 20000,
@@ -109,6 +120,10 @@ NULLABLE = {
     "seo_title",
     "seo_description",
     "slug_request",
+    "featured_image_alt",
+    "social_image_alt",
+    "og_title",
+    "og_description",
     "location_text",
     "geographic_eligibility",
     "work_mode",
@@ -193,8 +208,11 @@ def clean_draft(content: Mapping[str, Any]) -> tuple[dict[str, Any], FieldErrors
                 if len(cleaned) > limit:
                     _err(errors, key, "too_long", f"At most {limit} characters.")
                 out[key] = cleaned or (None if key in NULLABLE else "")
-    if out.get("slug_request") is not None and not SLUG_PATTERN.match(out["slug_request"]):
-        _err(errors, "slug_request", "invalid_format", "Use lower-case letters, digits and single hyphens.")
+    if out.get("slug_request") is not None:
+        out["slug_request"] = out["slug_request"].lower()  # addresses are compared without letter case
+        problem = slugs.format_error(out["slug_request"])
+        if problem:
+            _err(errors, "slug_request", "invalid_format", problem)
     for key, limit in MULTI_LINE.items():
         if key in content:
             value = content[key]
@@ -220,6 +238,19 @@ def clean_draft(content: Mapping[str, Any]) -> tuple[dict[str, Any], FieldErrors
                 out[key] = value
             else:
                 _err(errors, key, "invalid_choice", "Not a valid choice.")
+
+    for key in ("featured_image", "social_image"):
+        if f"{key}_id" in content:
+            value = content[f"{key}_id"]
+            if value is None or value == "":
+                out[key] = None
+            else:
+                asset_id = _as_uuid(value)
+                asset = MediaAsset.objects.filter(pk=asset_id).first() if asset_id else None
+                if asset is None:
+                    _err(errors, f"{key}_id", "not_found_reference", "Unknown image.")
+                else:
+                    out[key] = asset
 
     if "organisation_id" in content:
         org_id = _as_uuid(content["organisation_id"])
@@ -551,9 +582,20 @@ COPIED_COLUMNS = (
 )
 
 
-# Added by D-46. They join the snapshot (and so the hash) only when set, so every revision hashed before they
-# existed still verifies.
-OPTIONAL_COLUMNS = ("responsibilities_md", "seo_title", "seo_description", "slug_request")
+# Added by D-46 and D-47. They join the snapshot (and so the hash) only when set, so every revision hashed
+# before they existed still verifies.
+OPTIONAL_COLUMNS = (
+    "responsibilities_md",
+    "seo_title",
+    "seo_description",
+    "slug_request",
+    "featured_image_id",
+    "featured_image_alt",
+    "social_image_id",
+    "social_image_alt",
+    "og_title",
+    "og_description",
+)
 
 
 def _json_default(value: Any) -> Any:

@@ -42,7 +42,7 @@ def test_claim_listing_and_profile_are_decided_through_the_services(
     call_command("demo_employer_review", approve_claim="boss@example.org")
     claim = OrganisationClaim.objects.get(user=employer)
     assert claim.status == ClaimStatus.APPROVED and claim.organisation is not None
-    category, data = world.content("jobs-1", organisation_id=str(claim.organisation.pk))
+    category, data = world.employer_content("jobs-1", organisation_id=str(claim.organisation.pk))
     data.pop("sources", None)
     opp = listings.create(employer, claim.organisation.pk, category, data)
     listings.submit(employer, opp.pk, opp.row_version)

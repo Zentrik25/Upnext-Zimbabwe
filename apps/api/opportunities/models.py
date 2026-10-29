@@ -12,6 +12,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 from catalog.models import Category, Location, Organisation, Sector, Skill
@@ -164,6 +165,8 @@ class Opportunity(models.Model):
             ),
         ]
         constraints = [
+            # Addresses are compared case-insensitively (D-47); this enforces it in the database.
+            models.UniqueConstraint(Lower("slug"), name="opp_slug_lower_unique"),
             models.CheckConstraint(
                 condition=~Q(status__in=["published", "expired", "withdrawn"])
                 | Q(live_version__isnull=False, slug__isnull=False),
@@ -215,6 +218,18 @@ class OpportunityVersion(models.Model):
     seo_title = models.CharField(max_length=70, null=True, blank=True)
     seo_description = models.CharField(max_length=160, null=True, blank=True)
     slug_request = models.CharField(max_length=80, null=True, blank=True)
+    # social sharing (D-47): images are uploaded by staff, never generated; an empty social image means the
+    # featured image is shared; empty Open Graph text means the suggestion built from the listing is used
+    featured_image = models.ForeignKey(
+        "catalog.MediaAsset", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    featured_image_alt = models.CharField(max_length=200, null=True, blank=True)
+    social_image = models.ForeignKey(
+        "catalog.MediaAsset", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    social_image_alt = models.CharField(max_length=200, null=True, blank=True)
+    og_title = models.CharField(max_length=95, null=True, blank=True)
+    og_description = models.CharField(max_length=200, null=True, blank=True)
 
     # searchable facts
     work_mode = models.CharField(max_length=10, choices=WorkMode.choices, null=True, blank=True)
@@ -515,3 +530,24 @@ class SavedOpportunity(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.opportunity_id}"
+
+
+class SlugRedirect(models.Model):
+    """A slug a listing used to have. It stays reserved for that listing for good and redirects (permanently)
+    to the current address, so no old link breaks and no other listing can take the address (D-47)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    old_slug = models.CharField(max_length=80, editable=False)
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.PROTECT, related_name="old_slugs")
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", editable=False
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower("old_slug"), name="slugredirect_old_slug_lower_unique"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.old_slug} -> {self.opportunity_id}"

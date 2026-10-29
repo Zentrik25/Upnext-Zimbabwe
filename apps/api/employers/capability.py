@@ -48,7 +48,19 @@ def is_employer_listing(opportunity: Opportunity) -> bool:
     return EmployerListing.objects.filter(opportunity=opportunity).exists()
 
 
-STAFF_ONLY_FIELDS = frozenset({"seo_title", "seo_description", "slug_request"})
+STAFF_ONLY_FIELDS = frozenset(
+    {
+        "seo_title",
+        "seo_description",
+        "slug_request",
+        "featured_image_id",
+        "featured_image_alt",
+        "social_image_id",
+        "social_image_alt",
+        "og_title",
+        "og_description",
+    }
+)
 
 
 def enforce_create(actor: User, category_code: str, organisation: Organisation) -> None:

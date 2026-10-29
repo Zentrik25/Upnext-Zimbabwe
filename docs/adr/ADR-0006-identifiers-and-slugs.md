@@ -20,3 +20,6 @@ URLs are shared and indexed; titles change; ids must never be reused or edited.
 
 ## Alternatives considered
 Slug derived live from title (rejected: URLs change); numeric auto-increment ids in URLs (rejected: enumerable, not stable across environments).
+
+
+> **Amended by ADR-0025 (D-47):** a slug may be changed by an Editor or Administrator through transition T17; the old slug stays reserved and redirects permanently. Everything else here stands.

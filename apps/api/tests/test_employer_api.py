@@ -116,7 +116,7 @@ def test_the_whole_journey_register_claim_verify_post_review_publish_and_count(
     assert org["verified"] is True and org["role"] == "owner" and org["listing_count"] == 0
 
     # post a job
-    _, content = world.content("jobs-1")
+    _, content = world.employer_content("jobs-1")
     for key in ("sources", "organisation_id"):
         content.pop(key, None)
     made = send(web, "post", f"{J}/organisations/{org_id}/listings", {"category": "jobs", "content": content})
@@ -206,7 +206,7 @@ def test_other_peoples_ids_answer_404_and_never_reveal_existence(
     claim = send(mine, "post", f"{J}/claims", CLAIM).json()
     approve(people["editor"], claim["id"])
     org_id = mine.get(f"{J}/overview").json()["organisations"][0]["id"]
-    _, content = world.content("jobs-1")
+    _, content = world.employer_content("jobs-1")
     content.pop("sources", None)
     listing = send(
         mine, "post", f"{J}/organisations/{org_id}/listings", {"category": "jobs", "content": content}
@@ -272,7 +272,7 @@ def test_an_unverified_or_revoked_employer_cannot_post_through_the_api(
     claim = send(web, "post", f"{J}/claims", CLAIM).json()
     approve(people["editor"], claim["id"], role=MemberRole.RECRUITER)
     org_id = web.get(f"{J}/overview").json()["organisations"][0]["id"]
-    _, content = world.content("jobs-1")
+    _, content = world.employer_content("jobs-1")
     content.pop("sources", None)
     listing = send(
         web, "post", f"{J}/organisations/{org_id}/listings", {"category": "jobs", "content": content}

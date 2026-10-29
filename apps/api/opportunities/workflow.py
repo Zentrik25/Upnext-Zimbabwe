@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from access import policy
@@ -35,12 +35,14 @@ from core.context import get_request_id
 from employers import capability as employer_capability
 
 from . import content as content_mod
+from . import slugs
 from .duplicates import find_duplicates
 from .errors import (
     InvalidTransition,
     NotFoundError,
     PermissionDeniedError,
     SeparationOfDuties,
+    SlugTaken,
     StateConflict,
     ValidationFailed,
     WorkflowError,
@@ -53,6 +55,7 @@ from .models import (
     OpportunityVersion,
     PublishingEvent,
     ReviewDecision,
+    SlugRedirect,
     VerificationLevel,
     VerificationMethod,
     VerificationOutcome,
@@ -239,6 +242,10 @@ def _run[T](ctx: Context, actor: User, opportunity_id: uuid.UUID | str | None, b
     try:
         with transaction.atomic():
             return body()
+    except IntegrityError as exc:
+        if "slug" in str(exc).lower():  # a concurrent request took the address first (D-47)
+            raise _slug_taken_error() from exc
+        raise
     except WorkflowError as exc:
         if exc.code in {"separation_of_duties", "permission_denied", "approval_stale", "invalid_transition"}:
             audit.record(
@@ -297,6 +304,7 @@ def create_draft(actor: User, *, category_code: str, content: Mapping[str, Any])
         if "organisation" not in cleaned:
             errors.setdefault("organisation_id", []).append(("required", "Choose an organisation."))
         content_mod.raise_if_errors(errors)
+        _check_slug_request(cleaned, None)
         if employer:
             employer_capability.check_content(None, cleaned, content)
             employer_capability.enforce_create(actor, category_code, cleaned["organisation"])
@@ -336,6 +344,7 @@ def save_draft(
             raise PermissionDeniedError("permission_denied", "Only the author can edit this draft.")
         cleaned, errors = content_mod.clean_draft(content)
         content_mod.raise_if_errors(errors)
+        _check_slug_request(cleaned, opportunity)
         if employer:
             employer_capability.check_content(binding, cleaned, content)
         content_mod.apply_to_version(version, cleaned, actor_id=actor.pk)
@@ -585,7 +594,9 @@ def publish(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_versio
         version.save()
         _index(version)
         if opportunity.slug is None:
-            opportunity.slug = _assign_slug(opportunity, version.title)
+            opportunity.slug = _requested_slug(opportunity, version) or _assign_slug(
+                opportunity, version.title
+            )
             opportunity.first_published_at = now
         opportunity.status = ListingStatus.PUBLISHED
         opportunity.live_version = version
@@ -723,18 +734,67 @@ def publish_direct(
     return _run(ctx, actor, opportunity_id, body)
 
 
+def _slug_taken_error(field: str = "slug_request") -> SlugTaken:
+    return SlugTaken({field: [("slug_taken", slugs.SLUG_TAKEN_MESSAGE)]})
+
+
+def _check_slug_request(cleaned: Mapping[str, Any], opportunity: Opportunity | None) -> None:
+    """Refuse a requested address that is already in use, while the draft is saved (D-47)."""
+    requested = cleaned.get("slug_request")
+    if requested and slugs.is_taken(
+        requested, exclude_opportunity_id=opportunity.pk if opportunity else None
+    ):
+        raise _slug_taken_error()
+
+
+# --- T17 change_slug (D-47) ---------------------------------------------------------------------
+def change_slug(
+    actor: User, opportunity_id: uuid.UUID | str, *, new_slug: str, expected_row_version: int
+) -> Opportunity:
+    """Give a published listing a new address. The old address is recorded first, stays reserved for this
+    listing and redirects permanently to the new one. Editors and Administrators only; the content, its
+    revisions and their hashes are not touched."""
+    ctx = Context("T17", "opportunity.slug_change", Permission.OPP_SLUG_CHANGE)
+
+    def body() -> Opportunity:
+        _require(actor, ctx.permission)
+        opportunity = _lock(opportunity_id, expected_row_version)
+        if opportunity.slug is None or opportunity.status == ListingStatus.ARCHIVED:
+            raise InvalidTransition(
+                "Only a listing that has been published and is not archived has an address."
+            )
+        slug = (new_slug or "").strip()
+        problem = slugs.format_error(slug)
+        if problem:
+            raise ValidationFailed({"slug": [("invalid_format", problem)]})
+        if slug == opportunity.slug:
+            raise ValidationFailed({"slug": [("unchanged", "That is already this listing's address.")]})
+        if slugs.is_taken(slug, exclude_opportunity_id=opportunity.pk):
+            raise _slug_taken_error("slug")
+        old = opportunity.slug
+        SlugRedirect.objects.create(old_slug=old, opportunity=opportunity, changed_by=actor)
+        opportunity.slug = slug
+        opportunity.last_published_at = timezone.now()
+        _bump(opportunity)
+        _record(
+            ctx,
+            actor,
+            opportunity,
+            opportunity.live_version,
+            opportunity.status,
+            extra={"old_slug": old, "new_slug": slug},
+        )
+        return opportunity
+
+    return _run(ctx, actor, opportunity_id, body)
+
+
 def _requested_slug(opportunity: Opportunity, version: OpportunityVersion) -> str | None:
     """The slug staff asked for, if this is the first publication and it is free; never silently replaced."""
     if opportunity.slug is not None or not version.slug_request:
         return None
-    if Opportunity.objects.filter(slug=version.slug_request).exists():
-        raise ValidationFailed(
-            {
-                "slug_request": [
-                    ("slug_taken", "That address is already used by another listing; choose another.")
-                ]
-            }
-        )
+    if slugs.is_taken(version.slug_request, exclude_opportunity_id=opportunity.pk):
+        raise _slug_taken_error()
     return version.slug_request
 
 
@@ -1168,6 +1228,8 @@ def allowed_actions(actor: User, opportunity: Opportunity) -> list[str]:
             out.append("return")
         if policy.can_publish(me, facts):
             out.append("publish")
+    if opportunity.slug and opportunity.status != ListingStatus.ARCHIVED and has(Permission.OPP_SLUG_CHANGE):
+        out.append("change_slug")
     if opportunity.status == ListingStatus.PUBLISHED:
         out += [
             a for a, p in (("withdraw", Permission.OPP_WITHDRAW), ("expire", Permission.OPP_EXPIRE)) if has(p)
@@ -1192,6 +1254,7 @@ __all__ = [
     "approve",
     "archive",
     "chain_author_ids",
+    "change_slug",
     "create_draft",
     "discard",
     "effective_level",
