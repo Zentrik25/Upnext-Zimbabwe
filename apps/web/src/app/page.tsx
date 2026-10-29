@@ -34,10 +34,11 @@ export default async function HomePage() {
         <JsonLd key={index} data={block} />
       ))}
       <Hero categories={categories} locations={locations} />
-      <section aria-labelledby="latest-title" className="border-b border-line py-10">
+      <CategoryGrid categories={categories} />
+      <section aria-labelledby="latest-title" className="border-b border-line pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="latest-title" className="font-headline text-title tracking-title">
+            <h2 id="latest-title" className="font-headline text-[20px] tracking-title">
               Latest opportunities
             </h2>
             <Link
@@ -50,7 +51,7 @@ export default async function HomePage() {
           </div>
           {rows.length > 0 ? (
             <div
-              className="mt-6 overflow-hidden rounded-feature border border-border-panel bg-surface"
+              className="mt-3 overflow-hidden rounded-feature border border-border-panel bg-surface"
               data-testid="latest"
             >
               {rows.map((row) => (
@@ -70,7 +71,6 @@ export default async function HomePage() {
           )}
         </Container>
       </section>
-      <CategoryGrid categories={categories} />
       <TrustSection />
     </>
   );

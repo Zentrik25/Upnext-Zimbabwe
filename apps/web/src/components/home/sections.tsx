@@ -7,40 +7,93 @@ import { SearchForm } from "@/components/ui/search-form";
 import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { BRAND } from "@/lib/brand";
-import { EMPLOYMENT } from "@/lib/filters";
+import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VERIFICATION } from "@/lib/format";
 
+/** Every search control is one outlined box: 44px tall, 16px text (no zoom on focus in iOS), icon on the left. */
 const FIELD =
-  "block min-h-field w-full rounded-control border border-control-border bg-surface pl-10 pr-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
-const FIELD_SM = FIELD.replace("pl-10 pr-3", "pl-9 pr-1 max-sm:pl-8 max-sm:text-small");
+  "block min-h-search w-full rounded-control border border-control-border bg-surface pl-11 pr-3 text-base font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
+const SELECT = `${FIELD.replace("pr-3", "pr-10")} appearance-none truncate`;
 
-function IconControl({ icon, children }: { icon: IconName; children: ReactNode }) {
+function IconControl({ icon, select, children }: { icon: IconName; select?: boolean; children: ReactNode }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">
-        <Icon name={icon} className="h-[18px] w-[18px]" />
+      <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">
+        <Icon name={icon} className="h-5 w-5" />
       </span>
       {children}
+      {select ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink">
+          <Icon name="chevronDown" className="h-5 w-5" />
+        </span>
+      ) : null}
     </div>
   );
 }
 
-/** Hero: headline, one honest sentence, the search that works against the real API and the category shortcuts. */
-export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
-  const shortcuts = categories.slice(0, 4);
+function FilterSelect({
+  id,
+  name,
+  label,
+  icon,
+  all,
+  options,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  icon: IconName;
+  all: string;
+  options: readonly (readonly [string, string])[];
+}) {
   return (
-    <section aria-labelledby="home-title" className="border-b border-line bg-surface-pale">
-      <Container className="pt-6 pb-6 max-sm:pt-4">
-        <div className="grid grid-cols-[1.3fr_1fr] items-center gap-4 max-md:grid-cols-1 max-md:gap-2">
-          {/* Exactly two lines at every width: the first never wraps and the size follows the screen width. */}
-          <h1
-            id="home-title"
-            className="font-headline text-[clamp(16px,5.6vw,34px)] leading-[1.12] tracking-display text-ink"
-          >
-            <span className="block whitespace-nowrap">Find your next opportunity </span>
-            <span className="block">in Zimbabwe</span>
-          </h1>
-          <JobSeekerArt priority className="mx-auto max-w-[400px] max-md:max-w-[230px]" />
+    <div>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <IconControl icon={icon} select>
+        <select id={id} name={name} defaultValue="" className={SELECT}>
+          <option value="">{all}</option>
+          {options.map(([value, text]) => (
+            <option key={value} value={value}>
+              {text}
+            </option>
+          ))}
+        </select>
+      </IconControl>
+    </div>
+  );
+}
+
+/** Hero: eyebrow, three-line headline with the middle word in the accent colour, the illustration beside it, and
+ *  the search. The search works against the real API; Location and Category are always shown, the rest sit behind
+ *  "More filters" (a native disclosure, so it needs no script and its fields are sent whether open or closed). */
+export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+  const places = locations
+    .filter((l) => l.kind !== "remote" && l.kind !== "country")
+    .map((l) => [l.slug, l.name] as const);
+  return (
+    <section aria-labelledby="home-title" className="bg-surface-pale">
+      <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
+        <p className="font-headline text-ctl uppercase tracking-[0.24em] text-accent">Your next chapter</p>
+        <div className="mt-1 grid items-center">
+          <div className="relative z-10 col-start-1 row-start-1">
+            <h1
+              id="home-title"
+              className="font-headline text-[clamp(28px,8vw,64px)] leading-[1.06] tracking-[-0.035em] text-ink"
+            >
+              <span className="block whitespace-nowrap">Find your next </span>
+              <span className="block text-accent">opportunity </span>
+              <span className="block">in Zimbabwe.</span>
+            </h1>
+            <p className="mt-2 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
+              Jobs, internships and opportunities to move you forward.
+            </p>
+          </div>
+          {/* Behind the text, as in the mockup: it takes the right 46% and may touch the end of the headline. */}
+          <div className="col-start-1 row-start-1 -mr-[3%] w-[46%] max-w-[460px] justify-self-end">
+            <JobSeekerArt priority />
+          </div>
         </div>
 
         <SearchForm
@@ -48,7 +101,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
           action="/opportunities"
           method="get"
           aria-label="Search opportunities"
-          className="mt-5 grid gap-3"
+          className="mt-3 grid gap-2.5 md:max-w-[720px]"
         >
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
@@ -59,147 +112,103 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
               name="q"
               type="search"
               maxLength={100}
-              placeholder="Job title, organisation or keyword"
+              enterKeyHint="search"
+              autoComplete="off"
+              placeholder="Job title or keyword"
               className={FIELD}
             />
           </IconControl>
-          <div className="grid grid-cols-3 gap-3 max-sm:gap-2">
-            <div>
-              <label htmlFor="home-location" className="sr-only">
-                Location
-              </label>
-              <IconControl icon="pin">
-                <select id="home-location" name="location" defaultValue="" className={FIELD_SM}>
-                  <option value="">Location</option>
-                  {locations
-                    .filter((l) => l.kind !== "remote" && l.kind !== "country")
-                    .map((l) => (
-                      <option key={l.slug} value={l.slug}>
-                        {l.name}
-                      </option>
-                    ))}
-                </select>
-              </IconControl>
-            </div>
-            <div>
-              <label htmlFor="home-category" className="sr-only">
-                Category
-              </label>
-              <IconControl icon="grid">
-                <select id="home-category" name="category" defaultValue="" className={FIELD_SM}>
-                  <option value="">Category</option>
-                  {categories.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </IconControl>
-            </div>
-            <div>
-              <label htmlFor="home-type" className="sr-only">
-                Type of work
-              </label>
-              <IconControl icon="briefcase">
-                <select id="home-type" name="employment_type" defaultValue="" className={FIELD_SM}>
-                  <option value="">Type</option>
-                  {EMPLOYMENT.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </IconControl>
-            </div>
+          <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+            <FilterSelect
+              id="home-location"
+              name="location"
+              label="Location"
+              icon="pin"
+              all="Location"
+              options={places}
+            />
+            <FilterSelect
+              id="home-category"
+              name="category"
+              label="Category"
+              icon="grid"
+              all="Category"
+              options={categories.map((c) => [c.code, c.name] as const)}
+            />
           </div>
-          <Button type="submit" className="min-h-field w-full gap-2">
-            <Icon name="search" className="h-[18px] w-[18px]" />
+          <details className="group">
+            <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2.5 text-base text-accent [&::-webkit-details-marker]:hidden">
+              <Icon name="sliders" className="h-5 w-5" />
+              <span className="group-open:hidden">More filters</span>
+              <span className="hidden group-open:inline">Fewer filters</span>
+            </summary>
+            <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-3">
+              <FilterSelect
+                id="home-type"
+                name="employment_type"
+                label="Type of work"
+                icon="briefcase"
+                all="Type of work"
+                options={EMPLOYMENT}
+              />
+              <FilterSelect
+                id="home-mode"
+                name="work_mode"
+                label="Work arrangement"
+                icon="building"
+                all="Arrangement"
+                options={MODES}
+              />
+              <FilterSelect
+                id="home-deadline"
+                name="deadline_state"
+                label="Deadline"
+                icon="calendar"
+                all="Deadline"
+                options={DEADLINES}
+              />
+            </div>
+          </details>
+          <Button type="submit" className="relative min-h-[48px] w-full gap-3 text-base">
+            <Icon name="search" className="h-5 w-5" />
             Find opportunities
+            <Icon name="arrowRight" className="absolute right-4 h-5 w-5" />
           </Button>
         </SearchForm>
-
-        {categories.length > 0 ? (
-          <nav aria-label="Quick categories" className="mt-4">
-            <ul className="m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 md:grid md:grid-cols-6 [&>li]:min-w-[96px] [&>li]:flex-1">
-              <li>
-                <Link
-                  href="/opportunities"
-                  className={`${TILE} border-border-interest bg-match-bg text-secondary-text`}
-                >
-                  <Icon name="briefcase" className="h-6 w-6" />
-                  All
-                </Link>
-              </li>
-              {shortcuts.map((c) => (
-                <li key={c.code}>
-                  <Link
-                    href={`/opportunities?category=${c.code}`}
-                    className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
-                  >
-                    <Icon name={CATEGORY_ICON[c.code] ?? "grid"} className="h-6 w-6 text-accent" />
-                    {c.name}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="#categories"
-                  className={`${TILE} border-border-panel bg-surface text-ink hover:bg-row-hover`}
-                >
-                  <Icon name="grid" className="h-6 w-6 text-accent" />
-                  More
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        ) : null}
       </Container>
     </section>
   );
 }
 
-const TILE =
-  "flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-card border px-2 text-center text-small leading-tight";
-
-/** Featured categories: one tile per category, same destinations as the list filter. */
+/** Explore by category: one outlined tile per category (icon, name), same destinations as the list filter. */
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) return null;
   return (
-    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-10">
+    <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 id="categories-title" className="font-headline text-title tracking-title">
-            Featured categories
+        <div className="border-b border-line pb-5">
+          <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
+            Explore by category
           </h2>
-          <Link
-            href="/opportunities"
-            className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline"
-          >
-            View all
-            <Icon name="arrowRight" className="h-4 w-4" />
-          </Link>
-        </div>
-        <nav aria-label="Browse by category" className="mt-5">
-          <ul className="m-0 grid list-none grid-cols-6 gap-3 p-0 max-lg:grid-cols-3 max-sm:grid-cols-2">
-            {categories.map((category) => (
-              <li key={category.code}>
-                <Link
-                  href={`/opportunities?category=${category.code}`}
-                  className="flex min-h-[112px] flex-col justify-between rounded-card bg-brand-dark p-4 text-white hover:bg-ink"
-                >
-                  <Icon
-                    name={CATEGORY_ICON[category.code] ?? "grid"}
-                    className="h-6 w-6 text-brand-dark-text"
-                  />
-                  <span className="flex items-end justify-between gap-2 text-ctl font-medium leading-tight">
+          <nav aria-label="Browse by category" className="mt-3">
+            <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 max-sm:gap-2 md:grid-cols-6">
+              {categories.map((category) => (
+                <li key={category.code}>
+                  <Link
+                    href={`/opportunities?category=${category.code}`}
+                    className="flex min-h-[66px] items-center max-[400px]:min-h-[84px] max-[400px]:flex-col max-[400px]:justify-center max-[400px]:text-center gap-2.5 rounded-control border border-border-panel bg-surface px-3 text-small leading-tight text-ink break-words hover:bg-row-hover max-sm:gap-2 max-sm:px-2.5 sm:text-ctl"
+                  >
+                    <Icon
+                      name={CATEGORY_ICON[category.code] ?? "grid"}
+                      className="h-6 w-6 shrink-0 text-accent max-sm:h-[22px] max-sm:w-[22px]"
+                    />
                     {category.name}
-                    <Icon name="arrowRight" className="h-4 w-4 shrink-0" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </Container>
     </section>
   );
@@ -209,7 +218,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
 export function TrustSection() {
   const levels = Object.values(VERIFICATION);
   return (
-    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-14">
+    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-8">
       <Container>
         <h2 id="trust-title" className="text-display font-strong tracking-display">
           How listings are checked

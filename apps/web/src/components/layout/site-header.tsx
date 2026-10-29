@@ -7,15 +7,27 @@ import { MobileMenu, type MenuItem } from "./mobile-menu";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
-  // Phones: the same destinations as the header bar, inside the menu.
-  const menuItems: MenuItem[] = [
-    { href: "/opportunities", label: "Opportunities" },
-    { href: "/employers", label: "For employers" },
+  // Phones: the places a visitor goes most, then the company pages; signed-in destinations come last.
+  const menuGroups: MenuItem[][] = [
+    [
+      { href: "/", label: "Home", icon: "home" },
+      { href: "/opportunities", label: "Jobs", icon: "briefcase" },
+      { href: "/opportunities?category=internships", label: "Internships", icon: "users" },
+      { href: "/opportunities?category=scholarships", label: "Scholarships", icon: "cap" },
+      { href: "/opportunities?category=tenders", label: "Tenders", icon: "doc" },
+    ],
+    [
+      { href: "/employers", label: "For Employers", icon: "building" },
+      { href: "/about", label: "About Us", icon: "info" },
+      { href: "/contact", label: "Contact Us", icon: "mail" },
+    ],
     ...(user
       ? [
-          { href: "/for-you", label: "For you" },
-          { href: "/saved", label: "Saved" },
-          { href: "/account", label: "Account" },
+          [
+            { href: "/for-you", label: "For you", icon: "home" as const },
+            { href: "/saved", label: "Saved", icon: "bookmark" as const },
+            { href: "/account", label: "Account", icon: "user" as const },
+          ],
         ]
       : []),
   ];
@@ -25,7 +37,7 @@ export async function SiteHeader() {
         <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex min-h-[44px] items-center">
           <Logo />
         </Link>
-        <MobileMenu items={menuItems} signedIn={Boolean(user)} />
+        <MobileMenu groups={menuGroups} signedIn={Boolean(user)} />
         <nav
           aria-label="Primary"
           className="flex flex-wrap items-center justify-end gap-x-[22px] max-sm:hidden"
