@@ -35,7 +35,7 @@ export default async function HomePage() {
       ))}
       <Hero categories={categories} locations={locations} />
       <CategoryGrid categories={categories} />
-      <section aria-labelledby="latest-title" className="border-b border-line py-10">
+      <section aria-labelledby="latest-title" className="border-b border-line pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 id="latest-title" className="font-headline text-[20px] tracking-title">
@@ -51,7 +51,7 @@ export default async function HomePage() {
           </div>
           {rows.length > 0 ? (
             <div
-              className="mt-6 overflow-hidden rounded-feature border border-border-panel bg-surface"
+              className="mt-3 overflow-hidden rounded-feature border border-border-panel bg-surface"
               data-testid="latest"
             >
               {rows.map((row) => (

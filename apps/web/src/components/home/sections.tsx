@@ -74,9 +74,9 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
     .map((l) => [l.slug, l.name] as const);
   return (
     <section aria-labelledby="home-title" className="bg-surface-pale">
-      <Container className="pt-5 pb-[18px] md:pt-8 md:pb-10">
+      <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
         <p className="font-headline text-ctl uppercase tracking-[0.24em] text-accent">Your next chapter</p>
-        <div className="mt-3 grid items-center">
+        <div className="mt-1 grid items-center">
           <div className="relative z-10 col-start-1 row-start-1">
             <h1
               id="home-title"
@@ -86,7 +86,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
               <span className="block text-accent">opportunity </span>
               <span className="block">in Zimbabwe.</span>
             </h1>
-            <p className="mt-3 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
+            <p className="mt-2 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
               Jobs, internships and opportunities to move you forward.
             </p>
           </div>
@@ -101,7 +101,7 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
           action="/opportunities"
           method="get"
           aria-label="Search opportunities"
-          className="mt-5 grid gap-3 md:max-w-[720px]"
+          className="mt-3 grid gap-2.5 md:max-w-[720px]"
         >
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
@@ -184,13 +184,13 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) return null;
   return (
-    <section id="categories" aria-labelledby="categories-title" className="pt-8">
+    <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
-        <div className="border-b border-line pb-8">
+        <div className="border-b border-line pb-5">
           <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
             Explore by category
           </h2>
-          <nav aria-label="Browse by category" className="mt-4">
+          <nav aria-label="Browse by category" className="mt-3">
             <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 max-sm:gap-2 md:grid-cols-6">
               {categories.map((category) => (
                 <li key={category.code}>
@@ -218,7 +218,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
 export function TrustSection() {
   const levels = Object.values(VERIFICATION);
   return (
-    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-14">
+    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-8">
       <Container>
         <h2 id="trust-title" className="text-display font-strong tracking-display">
           How listings are checked
