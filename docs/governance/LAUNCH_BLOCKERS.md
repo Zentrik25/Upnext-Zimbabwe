@@ -61,6 +61,9 @@ Release candidate `06dfafe3dfc7287cd661074066e965ea14adf846` is accepted by the 
 | B-10 | — | Manual accessibility audit |
 | Brand | `docs/design/WORDMARK_VECTORISATION.md` | Vector wordmark from the designer, or owner acceptance of the typeset stand-in (O-5) |
 
+### Update 2026-10-29: legal pages built (B-02, B-03)
+The Privacy Policy and Terms of Service are written and implemented (`/privacy`, `/terms`, PR for D-44) with versioning, accuracy tests and a publication gate (`UPNEXT_LEGAL_APPROVED`, off). The operator is named (Zentrik Solutions (Pvt) Ltd) and the privacy contact is support@upnext.co.zw (D-44, mailbox existence unconfirmed: B-03). **B-02 stays open:** operator address and registration, POTRAZ licence and DPO, hosting and backup locations, retention periods and the adviser's answers are outstanding (`docs/legal/LEGAL_APPROVAL_CHECKLIST.md`).
+
 ### GO / NO-GO gates (a launch is GO only when every NO-GO line below is cleared)
 
 | Gate | Cleared when | State |

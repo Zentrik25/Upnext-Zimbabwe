@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getSitemapEntries } from "@/lib/catalog";
 import { absolute, STATIC_PATHS } from "@/lib/site";
+import { legalPublished } from "@/content/legal/operator";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,11 @@ export const dynamic = "force-dynamic";
  * If the API cannot be reached the file lists the static pages only.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const fixed = STATIC_PATHS.map((path) => ({ url: absolute(path === "/" ? "/" : path) }));
+  // The legal pages are listed only once the owner has recorded their approval (UPNEXT_LEGAL_APPROVED).
+  const open = legalPublished();
+  const fixed = STATIC_PATHS.filter((path) => open || (path !== "/privacy" && path !== "/terms")).map(
+    (path) => ({ url: absolute(path === "/" ? "/" : path) }),
+  );
   const result = await getSitemapEntries();
   const listings = result.ok
     ? result.data.data.map((entry) => ({

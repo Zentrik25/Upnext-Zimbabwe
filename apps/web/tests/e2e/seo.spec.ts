@@ -33,8 +33,11 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(response.headers()["content-type"]).toContain("xml");
     const xml = await response.text();
     const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
-    for (const path of ["", "/opportunities", "/about", "/contact", "/privacy", "/terms"])
+    for (const path of ["", "/opportunities", "/about", "/contact"])
       expect(urls.some((u) => u.replace(/\/$/, "").endsWith(path))).toBe(true);
+    // The legal pages are listed only after the owner records approval (UPNEXT_LEGAL_APPROVED); CI never sets it.
+    for (const path of ["/privacy", "/terms"])
+      expect(urls.some((u) => u.replace(/\/$/, "").endsWith(path))).toBe(false);
     const listings = urls.filter((u) => /\/opportunities\/[a-z0-9-]+$/.test(u));
     const api = await (await request.get("/api/v1/opportunities?limit=50")).json();
     expect(listings).toHaveLength(api.data.length);
@@ -153,19 +156,25 @@ test.describe("home and static pages (SC-01, SC-14)", () => {
     const hrefs = await page
       .locator('a[href^="mailto:"]')
       .evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-    expect(new Set(hrefs)).toEqual(new Set(["mailto:info@upnext.co.zw"]));
+    expect(new Set(hrefs)).toEqual(new Set(["mailto:info@upnext.co.zw", "mailto:support@upnext.co.zw"]));
   });
 
   for (const path of ["/privacy", "/terms"]) {
-    test(`${path} is a draft for review: marked as such, not indexed, nothing claims legal approval`, async ({
+    test(`${path}: no draft presentation or placeholders, not indexed until the owner records approval, nothing claims legal approval`, async ({
       page,
     }) => {
       await page.goto(path);
-      await expect(page.getByTestId("draft-notice")).toContainText("not been approved");
-      expect(await robotsMeta(page)).toContain("noindex");
+      await expect(page.getByTestId("draft-notice")).toHaveCount(0);
+      expect(await robotsMeta(page)).toContain("noindex"); // UPNEXT_LEGAL_APPROVED is not set in CI
       const text = (await page.locator("main").innerText()).toLowerCase();
-      expect(text).not.toMatch(/legally (approved|reviewed|compliant)|compliant with/);
-      expect(text).toContain("[");
+      expect(text).not.toMatch(
+        /legally (approved|reviewed|compliant)|compliant with|\bdraft\b|to be confirmed/,
+      );
+      expect(text).not.toMatch(/\[(?!chapter )[^\]]*\]/);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        "href",
+        `https://upnext.co.zw${path}`,
+      );
     });
   }
 
