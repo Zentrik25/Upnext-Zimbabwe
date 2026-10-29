@@ -19,7 +19,7 @@ from tests.test_admin import logged_in
 
 pytestmark = pytest.mark.django_db
 
-CHANGELIST = "/staff/reports/listingreport/"
+CHANGELIST = "/django-admin/reports/listingreport/"
 NOTE = "Checked the source page and called the employer."
 
 

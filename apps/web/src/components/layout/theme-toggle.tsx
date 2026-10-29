@@ -43,6 +43,10 @@ export function applyTheme(choice: ThemeChoice) {
   listeners.forEach((listener) => listener());
 }
 
+export function useThemeChoice(): ThemeChoice {
+  return useSyncExternalStore(subscribe, stored, () => "light" as ThemeChoice);
+}
+
 /** Light is the default on every device; choosing Dark is remembered in this browser only (no cookie, nothing sent). */
 export function ThemeToggle({ className }: { className?: string }) {
   const choice = useSyncExternalStore(subscribe, stored, () => "light" as ThemeChoice);

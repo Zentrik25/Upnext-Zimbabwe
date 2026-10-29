@@ -244,8 +244,13 @@ def test_employers_cannot_reach_the_staff_site_or_review_actions(
     web = signed_in(employer)
     claim = send(web, "post", f"{J}/claims", CLAIM).json()
     approve(people["editor"], claim["id"])
-    assert web.get("/staff/", follow=False).status_code in (301, 302, 403)
-    assert send(web, "post", "/staff/employers/organisationclaim/", {}).status_code in (302, 403, 404, 405)
+    assert web.get("/django-admin/", follow=False).status_code in (301, 302, 403)
+    assert send(web, "post", "/django-admin/employers/organisationclaim/", {}).status_code in (
+        302,
+        403,
+        404,
+        405,
+    )
     me = web.get("/api/v1/me").json()
     assert me["roles"] == []
 

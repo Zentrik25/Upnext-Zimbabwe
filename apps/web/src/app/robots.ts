@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/staff/",
+          "/django-admin/",
           "/api/",
           "/health/",
           "/account",

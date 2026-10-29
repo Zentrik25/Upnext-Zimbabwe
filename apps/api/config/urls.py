@@ -16,12 +16,12 @@ admin.site.login_form = ThrottledAdminAuthenticationForm
 urlpatterns = [
     path("health/live", core_views.live, name="health-live"),
     path("health/ready", core_views.ready, name="health-ready"),
-    path("staff/mfa/", staff_mfa.mfa_view, name="staff-mfa"),
+    path("django-admin/mfa/", staff_mfa.mfa_view, name="staff-mfa"),
     path(
-        "staff/content-health/",
+        "django-admin/content-health/",
         admin.site.admin_view(staff_views.content_health),
         name="staff-content-health",
     ),
-    path("staff/", admin.site.urls),
+    path("django-admin/", admin.site.urls),
     path("api/v1/", include("api.v1.urls")),
 ]

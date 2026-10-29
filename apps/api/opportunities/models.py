@@ -266,6 +266,10 @@ class OpportunityVersion(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     published_at = models.DateTimeField(null=True, blank=True)
+    # True when a staff author published this revision on their own authority (D-46). Set while the revision
+    # is still a draft, frozen with it; the database triggers accept a self-approval only for such a revision,
+    # only for an active Editor or Administrator on a listing that no employer owns.
+    direct_publication = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

@@ -113,16 +113,21 @@ def test_contributor_without_editor_authority_cannot_approve(world: World, peopl
         workflow.approve(people["seeker"], opp.pk, expected_row_version=opp.row_version, checklist=CHECKLIST)
 
 
-def test_editor_cannot_create_or_edit_content(world: World, people: dict[str, User]) -> None:
-    """No role implies Contributor (AC-EDIT-05)."""
+def test_editors_write_their_own_drafts_but_not_other_peoples(world: World, people: dict[str, User]) -> None:
+    """D-46 replaces AC-EDIT-05: Editors and Administrators author listings; a draft stays its author's."""
     _, content = world.content("jobs-1")
-    with pytest.raises(PermissionDeniedError):
-        workflow.create_draft(people["editor"], category_code="jobs", content=content)
-    opp = new_draft(world, people["author"])
+    own = workflow.create_draft(people["editor"], category_code="jobs", content=content)
+    own.refresh_from_db()
+    workflow.save_draft(
+        people["editor"], own.pk, expected_row_version=own.row_version, content={"title": "Changed"}
+    )
+    theirs = new_draft(world, people["author"])
     with pytest.raises(PermissionDeniedError):
         workflow.save_draft(
-            people["editor"], opp.pk, expected_row_version=opp.row_version, content={"title": "Changed"}
+            people["editor"], theirs.pk, expected_row_version=theirs.row_version, content={"title": "Changed"}
         )
+    with pytest.raises(PermissionDeniedError):
+        workflow.create_draft(people["seeker"], category_code="jobs", content=content)
 
 
 # --- the author may publish only after another person approved the exact revision (AC-EDIT-04) ------

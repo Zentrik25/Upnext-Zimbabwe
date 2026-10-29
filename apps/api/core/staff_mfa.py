@@ -1,8 +1,10 @@
-"""Second step for the staff site (/staff/): a gate in front of Django Admin plus the verify/enrol page.
+"""Second step for Django Admin (/django-admin/): a gate in front of it plus the verify/enrol page.
+
+The staff console (/staff/, Next.js) gives the same proof through /api/v1/staff/mfa/*; the flag is shared.
 
 Any account that holds a staff role must prove a TOTP or recovery code in the current session before any
-other /staff/ page is served (OQ-16 provisional default P3-07). The flag lives in the session, so it cannot be
-reached by signing in some other way (for example through the API).
+other /django-admin/ page, or any /api/v1/staff/ endpoint, is served (OQ-16 default P3-07). The flag
+lives in the session and is set only after a valid code, so plain sign-in through the API never sets it.
 """
 
 from __future__ import annotations
@@ -22,8 +24,9 @@ from accounts import mfa
 from accounts.models import UserSession
 
 SESSION_FLAG = "mfa_ok"
-OPEN_PATHS = ("/staff/login/", "/staff/logout/", "/staff/mfa/")
-LANDING = "/staff/"
+ADMIN_PREFIX = "/django-admin/"
+OPEN_PATHS = (ADMIN_PREFIX + "login/", ADMIN_PREFIX + "logout/", ADMIN_PREFIX + "mfa/")
+LANDING = ADMIN_PREFIX
 
 
 def _is_staff_user(user: Any) -> bool:
@@ -37,7 +40,7 @@ class StaffMfaMiddleware:
     def __call__(self, request: HttpRequest) -> HttpResponse:
         if (
             settings.UPNEXT_STAFF_MFA_REQUIRED
-            and request.path.startswith("/staff/")
+            and request.path.startswith(ADMIN_PREFIX)
             and not request.path.startswith(OPEN_PATHS)
             and _is_staff_user(getattr(request, "user", None))
             and not request.session.get(SESSION_FLAG)
@@ -53,7 +56,7 @@ def _safe_next(request: HttpRequest) -> str:
     candidate = request.POST.get("next") or request.GET.get("next") or LANDING
     allowed = url_has_allowed_host_and_scheme(
         candidate, allowed_hosts={request.get_host()}
-    ) and candidate.startswith("/staff/")
+    ) and candidate.startswith(ADMIN_PREFIX)
     return candidate if allowed else LANDING
 
 

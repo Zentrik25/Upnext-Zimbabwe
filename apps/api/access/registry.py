@@ -31,6 +31,7 @@ class Permission(StrEnum):
     OPP_REVIEW_RETURN = "opp.review.return"
     OPP_VERIFY_RECORD = "opp.verify.record"
     OPP_PUBLISH = "opp.publish"
+    OPP_PUBLISH_DIRECT = "opp.publish_direct"
     OPP_SCHEDULE = "opp.schedule"
     OPP_TAKEDOWN = "opp.takedown"
     OPP_WITHDRAW = "opp.withdraw"
@@ -64,8 +65,17 @@ PUBLIC_PERMISSIONS: frozenset[str] = frozenset({P.OPP_READ_PUBLIC})
 # Held by every authenticated, active account (seekers and staff alike).
 ACCOUNT_PERMISSIONS: frozenset[str] = frozenset({P.ME_PROFILE, P.ME_SAVED, P.ME_SESSIONS, P.ME_DELETE})
 
+# Editors and Administrators write their own listings (D-46) and may publish a staff-created listing without a
+# second person's approval (`opp.publish_direct`); employer-submitted listings never qualify (see
+# workflow.publish_direct).
 _EDITOR_CODES = frozenset(
     {
+        P.OPP_DRAFT_CREATE,
+        P.OPP_DRAFT_EDIT_OWN,
+        P.OPP_SUBMIT,
+        P.OPP_DISCARD_OWN,
+        P.OPP_AMEND,
+        P.OPP_PUBLISH_DIRECT,
         P.OPP_REVIEW_APPROVE,
         P.OPP_REVIEW_REJECT,
         P.OPP_REVIEW_RETURN,

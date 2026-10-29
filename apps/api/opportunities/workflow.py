@@ -33,6 +33,7 @@ from catalog.models import Category, DetailSchema, DetailSchemaStatus
 from catalog.validators import make_slug
 from core.context import get_request_id
 from employers import capability as employer_capability
+from employers.models import EmployerListing
 
 from . import content as content_mod
 from .duplicates import find_duplicates
@@ -346,6 +347,39 @@ def save_draft(
     return _run(ctx, actor, opportunity_id, body)
 
 
+def _validate_for_submission(
+    version: OpportunityVersion, duplicate_acknowledgement: Mapping[str, Any] | None
+) -> list[Any]:
+    """Publishability and duplicate checks shared by submission and direct publication."""
+    errors = validate_publishable(version)
+    duplicates = find_duplicates(version)
+    hard = [d for d in duplicates if d.level == "hard"]
+    if hard:
+        ack = duplicate_acknowledgement or {}
+        reason = str(ack.get("reason", "")).strip()
+        if str(ack.get("duplicate_of", "")) not in {d.opportunity_id for d in hard} or len(reason) < 10:
+            named = "; ".join(f"{d.title or 'untitled'} ({d.opportunity_id}): {d.reason}" for d in hard)
+            errors.setdefault("duplicate_acknowledgement", []).append(
+                (
+                    "duplicate_detected",
+                    f"This looks like an existing listing: {named}. If it is a separate listing, give "
+                    "its id and explain why.",
+                )
+            )
+        else:
+            version.duplicate_acknowledgement = {
+                "duplicate_of": str(ack["duplicate_of"]),
+                "reason": reason,
+            }
+            version.save()
+    if errors:
+        codes = {c for items in errors.values() for c, _ in items}
+        if codes == {"duplicate_detected"}:
+            raise WorkflowError("duplicate_detected", "Possible duplicate listing.", fields=errors)
+        raise ValidationFailed(errors)
+    return duplicates
+
+
 # --- T03 submit ---------------------------------------------------------------------------------
 def submit(
     actor: User,
@@ -367,32 +401,7 @@ def submit(
             raise PermissionDeniedError("permission_denied", "Only the author can submit this draft.")
         if binding is not None:
             employer_capability.prepare_submission(actor, version, binding)
-        errors = validate_publishable(version)
-        duplicates = find_duplicates(version)
-        hard = [d for d in duplicates if d.level == "hard"]
-        if hard:
-            ack = duplicate_acknowledgement or {}
-            reason = str(ack.get("reason", "")).strip()
-            if str(ack.get("duplicate_of", "")) not in {d.opportunity_id for d in hard} or len(reason) < 10:
-                named = "; ".join(f"{d.title or 'untitled'} ({d.opportunity_id}): {d.reason}" for d in hard)
-                errors.setdefault("duplicate_acknowledgement", []).append(
-                    (
-                        "duplicate_detected",
-                        f"This looks like an existing listing: {named}. If it is a separate listing, give "
-                        "its id and explain why.",
-                    )
-                )
-            else:
-                version.duplicate_acknowledgement = {
-                    "duplicate_of": str(ack["duplicate_of"]),
-                    "reason": reason,
-                }
-                version.save()
-        if errors:
-            codes = {c for items in errors.values() for c, _ in items}
-            if codes == {"duplicate_detected"}:
-                raise WorkflowError("duplicate_detected", "Possible duplicate listing.", fields=errors)
-            raise ValidationFailed(errors)
+        duplicates = _validate_for_submission(version, duplicate_acknowledgement)
         before = opportunity.status
         version.content_hash = content_mod.content_hash(version)
         version.state = VersionState.IN_REVIEW
@@ -573,31 +582,124 @@ def publish(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_versio
                     "deadline_in_past", "The deadline has passed; a new revision is needed.", fields=errors
                 )
             raise ValidationFailed(errors)
-        now = timezone.now()
-        before = opportunity.status
-        previous = opportunity.live_version
-        if previous is not None:
-            previous.state = VersionState.SUPERSEDED
-            previous.save()
-        version.state = VersionState.PUBLISHED
-        version.published_by = actor
-        version.published_at = now
-        version.save()
-        _index(version)
-        if opportunity.slug is None:
-            opportunity.slug = _assign_slug(opportunity, version.title)
-            opportunity.first_published_at = now
-        opportunity.status = ListingStatus.PUBLISHED
-        opportunity.live_version = version
-        opportunity.pending_version = None
-        opportunity.last_published_at = now
-        opportunity.closed_at = None
-        _apply_verification(opportunity, version)
-        _bump(opportunity)
+        before = _apply_publication(actor, opportunity, version)
         _record(ctx, actor, opportunity, version, before, extra={"approved_by": str(version.approved_by_id)})
         return opportunity
 
     return _run(ctx, actor, opportunity_id, body)
+
+
+def publish_direct(
+    actor: User,
+    opportunity_id: uuid.UUID | str,
+    *,
+    expected_row_version: int,
+    checklist: Mapping[str, Any],
+    duplicate_acknowledgement: Mapping[str, Any] | None = None,
+) -> Opportunity:
+    """T07 by the author (D-46, ADR-0024): an Editor or Administrator publishes their own draft in one step.
+
+    The same checks as submission, review and publication all run: publishable content, duplicate
+    acknowledgement, the three-item review checklist (attested by the author, and stored with the decision),
+    the fee-text acknowledgement and the exact-hash approval record. Only separation of duties is waived, and
+    only here: employer-owned listings are refused, the revision is flagged `direct_publication`, the database
+    triggers re-check all of it, and the event and audit rows say "direct, self-approved". Verification stays
+    separate: the author cannot record it (the listing shows the level of its sources, not a check).
+    """
+    ctx = Context("T07", "opportunity.publish_direct", Permission.OPP_PUBLISH_DIRECT)
+    required = ["source_reviewed", "duplicates_reviewed", "content_matches_source"]
+    unknown = set(checklist) - set(required) - {"applicant_payment_reviewed"}
+    if unknown or not all(checklist.get(k) is True for k in required):
+        raise ValidationFailed({"checklist": [("required", "Complete every checklist item to publish.")]})
+
+    def body() -> Opportunity:
+        _require(actor, ctx.permission)
+        opportunity = _lock(opportunity_id, expected_row_version)
+        if opportunity.status == ListingStatus.ARCHIVED:
+            raise InvalidTransition()
+        version = _version(opportunity, opportunity.pending_version_id)
+        _enforce(
+            policy.can_publish_direct(
+                _actor(actor),
+                _facts(version),
+                author_id=version.author_id,
+                employer_owned=EmployerListing.objects.filter(opportunity=opportunity).exists(),
+            )
+        )
+        duplicates = _validate_for_submission(version, duplicate_acknowledgement)
+        if fee_lint_triggers(version) and checklist.get("applicant_payment_reviewed") is not True:
+            raise ValidationFailed(
+                {
+                    "checklist.applicant_payment_reviewed": [
+                        (
+                            "required",
+                            "The text mentions applicant payments; confirm you checked it.",
+                        )
+                    ]
+                }
+            )
+        now = timezone.now()
+        digest = content_mod.content_hash(version)
+        version.direct_publication = True
+        version.content_hash = digest
+        version.state = VersionState.IN_REVIEW
+        version.submitted_by = actor
+        version.submitted_at = now
+        version.save()
+        ReviewDecision.objects.create(
+            version=version,
+            decision=Decision.APPROVED,
+            checklist={**dict(checklist), "direct_publication": True},
+            content_hash=digest,
+            decided_by=actor,
+        )
+        version.state = VersionState.APPROVED
+        version.approved_by = actor
+        version.approved_at = now
+        version.save()
+        before = _apply_publication(actor, opportunity, version)
+        _record(
+            ctx,
+            actor,
+            opportunity,
+            version,
+            before,
+            "Direct publication by the staff author (D-46).",
+            extra={
+                "direct_publication": True,
+                "self_approved": True,
+                "soft_duplicates": [d.opportunity_id for d in duplicates if d.level == "soft"],
+            },
+        )
+        return opportunity
+
+    return _run(ctx, actor, opportunity_id, body)
+
+
+def _apply_publication(actor: User, opportunity: Opportunity, version: OpportunityVersion) -> str:
+    """Make `version` the live revision (the caller holds the lock and passed the policy)."""
+    now = timezone.now()
+    before = opportunity.status
+    previous = opportunity.live_version
+    if previous is not None:
+        previous.state = VersionState.SUPERSEDED
+        previous.save()
+    version.state = VersionState.PUBLISHED
+    version.published_by = actor
+    version.published_at = now
+    version.save()
+    _index(version)
+    if opportunity.slug is None:
+        opportunity.slug = _assign_slug(opportunity, version.title)
+        opportunity.first_published_at = now
+    opportunity.status = ListingStatus.PUBLISHED
+    opportunity.live_version = version
+    opportunity.pending_version = None
+    opportunity.last_published_at = now
+    opportunity.closed_at = None
+    _apply_verification(opportunity, version)
+    _bump(opportunity)
+    return before
 
 
 def _assign_slug(opportunity: Opportunity, title: str) -> str:
@@ -1016,6 +1118,13 @@ def allowed_actions(actor: User, opportunity: Opportunity) -> list[str]:
             out.append("return")
         if policy.can_publish(me, facts):
             out.append("publish")
+        if version.state == VersionState.DRAFT and policy.can_publish_direct(
+            me,
+            facts,
+            author_id=version.author_id,
+            employer_owned=EmployerListing.objects.filter(opportunity=opportunity).exists(),
+        ):
+            out.append("publish_direct")
     if opportunity.status == ListingStatus.PUBLISHED:
         out += [
             a for a, p in (("withdraw", Permission.OPP_WITHDRAW), ("expire", Permission.OPP_EXPIRE)) if has(p)
@@ -1046,6 +1155,7 @@ __all__ = [
     "expire",
     "expire_due",
     "publish",
+    "publish_direct",
     "record_verification",
     "refresh_search_vectors_for_organisation",
     "reject",
