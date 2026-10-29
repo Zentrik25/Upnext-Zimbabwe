@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Logo } from "@/components/ui";
+import { Icon, type IconName } from "@/components/ui/icons";
 import { SignOutButton } from "@/components/account/sign-out-button";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/cn";
 
-export type MenuItem = { href: string; label: string };
+export type MenuItem = { href: string; label: string; icon: IconName };
 
 /** Below the `sm` breakpoint (650px) the header shows only the logo and a menu button; everything the header bar
  * holds on a wider screen is inside the full-screen menu this opens. */
@@ -28,7 +29,8 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
-export function MobileMenu({ items, signedIn }: { items: MenuItem[]; signedIn: boolean }) {
+/** `groups` are shown in order with a thin rule between them. */
+export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedIn: boolean }) {
   // The menu is open for one page only: navigating (or any change of address) closes it without an effect.
   const pathname = usePathname();
   const [openAt, setOpenAt] = useState<string | null>(null);
@@ -84,8 +86,7 @@ export function MobileMenu({ items, signedIn }: { items: MenuItem[]; signedIn: b
     };
   }, [open, close]);
 
-  const row =
-    "flex min-h-[56px] items-center border-b border-line text-[22px] font-strong text-ink hover:underline";
+  const row = "flex min-h-[52px] items-center gap-4 rounded-control px-4 text-base";
 
   return (
     <>
@@ -131,16 +132,37 @@ export function MobileMenu({ items, signedIn }: { items: MenuItem[]; signedIn: b
                   <MenuIcon open />
                 </button>
               </div>
-              <nav aria-label="Menu" className="mt-6 px-[16px]">
-                <ul className="m-0 list-none p-0">
-                  {items.map((item) => (
-                    <li key={item.href}>
-                      <Link href={item.href} className={row} onClick={() => close(false)}>
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+              <nav aria-label="Menu" className="mt-4 px-[16px]">
+                {groups.map((group, index) => (
+                  <ul
+                    key={index}
+                    className={cn("m-0 list-none p-0", index > 0 && "mt-2 border-t border-line pt-2")}
+                  >
+                    {group.map((item) => {
+                      const current = pathname === item.href;
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            aria-current={current ? "page" : undefined}
+                            className={cn(
+                              row,
+                              current ? "bg-match-bg text-accent" : "text-ink hover:bg-row-hover",
+                            )}
+                            onClick={() => close(false)}
+                          >
+                            <Icon
+                              name={item.icon}
+                              className="h-6 w-6 shrink-0"
+                              {...(current ? { fill: "currentColor" } : {})}
+                            />
+                            {item.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ))}
               </nav>
               <div className="mt-auto grid grid-cols-2 gap-3 px-[16px] pt-8 pb-[max(24px,env(safe-area-inset-bottom))]">
                 {signedIn ? (

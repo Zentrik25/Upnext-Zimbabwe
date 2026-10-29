@@ -24,6 +24,7 @@ const PATHS = {
   signIn: "M10 4H5v16h5m3-12 4 4-4 4m4-4H9",
   calendar: "M4 6h16v14H4V6Zm0 5h16M8 3v4m8-4v4",
   chevronDown: "m6 9 6 6 6-6",
+  info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm0-10v5m0-9h.01",
   sliders:
     "M3 6h8m4 0h6M3 12h4m4 0h10M3 18h10m4 0h4M13 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM9 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM15 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
 } as const;
