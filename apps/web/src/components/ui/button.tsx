@@ -21,7 +21,7 @@ const variants: Record<ButtonVariant, string> = {
   "outline-inverse": "border-brand-dark-text bg-transparent text-white hover:bg-white/10",
 };
 const sizes: Record<ButtonSize, string> = {
-  standard: "min-h-control px-3 py-[7px]",
+  standard: "min-h-control px-4 py-2",
   search: "min-h-search sm:rounded-l-none border-0 px-[15px] py-2 max-sm:min-h-field",
 };
 

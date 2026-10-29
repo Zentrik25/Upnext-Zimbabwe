@@ -1,5 +1,8 @@
 # UPNEXT Careers — brand guidelines and implementation record — DRAFT
 
+> **Update 2026-10-29 (D-45): the interface follows the Stripe design system supplied by the owner** (`DESIGN.md`, `preview.html`, `preview-dark.html`). Where this document describes the monochrome palette, 600-weight headings or the black accent of D-39/D-42, the values in `apps/web/src/design/tokens.json` now govern: purple `#533afd` (hover `#4434d4`) for primary actions, links and focus; deep navy `#061b31` headings and slate `#64748d` secondary text; borders `#e5edf5`; brand dark `#1c1e54` for the footer and employer band; weight 300 for body and headlines and 400 for buttons, links and navigation; tracking -1.4px at 56px, -0.96px at 48px, -0.64px at 32px, -0.26px at 26px, -0.22px at 22px; shadows `rgba(23,23,23,.06) 0 3px 6px`, `rgba(23,23,23,.08) 0 15px 35px`, `rgba(50,50,93,.25) 0 30px 45px -30px` with `rgba(0,0,0,.1) 0 18px 36px -18px`, and `rgba(3,3,39,.25) 0 14px 21px -14px` with `rgba(0,0,0,.1) 0 8px 17px -8px`; radii 1, 4, 5, 6, 8px; Source Code Pro for code and technical labels; ruby `#ea2261` and magenta `#f96bee` only as a decorative hero accent and for the error ring. Dark theme values are the owner's dark preview (surface `#0e0f2e`). **The logo is unchanged: the flat black or white UN monogram, never recoloured.** Söhne is not redistributable, so Inter stands in. Accessibility corrections: `ACCESSIBILITY_DEVIATIONS.md` DEV-02 to DEV-06. Light is the default theme.
+
+
 Status: DRAFT (owner instruction 2026-10-28, decision D-42). Previous development name: **NextJob Zimbabwe** (D-33). Current public brand: **UPNEXT Careers**. Nothing here is deployed; no DNS, mail or hosting setting was changed.
 
 | Property | Value |

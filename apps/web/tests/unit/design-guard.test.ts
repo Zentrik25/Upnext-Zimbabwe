@@ -12,10 +12,10 @@ function files(dir: string): string[] {
 }
 const sources = files(src).filter((f) => /\.(tsx?|css)$/.test(f) && !f.endsWith("tokens.generated.css"));
 
-describe("design system guard (VIS-04, D-39)", () => {
+describe("design system guard (VIS-04, D-39, D-45)", () => {
   const banned = [
-    // Radii come only from the token scale: control 4px, card 6px, feature 8px. No pills, no arbitrary radii.
-    /\brounded(?!-(?:none|control|card|feature|[rltb]-(?:none|control|card|feature))(?![\w-]))(?:-[\w[\]./]+)?\b/,
+    // Radii come only from the token scale: micro 1px, control 4px, standard 5px, card 6px, feature 8px. No pills, no arbitrary radii.
+    /\brounded(?!-(?:none|micro|control|standard|card|feature|[rltb]-(?:none|micro|control|standard|card|feature))(?![\w-]))(?:-[\w[\]./]+)?\b/,
     // Shadows come only from the four design-system levels (subtle, ambient, elevated, deep).
     /\b(?:drop-)?shadow(?!-(?:subtle|ambient|elevated|deep|none)(?![\w-]))(?:-[\w[\]./]+)?\b/,
     /\bbg-(?:gradient|radial|conic)-[\w[\]./-]+/,

@@ -53,7 +53,7 @@ export default function DesignSystemPage() {
       </Section>
 
       <Section id="buttons" title="Buttons">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button data-testid="btn-primary">Create account</Button>
           <Button variant="secondary" data-testid="btn-secondary">
             Explore opportunities

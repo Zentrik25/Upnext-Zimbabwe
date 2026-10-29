@@ -82,7 +82,7 @@ export function SaveToggle({
         role="status"
         aria-live="polite"
         className={
-          message.startsWith("Saved") || message.startsWith("Removed") ? "sr-only" : "text-small text-urgent"
+          message.startsWith("Saved") || message.startsWith("Removed") ? "sr-only" : "text-small text-danger"
         }
       >
         {message}

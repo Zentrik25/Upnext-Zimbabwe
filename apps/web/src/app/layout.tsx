@@ -7,13 +7,22 @@ import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
 
-// Inter, Latin subset, served from this origin (no third-party font request). Two weights keep the page light.
+// Inter (weights 300 and 400) and Source Code Pro, Latin subsets, served from this origin (no third-party font
+// request). Inter stands in for the Stripe system's commercial Söhne (D-45).
 const inter = localFont({
   src: [
+    { path: "../fonts/inter-latin-300.woff2", weight: "300", style: "normal" },
     { path: "../fonts/inter-latin-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/inter-latin-600.woff2", weight: "600", style: "normal" },
   ],
   variable: "--font-inter",
+  display: "swap",
+});
+const sourceCode = localFont({
+  src: [
+    { path: "../fonts/source-code-pro-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/source-code-pro-latin-500.woff2", weight: "500", style: "normal" },
+  ],
+  variable: "--font-source-code",
   display: "swap",
 });
 
@@ -53,7 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

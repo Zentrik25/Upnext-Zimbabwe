@@ -5,33 +5,72 @@ import tokens from "../../src/design/tokens.json";
 import { colors, contrast, dark, prod, readRepoFile, ref } from "./helpers";
 
 describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
-  it("the colour tokens equal the UPNEXT Careers monochrome palette (D-42)", () => {
+  it("the colour tokens equal the Stripe design system palette (D-45)", () => {
     expect(
       Object.fromEntries(
         Object.entries(colors)
           .filter(([n]) =>
-            ["ink", "accent", "accent-hover", "line", "brand-dark", "surface-pale", "muted"].includes(n),
+            [
+              "ink",
+              "muted",
+              "accent",
+              "accent-hover",
+              "accent-solid",
+              "line",
+              "brand-dark",
+              "surface",
+              "surface-pale",
+              "check-text",
+              "border-strong",
+              "border-interest",
+              "border-empty",
+              "ruby",
+              "magenta",
+            ].includes(n),
           )
           .map(([n, t]) => [n, t.ref]),
       ),
     ).toEqual({
-      ink: "#101828",
-      muted: "#475467",
-      accent: "#000000",
-      "accent-hover": "#1d2939",
-      line: "#e4e7ec",
-      "surface-pale": "#f8fafc",
-      "brand-dark": "#000000",
+      ink: "#061b31",
+      muted: "#64748d",
+      accent: "#533afd",
+      "accent-hover": "#4434d4",
+      "accent-solid": "#533afd",
+      line: "#e5edf5",
+      "brand-dark": "#1c1e54",
+      surface: "#ffffff",
+      "surface-pale": "#f6f9fc",
+      "check-text": "#273951",
+      "border-strong": "#b9b9f9",
+      "border-interest": "#d6d9fc",
+      "border-empty": "#362baa",
+      ruby: "#ea2261",
+      magenta: "#f96bee",
     });
   });
 
-  it("the only production deviations are DEV-02…DEV-04 (DEV-01 retired by D-42) and match ACCESSIBILITY_DEVIATIONS.md", () => {
+  it("the dark theme equals the owner's dark preview (D-45)", () => {
+    expect(dark("surface")).toBe("#0e0f2e");
+    expect(dark("ink")).toBe("#e8ecf0");
+    expect(dark("muted")).toBe("#8a95a8");
+    expect(dark("accent-solid")).toBe("#665efd");
+    expect(dark("accent")).toBe("#b9b9f9");
+    expect(dark("brand-dark")).toBe("#1c1e54");
+    expect(dark("good")).toBe("#4cdf80");
+    expect(dark("urgent")).toBe("#d4a04a");
+  });
+
+  it("the only production deviations are DEV-02…DEV-06 and match ACCESSIBILITY_DEVIATIONS.md", () => {
     const deviating = Object.entries(colors).filter(([, t]) => t.prod);
-    expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(new Set(["DEV-02", "DEV-03", "DEV-04"]));
+    expect(new Set(deviating.map(([, t]) => t.dev))).toEqual(
+      new Set(["DEV-02", "DEV-03", "DEV-04", "DEV-05", "DEV-06"]),
+    );
     expect(Object.fromEntries(deviating.map(([n, t]) => [n, t.dev]))).toMatchObject({
       good: "DEV-02",
       urgent: "DEV-03",
       "control-border": "DEV-04",
+      muted: "DEV-05",
+      danger: "DEV-06",
     });
     const doc = readRepoFile("docs/design/ACCESSIBILITY_DEVIATIONS.md");
     for (const [name, t] of deviating) {
@@ -42,8 +81,8 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     }
   });
 
-  it("the DEV-04 control border is the corrected value", () => {
-    expect(colors["control-border"]?.prod).toBe("#667085");
+  it("the DEV-04 control border is the corrected value (the design system's slate)", () => {
+    expect(colors["control-border"]?.prod).toBe("#64748d");
   });
 
   it("production text pairs meet WCAG 2.2 AA (A11Y-06)", () => {
@@ -75,6 +114,11 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       ["good", "good-bg", 4.5],
       ["urgent", "urgent-bg", 4.5],
       ["urgent", "surface", 4.5],
+      ["danger", "surface", 4.5],
+      ["danger", "danger-bg", 4.5],
+      ["muted", "match-bg", 4.5],
+      ["ink", "match-bg", 4.5],
+      ["accent", "match-bg", 4.5],
       ["avatar-text", "avatar-bg", 4.5],
     ];
     const failing = pairs
@@ -103,6 +147,8 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       ["good", "good-bg", 4.5],
       ["urgent", "urgent-bg", 4.5],
       ["control-border", "surface", 3],
+      ["muted", "surface-pale", 4.5],
+      ["danger", "surface", 4.5],
     ];
     for (const [fg, bg, min] of failsRef) {
       expect(contrast(ref(fg), ref(bg)), `${fg}/${bg} (design system)`).toBeLessThan(min);
@@ -110,14 +156,44 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     }
   });
 
-  it("typography, radius, shadow and layout tokens equal the design system", () => {
+  it("typography, radius, shadow and layout tokens equal the Stripe design system (D-45)", () => {
     expect(tokens.fontFamily).toMatch(/^var\(--font-inter\), "Inter"/);
-    expect(tokens.fontSizes.hero).toBe("clamp(36px, 5.2vw, 60px)");
-    expect(tokens.fontWeights).toMatchObject({ light: "400", strong: "600", medium: "600" });
-    expect(tokens.radii).toMatchObject({ control: "4px", card: "6px", feature: "8px" });
+    expect(tokens.fontMono).toMatch(/^var\(--font-source-code\), "Source Code Pro"/);
+    expect(tokens.fontSizes).toMatchObject({
+      base: "16px",
+      lead: "18px",
+      title: "22px",
+      sub: "26px",
+      section: "32px",
+      display: "clamp(32px, 4vw, 48px)",
+      hero: "clamp(36px, 5.2vw, 56px)",
+    });
+    expect(tokens.tracking).toMatchObject({
+      hero: "-1.4px",
+      display: "-0.96px",
+      section: "-0.64px",
+      sub: "-0.26px",
+      title: "-0.22px",
+    });
+    expect(tokens.leading).toMatchObject({ body: "1.4", hero: "1.03", display: "1.15" });
+    // Weight 300 is the voice; 400 is for buttons, links and navigation; nothing heavier in the primary font.
+    expect(tokens.fontWeights).toMatchObject({ light: "300", medium: "400", strong: "400", bold: "400" });
+    expect(tokens.radii).toMatchObject({
+      micro: "1px",
+      control: "4px",
+      standard: "5px",
+      card: "6px",
+      feature: "8px",
+    });
     expect(Object.keys(tokens.shadows)).toEqual(["subtle", "ambient", "elevated", "deep"]);
-    expect(tokens.shadows.elevated).toBe(
-      "rgba(16, 24, 40, 0.18) 0px 30px 45px -30px, rgba(0, 0, 0, 0.08) 0px 18px 36px -18px",
+    expect(tokens.shadows).toMatchObject({
+      subtle: "rgba(23, 23, 23, 0.06) 0px 3px 6px 0px",
+      ambient: "rgba(23, 23, 23, 0.08) 0px 15px 35px 0px",
+      elevated: "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
+      deep: "rgba(3, 3, 39, 0.25) 0px 14px 21px -14px, rgba(0, 0, 0, 0.1) 0px 8px 17px -8px",
+    });
+    expect(tokens.darkShadows.elevated).toBe(
+      "rgba(0, 0, 0, 0.4) 0px 30px 45px -30px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px",
     );
     expect(tokens.containers.page).toBe("1080px");
   });
@@ -157,6 +233,10 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
       ["good", "good-bg"],
       ["urgent", "urgent-bg"],
       ["urgent", "surface"],
+      ["danger", "surface"],
+      ["danger", "danger-bg"],
+      ["ink", "match-bg"],
+      ["muted", "match-bg"],
       ["avatar-text", "avatar-bg"],
       ["brand-dark-text", "brand-dark"],
     ];

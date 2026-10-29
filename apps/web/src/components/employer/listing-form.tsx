@@ -212,7 +212,7 @@ export function ListingForm({ organisationId, locations, listing }: Props) {
       {flat.length > 0 ? (
         <div
           role="alert"
-          className="border border-urgent p-[10px] text-base text-urgent"
+          className="border border-danger p-[10px] text-base text-danger"
           data-testid="listing-errors"
         >
           <p className="font-strong">Check these points:</p>

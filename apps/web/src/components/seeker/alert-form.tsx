@@ -110,7 +110,7 @@ export function AlertForm({
         max={6}
       />
       {errors.categories ? (
-        <p role="alert" className="-mt-4 text-small text-urgent">
+        <p role="alert" className="-mt-4 text-small text-danger">
           <span className="font-strong">Error:</span> {errors.categories[0]}
         </p>
       ) : null}
@@ -135,7 +135,7 @@ export function AlertForm({
             aria-describedby={errors.consent ? "alert-consent-error" : undefined}
           />
           {errors.consent ? (
-            <p id="alert-consent-error" role="alert" className="text-small text-urgent">
+            <p id="alert-consent-error" role="alert" className="text-small text-danger">
               <span className="font-strong">Error:</span> {errors.consent[0]}
             </p>
           ) : null}
