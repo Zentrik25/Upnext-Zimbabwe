@@ -49,7 +49,14 @@ export function openGraphFor(url: string, extra: { title?: string; description?:
     url,
     title: extra.title ?? BRAND.name,
     description: extra.description ?? BRAND.description,
-    images: [{ url: BRAND.assets.ogImage, width: 1200, height: 630, alt: BRAND.name }],
+    images: [
+      {
+        url: BRAND.assets.ogImage,
+        width: 1200,
+        height: 630,
+        alt: `${BRAND.name}: jobs and opportunities in Zimbabwe`,
+      },
+    ],
   };
 }
 
