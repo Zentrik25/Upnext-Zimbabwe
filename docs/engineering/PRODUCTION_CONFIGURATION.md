@@ -74,7 +74,7 @@ Resend is the selected provider (D-34) but none is configured or enabled. Until 
 
 ## Addendum (D-34, D-42): identity and e-mail variables
 
-Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
+Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`; Sign in with Google `UPNEXT_GOOGLE_CLIENT_ID` and `UPNEXT_GOOGLE_CLIENT_SECRET` (D-50; both must be listed in `x-api-env` of `compose.production.yaml`, which passes only the variables it names; redirect URI `https://upnext.co.zw/api/v1/auth/google/callback`). A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
 
 ## Addendum (launch preparation): production Compose project
 
