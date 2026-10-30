@@ -1,5 +1,5 @@
 /**
- * The three editorial guides (DRAFT until the owner approves the wording, D-50). One list feeds the pages, the
+ * The three editorial guides (DRAFT until the owner approves the wording, D-51). One list feeds the pages, the
  * sitemap, the footer and the related-links block, so an address cannot be linked without being listed. Dates are the
  * dates the text was written and last changed; change `dateModified` only when the text meaningfully changes.
  */

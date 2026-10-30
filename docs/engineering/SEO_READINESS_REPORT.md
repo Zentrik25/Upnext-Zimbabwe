@@ -1,6 +1,6 @@
 # SEO, AEO, GEO and Google indexing readiness: audit and final engineering report — DRAFT
 
-Status: DRAFT. D-50 approved conditionally by the owner on 2026-10-30 (see the decision register). Date: 2026-10-30. Branch: `claude/seo-readiness` (not merged, not deployed).
+Status: DRAFT. D-51 approved conditionally by the owner on 2026-10-30 (see the decision register). Date: 2026-10-30. Branch: `claude/seo-readiness` (not merged, not deployed).
 Nothing here promises rankings, indexing or appearance in AI-generated answers. It records technical correctness and
 what is still unproven.
 
@@ -25,7 +25,7 @@ Severity: Critical, High, Medium, Low. "Status" is the state on this branch.
 | SEO-A01 | High | `/opportunities/[slug]` JobPosting and indexing | Source: JobPosting and `index` depended on `status === "published"`. A listing whose deadline had passed stayed `published` until the scheduled expiry job ran, so it kept `validThrough` in the past, was indexable and showed breadcrumbs | Google Jobs policy: expired jobs must not be marked up as open; stale results | `isOpen()` (published and deadline not expired) drives JobPosting, breadcrumb and `robots`; tests for the gap | Fixed |
 | SEO-A02 | High | JobPosting `jobLocation` / remote | Source: a Zimbabwe-wide listing dropped the location entirely (no `jobLocation`, a required field); remote listings had no `applicantLocationRequirements` (required by Google) | Invalid structured data, ineligible for Jobs experience | Country-only `jobLocation` for Zimbabwe-wide; remote gets `applicantLocationRequirements` from a stated Zimbabwe location only; no place stated means no markup (never invented) | Fixed |
 | SEO-A03 | Medium | JobPosting `identifier` | Source: bare string | Google expects `PropertyValue` | `{@type: PropertyValue, name: organisation, value: reference}` | Fixed |
-| SEO-A04 | High | Category lists (`?category=`) | Source + e2e: every filtered list, including a single category, was `noindex` and canonical to `/opportunities`. Internships, scholarships, tenders and grants had no indexable landing page | Category queries cannot be satisfied by a category page | A list of exactly one known category is indexable with its own title, description, H1, canonical and sitemap entry. Owner decision needed (P4-02 was OPEN): D-50 proposal | Fixed (needs approval) |
+| SEO-A04 | High | Category lists (`?category=`) | Source + e2e: every filtered list, including a single category, was `noindex` and canonical to `/opportunities`. Internships, scholarships, tenders and grants had no indexable landing page | Category queries cannot be satisfied by a category page | A list of exactly one known category is indexable with its own title, description, H1, canonical and sitemap entry. Owner decision needed (P4-02 was OPEN): D-51 proposal | Fixed (needs approval) |
 | SEO-A05 | Medium | Paged and filtered lists | Source: all views, including later pages, were `noindex` with canonical to page one | Conflicting signals; page two is a distinct page | Later pages: noindex, follow, canonical to themselves. Other views: noindex, follow, canonical to the nearest indexable list. Tracking parameters (utm_*, fbclid) are ignored | Fixed |
 | SEO-A06 | Medium | Twitter/X cards | Source: only the layout set `twitter`; Next.js does not merge it, so every page's card said "UPNEXT Careers" while Open Graph said otherwise | Wrong share previews | `socialFor()` sets Open Graph and Twitter together on every public page | Fixed |
 | SEO-A07 | Medium | Listing titles | Source: `Title · Organisation \| UPNEXT Careers` | Less readable than the brief's pattern | `Title at Organisation \| UPNEXT Careers` | Fixed |
@@ -109,7 +109,7 @@ Local build output, observed (mock API):
 
 ## 6. Remaining blockers and manual checks
 
-1. **Owner decisions:** approve D-50 (category lists indexable; three guides' wording); privacy and terms approval (B-02) before they are listed.
+1. **Owner decisions:** D-51 is approved conditionally; the three guides' final factual and editorial review is still open; privacy and terms approval (B-02) before they are listed.
 2. **Deployment (Phase 7, separate written approval):** none was done. After it: V-1 to V-12 of the deployment plan plus the checks in the guide, section 6.
 3. **Proxy behaviour to confirm on the live site:** HTTP→HTTPS, no `www` resolution or a redirect, trailing-slash behaviour, `X-Robots-Tag` and cache headers, `/sitemap.xml` freshness.
 4. **External validation:** Rich Results Test and Schema.org Validator on one open job; URL Inspection for the home page, a category list and a listing.
@@ -148,7 +148,7 @@ returns `refined` (one function, covered by the tests).
 
 ## 10. Recommended next actions
 
-1. Owner review of D-50 and the guides' wording; decide the legal approval (B-02).
+1. Owner review of D-51 and the guides' wording; decide the legal approval (B-02).
 2. Merge on approval; deploy only under the Phase 7 plan.
 3. After deployment follow `SEARCH_CONSOLE_GUIDE.md`; run the Rich Results Test on one job.
 4. Add employer profile pages to the sitemap through a small public API endpoint (SEO-A13).

@@ -342,7 +342,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-03 | noindex on staff, account, auth pages |
 | SEO-04 | robots.txt; expired/withdrawn policy once OQ-20 decided |
 | SEO-05 | JobPosting states only facts the listing states; JSON-LD output cannot break out of its element |
-| SEO-06 | List indexing (D-50): the plain list and one known category with open listings are indexable; empty, searched, filtered, sorted and resized views are noindex with the right canonical; later pages are self-canonical |
+| SEO-06 | List indexing (D-51): the plain list and one known category with open listings are indexable; empty, searched, filtered, sorted and resized views are noindex with the right canonical; later pages are self-canonical |
 | SEO-07 | JobPosting: none after the deadline, a place is required, remote needs an applicant country, pay needs a period and an ISO currency, identifier as PropertyValue; Article only for the guides |
 | SEO-08 | Sitemap, robots.txt, canonical and noindex agree: sitemap addresses are crawlable, indexable and self-canonical; no rule hides a linked noindex page; every non-public page is noindex or disallowed; one canonical domain |
 | SEO-09 | Editorial guides: one H1, no skipped heading level, visible dates equal the Article dates, every internal link resolves to a route |
