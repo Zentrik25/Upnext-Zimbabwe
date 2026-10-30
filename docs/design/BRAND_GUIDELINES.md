@@ -33,7 +33,7 @@ Rules: black on white, white on black; flat; no blue, gradient, 3D, bevel, glow,
 | `apple-touch-icon.png` (180) | iOS home screen |
 | `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | PWA (`src/app/manifest.ts`) |
 | `social-profile-400.png` | Social profile icon |
-| `og-image.png` (1200x630) | Open Graph and Twitter card |
+| `og-image.png` (1200x630, owner-supplied artwork, 8-bit PNG under 300 KB) | Open Graph and Twitter card on every page; this is the image WhatsApp, Facebook, LinkedIn and X show for a shared link |
 
 Regenerate: `python tools/brand/build_assets.py` (needs `fonttools`, fonts-inter), then `PW_CHROMIUM=<chrome> node apps/web/scripts/render-brand-pngs.mjs` in `apps/web`. A test (`tests/unit/brand.test.ts`) checks the files exist and that every logo SVG contains only black or white fills and no gradient, filter, image or stroke.
 

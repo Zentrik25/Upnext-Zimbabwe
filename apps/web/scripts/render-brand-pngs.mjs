@@ -29,15 +29,6 @@ for (const [out, src, size] of icons) {
   await page.screenshot({ path: join(dir, out), omitBackground: true });
 }
 
-// Open Graph: flat white card, the lockup at the left, one honest line of text (no counts, no claims).
-await page.setViewportSize({ width: 1200, height: 630 });
-const lockup = svg("upnext-lockup.svg").replace("<svg ", '<svg width="640" ');
-await page.setContent(`<body style="margin:0;width:1200px;height:630px;background:#fff;position:relative;
-  font-family:Inter,'Helvetica Neue',Arial,sans-serif">
-  <div style="position:absolute;left:80px;top:150px">${lockup}</div>
-  <p style="position:absolute;left:80px;top:400px;width:900px;margin:0;font-size:44px;line-height:1.2;
-    letter-spacing:-0.02em;color:#101828;font-weight:600">Jobs and opportunities in Zimbabwe.</p>
-  <p style="position:absolute;left:80px;top:540px;margin:0;font-size:26px;color:#475467">upnext.co.zw</p>
-  <div style="position:absolute;left:0;right:0;bottom:0;height:12px;background:#000"></div></body>`);
-await page.screenshot({ path: join(dir, "og-image.png") });
+// og-image.png (1200x630) is owner-supplied artwork, cropped and compressed to 8-bit PNG (under 300 KB so WhatsApp shows
+// it). It is deliberately not generated here: running this script must not replace it.
 await browser.close();

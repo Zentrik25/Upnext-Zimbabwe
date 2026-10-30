@@ -95,4 +95,12 @@ describe("UPNEXT Careers identity (D-42)", () => {
       expect(svg, file).not.toMatch(/gradient|filter|<image|stroke=/i);
     }
   });
+
+  it("the shared-link preview image is 1200x630 and small enough for WhatsApp to show", () => {
+    const file = readFileSync(join(__dirname, "../../public/brand/og-image.png"));
+    expect([...file.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect(file.readUInt32BE(16)).toBe(1200);
+    expect(file.readUInt32BE(20)).toBe(630);
+    expect(file.length).toBeLessThan(300 * 1024);
+  });
 });
