@@ -27,7 +27,7 @@ Status: DRAFT. **Nothing here has been done.** No Resend account exists in the r
 
 ```
 UPNEXT_EMAIL_BACKEND=smtp   # only after Gates A and B, and with approval A-4
-UPNEXT_EMAIL_FROM=UPNEXT Careers <info@upnext.co.zw>
+UPNEXT_EMAIL_FROM=UPNEXT Careers <noreply@upnext.co.zw>   # send-only From (D-52); fixed in compose.production.yaml
 UPNEXT_EMAIL_REPLY_TO=info@upnext.co.zw
 UPNEXT_SMTP_HOST=smtp.resend.com   UPNEXT_SMTP_PORT=465   UPNEXT_SMTP_SECURITY=ssl   UPNEXT_SMTP_USER=resend
 ```
