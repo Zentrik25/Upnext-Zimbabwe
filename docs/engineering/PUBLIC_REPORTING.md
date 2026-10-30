@@ -31,10 +31,10 @@ API: `POST /api/v1/opportunities/{slug}/reports` (`createListingReport`): 202 wi
 
 `reports_listingreport`: reference, listing, the live revision at the time, reason, details, evidence link, optional contact e-mail, a keyed hash for collapsing repeats, repeat count, status, outcome, who closed it and when. `reports_reportevent`: every step, append-only (a database trigger refuses UPDATE and DELETE). The audit log gets `report.created` and one row per staff step with **no free text**. **No IP address or browser string is stored.** The contact e-mail and the repeat hash are cleared 30 days after the report is closed (worker retention step) and at once when the account with that address is deleted. See `docs/legal/DATA_INVENTORY.md` section B3.
 
-## 4. Staff handling (Django Admin, `/staff/reports/listingreport/`)
+## 4. Staff handling (staff workspace, `/workspace/records/reports`)
 
 * **Queue:** escalated first, then new, investigating, closed; filter by work queue (new, assigned to me, escalated, all open, closed), status, reason, and "listing has several open reports"; search by reference, listing, text.
-* **Case page:** what was reported (reporter text is escaped; the link is shown only if it is https), the listing and links to its public page and staff record, other reports on the same listing, the full history, and the actions the person may take.
+* **Case page:** what was reported (reporter text is escaped; the link is shown only if it is https), the listing and links to its public page, other reports on the same listing, the full history, and the actions the person may take.
 * **Actions:** take for investigation, add a note, escalate, resolve (*listing corrected through its own workflow* or *checked, no action needed*), dismiss (*not substantiated, already handled, out of scope, spam*), **act on the listing** (expire, withdraw, take down), and reopen (Administrators only). Every form carries the version the person saw; a stale form is refused.
 * **Permissions** (`ROLE_PERMISSION_MATRIX.md`): Editors and Administrators read, triage and resolve; only Administrators close an escalated report or reopen one. Contributors and seekers see nothing.
 * **Separation of duties (D-18, D-22):** a person who authored, submitted or created any revision of the listing **cannot resolve, dismiss or act on the listing through a report about it**. They can add notes and escalate, so what they know reaches the case.

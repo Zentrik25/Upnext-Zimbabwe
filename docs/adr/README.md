@@ -26,6 +26,9 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0019](ADR-0019-phase-3-accounts-saved-and-staff-security.md) | Phase 3 accounts, saved opportunities and staff security approach | D-11, D-27; P3-01…P3-08 |
 | [0020](ADR-0020-phase-4-launch-readiness.md) | Phase 4 launch readiness: SEO, deletion lifecycle, e-mail provider architecture, safeguards | D-28; P4-01…P4-11 |
 | [0021](ADR-0021-phase-5-launch-readiness-and-hardening.md) | Phase 5 launch readiness and hardening: preflight, least-privilege roles, rehearsed backups, monitoring, verified delivery, draft-only import | D-31, D-32; P5-01…P5-12 |
+| [0024](ADR-0024-staff-console-and-direct-publication.md) | Staff console and direct publication by Administrators and Editors (the /staff console part is superseded by 0025) | D-46 |
+| [0025](ADR-0025-staff-workspace-nextjs.md) | Staff workspace in Next.js at /workspace on a thin staff API; Django Admin and the /staff console retired (two-step gated, same workflow service and visibility rule) | D-49 |
+| [0026](ADR-0026-staff-interface-redesign-in-django-admin.md) | Staff interface redesign inside Django Admin (superseded by 0025) | D-49 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

@@ -62,7 +62,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-52 | Route-level loading states, reusable static skeletons, global error handling with an accessible retry, responsive from 320px | M2 (owner instruction 2026-10-28); D-19 | — | — | STATE-01, STATE-02, STATE-03 | — |
 | R-53 | Category specifications are reviewed against the loaded schemas and stay a proposal: no schema, migration or published-listing meaning changes before the owner approves OQ-06 | M2 (owner instruction 2026-10-28); D-21; P2-07 | — | — | CAT-01 | OQ-06 |
 | R-54 | Public identity is UPNEXT Careers: flat black-and-white UN monogram and wordmark, monochrome Stripe-inspired design with Inter, the one official mailbox info@upnext.co.zw, canonical domain upnext.co.zw, branded e-mail and metadata, homepage and staff site, without changing architecture, security or the editorial workflow | D-42 (owner instruction 2026-10-28); D-39; D-40; D-33 (superseded naming) | SC-01 | — | BRAND-01, BRAND-02, BRAND-03, BRAND-04 | B-01; B-02 |
-| R-55 | Staff console at /staff/ over /api/v1/staff/ (no new authority, two-step proof shared with the session); Administrators and Editors write their own listings and publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, flagged and re-checked by database triggers, never for employer-owned listings, verification still independent; organisations entered by staff are never verified; Django Admin moves to /django-admin/ | D-46; ADR-0024; STAFF_API | SC-12, SC-13 | - | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-07 | OQ-13 |
+| R-55 | Staff workspace (Next.js, /workspace) on a staff API (/api/v1/staff/*) in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, records and catalogue management (claims, profiles, verifications, reports, outbox, delivery, users, roles, audit, organisations, taxonomies, content health), two-step proof shared with the session, themes, mobile drawer; no new write path and no bypass of the workflow; Django Admin retired; Administrators and Editors publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, never for employer-owned listings, verification still independent | D-46; D-49; ADR-0024; ADR-0025 | SC-12, SC-13 | getStaffSession, getStaffTwoStep, verifyStaffTwoStep, getStaffDashboard, listStaffOpportunities, createStaffDraft, getStaffOpportunity, saveStaffDraft, runStaffAction, listStaffActivity, searchStaff, listStaffCategories, listStaffOrganisations, listStaffRecordKinds, listStaffRecords, getStaffRecord, runStaffRecordAction, getStaffContentHealth, listStaffCatalogKinds, listStaffCatalog, createStaffCatalogRecord, getStaffCatalogRecord, updateStaffCatalogRecord, lookupStaffReference | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-08 | OQ-13 |
 
 ## 2. Screen register
 
@@ -79,8 +79,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | SC-09 | For You | /for-you | §19 Screen 6 | incomplete profile (still useful results), no matches |
 | SC-10 | Saved | /saved | §19 Screen 7 | empty, expired item, unavailable item |
 | SC-11 | Account settings | /account/settings | §19 Screen 8 | profile, email change, password, sessions, deletion request |
-| SC-12 | Staff editorial console (Next.js; D-46, ADR-0024) | /staff/ (noindex) | §19 Screen 9 | opportunity editor, provenance, direct publication, review queue, employer submissions, verification, history, conflict, rejection |
-| SC-13 | Staff administration | /staff/ (noindex) | §17 admin nav | users, roles, status, taxonomies, audit, outbox, settings |
+| SC-12 | Staff editorial workspace (Next.js; D-49, ADR-0025) | /workspace (noindex) | §19 Screen 9 | opportunity editor, provenance, direct publication, review queue, employer submissions, verification, history, conflict, rejection |
+| SC-13 | Staff administration | /workspace (noindex) | §17 admin nav | users, roles, status, taxonomies, audit, outbox, settings |
 | SC-14 | Static pages | /about, /contact, privacy, terms | §17 | content OQ-09 |
 | SC-16 | Job alerts and unsubscribe | /alerts, /alerts/unsubscribe | Phase 6B | off, on, consent missing, delivery not yet verified, invalid link |
 | SC-17 | Jobseeker dashboard | /dashboard | Phase 6B | empty profile, recommendations, saved, alerts off or on |
@@ -168,6 +168,30 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `retryOutbox` | POST `/admin/email-outbox/{outbox_id}/retry` | administration | R-18, R-20 |
 | `healthLive` | GET `/health/live` | health | R-24 |
 | `healthReady` | GET `/health/ready` | health | R-24 |
+| `getStaffSession` | GET `/staff/session` | staff | R-55 |
+| `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
+| `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `getStaffDashboard` | GET `/staff/dashboard` | staff | R-55 |
+| `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
+| `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
+| `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
+| `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
+| `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
+| `listStaffActivity` | GET `/staff/activity` | staff | R-55 |
+| `searchStaff` | GET `/staff/search` | staff | R-55 |
+| `listStaffCategories` | GET `/staff/categories` | staff | R-55 |
+| `listStaffOrganisations` | GET `/staff/organisations` | staff | R-55 |
+| `listStaffRecordKinds` | GET `/staff/records` | staff | R-55 |
+| `listStaffRecords` | GET `/staff/records/{kind}` | staff | R-55 |
+| `getStaffRecord` | GET `/staff/records/{kind}/{recordId}` | staff | R-55 |
+| `runStaffRecordAction` | POST `/staff/records/{kind}/{recordId}/actions/{action}` | staff | R-55 |
+| `getStaffContentHealth` | GET `/staff/content-health` | staff | R-55 |
+| `listStaffCatalogKinds` | GET `/staff/catalog` | staff | R-55 |
+| `listStaffCatalog` | GET `/staff/catalog/{kind}` | staff | R-55 |
+| `createStaffCatalogRecord` | POST `/staff/catalog/{kind}` | staff | R-55 |
+| `getStaffCatalogRecord` | GET `/staff/catalog/{kind}/{recordId}` | staff | R-55 |
+| `updateStaffCatalogRecord` | PATCH `/staff/catalog/{kind}/{recordId}` | staff | R-55 |
+| `lookupStaffReference` | GET `/staff/lookup/{what}` | staff | R-55 |
 
 ## 4. Test catalogue (planned)
 
@@ -212,7 +236,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | AUTH-10 | List/revoke sessions; cannot see/revoke another user's |
 | AUTH-11 | Re-authentication window for sensitive actions |
 | AUTH-12 | Status enforcement: suspended/deactivated sessions invalidated at once |
-| AUTH-13 | Staff second step: every /staff/ page needs a verified TOTP or recovery code in the session; API sessions do not bypass it; codes are single-use per time step; failures limited and audited |
+| AUTH-13 | Staff second step: every /workspace page and staff API endpoint needs a verified TOTP or recovery code in the session; API sessions do not bypass it; codes are single-use per time step; failures limited and audited |
 | AUTH-14 | Staff second-step lifecycle: first-time enrolment, recovery codes shown once, audited reset (administrator or break-glass), secret not stored |
 | AUTH-15 | Session lifetimes: seeker 7 days idle / 30 days absolute; staff 30 minutes idle / 8 hours absolute; expired sessions are logged out |
 | WF-01 | Every legal transition T01–T15 succeeds for the permitted role |
@@ -553,7 +577,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | AUTH-10 | `apps/api/tests/test_accounts_api.py::test_sessions_are_listed_and_can_be_revoked_individually; apps/web/tests/e2e/accounts-journey.spec.ts` | executed |
 | AUTH-11 | `apps/api/tests/test_accounts_api.py::test_change_password_requires_the_current_password_and_keeps_only_this_session; ::test_failed_reauthentication_is_counted_against_the_login_limiter; ::test_deletion_request_needs_the_password_is_idempotent_and_can_be_cancelled` | executed (the password is required every time; there is no 10-minute freshness window) |
 | AUTH-13 | `apps/api/tests/test_staff_mfa.py; apps/web/tests/e2e/cms-journey.spec.ts (every staff sign-in)` | executed |
-| AUTH-14 | `apps/api/tests/test_staff_mfa.py::test_first_sign_in_enrols_shows_recovery_codes_once_then_opens_the_site; ::test_reset_command_is_audited_ends_sessions_and_forbids_self_reset; ::test_the_secret_is_derived_not_stored_and_a_key_change_resets_devices` | executed |
+| AUTH-14 | `apps/api/tests/test_staff_mfa.py::test_first_sign_in_enrols_shows_recovery_codes_once_then_opens_the_api; ::test_reset_command_is_audited_ends_sessions_and_forbids_self_reset; ::test_the_secret_is_derived_not_stored_and_a_key_change_resets_devices` | executed |
 | AUTH-15 | `apps/api/tests/test_saved.py::test_seeker_sessions_are_idle_7_days_and_absolute_30_days; ::test_staff_sessions_are_idle_30_minutes_and_absolute_8_hours` | executed against the provisional values in P3-03 |
 | MAIL-01 | `apps/api/tests/test_accounts_api.py::test_registration_is_accepted_and_queues_a_verification_email (row and token in one transaction)` | executed |
 | MAIL-02 | `apps/api/tests/test_outbox.py::test_two_workers_do_not_send_the_same_row_twice` | executed with sequential claims; a concurrent two-process claim test is not written |
@@ -564,7 +588,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | DB-03 | `apps/api/tests/test_saved.py::test_a_listing_can_be_saved_once_per_user_in_the_database` | executed |
 | SEC-03 | `apps/api/tests/test_saved.py::test_saved_lists_are_private_and_filterable_and_paged; apps/api/tests/test_accounts_api.py::test_sessions_are_listed_and_can_be_revoked_individually` | executed for saved items and sessions (profile is not built) |
 | SEC-08 | `apps/web/tests/unit/accounts.test.tsx (safeNext); apps/web/tests/e2e/accounts-journey.spec.ts::sign-in only follows safe return addresses` | executed |
-| SEC-11 | `apps/api/tests/test_saved.py::test_the_staff_site_sends_a_content_security_policy_and_noindex` | executed |
+| SEC-11 | `apps/api/tests/test_platform.py::test_api_responses_are_marked_noindex` | executed |
 | E2E-04 | `apps/web/tests/e2e/accounts-journey.spec.ts (register, confirm by e-mail, sign in)` | executed on a throwaway stack with the file mail spool |
 | E2E-05 | `apps/web/tests/e2e/accounts-journey.spec.ts::account settings: name, password, sessions, deletion request` | executed (the request is recorded; execution of deletion is not built) |
 | E2E-08 | `apps/web/tests/e2e/accounts-journey.spec.ts::a signed-in person can save and unsave...` | executed in one browser session; retrieval from a second session is covered at API level only |

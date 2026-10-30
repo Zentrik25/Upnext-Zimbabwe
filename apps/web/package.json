@@ -2,7 +2,7 @@
   "name": "upnext-web",
   "version": "0.1.0",
   "private": true,
-  "description": "UPNEXT web application (Next.js + TypeScript + Tailwind CSS) — Phase 1 foundation",
+  "description": "UPNEXT web application (Next.js + TypeScript + Tailwind CSS) \u2014 Phase 1 foundation",
   "engines": {
     "node": ">=24.22.0 <25",
     "npm": ">=11"
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "next": "16.4.2",
+    "qrcode": "1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1"
@@ -33,6 +34,7 @@
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/node": "24.19.2",
+    "@types/qrcode": "1.5.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "5.2.0",

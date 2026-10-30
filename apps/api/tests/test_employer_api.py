@@ -238,19 +238,15 @@ def test_other_peoples_ids_answer_404_and_never_reveal_existence(
     assert mine.get(f"{J}/listings/{listing['id']}").status_code == 200
 
 
-def test_employers_cannot_reach_the_staff_site_or_review_actions(
+def test_employers_cannot_reach_the_staff_api_or_review_actions(
     employer: User, people: dict[str, User], world: World
 ) -> None:
     web = signed_in(employer)
     claim = send(web, "post", f"{J}/claims", CLAIM).json()
     approve(people["editor"], claim["id"])
-    assert web.get("/django-admin/", follow=False).status_code in (301, 302, 403)
-    assert send(web, "post", "/django-admin/employers/organisationclaim/", {}).status_code in (
-        302,
-        403,
-        404,
-        405,
-    )
+    assert web.get("/api/v1/staff/dashboard").status_code == 403  # an employer holds no staff role
+    assert web.get("/api/v1/staff/session").status_code == 403
+    assert send(web, "post", "/api/v1/staff/records/claims/x/actions/decide", {}).status_code == 403
     me = web.get("/api/v1/me").json()
     assert me["roles"] == []
 

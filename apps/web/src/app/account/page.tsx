@@ -28,8 +28,8 @@ export default async function AccountPage() {
       {staff ? (
         <p className="mt-2 text-base text-muted">
           You also have staff access.{" "}
-          <a href="/staff/" className="text-accent underline">
-            Open the staff site
+          <a href="/workspace" className="text-accent underline">
+            Open the staff workspace
           </a>
         </p>
       ) : null}

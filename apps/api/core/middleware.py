@@ -62,24 +62,17 @@ class RequestLogMiddleware:
 
 
 class StaffHardeningMiddleware:
-    """Keeps the staff interface and the API out of search indexes, applies session lifetime limits and sends
-    the staff Content-Security-Policy.
+    """Keeps the API out of search indexes and applies session lifetime limits.
 
-    * `X-Robots-Tag: noindex, nofollow` on /django-admin/, /api/ and /health/ (the pages live in Next.js).
+    * `X-Robots-Tag: noindex, nofollow` on /api/ and /health/ (the public pages live in Next.js; the staff
+      workspace marks itself noindex there).
     * Idle and absolute session limits (SECURITY_ARCHITECTURE §3, PROPOSED values, OQ-17): seekers 7 days idle
       and 30 days absolute; any account holding a staff role 30 minutes idle and 8 hours absolute. An expired
       session is logged out and the request continues as anonymous.
-    * `Content-Security-Policy` on /django-admin/ (Django Admin): scripts only from this origin. The /staff/
-      console is a Next.js page with its own nonce policy.
     """
 
-    PREFIXES = ("/django-admin/", "/api/", "/health/")
+    PREFIXES = ("/api/", "/health/")
     TOUCH_EVERY = 60  # seconds between writes of the activity stamp
-    STAFF_CSP = (
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; "
-        "object-src 'none'"
-    )
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
@@ -121,6 +114,4 @@ class StaffHardeningMiddleware:
         response = self.get_response(request)
         if request.path.startswith(self.PREFIXES):
             response["X-Robots-Tag"] = "noindex, nofollow"
-        if request.path.startswith("/django-admin/"):
-            response["Content-Security-Policy"] = self.STAFF_CSP
         return response

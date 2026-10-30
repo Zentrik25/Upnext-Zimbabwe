@@ -1,10 +1,20 @@
 """Routes under /api/v1/ (paths match docs/engineering/openapi/openapi.yaml)."""
 
 from django.conf import settings
-from django.urls import include, path, re_path
+from django.urls import path, re_path
 from drf_spectacular.views import SpectacularAPIView
 
-from api import account_views, employer_views, profile_views, public_views, report_views, views
+from api import (
+    account_views,
+    employer_views,
+    profile_views,
+    public_views,
+    report_views,
+    staff_catalog,
+    staff_records,
+    staff_views,
+    views,
+)
 
 urlpatterns = [
     path("", views.ApiRootView.as_view(), name="api-root"),
@@ -105,6 +115,50 @@ urlpatterns = [
         employer_views.AmendListingView.as_view(),
         name="employer-listing-amend",
     ),
+    path("staff/session", staff_views.SessionView.as_view(), name="staff-session"),
+    path("staff/two-step", staff_views.TwoStepView.as_view(), name="staff-two-step"),
+    path("staff/dashboard", staff_views.DashboardView.as_view(), name="staff-dashboard"),
+    path("staff/opportunities", staff_views.OpportunityListView.as_view(), name="staff-opportunities"),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>",
+        staff_views.OpportunityDetailView.as_view(),
+        name="staff-opportunity",
+    ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/draft",
+        staff_views.SaveDraftView.as_view(),
+        name="staff-opportunity-draft",
+    ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/actions/<slug:action>",
+        staff_views.ActionView.as_view(),
+        name="staff-opportunity-action",
+    ),
+    path("staff/records", staff_records.RecordsIndexView.as_view(), name="staff-records"),
+    path("staff/records/<slug:kind>", staff_records.RecordListView.as_view(), name="staff-record-list"),
+    path(
+        "staff/records/<slug:kind>/<slug:record_id>",
+        staff_records.RecordDetailView.as_view(),
+        name="staff-record",
+    ),
+    path(
+        "staff/records/<slug:kind>/<slug:record_id>/actions/<slug:action>",
+        staff_records.RecordActionView.as_view(),
+        name="staff-record-action",
+    ),
+    path("staff/content-health", staff_views.ContentHealthView.as_view(), name="staff-content-health-api"),
+    path("staff/catalog", staff_catalog.CatalogIndexView.as_view(), name="staff-catalog"),
+    path("staff/catalog/<slug:kind>", staff_catalog.CatalogListView.as_view(), name="staff-catalog-list"),
+    path(
+        "staff/catalog/<slug:kind>/<slug:record_id>",
+        staff_catalog.CatalogDetailView.as_view(),
+        name="staff-catalog-record",
+    ),
+    path("staff/lookup/<slug:what>", staff_catalog.LookupView.as_view(), name="staff-lookup"),
+    path("staff/activity", staff_views.ActivityView.as_view(), name="staff-activity"),
+    path("staff/search", staff_views.SearchView.as_view(), name="staff-search-api"),
+    path("staff/categories", staff_views.CategoryListView.as_view(), name="staff-categories"),
+    path("staff/organisations", staff_views.OrganisationListView.as_view(), name="staff-organisations"),
     path("employers/<slug:slug>", employer_views.PublicProfileView.as_view(), name="employer-public-profile"),
     re_path(
         r"^opportunities/(?P<slug>[^/]{1,200})/events$",
@@ -121,7 +175,6 @@ urlpatterns = [
         public_views.OpportunityDetailView.as_view(),
         name="opportunity-detail",
     ),
-    path("staff/", include("staffapi.urls")),
     path("sitemap", public_views.SitemapView.as_view(), name="sitemap"),
     path("categories", public_views.CategoryListView.as_view(), name="category-list"),
     path("locations", public_views.LocationListView.as_view(), name="location-list"),

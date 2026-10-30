@@ -211,19 +211,6 @@ def test_staff_sessions_are_idle_30_minutes_and_absolute_8_hours(make_user: Call
     assert client2.get("/api/v1/me").status_code == 401
 
 
-def test_the_staff_site_sends_a_content_security_policy_and_noindex(
-    make_user: Callable[..., User],
-) -> None:
-    from django.test import Client
-
-    response = Client().get("/django-admin/login/")
-    csp = response["Content-Security-Policy"]
-    assert "script-src 'self'" in csp and "frame-ancestors 'none'" in csp and "unsafe-eval" not in csp
-    assert "'unsafe-inline'" not in csp.split("script-src")[1].split(";")[0]
-    assert response["X-Robots-Tag"] == "noindex, nofollow"
-    assert "Content-Security-Policy" not in Client().get("/api/v1/")
-
-
 def test_a_listing_can_be_saved_once_per_user_in_the_database(
     world: World, people: dict[str, User], make_user: Callable[..., User]
 ) -> None:

@@ -16,7 +16,6 @@ const config: NextConfig = {
     return [
       { source: "/api/:path*", destination: `${apiOrigin}/api/:path*` },
       { source: "/health/:path*", destination: `${apiOrigin}/health/:path*` },
-      { source: "/django-admin/:path*", destination: `${apiOrigin}/django-admin/:path*` },
       { source: "/static/:path*", destination: `${apiOrigin}/static/:path*` },
     ];
   },

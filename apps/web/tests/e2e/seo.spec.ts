@@ -21,7 +21,15 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(response.status()).toBe(200);
     const text = await response.text();
     expect(text).toMatch(/User-Agent: \*/i);
-    for (const path of ["/staff/", "/api/", "/account", "/saved", "/sign-in", "/register", "/reset-password"])
+    for (const path of [
+      "/workspace",
+      "/api/",
+      "/account",
+      "/saved",
+      "/sign-in",
+      "/register",
+      "/reset-password",
+    ])
       expect(text).toContain(`Disallow: ${path}`);
     expect(text).not.toMatch(/Disallow: \/$/m);
     expect(text).toMatch(/Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
@@ -43,7 +51,9 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(listings).toHaveLength(api.data.length);
     for (const row of api.data)
       expect(listings.some((u) => u.endsWith(`/opportunities/${row.slug}`))).toBe(true);
-    expect(urls.some((u) => u.includes("?") || u.includes("/staff") || u.includes("/account"))).toBe(false);
+    expect(urls.some((u) => u.includes("?") || u.includes("/workspace") || u.includes("/account"))).toBe(
+      false,
+    );
   });
 });
 

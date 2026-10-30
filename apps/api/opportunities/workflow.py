@@ -1083,6 +1083,11 @@ def record_verification(
 
 # --- queries used by the staff interface --------------------------------------------------------
 def _has_open_version(opportunity: Opportunity) -> bool:
+    pending = opportunity.pending_version  # the open revision, when there is one (loaded with the listing)
+    if pending is None:
+        return False
+    if pending.state in (VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED):
+        return True
     return OpportunityVersion.objects.filter(
         opportunity=opportunity, state__in=[VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED]
     ).exists()

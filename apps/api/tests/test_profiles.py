@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import pytest
-from django.contrib import admin
 from rest_framework.test import APIClient
 
 from accounts import deletion
@@ -225,9 +224,14 @@ def test_staff_and_employers_see_only_their_own_profile(
         assert client.get(URL).json()["exists"] is False  # their own, empty
 
 
-def test_profiles_and_alerts_are_not_in_the_staff_site() -> None:
-    assert not admin.site.is_registered(SeekerProfile)
-    assert not admin.site.is_registered(JobAlert)
+def test_profiles_and_alerts_are_not_in_the_staff_workspace() -> None:
+    """No staff register or reference-data screen is built on a seeker's profile or alert (P6B-02)."""
+    from api.staff_catalog import KINDS
+    from api.staff_records import RESOURCES
+
+    models = {r.queryset(None).model for r in RESOURCES.values()}  # type: ignore[arg-type]
+    models |= {k.model for k in KINDS.values()}
+    assert SeekerProfile not in models and JobAlert not in models
 
 
 def test_no_url_exposes_a_seeker_profile_by_id() -> None:

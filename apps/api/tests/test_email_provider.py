@@ -15,11 +15,9 @@ from typing import Any
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import Client
 from django.utils import timezone
 
 from accounts.models import User
-from audit.models import AuditEvent
 from notifications import config, suppression
 from notifications import services as outbox
 from notifications.models import EmailKind, EmailOutbox, EmailSuppression, OutboxStatus
@@ -310,34 +308,6 @@ def test_outbox_status_counts_and_alerts(make_user: Callable[..., User]) -> None
     EmailOutbox.objects.filter(pk=waiting.pk).update(status=OutboxStatus.DEAD)
     with pytest.raises(CommandError, match="dead"):
         call_command("outbox_status", check=True)
-
-
-# --- admin view -------------------------------------------------------------------------------------------
-def test_administrators_see_a_masked_outbox_and_can_retry_with_an_audit_trail(
-    make_user: Callable[..., User],
-) -> None:
-    admin, editor = make_user(roles=("administrator",)), make_user(roles=("editor",))
-    row = outbox.enqueue(EmailKind.PASSWORD_CHANGED_NOTICE, None, "private.person@example.org", context={})
-    EmailOutbox.objects.filter(pk=row.pk).update(status=OutboxStatus.DEAD, last_error="smtp_error")
-    client = Client()
-    client.force_login(admin)
-    page = client.get("/django-admin/notifications/emailoutbox/").content.decode()
-    assert "p***@e***" in page and "private.person" not in page
-    detail = client.get(f"/django-admin/notifications/emailoutbox/{row.pk}/change/").content.decode()
-    assert "private.person" not in detail
-    response = client.post(
-        "/django-admin/notifications/emailoutbox/",
-        {"action": "retry_selected", "_selected_action": [str(row.pk)]},
-        follow=True,
-    )
-    assert response.status_code == 200
-    row.refresh_from_db()
-    assert row.status == OutboxStatus.PENDING and row.attempts == 0
-    assert AuditEvent.objects.filter(action="outbox.retry", object_id=row.pk, actor_ref=admin.pk).exists()
-    other = Client()
-    other.force_login(editor)
-    assert other.get("/django-admin/notifications/emailoutbox/").status_code in (302, 403, 404)
-    assert Client().get("/django-admin/notifications/emailoutbox/").status_code == 302
 
 
 # --- signed bounce/complaint feed (P5-01) ---------------------------------------------------------------------------

@@ -1,50 +1,52 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { authedJson } from "./session";
-import type { StaffReference, StaffSession } from "./staff-types";
+import { authedJson, getCurrentUser } from "./session";
+import type { StaffSession } from "./staff-types";
 
-/** The staff session, or a redirect to the staff sign-in page. Memoised for one render pass. */
-export const requireStaff = cache(async (): Promise<StaffSession> => {
-  const result = await authedJson<StaffSession>("staff/session");
-  if (!result.ok) redirect("/staff/sign-in");
-  const session = result.data;
-  if (session.mfa.required && !session.mfa.verified) redirect("/staff/sign-in");
-  return session;
-});
-
-export function can(session: StaffSession, permission: string): boolean {
-  return session.permissions.includes(permission);
+/** Server-side GET of a staff API document (forwards the browser's session cookie). */
+export function staffJson<T>(path: string) {
+  return authedJson<T>(`staff/${path}`);
 }
 
-/** GET a staff API document. A 401/403 means the session ended: go back to sign-in. */
-export async function staffGet<T>(
-  path: string,
-): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
-  const result = await authedJson<T>(`staff/${path}`);
-  if (!result.ok && (result.status === 401 || result.status === 403)) {
-    // 403 for a missing permission is also possible; the pages check permissions first, so this is the session.
-    if (result.status === 401) redirect("/staff/sign-in");
+const session = cache(() => authedJson<StaffSession>("staff/session"));
+
+/**
+ * The signed-in, two-step-verified staff member, or a redirect: visitors go to sign-in, seekers and employers
+ * to the home page, staff who have not passed the second step to the two-step page. The API re-checks every
+ * request; this only picks the right page.
+ */
+export async function requireStaff(next: string): Promise<StaffSession> {
+  const result = await session();
+  if (!result.ok) {
+    if (result.status === 0 || result.status === 401 || result.status === 403) {
+      const user = await getCurrentUser();
+      if (!user) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
+      if (result.status !== 0) redirect("/");
+    }
+    throw new Error("The staff service could not be reached.");
   }
-  return result;
-}
-
-export const getReference = cache(async () => {
-  const result = await staffGet<StaffReference>("reference");
-  return result.ok ? result.data : null;
-});
-
-/** Query string from a Next searchParams object, keeping only the named keys. */
-export function qs(params: Record<string, string | string[] | undefined>, keys: string[]): string {
-  const out = new URLSearchParams();
-  for (const key of keys) {
-    const value = params[key];
-    const single = Array.isArray(value) ? value[0] : value;
-    if (single) out.set(key, single);
+  if (result.data.two_step.required && !result.data.two_step.verified) {
+    redirect(`/workspace/two-step?next=${encodeURIComponent(next)}`);
   }
-  return out.toString();
+  return result.data;
 }
 
-export function first(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : value) ?? "";
+/** The session for the two-step page itself (staff only, verified or not). */
+export async function requireStaffAccount(): Promise<StaffSession> {
+  const result = await session();
+  if (!result.ok) {
+    const user = await getCurrentUser();
+    if (!user) redirect("/sign-in?next=%2Fworkspace");
+    if (result.status !== 0) redirect("/");
+    throw new Error("The staff service could not be reached.");
+  }
+  return result.data;
 }
+
+export function can(session: StaffSession, code: string): boolean {
+  return session.permissions?.includes(code) ?? false;
+}
+
+/** The current time in milliseconds, read on the server for relative times ("2 hours ago"). */
+export const currentTime = () => Date.now();

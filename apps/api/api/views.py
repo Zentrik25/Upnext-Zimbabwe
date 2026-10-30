@@ -26,6 +26,7 @@ from accounts.sessions import client_ip
 from audit import services as audit
 from audit.models import Severity
 from core.context import get_request_id
+from core.staff_mfa import SESSION_FLAG as STAFF_SESSION_FLAG
 
 from . import schema as _schema  # noqa: F401  (registers the OpenAPI auth extension)
 from .errors import CodedPermissionDenied, error_response
@@ -122,6 +123,7 @@ class LoginView(APIView):
             raise CodedPermissionDenied("account_unavailable")
 
         login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+        request._request.session.pop(STAFF_SESSION_FLAG, None)  # every sign-in earns its own second step
         if not serializer.validated_data["remember"]:
             request.session.set_expiry(0)  # a browser-session cookie: gone when the browser closes
         EmailFailureLimiter.reset(email)

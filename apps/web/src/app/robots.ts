@@ -11,8 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         disallow: [
-          "/staff/",
-          "/django-admin/",
+          "/workspace",
           "/api/",
           "/health/",
           "/account",

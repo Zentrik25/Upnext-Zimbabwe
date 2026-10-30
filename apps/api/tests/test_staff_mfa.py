@@ -1,8 +1,7 @@
-"""Staff two-step verification (provisional default P3-07 for OQ-16)."""
+"""Staff two-step verification through the staff API (provisional default P3-07 for OQ-16; D-49)."""
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from typing import Any
 
@@ -10,13 +9,14 @@ import pytest
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import Client
+from rest_framework.test import APIClient
 
 from accounts import mfa
 from accounts.models import StaffMfaDevice, StaffRecoveryCode, User, UserSession
 from audit.models import AuditEvent
 
-from .conftest import PASSWORD, post_json
+from .conftest import PASSWORD
+from .test_staff_api import S, send, signed_in
 
 pytestmark = pytest.mark.django_db
 
@@ -27,10 +27,7 @@ def mfa_required(settings: Any) -> None:
     cache.clear()
 
 
-def staff_client(user: User) -> Client:
-    client = Client()
-    client.force_login(user)
-    return client
+TWO_STEP = f"{S}/two-step"
 
 
 def current_code(user: User) -> str:
@@ -38,11 +35,12 @@ def current_code(user: User) -> str:
     return mfa.code_at(mfa.secret_for(device), mfa.current_step())
 
 
-def enrol(client: Client, user: User) -> list[str]:
-    client.get("/django-admin/mfa/")  # creates the pending device
-    response = client.post("/django-admin/mfa/", {"code": current_code(user), "next": "/django-admin/"})
-    assert response.status_code == 200, response.content.decode()[:300]
-    return re.findall(r"<code>([0-9a-f]{6}-[0-9a-f]{6})</code>", response.content.decode())
+def enrol(client: APIClient, user: User) -> list[str]:
+    assert client.get(TWO_STEP).json()["enrolling"] is True  # creates the pending device
+    response = send(client, "post", TWO_STEP, {"code": current_code(user)})
+    assert response.status_code == 200, response.content
+    codes: list[str] = response.json()["recovery_codes"]
+    return codes
 
 
 def test_rfc_6238_vectors() -> None:
@@ -52,36 +50,39 @@ def test_rfc_6238_vectors() -> None:
     assert mfa.code_at(secret, 1234567890 // 30) == "005924"
 
 
-def test_staff_must_pass_the_second_step_before_any_staff_page(make_user: Callable[..., User]) -> None:
-    client = staff_client(make_user(roles=("editor",)))
-    for path in ("/django-admin/", "/django-admin/opportunities/opportunity/"):
-        response = client.get(path)
-        assert response.status_code == 302 and response["Location"].startswith("/django-admin/mfa/"), path
-    assert client.get("/django-admin/mfa/").status_code == 200
+def test_staff_must_pass_the_second_step_before_any_staff_endpoint(make_user: Callable[..., User]) -> None:
+    client = signed_in(make_user(roles=("editor",)))
+    for path in ("/dashboard", "/opportunities", "/records", "/catalog", "/activity"):
+        response = client.get(f"{S}{path}")
+        assert response.status_code == 403 and response.json()["error"]["code"] == "two_step_required", path
+    session = client.get(f"{S}/session").json()
+    assert session["two_step"]["verified"] is False and "attention" not in session
+    assert client.get(TWO_STEP).status_code == 200
 
 
 def test_people_without_a_staff_role_are_not_sent_to_the_staff_gate(make_user: Callable[..., User]) -> None:
-    client = staff_client(make_user())
-    response = client.get("/django-admin/")
-    assert response.status_code == 302 and "/django-admin/login/" in response["Location"]
+    client = signed_in(make_user())
+    assert client.get(f"{S}/session").status_code == 403
+    assert client.get(TWO_STEP).status_code == 403
 
 
-def test_first_sign_in_enrols_shows_recovery_codes_once_then_opens_the_site(
+def test_first_sign_in_enrols_shows_recovery_codes_once_then_opens_the_api(
     make_user: Callable[..., User],
 ) -> None:
     user = make_user(roles=("editor",))
-    client = staff_client(user)
-    page = client.get("/django-admin/mfa/").content.decode()
-    assert "Set up two-step verification" in page and 'id="mfa-secret"' in page
-    wrong = client.post("/django-admin/mfa/", {"code": "000000", "next": "/django-admin/"})
-    assert "did not match" in wrong.content.decode() and client.get("/django-admin/").status_code == 302
+    client = signed_in(user)
+    setup = client.get(TWO_STEP).json()
+    assert setup["enrolling"] is True and setup["secret"] and setup["uri"].startswith("otpauth://")
+    wrong = send(client, "post", TWO_STEP, {"code": "000000"})
+    assert wrong.status_code == 400 and "did not match" in wrong.json()["error"]["message"]
+    assert client.get(f"{S}/dashboard").status_code == 403
     codes = enrol(client, user)
     assert len(codes) == mfa.RECOVERY_CODES and len(set(codes)) == mfa.RECOVERY_CODES
-    assert client.get("/django-admin/").status_code == 200
+    assert client.get(f"{S}/dashboard").status_code == 200
     assert mfa.is_enrolled(user)
-    again = client.get("/django-admin/mfa/")  # already verified: straight back to the site
-    assert again.status_code == 302 and again["Location"] == "/django-admin/"
-    assert not any(c in client.get("/django-admin/").content.decode() for c in codes)
+    again = client.get(TWO_STEP).json()  # already verified: nothing secret is shown again
+    assert again == {"enrolling": False, "verified": True}
+    assert not any(c in client.get(f"{S}/dashboard").content.decode() for c in codes)
     actions = set(AuditEvent.objects.filter(object_id=user.pk).values_list("action", flat=True))
     assert "staff.mfa_enrolled" in actions and "staff.mfa_failed" in actions
 
@@ -90,43 +91,39 @@ def test_each_later_sign_in_needs_a_fresh_code_and_a_used_code_cannot_be_replaye
     make_user: Callable[..., User],
 ) -> None:
     user = make_user(roles=("editor",))
-    enrol(staff_client(user), user)
-    second = staff_client(user)  # a new sign-in
-    assert second.get("/django-admin/").status_code == 302
+    enrol(signed_in(user), user)
+    second = signed_in(user)  # a new sign-in
+    assert second.get(f"{S}/dashboard").status_code == 403
     device = StaffMfaDevice.objects.get(user=user)
-    assert "Enter your verification code" in second.get("/django-admin/mfa/").content.decode()
-    replay = second.post(
-        "/django-admin/mfa/", {"code": mfa.code_at(mfa.secret_for(device), device.last_used_step)}
+    assert second.get(TWO_STEP).json()["enrolling"] is False
+    replay = send(
+        second, "post", TWO_STEP, {"code": mfa.code_at(mfa.secret_for(device), device.last_used_step)}
     )
-    assert replay.status_code == 200 and "not valid" in replay.content.decode()
+    assert replay.status_code == 400 and "not valid" in replay.json()["error"]["message"]
     nxt = mfa.code_at(mfa.secret_for(device), mfa.current_step() + 1)
-    ok = second.post("/django-admin/mfa/", {"code": nxt, "next": "/django-admin/opportunities/opportunity/"})
-    assert ok.status_code == 302 and ok["Location"] == "/django-admin/opportunities/opportunity/"
-    assert second.get("/django-admin/").status_code == 200
+    assert send(second, "post", TWO_STEP, {"code": nxt}).status_code == 200
+    assert second.get(f"{S}/dashboard").status_code == 200
 
 
 def test_recovery_codes_work_once(make_user: Callable[..., User]) -> None:
     user = make_user(roles=("editor",))
-    codes = enrol(staff_client(user), user)
-    first = staff_client(user)
-    assert first.post("/django-admin/mfa/", {"code": codes[0].upper()}).status_code == 302
-    second = staff_client(user)
-    assert "not valid" in second.post("/django-admin/mfa/", {"code": codes[0]}).content.decode()
-    assert second.post("/django-admin/mfa/", {"code": codes[1]}).status_code == 302
+    codes = enrol(signed_in(user), user)
+    assert send(signed_in(user), "post", TWO_STEP, {"code": codes[0].upper()}).status_code == 200
+    second = signed_in(user)
+    assert send(second, "post", TWO_STEP, {"code": codes[0]}).status_code == 400
+    assert send(second, "post", TWO_STEP, {"code": codes[1]}).status_code == 200
     assert StaffRecoveryCode.objects.filter(used_at__isnull=False).count() == 2
 
 
 def test_wrong_codes_are_limited_and_audited(make_user: Callable[..., User]) -> None:
     user = make_user(roles=("editor",))
-    enrol(staff_client(user), user)
-    client = staff_client(user)
+    enrol(signed_in(user), user)
+    client = signed_in(user)
     for _ in range(mfa.MAX_FAILURES):
-        assert "not valid" in client.post("/django-admin/mfa/", {"code": "123456"}).content.decode()
-    locked = client.post("/django-admin/mfa/", {"code": current_code(user)})
-    assert (
-        "Too many incorrect codes" in locked.content.decode()
-        and client.get("/django-admin/").status_code == 302
-    )
+        assert send(client, "post", TWO_STEP, {"code": "123456"}).status_code == 400
+    locked = send(client, "post", TWO_STEP, {"code": current_code(user)})
+    assert locked.status_code == 429 and "Too many incorrect codes" in locked.json()["error"]["message"]
+    assert client.get(f"{S}/dashboard").status_code == 403
     assert AuditEvent.objects.filter(action="staff.mfa_failed", object_id=user.pk).count() == mfa.MAX_FAILURES
 
 
@@ -134,7 +131,7 @@ def test_the_secret_is_derived_not_stored_and_a_key_change_resets_devices(
     make_user: Callable[..., User], settings: Any
 ) -> None:
     user = make_user(roles=("editor",))
-    enrol(staff_client(user), user)
+    enrol(signed_in(user), user)
     device = StaffMfaDevice.objects.get(user=user)
     secret = mfa.secret_text(device).replace(" ", "")
     stored = str([getattr(device, f.name) for f in device._meta.fields]) + str(
@@ -146,39 +143,17 @@ def test_the_secret_is_derived_not_stored_and_a_key_change_resets_devices(
     assert mfa.code_at(mfa.secret_for(device), mfa.current_step()) != before
 
 
-def test_a_password_only_session_from_the_api_does_not_open_the_staff_site(
-    make_user: Callable[..., User],
-) -> None:
-    user = make_user(roles=("administrator",))
-    from rest_framework.test import APIClient
-
-    api = APIClient(enforce_csrf_checks=True)
-    assert (
-        post_json(api, "/api/v1/auth/login", {"email": user.email, "password": PASSWORD}).status_code == 200
-    )
-    response = api.get("/django-admin/")
-    assert response.status_code == 302 and response["Location"].startswith("/django-admin/mfa/")
-
-
-def test_next_is_only_followed_inside_the_staff_site(make_user: Callable[..., User]) -> None:
-    user = make_user(roles=("editor",))
-    enrol(staff_client(user), user)
-    client = staff_client(user)
-    device = StaffMfaDevice.objects.get(user=user)
-    for target in ("https://evil.example/", "//evil.example/", "/api/v1/me", "javascript:alert(1)"):
-        cache.clear()
-        StaffMfaDevice.objects.filter(pk=device.pk).update(last_used_step=0)
-        fresh = staff_client(user)
-        response = fresh.post("/django-admin/mfa/", {"code": current_code(user), "next": target})
-        assert response["Location"] == "/django-admin/", target
-    assert client is not None
+def test_a_password_only_session_does_not_open_the_staff_api(make_user: Callable[..., User]) -> None:
+    api = signed_in(make_user(roles=("administrator",)))
+    response = api.get(f"{S}/dashboard")
+    assert response.status_code == 403 and response.json()["error"]["code"] == "two_step_required"
 
 
 def test_verifying_rotates_the_session_key_and_keeps_the_session_record(
     make_user: Callable[..., User],
 ) -> None:
     user = make_user(roles=("editor",))
-    client = staff_client(user)
+    client = signed_in(user)
     before = client.session.session_key
     enrol(client, user)
     after = client.session.session_key
@@ -193,7 +168,7 @@ def test_reset_command_is_audited_ends_sessions_and_forbids_self_reset(
     admin = make_user(roles=("administrator",))
     other_admin = make_user(roles=("administrator",))
     editor = make_user(roles=("editor",))
-    editor_client = staff_client(editor)
+    editor_client = signed_in(editor)
     enrol(editor_client, editor)
     with pytest.raises(CommandError, match="own"):
         call_command("reset_staff_mfa", email=admin.email, reason="locked out of my device", by=admin.email)
@@ -205,12 +180,12 @@ def test_reset_command_is_audited_ends_sessions_and_forbids_self_reset(
         "reset_staff_mfa", email=editor.email, reason="lost phone, verified in person", by=other_admin.email
     )
     assert not StaffMfaDevice.objects.filter(user=editor).exists()
-    assert editor_client.get("/django-admin/").status_code == 302  # session ended
+    assert editor_client.get(f"{S}/dashboard").status_code in (401, 403)  # session ended
     event = AuditEvent.objects.get(action="staff.mfa_reset")
     assert event.actor_ref == other_admin.pk and event.severity == "privileged"
     with pytest.raises(CommandError, match="no two-step"):
         call_command("reset_staff_mfa", email=editor.email, reason="lost phone, verified in person")
-    enrol(staff_client(editor), editor)  # re-enrols
+    enrol(signed_in(editor), editor)  # re-enrols
     call_command("reset_staff_mfa", email=editor.email, reason="break-glass with server access")
     assert AuditEvent.objects.filter(action="staff.mfa_reset", actor_type="system").exists()
 
@@ -237,4 +212,14 @@ def test_the_gate_can_be_switched_off_only_by_configuration(
     make_user: Callable[..., User], settings: Any
 ) -> None:
     settings.UPNEXT_STAFF_MFA_REQUIRED = False
-    assert staff_client(make_user(roles=("editor",))).get("/django-admin/").status_code == 200
+    assert signed_in(make_user(roles=("editor",))).get(f"{S}/dashboard").status_code == 200
+
+
+def test_signing_in_again_requires_the_second_step_again(make_user: Callable[..., User]) -> None:
+    user = make_user(roles=("editor",))
+    client = signed_in(user)
+    enrol(client, user)
+    assert client.get(f"{S}/dashboard").status_code == 200
+    again = send(client, "post", "/api/v1/auth/login", {"email": user.email, "password": PASSWORD})
+    assert again.status_code == 200, again.content
+    assert client.get(f"{S}/dashboard").status_code == 403  # the flag from the earlier sign-in is gone

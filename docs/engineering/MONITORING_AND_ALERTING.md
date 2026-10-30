@@ -36,7 +36,7 @@ Status: DRAFT (Phase 5, P5-05). Describes what the application provides and what
 Not yet covered, and why: 5xx-rate and latency alerts need metrics from the front or an external collector (OQ-26); dead-man's-switch for the whole server needs the external probe.
 
 ## 3. mail
-`manage.py outbox_status` shows counts and the oldest waiting age. Dead: read the last error in the Administrator outbox page (`/staff/`, addresses masked), fix the cause (provider credentials, domain authentication, suppression), then retry from the same page (audited). Stuck with the worker healthy: check the provider status and `check_email_config --connect`.
+`manage.py outbox_status` shows counts and the oldest waiting age. Dead: read the last error in the Administrator outbox page (`/workspace/records/outbox`, addresses masked), fix the cause (provider credentials, domain authentication, suppression), then retry from the same page (audited). Stuck with the worker healthy: check the provider status and `check_email_config --connect`.
 
 ## 4. worker
 Check the container health, `docker logs`, then `manage.py run_worker --once`. A failed housekeeping run raises in the log; deletion and retention are idempotent and safe to repeat.

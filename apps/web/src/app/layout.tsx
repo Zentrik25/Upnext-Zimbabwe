@@ -70,8 +70,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // is applied to Next.js' own scripts.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  // The staff console (/staff) is a separate application shell: no public header, footer or skip link.
-  const staff = (requestHeaders.get("x-pathname") ?? "").startsWith("/staff");
+  // The staff workspace (D-49) has its own shell: no public header, footer or skip link from the site.
+  const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html
@@ -83,7 +83,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
-        {staff ? (
+        {workspace ? (
           children
         ) : (
           <>
