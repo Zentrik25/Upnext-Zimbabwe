@@ -43,7 +43,8 @@ x-api-env: &api-env
   UPNEXT_BRAND_DOMAIN: upnext.co.zw
   UPNEXT_OFFICIAL_EMAIL: info@upnext.co.zw
   UPNEXT_SUPPORT_EMAIL: info@upnext.co.zw
-  UPNEXT_EMAIL_FROM: UPNEXT Careers <info@upnext.co.zw>
+  # Send-only sender (D-52): no mailbox exists at noreply@; people who reply reach info@ through Reply-To.
+  UPNEXT_EMAIL_FROM: UPNEXT Careers <noreply@upnext.co.zw>
   UPNEXT_EMAIL_REPLY_TO: info@upnext.co.zw
   # Sending stays off until B-01 is closed AND the owner approves; then set to smtp with the UPNEXT_SMTP_* values.
   UPNEXT_EMAIL_BACKEND: ${UPNEXT_EMAIL_BACKEND:-none}

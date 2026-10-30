@@ -137,7 +137,9 @@ def test_identity_is_the_root_domain_and_the_one_mailbox(cfg: dict[str, Any]) ->
     # `api` is the internal name the web container uses to read the API (without it every server-side read is a 400)
     assert env["DJANGO_ALLOWED_HOSTS"] == "upnext.co.zw,api"
     assert env["DJANGO_CSRF_TRUSTED_ORIGINS"] == "https://upnext.co.zw"
-    mailboxes = {v for k, v in env.items() if "@" in str(v)}
+    # D-52: the send-only From is noreply@; every other address in the environment is the one mailbox
+    assert env["UPNEXT_EMAIL_FROM"] == "UPNEXT Careers <noreply@upnext.co.zw>"
+    mailboxes = {v for k, v in env.items() if "@" in str(v) and k != "UPNEXT_EMAIL_FROM"}
     assert all("info@upnext.co.zw" in v for v in mailboxes)
     assert "www" not in json.dumps(cfg).lower().replace("www.w3.org", "")
 

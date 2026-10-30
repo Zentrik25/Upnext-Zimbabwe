@@ -24,7 +24,7 @@ Rules, because a mistake here can break existing mail:
 
 ## 4. Mailboxes
 
-D-42: the only official address is **info@upnext.co.zw**. No other mailbox (support@, notifications@, jobs@, partnerships@, noreply@) exists or is to be created. It is both the From and the Reply-To. Resend sends mail; it does not host inboxes, so info@ must already receive mail (set up by the owner outside this repository) before sending is enabled. Nothing here creates a mailbox.
+D-42: the only official address is **info@upnext.co.zw**. No other mailbox (support@, notifications@, jobs@, partnerships@) exists or is to be created. D-52 (owner, 2026-10-30): transactional mail is sent From `noreply@upnext.co.zw`, a send-only address that is not a mailbox (it needs no inbox, only the verified sending domain); `info@upnext.co.zw` is the Reply-To, so a reply reaches the one mailbox. Resend sends mail; it does not host inboxes, so info@ must already receive mail (set up by the owner outside this repository) before sending is enabled. Nothing here creates a mailbox.
 
 ## 5. Redirects
 
