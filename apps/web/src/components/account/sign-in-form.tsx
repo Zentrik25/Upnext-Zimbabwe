@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { lazy, Suspense, useState, type FormEvent, type ReactNode } from "react";
 import { Button, Icon } from "@/components/ui";
@@ -96,12 +95,6 @@ export function SignInForm({
         {busy ? "Signing in…" : "Sign in"}
       </Button>
       {social}
-      <p className="text-center text-ctl">
-        Don’t have an account?{" "}
-        <Link href="/register" className="text-accent underline">
-          Create an account
-        </Link>
-      </p>
     </form>
   );
 }

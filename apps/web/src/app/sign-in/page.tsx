@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { AuthPage } from "@/components/account/auth-parts";
 import { GoogleButton, OrDivider } from "@/components/account/google-button";
-import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
+import { CreateAccountPrompt, GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
 import { safeNext } from "@/lib/safe-next";
 import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
@@ -32,6 +32,7 @@ export default async function SignInPage({
           <>
             <OrDivider />
             <GoogleButton enabled={providers.google} next={next} />
+            <CreateAccountPrompt />
           </>
         }
       />

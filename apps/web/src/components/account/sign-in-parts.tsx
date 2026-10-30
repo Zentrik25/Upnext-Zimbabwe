@@ -22,3 +22,14 @@ export function GoogleFailedNotice() {
     <FormError>Google sign-in did not work. Try again, or sign in with your e-mail and password.</FormError>
   );
 }
+
+export function CreateAccountPrompt() {
+  return (
+    <p className="text-center text-ctl">
+      Don’t have an account?{" "}
+      <Link href="/register" className="text-accent underline">
+        Create an account
+      </Link>
+    </p>
+  );
+}
