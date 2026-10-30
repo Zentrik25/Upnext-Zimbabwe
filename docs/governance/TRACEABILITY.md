@@ -36,7 +36,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-26 | Performance targets (LCP, INP, CLS, API latency) measured on realistic data | spec §31; QUALITY-GATES | SC-01…SC-03 | listOpportunities, getOpportunity | PERF-01…PERF-05 | OQ-11 |
 | R-27 | Isolation from The Granite Post (no shared secrets, DB, networks; no changes without approval) | D-06; CLAUDE.md | — | — | OPS-08, OPS-09 (Phase 7 checklist) | OQ-10 |
 | R-28 | Unpublished content (draft, in review, approved, rejected, takedown) is never public or indexed; 404 not 403 | ACCEPTANCE; spec §6 | SC-03 | getOpportunity | API-09, SEC-04, E2E-03 | OQ-20 |
-| R-29 | Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex | IA; spec §6 | SC-01…SC-03, SC-12, SC-13, SC-14 | getOpportunity, getSitemapEntries | SEO-01…SEO-05 | OQ-01, OQ-20 |
+| R-29 | Indexability: server-rendered public pages, metadata, canonical URL, sitemap, robots; staff/account pages noindex | IA; spec §6 | SC-01…SC-03, SC-12, SC-13, SC-14 | getOpportunity, getSitemapEntries | SEO-01…SEO-09 | OQ-01, OQ-20 |
 | R-30 | Deferred scope is not exposed: eligibility decisions, advanced related items, uploads, native applications, candidate search, payments (alerts, seeker profiles and employer self-service were authorised by D-35 and D-38) | D-15; ADR-0008; PRD exclusions | SC-01…SC-03 | — | SCOPE-01, SCOPE-02 | OQ-24 |
 | R-31 | Runtime versions are researched, pinned, patched and monitored for end of life | D-20; ADR-0013; VERSION_RECOMMENDATION | — | — | OPS-10…OPS-13 | OQ-28 |
 | R-32 | Category-specific schemas stay drafts until approved; examples and validation recommendations exist for every launch category | D-21; ADR-0014; CATEGORY_SCHEMA_EXAMPLES | SC-12 | createDraft, saveDraft | CAT-01…CAT-08 | OQ-06, OQ-21, OQ-22, OQ-29 |
@@ -342,10 +342,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-03 | noindex on staff, account, auth pages |
 | SEO-04 | robots.txt; expired/withdrawn policy once OQ-20 decided |
 | SEO-05 | JobPosting states only facts the listing states; JSON-LD output cannot break out of its element |
-| SEO-06 | List indexing rules: plain list and one known category indexable, others noindex with the right canonical; paged views self-canonical (D-50 proposal) |
-| SEO-07 | JobPosting closed by deadline, place required, remote needs applicant country, identifier as PropertyValue; Article for guides only |
-| SEO-08 | Sitemap: canonical absolute addresses, category lists, guides, no private or unapproved pages, `lastmod` only from real dates; robots.txt guard: every non-public page is noindex or disallowed |
-| SEO-09 | Editorial guides: one H1, no skipped heading levels, visible dates equal Article dates, every internal link resolves to a route |
+| SEO-06 | List indexing (D-50): the plain list and one known category with open listings are indexable; empty, searched, filtered, sorted and resized views are noindex with the right canonical; later pages are self-canonical |
+| SEO-07 | JobPosting: none after the deadline, a place is required, remote needs an applicant country, pay needs a period and an ISO currency, identifier as PropertyValue; Article only for the guides |
+| SEO-08 | Sitemap, robots.txt, canonical and noindex agree: sitemap addresses are crawlable, indexable and self-canonical; no rule hides a linked noindex page; every non-public page is noindex or disallowed; one canonical domain |
+| SEO-09 | Editorial guides: one H1, no skipped heading level, visible dates equal the Article dates, every internal link resolves to a route |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -602,9 +602,9 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-03 | `apps/web/tests/e2e/seo.spec.ts (robots.txt, noindex on filtered lists, account and one-time-link pages, draft legal pages)` | executed |
 | SEO-04 | `apps/web/tests/e2e/cms-journey.spec.ts (withdrawn listing: readable, noindex, no structured data, not in the sitemap); apps/web/tests/e2e/seo.spec.ts` | executed against the provisional defaults P4-02 and P4-03 (OQ-20 still open) |
 | SEO-05 | `apps/web/tests/unit/seo.test.tsx` | executed |
-| SEO-06 | `apps/web/tests/unit/seo-readiness.test.tsx (classifyList, list page metadata); apps/web/tests/e2e/seo.spec.ts (indexing rules)` | unit executed; e2e updated, not run in this session (needs the API stack) |
-| SEO-07 | `apps/web/tests/unit/seo.test.tsx (JobPosting, Article)` | executed |
-| SEO-08 | `apps/web/tests/unit/seo-readiness.test.tsx (robots, sitemap, private-route guard, one domain); apps/web/tests/e2e/seo.spec.ts` | unit executed; e2e not run |
+| SEO-06 | `apps/web/tests/unit/seo-readiness.test.tsx (list classification, list page metadata, empty categories); apps/web/tests/e2e/seo.spec.ts (indexing rules)` | unit executed; browser test run by CI |
+| SEO-07 | `apps/web/tests/unit/seo.test.tsx (JobPosting, pay, places, deadline, Article)` | executed |
+| SEO-08 | `apps/web/tests/unit/seo-readiness.test.tsx (robots, sitemap, consistency, private-route guard, one domain); apps/web/tests/e2e/seo.spec.ts` | unit executed; browser test run by CI |
 | SEO-09 | `apps/web/tests/unit/seo-readiness.test.tsx (guides, internal link integrity)` | executed |
 | PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
 | PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |

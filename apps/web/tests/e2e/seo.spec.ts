@@ -30,10 +30,11 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
       "/register",
       "/reset-password",
       "/employer/",
-      "/opportunities/*/report",
-      "/*?*cursor=",
     ])
       expect(text).toContain(`Disallow: ${path}`);
+    // a crawler must be able to fetch a page to see its noindex: these are linked publicly and say noindex themselves
+    for (const path of ["/employers/register", "/opportunities/*/report", "?*cursor=", "?*sort="])
+      expect(text).not.toContain(path);
     expect(text).not.toMatch(/Disallow: \/$/m);
     expect(text).toMatch(/Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
   });

@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { render } from "@testing-library/react";
+import type { Metadata } from "next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -10,6 +11,7 @@ const catalog = vi.hoisted(() => ({
   getSitemapEntries: vi.fn(),
   listCategories: vi.fn(),
   getOpportunity: vi.fn(),
+  listOpportunities: vi.fn(),
 }));
 vi.mock("@/lib/catalog", () => catalog);
 vi.mock("@/lib/session", () => ({ getCurrentUser: vi.fn(), getSavedIds: vi.fn() }));
@@ -87,20 +89,18 @@ describe("robots.txt", () => {
       expect(blocked).not.toBe("/");
     }
   });
-  it("blocks private areas and re-sorted or paged addresses, but not the public employer pages", () => {
+  it("blocks private areas, but not the public employer pages", () => {
     const d = rules[0]!.disallow;
-    for (const path of [
-      "/workspace",
-      "/api/",
-      "/account",
-      "/sign-in",
-      "/employer/",
-      "/opportunities/*/report",
-    ])
+    for (const path of ["/workspace", "/api/", "/account", "/sign-in", "/employer/"])
       expect(d).toContain(path);
-    for (const param of ["sort", "cursor", "limit"]) expect(d).toContain(`/*?*${param}=`);
     expect(d).not.toContain("/employer"); // would also match /employers
     expect(d).not.toContain("/employers");
+  });
+  it("never hides a noindex: pages linked from public pages that say noindex are crawlable", () => {
+    const d = rules[0]!.disallow;
+    for (const path of ["/employers/register", "/opportunities/*/report"]) expect(d).not.toContain(path);
+    expect(d.some((rule) => /[?*]/.test(rule.replace("/opportunities/*", "")))).toBe(false);
+    expect(d.some((rule) => /(sort|cursor|limit)=/.test(rule))).toBe(false);
   });
 });
 
@@ -108,6 +108,8 @@ describe("sitemap.xml source", () => {
   beforeEach(() => {
     catalog.getSitemapEntries.mockReset();
     catalog.listCategories.mockReset();
+    catalog.listOpportunities.mockReset();
+    catalog.listOpportunities.mockResolvedValue({ ok: true, data: { data: [{ id: "1" }], page: {} } });
     catalog.listCategories.mockResolvedValue([
       { code: "jobs", name: "Jobs" },
       { code: "tenders", name: "Tenders" },
@@ -150,6 +152,19 @@ describe("sitemap.xml source", () => {
       ).toBe(false);
     expect(urls.filter((u) => u.includes("?")).every((u) => /\?category=[a-z-]+$/.test(u))).toBe(true);
     expect(urls.some((u) => /[?&](q|sort|cursor|limit|location)=/.test(u))).toBe(false);
+  });
+  it("lists a category only while it holds an open listing, so the sitemap never offers a noindex address", async () => {
+    catalog.getSitemapEntries.mockResolvedValue({ ok: true, data: { data: [] } });
+    catalog.listOpportunities.mockImplementation(async (q: URLSearchParams) =>
+      q.get("category") === "tenders"
+        ? { ok: true, data: { data: [], page: {} } }
+        : { ok: true, data: { data: [{ id: "1" }], page: {} } },
+    );
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain(`${ORIGIN}/opportunities?category=jobs`);
+    expect(urls).not.toContain(`${ORIGIN}/opportunities?category=tenders`);
+    catalog.listOpportunities.mockResolvedValue({ ok: false, reason: "unreachable" });
+    expect((await sitemap()).some((e) => e.url.includes("?category="))).toBe(false);
   });
   it("still lists the static pages when the API is down", async () => {
     catalog.getSitemapEntries.mockResolvedValue({ ok: false, reason: "unreachable" });
@@ -206,11 +221,17 @@ describe("listing page metadata", () => {
 });
 
 describe("list page metadata", () => {
+  const results = (n: number) => ({
+    ok: true,
+    data: { data: Array.from({ length: n }, (_, i) => ({ id: `${i}` })), page: {} },
+  });
   async function metaFor(raw: Record<string, string>) {
     const { generateMetadata } = await import("@/app/opportunities/page");
     return generateMetadata({ searchParams: Promise.resolve(raw) });
   }
+  beforeEach(() => catalog.listOpportunities.mockReset());
   it("gives the plain list and each category a unique title, description and canonical address", async () => {
+    catalog.listOpportunities.mockResolvedValue(results(2));
     const plain = await metaFor({});
     const internships = await metaFor({ category: "internships" });
     expect(plain.title).toBe("Latest Jobs & Opportunities in Zimbabwe");
@@ -220,11 +241,23 @@ describe("list page metadata", () => {
     expect(internships.robots).toBeUndefined();
     expect(internships.description).not.toBe(plain.description);
     expect(internships.twitter).toMatchObject({ title: "Internships in Zimbabwe" });
+    expect(catalog.listOpportunities.mock.calls.at(-1)![0].toString()).toBe("category=internships");
   });
-  it("marks a searched view noindex, follow", async () => {
-    const meta = await metaFor({ q: "engineer" });
-    expect(meta.robots).toEqual({ index: false, follow: true });
-    expect(meta.alternates?.canonical).toBe("/opportunities");
+  it("keeps an empty category list, or one that could not be loaded, out of the index", async () => {
+    catalog.listOpportunities.mockResolvedValue(results(0));
+    expect((await metaFor({ category: "tenders" })).robots).toEqual({ index: false, follow: true });
+    expect((await metaFor({})).robots).toEqual({ index: false, follow: true });
+    catalog.listOpportunities.mockResolvedValue({ ok: false, reason: "unreachable" });
+    expect((await metaFor({ category: "jobs" })).robots).toEqual({ index: false, follow: true });
+  });
+  it("marks a searched view and a later page noindex, follow without asking the API", async () => {
+    const searched = await metaFor({ q: "engineer" });
+    expect(searched.robots).toEqual({ index: false, follow: true });
+    expect(searched.alternates?.canonical).toBe("/opportunities");
+    const paged = await metaFor({ category: "jobs", cursor: "abc" });
+    expect(paged.robots).toEqual({ index: false, follow: true });
+    expect(paged.alternates?.canonical).toBe("/opportunities?category=jobs&cursor=abc");
+    expect(catalog.listOpportunities).not.toHaveBeenCalled();
   });
 });
 
@@ -349,6 +382,72 @@ describe("private routes cannot be indexed by accident", () => {
       if (!noindex && !blocked) offenders.push(normalised);
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+/** Google's robots.txt matching: the longest matching rule wins, `*` matches any run, `$` anchors; Allow beats Disallow on a tie. */
+function robotsAllows(path: string): boolean {
+  const rule = (robots().rules as { allow: string; disallow: string[] }[])[0]!;
+  const matches = (pattern: string) =>
+    new RegExp("^" + pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")).test(path);
+  const blocked = rule.disallow.filter(matches).sort((a, b) => b.length - a.length)[0];
+  return !blocked || (matches(rule.allow) && rule.allow.length >= blocked.length);
+}
+
+describe("sitemap, robots.txt, canonical and noindex agree", () => {
+  it("every sitemap address is crawlable, indexable and canonical to itself", async () => {
+    catalog.getSitemapEntries.mockResolvedValue({
+      ok: true,
+      data: { data: [{ slug: "graduate-engineer-abc123", updated_at: "2026-10-20T08:00:00Z" }] },
+    });
+    catalog.listCategories.mockResolvedValue(Object.keys(CATEGORY_SEO).map((code) => ({ code, name: code })));
+    catalog.listOpportunities.mockResolvedValue({ ok: true, data: { data: [{ id: "1" }], page: {} } });
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls.length).toBeGreaterThan(10);
+    for (const url of urls) {
+      const { pathname, search } = new URL(url);
+      expect(robotsAllows(pathname + search), `${url} is blocked by robots.txt`).toBe(true);
+      if (pathname === "/opportunities" && search) {
+        const view = classifyList(Object.fromEntries(new URLSearchParams(search)));
+        expect(view, url).toMatchObject({ kind: "category", index: true, canonical: pathname + search });
+      }
+    }
+  });
+  it("static sitemap pages say index and name themselves as canonical", async () => {
+    const pages: [string, () => Promise<{ metadata: Metadata }>][] = [
+      ["/", () => import("@/app/page")],
+      ["/about", () => import("@/app/about/page")],
+      ["/contact", () => import("@/app/contact/page")],
+      ["/employers", () => import("@/app/employers/page")],
+      [
+        "/guides/how-to-find-jobs-in-zimbabwe",
+        () => import("@/app/guides/how-to-find-jobs-in-zimbabwe/page"),
+      ],
+      [
+        "/guides/apply-safely-and-avoid-scams",
+        () => import("@/app/guides/apply-safely-and-avoid-scams/page"),
+      ],
+      ["/guides/how-listings-are-verified", () => import("@/app/guides/how-listings-are-verified/page")],
+    ];
+    expect(
+      pages
+        .filter(([p]) => p.startsWith("/guides/"))
+        .map(([p]) => p)
+        .sort(),
+    ).toEqual(GUIDES.map((g) => g.path as string).sort());
+    for (const [path, load] of pages) {
+      const { metadata } = await load();
+      expect(metadata.robots, path).toBeUndefined();
+      expect(metadata.alternates?.canonical, path).toBe(path);
+    }
+  });
+  it("addresses the sitemap never lists are blocked or noindex, never both left open", () => {
+    expect(robotsAllows("/account")).toBe(false);
+    expect(robotsAllows("/workspace/activity")).toBe(false);
+    expect(robotsAllows("/employer/claim")).toBe(false);
+    expect(robotsAllows("/employers")).toBe(true);
+    expect(robotsAllows("/employers/example-power")).toBe(true);
+    expect(robotsAllows("/opportunities?category=jobs")).toBe(true);
   });
 });
 

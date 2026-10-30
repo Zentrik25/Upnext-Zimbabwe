@@ -70,6 +70,19 @@ describe("structured data", () => {
     for (const key of ["validThrough", "baseSalary", "employmentType", "identifier"])
       expect(data).not.toHaveProperty(key);
   });
+  it("marks up pay only with figures, an ISO currency and a period, never a guessed unit", () => {
+    const pay = (salary: unknown) =>
+      jobPostingFor({ ...base, salary } as unknown as OpportunityDetail, "u")!.baseSalary;
+    expect(pay({ min: "700.00", max: "700.00", currency: "USD", period: "month" })).toEqual({
+      "@type": "MonetaryAmount",
+      currency: "USD",
+      value: { "@type": "QuantitativeValue", unitText: "MONTH", value: 700 },
+    });
+    expect(pay({ min: "700.00", max: "900.00", currency: "USD", period: null })).toBeUndefined();
+    expect(pay({ min: "700.00", max: "900.00", currency: "usd", period: "month" })).toBeUndefined();
+    expect(pay({ min: "abc", max: null, currency: "USD", period: "month" })).toBeUndefined();
+    expect(pay({ min: null, max: null, currency: "USD", period: "month" })).toBeUndefined();
+  });
   it("describes where the job is only from stated places, and emits nothing when none is stated", () => {
     const at = (over: Record<string, unknown>) =>
       jobPostingFor({ ...base, ...over } as unknown as OpportunityDetail, "u");

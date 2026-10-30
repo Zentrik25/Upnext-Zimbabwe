@@ -72,14 +72,23 @@ export function jobPostingFor(listing: OpportunityDetail, pageUrl: string): Json
   } else {
     data.jobLocation = { "@type": "Place", address: { "@type": "PostalAddress", addressCountry: "ZW" } };
   }
+  // Pay is marked up only when the listing states figures, a currency code and the period they cover: Google's
+  // baseSalary needs all three, and a unit or currency is never guessed.
   const salary = listing.salary;
-  if (salary && (salary.min || salary.max)) {
-    const value: Json = { "@type": "QuantitativeValue" };
-    if (salary.min && salary.max && salary.min !== salary.max) {
-      value.minValue = Number(salary.min);
-      value.maxValue = Number(salary.max);
-    } else value.value = Number(salary.min ?? salary.max);
-    if (salary.period && PERIOD[salary.period]) value.unitText = PERIOD[salary.period];
+  const unit = salary?.period ? PERIOD[salary.period] : undefined;
+  const figures = [salary?.min, salary?.max].filter((v): v is string => Boolean(v)).map(Number);
+  if (
+    salary &&
+    unit &&
+    /^[A-Z]{3}$/.test(salary.currency) &&
+    figures.length > 0 &&
+    figures.every(Number.isFinite)
+  ) {
+    const value: Json = { "@type": "QuantitativeValue", unitText: unit };
+    if (figures.length === 2 && figures[0] !== figures[1]) {
+      value.minValue = Math.min(...figures);
+      value.maxValue = Math.max(...figures);
+    } else value.value = figures[0];
     data.baseSalary = { "@type": "MonetaryAmount", currency: salary.currency, value };
   }
   if (listing.reference_number) {

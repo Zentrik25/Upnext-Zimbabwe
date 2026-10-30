@@ -1,6 +1,6 @@
 # SEO, AEO, GEO and Google indexing readiness: audit and final engineering report — DRAFT
 
-Status: DRAFT (owner approval pending). Date: 2026-10-30. Branch: `claude/seo-readiness` (not merged, not deployed).
+Status: DRAFT. D-50 approved conditionally by the owner on 2026-10-30 (see the decision register). Date: 2026-10-30. Branch: `claude/seo-readiness` (not merged, not deployed).
 Nothing here promises rankings, indexing or appearance in AI-generated answers. It records technical correctness and
 what is still unproven.
 
@@ -29,7 +29,11 @@ Severity: Critical, High, Medium, Low. "Status" is the state on this branch.
 | SEO-A05 | Medium | Paged and filtered lists | Source: all views, including later pages, were `noindex` with canonical to page one | Conflicting signals; page two is a distinct page | Later pages: noindex, follow, canonical to themselves. Other views: noindex, follow, canonical to the nearest indexable list. Tracking parameters (utm_*, fbclid) are ignored | Fixed |
 | SEO-A06 | Medium | Twitter/X cards | Source: only the layout set `twitter`; Next.js does not merge it, so every page's card said "UPNEXT Careers" while Open Graph said otherwise | Wrong share previews | `socialFor()` sets Open Graph and Twitter together on every public page | Fixed |
 | SEO-A07 | Medium | Listing titles | Source: `Title · Organisation \| UPNEXT Careers` | Less readable than the brief's pattern | `Title at Organisation \| UPNEXT Careers` | Fixed |
-| SEO-A08 | Medium | `robots.txt` | Source: no rule for `/employer/` tools, report forms, `/employers/register`, `/django-admin/`, or re-sorted, re-sized and paged addresses | Crawl waste; private form addresses crawled | Rules added (the public `/employers` stays open; no rendering resource is blocked). Guard test: every non-public page is `noindex` or disallowed | Fixed |
+| SEO-A08 | Medium | `robots.txt` | Source: no rule for `/employer/` tools or `/django-admin/` | Private tool addresses crawled | Rules added (the public `/employers` stays open; no rendering resource is blocked). Guard test: every non-public page is `noindex` or disallowed | Fixed |
+| SEO-A17 | High | `robots.txt` versus `noindex` | Review of this branch's first draft: disallowing sort, cursor, limit, report and employer-registration addresses would stop crawlers fetching pages that carry `noindex`, so they could be shown as bare addresses | The directive meant to keep them out would hide itself | Those rules were removed; these pages are linked from public pages and say `noindex` instead. Test: no rule hides a linked noindex page and every sitemap address is crawlable | Fixed |
+| SEO-A18 | Medium | Empty category lists | Review: a category with no open listing was still indexable and listed in the sitemap | Thin pages; contradicts the owner's condition (genuine opportunities only) | An indexable list with no results, or one that failed to load, is `noindex, follow`; the sitemap lists a category only while it holds an open listing | Fixed |
+| SEO-A19 | Medium | JobPosting `baseSalary` | Review against Google's job posting guidance: pay without a period or with a non-ISO currency is not valid | Invalid markup | Pay is marked up only with figures, an ISO currency and a period; no unit is guessed | Fixed |
+| SEO-A20 | Info | Baseline CI on the integration branch | Run 153 on `cc06eea`: API, web, docs, browser and production-Compose jobs pass; "No secrets committed" and the TLS rehearsal preflight fail, unrelated to SEO and addressed by PR #27 | None for search | See the merge sequence in the pull request | Open (outside this branch) |
 | SEO-A09 | Low | API sitemap feed | Source: cap 50,000 plus static and category addresses could exceed the protocol's 50,000-URL file limit | Oversize file would be ignored | Cap 49,000; segmentation with `generateSitemaps` documented for when volume nears it | Fixed (segmentation not needed at current volume) |
 | SEO-A10 | Medium | Informational content (AEO/GEO) | Source: only About and Contact; no guidance on finding jobs, safe applications, scams or verification | Thin answer coverage, weak trust signals | Three editorial guides (section 3), server-rendered, linked from the footer, About and listing pages, listed in the sitemap, with Article data and visible dates | Done (wording is DRAFT) |
 | SEO-A11 | Low | Breadcrumbs | Source: listing breadcrumb skipped the category level | Weaker site structure signal | Opportunities > Category > Listing | Fixed |
@@ -78,7 +82,7 @@ Validation: JSON structure and required fields were checked in unit tests and on
 Run them after deployment (guide, section 4).
 
 Local build output, observed (mock API):
-- `GET /robots.txt` → 200 `text/plain`, 21 `Disallow` rules, `Sitemap: https://upnext.co.zw/sitemap.xml`.
+- `GET /robots.txt` → 200 `text/plain`, 16 `Disallow` rules, `Sitemap: https://upnext.co.zw/sitemap.xml`.
 - `GET /sitemap.xml` → 200 `application/xml`, well-formed, 15 URLs: 5 static, 3 guides, 6 category lists, 1 listing with `lastmod`; no query addresses other than categories; privacy and terms absent until owner approval.
 - Canonicals and robots: plain list index; `?category=internships&utm_source=x` canonical `…/opportunities?category=internships`, indexable; `?q=` noindex, follow; `?category=jobs&cursor=abc` noindex, follow, self-canonical; open listing indexable with JobPosting; closed and past-deadline listings `noindex`, no markup; unknown and unpublished listings `404`.
 - Titles, Open Graph and Twitter titles agree on every page checked.
@@ -128,7 +132,7 @@ Local build output, observed (mock API):
 | `tsc --noEmit` | passed |
 | `eslint .` | passed |
 | `prettier --check` | passed |
-| `vitest run` (web unit) | passed: 18 files, 220 tests (includes the new SEO suite; the private-route guard was checked by deleting `/workspace` from robots.txt and failing as expected) |
+| `vitest run` (web unit) | passed: 18 files, 227 tests (includes the new SEO suite; the private-route guard was checked by deleting `/workspace` from robots.txt and failing as expected) |
 | `next build` | passed |
 | Production-mode smoke (robots, sitemap, page heads, JSON-LD, status codes) | passed against a mock API |
 | `ruff check` / `ruff format --check` on the API change | passed |

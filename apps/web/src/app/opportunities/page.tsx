@@ -1,5 +1,6 @@
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import type { Metadata } from "next";
+import { cache } from "react";
 import { socialFor } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { classifyList, LIST_KEYS } from "@/lib/list-seo";
@@ -27,6 +28,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const view = classifyList(await searchParams);
   const copy = view.kind === "category" ? CATEGORY_SEO[view.category] : undefined;
+  // An address that would be indexed must hold genuine opportunities: an empty list, or one that could not be
+  // loaded, is not offered to search engines (the page itself says so to visitors).
+  let index: boolean = view.index;
+  if (view.index) {
+    const found = await fetchList(view.kind === "category" ? `category=${view.category}` : "");
+    index = found.ok && found.data.data.length > 0;
+  }
   const title =
     copy?.title ?? (view.kind === "plain" ? "Latest Jobs & Opportunities in Zimbabwe" : "Opportunities");
   const description = copy?.description ?? BASE_DESCRIPTION;
@@ -35,11 +43,14 @@ export async function generateMetadata({
     description,
     alternates: { canonical: view.canonical },
     ...socialFor(view.canonical, { title, description }),
-    ...(view.index ? {} : { robots: { index: false, follow: true } }),
+    ...(index ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
 const FILTER_KEYS = LIST_KEYS;
+
+/** One API request per distinct query for the metadata and the page of the same render. */
+const fetchList = cache((query: string) => listOpportunities(new URLSearchParams(query)));
 type Search = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -65,7 +76,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     if (value !== undefined && value !== "") params.set(key, value);
   }
   const [result, categories, locations, user] = await Promise.all([
-    listOpportunities(params),
+    fetchList(params.toString()),
     listCategories(),
     listLocations(),
     getCurrentUser(),
