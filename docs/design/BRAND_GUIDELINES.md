@@ -35,6 +35,8 @@ Rules: black on white, white on black; flat; no blue, gradient, 3D, bevel, glow,
 | `social-profile-400.png` | Social profile icon |
 | `og-image.png` (1200x630, owner-supplied artwork, 8-bit PNG under 300 KB) | Open Graph and Twitter card on every page; this is the image WhatsApp, Facebook, LinkedIn and X show for a shared link |
 
+**Listing previews.** Each public listing (`/opportunities/<slug>`, every category) sets its own Open Graph and Twitter image, `/opportunities/<slug>/og`: a generated 1200x630 card in the site's design (organisation initials mark, category, title, organisation, where, kind of work, deadline, the UPNEXT Careers logo and domain). It uses only what the listing already states, so a closed or withdrawn listing says so. Listings and organisations have no image or logo field today; when uploads are authorised the order will be listing image, then organisation logo, then this card, then the site image. An unknown listing has no card (404); if the service cannot be reached the site image is served; the card is cached for an hour.
+
 Regenerate: `python tools/brand/build_assets.py` (needs `fonttools`, fonts-inter), then `PW_CHROMIUM=<chrome> node apps/web/scripts/render-brand-pngs.mjs` in `apps/web`. A test (`tests/unit/brand.test.ts`) checks the files exist and that every logo SVG contains only black or white fills and no gradient, filter, image or stroke.
 
 ## 3. Colour

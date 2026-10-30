@@ -47,7 +47,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: listing.canonical_path },
-    ...socialFor(listing.canonical_path, { title, description }),
+    ...socialFor(listing.canonical_path, {
+      title,
+      description,
+      image: {
+        url: `/opportunities/${listing.slug}/og`,
+        alt: `${listing.title}, ${listing.organisation.name}`,
+      },
+    }),
     // Closed, withdrawn and past-deadline listings stay readable but are not promoted by search engines (OQ-20 default).
     robots: isOpen(listing) ? undefined : { index: false },
   };

@@ -9,3 +9,5 @@ fidelity and has no effect until Söhne is licensed. Regenerate or replace from 
 `@fontsource/source-code-pro` (v5) latin woff2 files.
 
 Inter 700 (`inter-latin-700.woff2`, from `@fontsource/inter` v5, OFL) is used only for the home page headlines (D-47) through the `.font-headline` class; it is loaded without preload so other pages do not fetch it.
+
+`inter-latin-400.ttf` and `inter-latin-700.ttf` are the same Inter files converted from woff2 to TrueType (fontTools, no change to the glyphs): the preview-card renderer (`app/opportunities/[slug]/og`) cannot read woff2. They are read on the server only and never sent to a browser.
