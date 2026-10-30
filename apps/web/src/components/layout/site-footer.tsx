@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Lockup } from "@/components/brand/logo";
 import { BRAND } from "@/lib/brand";
+import { GUIDES } from "@/lib/guides";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -11,6 +12,10 @@ const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[
       ["/opportunities", "All opportunities"],
       ["/#categories", "Browse by category"],
     ],
+  },
+  {
+    title: "Guides",
+    links: GUIDES.map((g) => [g.path, g.title] as const),
   },
   {
     title: "Employers",
@@ -51,7 +56,7 @@ export function SiteFooter() {
           </div>
           <nav
             aria-label="Footer"
-            className="col-span-3 grid grid-cols-3 gap-8 max-md:col-span-1 max-md:grid-cols-2 max-sm:block max-sm:columns-2 max-sm:gap-x-4"
+            className="col-span-3 grid grid-cols-4 gap-8 max-md:col-span-1 max-md:grid-cols-2 max-sm:block max-sm:columns-2 max-sm:gap-x-4"
           >
             {COLUMNS.map((column) => (
               <div key={column.title} className="max-sm:mb-6 max-sm:break-inside-avoid">

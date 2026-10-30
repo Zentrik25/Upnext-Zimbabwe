@@ -342,6 +342,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-03 | noindex on staff, account, auth pages |
 | SEO-04 | robots.txt; expired/withdrawn policy once OQ-20 decided |
 | SEO-05 | JobPosting states only facts the listing states; JSON-LD output cannot break out of its element |
+| SEO-06 | List indexing rules: plain list and one known category indexable, others noindex with the right canonical; paged views self-canonical (D-50 proposal) |
+| SEO-07 | JobPosting closed by deadline, place required, remote needs applicant country, identifier as PropertyValue; Article for guides only |
+| SEO-08 | Sitemap: canonical absolute addresses, category lists, guides, no private or unapproved pages, `lastmod` only from real dates; robots.txt guard: every non-public page is noindex or disallowed |
+| SEO-09 | Editorial guides: one H1, no skipped heading levels, visible dates equal Article dates, every internal link resolves to a route |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -598,6 +602,10 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-03 | `apps/web/tests/e2e/seo.spec.ts (robots.txt, noindex on filtered lists, account and one-time-link pages, draft legal pages)` | executed |
 | SEO-04 | `apps/web/tests/e2e/cms-journey.spec.ts (withdrawn listing: readable, noindex, no structured data, not in the sitemap); apps/web/tests/e2e/seo.spec.ts` | executed against the provisional defaults P4-02 and P4-03 (OQ-20 still open) |
 | SEO-05 | `apps/web/tests/unit/seo.test.tsx` | executed |
+| SEO-06 | `apps/web/tests/unit/seo-readiness.test.tsx (classifyList, list page metadata); apps/web/tests/e2e/seo.spec.ts (indexing rules)` | unit executed; e2e updated, not run in this session (needs the API stack) |
+| SEO-07 | `apps/web/tests/unit/seo.test.tsx (JobPosting, Article)` | executed |
+| SEO-08 | `apps/web/tests/unit/seo-readiness.test.tsx (robots, sitemap, private-route guard, one domain); apps/web/tests/e2e/seo.spec.ts` | unit executed; e2e not run |
+| SEO-09 | `apps/web/tests/unit/seo-readiness.test.tsx (guides, internal link integrity)` | executed |
 | PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
 | PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |
 | PRIV-05 | `apps/api/tests/test_deletion.py (retention tests)` | executed against the provisional windows P4-06 |

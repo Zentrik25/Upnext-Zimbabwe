@@ -3,7 +3,13 @@ import { absolute } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-/** Public pages may be indexed; accounts, staff, the API and one-time-link pages may not (SEO-03). */
+/**
+ * Public pages may be crawled and indexed. Accounts, the staff workspace, employer tools, the API, one-time-link
+ * pages and report forms may not (SEO-03). robots.txt only asks crawlers to stay away: those pages are protected by
+ * sign-in, and the ones that can be opened also say `noindex` themselves. Address patterns that only re-sort,
+ * re-size or page the same listings are kept out of the crawl; the listings themselves are reached through the
+ * sitemap and the category lists. Nothing the pages need to render (scripts, styles, images, fonts) is blocked.
+ */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -14,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/workspace",
           "/api/",
           "/health/",
+          "/django-admin/",
           "/account",
           "/saved",
           "/dashboard",
@@ -25,6 +32,12 @@ export default function robots(): MetadataRoute.Robots {
           "/verify-email",
           "/forgot-password",
           "/reset-password",
+          "/employer/", // employer tools; the public /employers pages stay open
+          "/employers/register",
+          "/opportunities/*/report",
+          "/*?*sort=",
+          "/*?*cursor=",
+          "/*?*limit=",
         ],
       },
     ],

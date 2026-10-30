@@ -1,6 +1,8 @@
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
+import { CATEGORY_SEO } from "@/lib/category-seo";
+import { classifyList, LIST_KEYS } from "@/lib/list-seo";
 import Link from "next/link";
 import { Container } from "@/components/layout";
 import { OpportunityRow } from "@/components/opportunities/parts";
@@ -13,36 +15,31 @@ const BASE_DESCRIPTION =
   "Search jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe.";
 
 /**
- * Only the plain list is indexed. A filtered, searched, sorted or paged list is a view of the same listings, so
- * it is not indexed (links are still followed) and points at the plain address as its canonical form. Category
- * paths of their own are OPEN (P4-02).
+ * Indexing rules (see `classifyList`): the plain list and the list of one known category are indexed, each with its own
+ * title and a canonical address of its own. A later page is a page of its own (noindex, follow, canonical to itself, never
+ * to page one). A searched, filtered, sorted or resized list is a view of the same listings: noindex, follow, canonical
+ * to the nearest indexable list. Listings themselves are found through the sitemap and the crawlable links below.
  */
 export async function generateMetadata({
   searchParams,
 }: {
   searchParams: Promise<Search>;
 }): Promise<Metadata> {
-  const raw = await searchParams;
-  const refined = Object.values(raw).some((value) => value !== undefined && value !== "");
+  const view = classifyList(await searchParams);
+  const copy = view.kind === "category" ? CATEGORY_SEO[view.category] : undefined;
+  const title =
+    copy?.title ?? (view.kind === "plain" ? "Latest Jobs & Opportunities in Zimbabwe" : "Opportunities");
+  const description = copy?.description ?? BASE_DESCRIPTION;
   return {
-    title: "Opportunities",
-    description: BASE_DESCRIPTION,
-    alternates: { canonical: "/opportunities" },
-    openGraph: openGraphFor("/opportunities"),
-    ...(refined ? { robots: { index: false, follow: true } } : {}),
+    title,
+    description,
+    alternates: { canonical: view.canonical },
+    ...socialFor(view.canonical, { title, description }),
+    ...(view.index ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
-const FILTER_KEYS = [
-  "q",
-  "category",
-  "location",
-  "employment_type",
-  "work_mode",
-  "deadline_state",
-  "sort",
-  "limit",
-] as const;
+const FILTER_KEYS = LIST_KEYS;
 type Search = Record<string, string | string[] | undefined>;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -79,6 +76,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const active = params.get("category");
   const keepForSearch = [...params.entries()].filter(([k]) => !["q", "category", "cursor"].includes(k));
 
+  const headingCategory = classifyList(raw).kind === "category" ? active : null;
   const tabs = [
     { href: href(params, { category: null }), label: "All", current: !active },
     ...categories.map((c) => ({
@@ -93,7 +91,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       <section aria-labelledby="results-title" className="border-b border-line py-[22px]">
         <Container>
           <h1 id="results-title" className="text-section font-strong tracking-section">
-            Opportunities
+            {headingCategory ? CATEGORY_SEO[headingCategory]!.heading : "Opportunities"}
           </h1>
           <p className="mt-1 mb-[14px] text-base text-muted">
             Every listing names its source. Applications happen on the issuer&apos;s own channel.

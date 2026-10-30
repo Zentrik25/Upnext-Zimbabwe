@@ -29,6 +29,9 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
       "/sign-in",
       "/register",
       "/reset-password",
+      "/employer/",
+      "/opportunities/*/report",
+      "/*?*cursor=",
     ])
       expect(text).toContain(`Disallow: ${path}`);
     expect(text).not.toMatch(/Disallow: \/$/m);
@@ -51,20 +54,30 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(listings).toHaveLength(api.data.length);
     for (const row of api.data)
       expect(listings.some((u) => u.endsWith(`/opportunities/${row.slug}`))).toBe(true);
-    expect(urls.some((u) => u.includes("?") || u.includes("/workspace") || u.includes("/account"))).toBe(
-      false,
-    );
+    // the only addresses with a query string are the category lists, one per launch category
+    expect(urls.filter((u) => u.includes("?")).every((u) => /\?category=[a-z-]+$/.test(u))).toBe(true);
+    expect(urls.some((u) => u.includes("/workspace") || u.includes("/account"))).toBe(false);
+    for (const guide of [
+      "how-to-find-jobs-in-zimbabwe",
+      "apply-safely-and-avoid-scams",
+      "how-listings-are-verified",
+    ])
+      expect(urls.some((u) => u.endsWith(`/guides/${guide}`))).toBe(true);
   });
 });
 
 test.describe("indexing rules (SEO-01, SEO-03)", () => {
-  test("the plain list is indexed; filtered, searched and paged lists are not, and all point at the plain address", async ({
+  test("the plain list and each category list are indexed with their own address; searched, filtered, sorted and resized lists are not", async ({
     page,
   }) => {
     await page.goto("/opportunities");
     expect(await robotsMeta(page)).toBeNull();
     expect(await canonical(page)).toMatch(/\/opportunities$/);
-    for (const query of ["?category=jobs", "?q=engineer", "?sort=closing_soon", "?limit=2"]) {
+    await page.goto("/opportunities?category=internships&utm_source=newsletter");
+    expect(await robotsMeta(page)).toBeNull();
+    expect(await canonical(page)).toMatch(/\/opportunities\?category=internships$/);
+    await expect(page).toHaveTitle(/^Internships in Zimbabwe \| UPNEXT Careers$/);
+    for (const query of ["?q=engineer", "?sort=closing_soon", "?limit=2"]) {
       await page.goto(`/opportunities${query}`);
       expect(await robotsMeta(page), query).toContain("noindex");
       expect(await robotsMeta(page), query).toContain("follow");
@@ -110,7 +123,7 @@ test.describe("structured data (SEO-01)", () => {
     expect(posting!.url).toBe(await canonical(page));
     expect(posting!.directApply).toBe(false);
     const crumbs = blocks.find((b) => b["@type"] === "BreadcrumbList");
-    expect((crumbs!.itemListElement as unknown[]).length).toBe(2);
+    expect((crumbs!.itemListElement as unknown[]).length).toBe(3); // Opportunities > Jobs > this listing
     expect(await robotsMeta(page)).toBeNull(); // published listings are indexable
   });
 
@@ -124,6 +137,25 @@ test.describe("structured data (SEO-01)", () => {
     const types = (await jsonLd(page)).map((b) => b["@type"]);
     expect(types).toContain("BreadcrumbList");
     expect(types).not.toContain("JobPosting");
+  });
+
+  test("the editorial guides are server-rendered, canonical and carry Article data, not FAQ markup", async ({
+    page,
+  }) => {
+    for (const slug of [
+      "how-to-find-jobs-in-zimbabwe",
+      "apply-safely-and-avoid-scams",
+      "how-listings-are-verified",
+    ]) {
+      const response = await page.goto(`/guides/${slug}`);
+      expect(response?.status(), slug).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      expect(await robotsMeta(page), slug).toBeNull();
+      expect(await canonical(page), slug).toMatch(new RegExp(`/guides/${slug}$`));
+      const types = (await jsonLd(page)).map((b) => b["@type"]);
+      expect(types).toEqual(expect.arrayContaining(["Article", "BreadcrumbList"]));
+      expect(types).not.toContain("FAQPage");
+    }
   });
 
   test("the home page describes the site and its search", async ({ page }) => {

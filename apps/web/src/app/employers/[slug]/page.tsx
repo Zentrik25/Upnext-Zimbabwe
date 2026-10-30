@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/layout";
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: profile.organisation.name,
     description,
     alternates: { canonical: `/employers/${profile.slug}` },
-    openGraph: openGraphFor(`/employers/${profile.slug}`, { title: profile.organisation.name, description }),
+    ...socialFor(`/employers/${profile.slug}`, { title: profile.organisation.name, description }),
   };
 }
 
