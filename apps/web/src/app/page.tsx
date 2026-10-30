@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
+import { cache, Suspense } from "react";
 import Link from "next/link";
 import { Container } from "@/components/layout";
-import { CategoryGrid, Hero, TrustSection } from "@/components/home/sections";
+import {
+  CategoryGrid,
+  CategoryGridSkeleton,
+  HeroFrame,
+  HeroSearch,
+  HeroSearchSkeleton,
+  TrustSection,
+} from "@/components/home/sections";
+import { HomeLatest, HomeLatestSkeleton } from "@/components/home/latest";
 import { Icon } from "@/components/ui/icons";
-import { HomeListingRow } from "@/components/home/home-row";
 import { JsonLd } from "@/components/seo/json-ld";
-import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
-import { getCurrentUser, getSavedIds } from "@/lib/session";
+import { listCategories, listLocations } from "@/lib/catalog";
 import { BRAND, socialFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import { websiteFor } from "@/lib/structured-data";
@@ -19,22 +26,36 @@ export const metadata: Metadata = {
   ...socialFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
 };
 
-export default async function HomePage() {
-  const [latest, categories, locations, user] = await Promise.all([
-    listOpportunities(new URLSearchParams({ limit: "6" })),
-    listCategories(),
-    listLocations(),
-    getCurrentUser(),
-  ]);
-  const rows = latest.ok ? latest.data.data : [];
-  const savedIds = user ? await getSavedIds(rows.map((row) => row.id)) : new Set<string>();
+/** One request each for the hero search and the category tiles, which both need the categories. */
+const categoriesOnce = cache(listCategories);
+
+async function HomeSearch() {
+  const [categories, locations] = await Promise.all([categoriesOnce(), listLocations()]);
+  return <HeroSearch categories={categories} locations={locations} />;
+}
+
+async function HomeCategories() {
+  return <CategoryGrid categories={await categoriesOnce()} />;
+}
+
+/**
+ * Static content (the headline, the illustration, the section headings, the trust section) is sent at once. The
+ * three sections that wait for the API each have their own Suspense boundary, so none of them holds up the others.
+ */
+export default function HomePage() {
   return (
     <>
       {websiteFor(siteUrl()).map((block, index) => (
         <JsonLd key={index} data={block} />
       ))}
-      <Hero categories={categories} locations={locations} />
-      <CategoryGrid categories={categories} />
+      <HeroFrame>
+        <Suspense fallback={<HeroSearchSkeleton />}>
+          <HomeSearch />
+        </Suspense>
+      </HeroFrame>
+      <Suspense fallback={<CategoryGridSkeleton />}>
+        <HomeCategories />
+      </Suspense>
       <section aria-labelledby="latest-title" className="border-b border-line pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -49,26 +70,9 @@ export default async function HomePage() {
               <Icon name="arrowRight" className="h-4 w-4" />
             </Link>
           </div>
-          {rows.length > 0 ? (
-            <div
-              className="mt-3 overflow-hidden rounded-feature border border-border-panel bg-surface"
-              data-testid="latest"
-            >
-              {rows.map((row) => (
-                <HomeListingRow
-                  key={row.id}
-                  row={row}
-                  save={{ signedIn: Boolean(user), saved: savedIds.has(row.id), returnTo: "/" }}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 text-base text-muted" data-testid="latest-empty">
-              {latest.ok
-                ? "New opportunities are added as they are checked."
-                : "Opportunities are unavailable right now. Try again shortly."}
-            </p>
-          )}
+          <Suspense fallback={<HomeLatestSkeleton />}>
+            <HomeLatest />
+          </Suspense>
         </Container>
       </section>
       <TrustSection />

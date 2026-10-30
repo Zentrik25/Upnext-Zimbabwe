@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { socialFor } from "@/lib/brand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { cache, Suspense, type ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ListingEvents } from "@/components/opportunities/listing-events";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
-import { getOpportunity } from "@/lib/catalog";
+import { getOpportunity as fetchOpportunity } from "@/lib/catalog";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import {
   VERIFICATION,
@@ -22,6 +22,7 @@ import {
   labelFor,
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
+import { SkeletonLine } from "@/components/ui/skeleton";
 import { absolute } from "@/lib/site";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { breadcrumbFor, isOpen, jobPostingFor } from "@/lib/structured-data";
@@ -30,6 +31,9 @@ import { getCurrentUser, getSavedIds } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** The metadata and the page of one render share one request for the listing. */
+const getOpportunity = cache(fetchOpportunity);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -68,8 +72,6 @@ export default async function OpportunityPage({ params }: Props) {
   const deadline = deadlineView(listing.deadline, listing.status);
   const salary = formatMoney(listing.salary);
   const funding = formatMoney(listing.funding);
-  const user = await getCurrentUser();
-  const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
 
   const pageUrl = absolute(`/opportunities/${listing.slug}`);
   const posting = jobPostingFor(listing, pageUrl);
@@ -133,17 +135,9 @@ export default async function OpportunityPage({ params }: Props) {
                 listing.organisation.name
               )}
             </p>
-            {listing.status === "published" || isSaved ? (
-              <SaveToggle
-                className="mt-2"
-                opportunityId={listing.id}
-                title={listing.title}
-                initialSaved={isSaved}
-                signedIn={Boolean(user)}
-                returnTo={`/opportunities/${listing.slug}`}
-                showLabel
-              />
-            ) : null}
+            <Suspense fallback={listing.status === "published" ? <SaveSkeleton /> : null}>
+              <ListingSave listing={listing} />
+            </Suspense>
             <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
               {listing.locations.map((l) => (
                 <li key={l.slug}>{l.name}</li>
@@ -287,6 +281,37 @@ export default async function OpportunityPage({ params }: Props) {
         </article>
       </Container>
     </>
+  );
+}
+
+/**
+ * The save control needs the visitor's session, which is a request of its own. Everything else on the page comes from
+ * the one listing request that has already decided the status code, so the page is sent without waiting for the
+ * session and this control follows in its own boundary. Until the session is known no save or sign-in prompt is drawn.
+ */
+async function ListingSave({ listing }: { listing: OpportunityDetail }) {
+  const user = await getCurrentUser();
+  const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
+  if (listing.status !== "published" && !isSaved) return null;
+  return (
+    <SaveToggle
+      className="mt-2"
+      opportunityId={listing.id}
+      title={listing.title}
+      initialSaved={isSaved}
+      signedIn={Boolean(user)}
+      returnTo={`/opportunities/${listing.slug}`}
+      showLabel
+    />
+  );
+}
+
+/** Holds the save control's place (44px) and announces nothing: it is one small control, not a region. */
+function SaveSkeleton() {
+  return (
+    <div aria-hidden="true" className="mt-2 flex min-h-[44px] items-center">
+      <SkeletonLine className="w-[120px] skeleton-pulse" />
+    </div>
   );
 }
 

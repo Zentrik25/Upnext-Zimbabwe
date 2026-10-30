@@ -82,6 +82,23 @@
   }
 }
 
+/* Loading placeholders: one slow opacity pulse on the whole region (compositor only, no layout, no colour change).
+   Only for people who have not asked for reduced motion; everyone else sees a still placeholder. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

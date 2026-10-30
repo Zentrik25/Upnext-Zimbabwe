@@ -47,7 +47,7 @@ Inter (SIL Open Font License), Latin subset, weights 400 and 600, self-hosted th
 
 ## 5. Components
 
-Shared components only, no page-specific copies: header (logo, Opportunities, For employers, Sign in, Register; wraps on narrow screens, 44px targets), buttons (primary, secondary, inverse for black bands), search group, filter selects, opportunity rows, category cards, tags, tabs, forms and fields, notices, empty states, loading skeletons (private routes only, no animation) and the error view (retry, focus, reference), pagination, footer. Radii come only from the token scale (4px controls, 6px cards, 8px featured); shadows only from the four token levels; no gradients (`tests/unit/design-guard.test.ts`). Motion is limited to short colour transitions and is switched off for `prefers-reduced-motion`.
+Shared components only, no page-specific copies: header (logo, Opportunities, For employers, Sign in, Register; wraps on narrow screens, 44px targets), buttons (primary, secondary, inverse for black bands), search group, filter selects, opportunity rows, category cards, tags, tabs, forms and fields, notices, empty states, loading skeletons (the skeleton system of `docs/design/SKELETON_LOADING.md`: route-level on private routes, Suspense boundaries on public pages, one reduced-motion-aware opacity pulse) and the error view (retry, focus, reference), pagination, footer. Radii come only from the token scale (4px controls, 6px cards, 8px featured); shadows only from the four token levels; no gradients (`tests/unit/design-guard.test.ts`). Motion is limited to short colour transitions and the slow skeleton pulse, and both are switched off for `prefers-reduced-motion`.
 
 ## 6. Responsive and accessibility
 

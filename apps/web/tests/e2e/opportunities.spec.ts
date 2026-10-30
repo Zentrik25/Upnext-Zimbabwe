@@ -79,6 +79,8 @@ test.describe("browse and search", () => {
     const seen = new Set<string>();
     await page.goto("/opportunities?limit=5&sort=closing_soon");
     for (let guard = 0; guard < 6; guard += 1) {
+      // The results stream in after the page shell (their own Suspense boundary): wait for them before reading.
+      await page.getByTestId("results").waitFor();
       for (const title of await page
         .getByTestId("results")
         .getByRole("heading", { level: 3 })
