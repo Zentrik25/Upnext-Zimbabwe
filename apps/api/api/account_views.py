@@ -424,7 +424,7 @@ class DeletionRequestView(MeBaseView):
 # --- saved opportunities ----------------------------------------------------------------------------
 def _saved_dict(row: Any, versions: dict[uuid.UUID, OpportunityVersion], now: datetime) -> dict[str, Any]:
     opportunity = row.opportunity
-    availability = saved.availability_of(opportunity)
+    availability = saved.availability_of(opportunity, now)
     version = versions.get(opportunity.pk) if availability != "unavailable" else None
     return {
         "opportunity_id": str(opportunity.pk),
@@ -512,11 +512,12 @@ class SavedListView(MeBaseView):
             return error_response("invalid_filter", "ids must be a list of identifiers.", 400)
         if len(ids) > 50:
             return error_response("invalid_filter", "At most 50 ids.", 400)
+        now = timezone.now()
         data = [
             {
                 "opportunity_id": str(r.opportunity_id),
                 "saved_at": _iso(r.created_at),
-                "availability": saved.availability_of(r.opportunity),
+                "availability": saved.availability_of(r.opportunity, now),
                 "opportunity": None,
             }
             for r in saved.states_for(user, ids)

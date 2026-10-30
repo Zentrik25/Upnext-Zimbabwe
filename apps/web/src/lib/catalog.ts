@@ -1,4 +1,5 @@
 import "server-only";
+import { headers } from "next/headers";
 import type {
   Category,
   Location,
@@ -14,13 +15,33 @@ export type Result<T> = { ok: true; data: T } | { ok: false; reason: Failure; me
 
 const base = () => process.env.API_INTERNAL_URL ?? "http://localhost:8000";
 
+const ADDRESS = /^[0-9a-fA-F.:]{3,45}$/;
+
+/** The address of the person this page is being rendered for, as nginx stated it (it replaces the header, so a
+ *  browser cannot choose it). The API counts its anonymous-read limit per address; without this every visitor
+ *  would share the web container's allowance. Only the last entry is used, as the nearest proxy wrote it. */
+export function visitorAddress(forwardedFor: string | null): string | null {
+  const last = forwardedFor?.split(",").pop()?.trim();
+  return last && ADDRESS.test(last) ? last : null;
+}
+
+async function visitorHeaders(): Promise<Record<string, string>> {
+  try {
+    const address = visitorAddress((await headers()).get("x-forwarded-for"));
+    return address ? { "X-Forwarded-For": address } : {};
+  } catch {
+    return {}; // not inside a request (build, tests): the API then counts the web container
+  }
+}
+
 async function get(path: string, params?: URLSearchParams, revalidate?: number): Promise<Response | null> {
   const query = params && [...params.keys()].length > 0 ? `?${params.toString()}` : "";
   try {
     return await fetch(`${base()}/api/v1/${path}${query}`, {
       ...(revalidate === undefined ? { cache: "no-store" as const } : { next: { revalidate } }),
       signal: AbortSignal.timeout(revalidate === undefined ? 4000 : 20000),
-      headers: { Accept: "application/json" },
+      // The cached sitemap is shared by every crawler, so it is not attributed to one visitor.
+      headers: { Accept: "application/json", ...(revalidate === undefined ? await visitorHeaders() : {}) },
     });
   } catch {
     return null;
