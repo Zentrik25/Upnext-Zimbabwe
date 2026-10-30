@@ -55,6 +55,9 @@ echo "$hdr" | grep -qi '^x-powered-by' && fail "x-powered-by leaks"
 [ "$(code upnext.co.zw /api/v1/schema)" = 404 ] || fail "OpenAPI schema must not be exposed"
 [ "$(curl -s --max-time 10 -H 'Host: upnext.co.zw' http://127.0.0.1:8090/sitemap.xml | grep -c 'https://upnext.co.zw')" -ge 1 ] || fail "sitemap origin"
 
+echo "== the web container can read the API over the internal network (as the pages do)"
+dc exec -T web node -e "fetch('http://api:8000/api/v1/auth/providers').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))" || fail "web cannot read the API at http://api:8000 (check DJANGO_ALLOWED_HOSTS includes api)"
+
 echo "== only loopback is published"
 published="$(docker ps --filter "label=com.docker.compose.project=upnext-prod" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"
 echo "$published"

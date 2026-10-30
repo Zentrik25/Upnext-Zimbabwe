@@ -134,7 +134,8 @@ def test_running_services_never_hold_owner_credentials(cfg: dict[str, Any]) -> N
 def test_identity_is_the_root_domain_and_the_one_mailbox(cfg: dict[str, Any]) -> None:
     env = cfg["services"]["api"]["environment"]
     assert env["UPNEXT_PUBLIC_BASE_URL"] == "https://upnext.co.zw"
-    assert env["DJANGO_ALLOWED_HOSTS"] == "upnext.co.zw"
+    # `api` is the internal name the web container uses to read the API (without it every server-side read is a 400)
+    assert env["DJANGO_ALLOWED_HOSTS"] == "upnext.co.zw,api"
     assert env["DJANGO_CSRF_TRUSTED_ORIGINS"] == "https://upnext.co.zw"
     mailboxes = {v for k, v in env.items() if "@" in str(v)}
     assert all("info@upnext.co.zw" in v for v in mailboxes)
