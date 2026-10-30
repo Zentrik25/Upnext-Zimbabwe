@@ -9,6 +9,7 @@ import { ForgotPasswordForm } from "@/components/account/forgot-password-form";
 import { RegisterForm } from "@/components/account/register-form";
 import { ResetPasswordForm } from "@/components/account/reset-password-form";
 import { SaveToggle } from "@/components/account/save-toggle";
+import { GoogleButton } from "@/components/account/google-button";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { VerifyEmailPanel } from "@/components/account/verify-email-panel";
 import { apiFetch, describeFailure, readCsrfCookie } from "@/lib/client-api";
@@ -252,7 +253,7 @@ describe("SignInForm", () => {
     expect(JSON.parse(String(more[0]!.init.body)).remember).toBe(true);
   });
   it("offers Google as a link carrying the return address, and explains a failed Google attempt", () => {
-    render(<SignInForm next="/saved" googleEnabled googleFailed />);
+    render(<SignInForm next="/saved" googleFailed social={<GoogleButton enabled next="/saved" />} />);
     expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute(
       "href",
       "/api/v1/auth/google/start?next=%2Fsaved",

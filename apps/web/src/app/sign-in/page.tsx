@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { AuthPage } from "@/components/account/auth-parts";
+import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { safeNext } from "@/lib/safe-next";
 import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
@@ -22,7 +23,16 @@ export default async function SignInPage({
       title="Welcome back"
       intro="Sign in to your account to save opportunities and come back to them."
     >
-      <SignInForm next={next} googleEnabled={providers.google} googleFailed={query.error === "google"} />
+      <SignInForm
+        next={next}
+        googleFailed={query.error === "google"}
+        social={
+          <>
+            <OrDivider />
+            <GoogleButton enabled={providers.google} next={next} />
+          </>
+        }
+      />
     </AuthPage>
   );
 }

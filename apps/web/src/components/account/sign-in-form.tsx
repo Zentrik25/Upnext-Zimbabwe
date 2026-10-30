@@ -2,22 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Button, Icon } from "@/components/ui";
 import { IconField } from "./auth-parts";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
-import { GoogleButton, OrDivider } from "./google-button";
 import { FormError } from "./parts";
 import { ResendVerification } from "./resend-verification";
 
+/** `social` is rendered by the page (a server component) so the Google button and its logo stay out of this
+ *  client bundle, which the mobile script budget (150 KiB) measures. */
 export function SignInForm({
   next,
-  googleEnabled = false,
+  social,
   googleFailed = false,
 }: {
   next?: string;
-  googleEnabled?: boolean;
+  social?: ReactNode;
   googleFailed?: boolean;
 }) {
   const router = useRouter();
@@ -96,8 +97,7 @@ export function SignInForm({
         <Icon name="signIn" className="h-[18px] w-[18px]" />
         {busy ? "Signing in…" : "Sign in"}
       </Button>
-      <OrDivider />
-      <GoogleButton enabled={googleEnabled} next={safeNext(next)} />
+      {social}
       <p className="text-center text-ctl">
         Don’t have an account?{" "}
         <Link href="/register" className="text-accent underline">
