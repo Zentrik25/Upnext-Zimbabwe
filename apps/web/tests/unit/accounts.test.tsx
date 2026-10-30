@@ -9,6 +9,8 @@ import { ForgotPasswordForm } from "@/components/account/forgot-password-form";
 import { RegisterForm } from "@/components/account/register-form";
 import { ResetPasswordForm } from "@/components/account/reset-password-form";
 import { SaveToggle } from "@/components/account/save-toggle";
+import { GoogleButton } from "@/components/account/google-button";
+import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { VerifyEmailPanel } from "@/components/account/verify-email-panel";
 import { apiFetch, describeFailure, readCsrfCookie } from "@/lib/client-api";
@@ -235,7 +237,7 @@ describe("SignInForm", () => {
   });
   it("sends the Remember me choice: off until ticked", async () => {
     const calls = script({ status: 200, body: { id: "u" } });
-    const { unmount } = render(<SignInForm />);
+    const { unmount } = render(<SignInForm options={<SignInOptions />} />);
     type("E-mail address", "a@example.org");
     type("Password", "pw");
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
@@ -243,7 +245,7 @@ describe("SignInForm", () => {
     expect(JSON.parse(String(calls[0]!.init.body)).remember).toBe(false);
     unmount();
     const more = script({ status: 200, body: { id: "u" } });
-    render(<SignInForm />);
+    render(<SignInForm options={<SignInOptions />} />);
     type("E-mail address", "a@example.org");
     type("Password", "pw");
     fireEvent.click(screen.getByLabelText("Remember me"));
@@ -252,7 +254,13 @@ describe("SignInForm", () => {
     expect(JSON.parse(String(more[0]!.init.body)).remember).toBe(true);
   });
   it("offers Google as a link carrying the return address, and explains a failed Google attempt", () => {
-    render(<SignInForm next="/saved" googleEnabled googleFailed />);
+    render(
+      <SignInForm
+        next="/saved"
+        notice={<GoogleFailedNotice />}
+        social={<GoogleButton enabled next="/saved" />}
+      />,
+    );
     expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute(
       "href",
       "/api/v1/auth/google/start?next=%2Fsaved",

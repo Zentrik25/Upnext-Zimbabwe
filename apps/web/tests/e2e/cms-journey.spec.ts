@@ -150,7 +150,8 @@ test("3. self-approval is refused even for someone who holds an editor role", as
   const id = listing.split("/").pop() ?? "";
   const csrf = (await context.cookies()).find((c) => /csrf/.test(c.name))?.value ?? "";
   const forced = await page.request.post(`/api/v1/staff/opportunities/${id}/actions/approve`, {
-    headers: { "X-CSRFToken": csrf },
+    // Over HTTPS Django also requires a same-origin Referer; a browser sends one, page.request does not.
+    headers: { "X-CSRFToken": csrf, Referer: listing },
     data: { row_version: 0, source_reviewed: true, duplicates_reviewed: true, content_matches_source: true },
   });
   expect(forced.status()).toBe(403);
