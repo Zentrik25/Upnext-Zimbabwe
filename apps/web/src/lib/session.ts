@@ -117,3 +117,19 @@ export async function getForYou(
 ): Promise<{ ok: true; data: ForYouFeed } | { ok: false; status: number }> {
   return authedJson<ForYouFeed>(`discovery/for-you?${params.toString()}`);
 }
+
+/** Which sign-in options the API offers; Google is offered only when the installation is set up for it. */
+export async function getAuthProviders(): Promise<{ google: boolean }> {
+  try {
+    const response = await fetch(`${base()}/api/v1/auth/providers`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return { google: false };
+    const body = (await response.json()) as { google?: unknown };
+    return { google: body.google === true };
+  } catch {
+    return { google: false };
+  }
+}

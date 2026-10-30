@@ -496,6 +496,39 @@ paths:
         '401': { description: 'invalid_signature (also for a stale timestamp)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '404': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /auth/providers:
+    get:
+      tags: [auth]
+      operationId: listAuthProviders
+      summary: Which sign-in options this installation offers
+      security: []
+      responses:
+        '200': { description: '`{google: boolean}`; the sign-in page shows the Google button only when true' }
+  /auth/google/start:
+    get:
+      tags: [auth]
+      operationId: startGoogleSignIn
+      summary: Begin Sign in with Google (OpenID Connect code flow with PKCE)
+      description: 'Redirects to Google, or back to `/sign-in?error=google` when Google sign-in is not configured. `next` is a path on this site; anything else is replaced by `/`.'
+      security: []
+      parameters:
+        - { name: next, in: query, required: false, schema: { type: string } }
+      responses:
+        '302': { description: 'Redirect to Google' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/google/callback:
+    get:
+      tags: [auth]
+      operationId: googleSignInCallback
+      summary: Google returns here with a one-time code
+      description: 'Checks state, nonce, issuer, audience, expiry and a verified e-mail address; signs the person in (never an account with a staff role) and redirects to the requested path, or to `/sign-in?error=google`.'
+      security: []
+      parameters:
+        - { name: code, in: query, required: false, schema: { type: string } }
+        - { name: state, in: query, required: false, schema: { type: string } }
+      responses:
+        '302': { description: 'Redirect' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /auth/login:
     post:
       tags: [auth]
@@ -1256,11 +1289,13 @@ components:
     RegisterRequest:
       type: object
       additionalProperties: false
-      required: [email, password, display_name]
+      required: [email, password, display_name, phone_number, accept_terms]
       properties:
         email: { type: string, format: email, maxLength: 254 }
         password: { type: string, minLength: 10, maxLength: 128, format: password }
         display_name: { type: string, minLength: 1, maxLength: 80 }
+        phone_number: { type: string, minLength: 8, maxLength: 24, description: 'International number with its country code; spaces and hyphens are ignored (stored as E.164)' }
+        accept_terms: { type: boolean, description: 'Must be true: agreement to the Terms of Service and Privacy Policy, recorded with its version' }
     LoginRequest:
       type: object
       additionalProperties: false
@@ -1268,6 +1303,7 @@ components:
       properties:
         email: { type: string, format: email, maxLength: 254 }
         password: { type: string, maxLength: 128, format: password }
+        remember: { type: boolean, default: true, description: '"Remember me": false makes the session cookie end when the browser closes' }
     TokenRequest:
       type: object
       additionalProperties: false

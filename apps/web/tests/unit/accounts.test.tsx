@@ -149,13 +149,20 @@ describe("client api", () => {
   });
 });
 
+function fillRegistration(over: { phone?: string; confirm?: string; agree?: boolean } = {}) {
+  type("Full name", "Tendai Moyo");
+  type("E-mail address", "taken@example.org");
+  type("Phone number", over.phone ?? "078 123 4567");
+  type("Password", "a long enough passphrase");
+  type("Confirm password", over.confirm ?? "a long enough passphrase");
+  if (over.agree !== false) fireEvent.click(screen.getByLabelText(/I agree to the/));
+}
+
 describe("RegisterForm", () => {
   it("shows the same neutral message for any address and offers a resend", async () => {
     const calls = script({ status: 202, body: { status: "accepted" } });
     render(<RegisterForm />);
-    type("Name", "Tendai Moyo");
-    type("E-mail address", "taken@example.org");
-    type("Password", "a long enough passphrase");
+    fillRegistration();
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText("Check your e-mail")).toBeInTheDocument();
     expect(screen.getByText(/If this address can be used/)).toBeInTheDocument();
@@ -163,19 +170,56 @@ describe("RegisterForm", () => {
       email: "taken@example.org",
       password: "a long enough passphrase",
       display_name: "Tendai Moyo",
+      phone_number: "+263781234567",
+      accept_terms: true,
     });
     expect(screen.getByRole("button", { name: "Send the link again" })).toBeInTheDocument();
   });
-  it("shows field errors from the server beside the fields", async () => {
-    script(error(400, "validation_failed", { password: [{ message: "This password is too common." }] }));
+  it("joins the chosen country code to the number, dropping the leading zero", async () => {
+    const calls = script({ status: 202, body: { status: "accepted" } });
     render(<RegisterForm />);
-    type("Name", "T");
-    type("E-mail address", "a@example.org");
-    type("Password", "password1234");
+    fireEvent.change(screen.getByLabelText("Country code"), { target: { value: "+27" } });
+    fillRegistration({ phone: "(082) 555-0100" });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await screen.findByText("Check your e-mail");
+    expect(JSON.parse(String(calls[0]!.init.body)).phone_number).toBe("+27825550100");
+  });
+  it("sends nothing while the passwords differ, the terms box is empty or the number is missing", async () => {
+    const calls = script({ status: 202, body: { status: "accepted" } });
+    render(<RegisterForm />);
+    fillRegistration({ confirm: "something else entirely", agree: false, phone: "" });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByText("The two passwords do not match.")).toBeInTheDocument();
+    expect(screen.getByText(/Tick the box to agree/)).toBeInTheDocument();
+    expect(screen.getByText("Enter your phone number.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirm password")).toHaveAttribute("aria-invalid", "true");
+    expect(calls).toHaveLength(0);
+  });
+  it("shows field errors from the server beside the fields", async () => {
+    script(
+      error(400, "validation_failed", {
+        password: [{ message: "This password is too common." }],
+        phone_number: [{ message: "Enter the number with its country code." }],
+      }),
+    );
+    render(<RegisterForm />);
+    fillRegistration();
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText("This password is too common.")).toBeInTheDocument();
+    expect(screen.getByText("Enter the number with its country code.")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Error:", { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText("Error:", { exact: false }).length).toBeGreaterThan(0);
+  });
+  it("links Google only when it is set up, and says so when it is not", () => {
+    const { unmount } = render(<RegisterForm />);
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
+    expect(screen.getByText("Google sign-in is not available yet.")).toBeInTheDocument();
+    unmount();
+    render(<RegisterForm googleEnabled />);
+    expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute(
+      "href",
+      "/api/v1/auth/google/start",
+    );
   });
 });
 
@@ -188,6 +232,32 @@ describe("SignInForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
     expect(router.refresh).toHaveBeenCalled();
+  });
+  it("sends the Remember me choice: off until ticked", async () => {
+    const calls = script({ status: 200, body: { id: "u" } });
+    const { unmount } = render(<SignInForm />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(JSON.parse(String(calls[0]!.init.body)).remember).toBe(false);
+    unmount();
+    const more = script({ status: 200, body: { id: "u" } });
+    render(<SignInForm />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByLabelText("Remember me"));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(more).toHaveLength(1));
+    expect(JSON.parse(String(more[0]!.init.body)).remember).toBe(true);
+  });
+  it("offers Google as a link carrying the return address, and explains a failed Google attempt", () => {
+    render(<SignInForm next="/saved" googleEnabled googleFailed />);
+    expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute(
+      "href",
+      "/api/v1/auth/google/start?next=%2Fsaved",
+    );
+    expect(screen.getByText(/Google sign-in did not work/)).toBeInTheDocument();
   });
   it("goes where it was asked when the address is a known route", async () => {
     script({ status: 200, body: { id: "u" } });

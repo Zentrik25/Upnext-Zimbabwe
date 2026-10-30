@@ -29,7 +29,7 @@ UNSAFE = ("post", "put", "patch", "delete")
 PUBLIC = {
     "getApiRoot", "listOpportunities", "getOpportunity", "listCategories", "listLocations", "listSectors",
     "searchSkills", "getSitemapEntries", "getCsrfToken", "login", "register", "verifyEmail", "resendVerification",
-    "requestPasswordReset", "confirmPasswordReset", "receiveEmailEvents", "receiveResendEmailEvents", "getSchema", "getEmployerProfilePublic", "recordListingEvent", "unsubscribeJobAlert", "createListingReport",
+    "requestPasswordReset", "confirmPasswordReset", "receiveEmailEvents", "receiveResendEmailEvents", "getSchema", "getEmployerProfilePublic", "recordListingEvent", "unsubscribeJobAlert", "createListingReport", "listAuthProviders", "startGoogleSignIn", "googleSignInCallback",
 }  # fmt: skip
 
 

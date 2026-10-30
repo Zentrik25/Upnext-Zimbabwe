@@ -8,10 +8,16 @@ export const PRIVACY: LegalDocument = {
     "How UPNEXT Careers collects, uses, shares, keeps and protects personal information, and how to exercise your rights.",
   intro:
     "This policy explains what personal information UPNEXT Careers collects, why, who can see it, how long it is kept and what you can do about it. We have written it to be read, not skimmed past.",
-  version: "1.0",
+  version: "1.1",
   effective: "2026-10-29",
   updated: "2026-10-29",
   history: [
+    {
+      version: "1.1",
+      effective: "2026-10-29",
+      summary:
+        "Registration now asks for a phone number and records when you agreed to these documents; you can also sign in with Google.",
+    },
     { version: "1.0", effective: "2026-10-29", summary: "First full version of the Privacy Policy." },
   ],
   sections: [
@@ -52,7 +58,7 @@ export const PRIVACY: LegalDocument = {
             ],
             [
               "A jobseeker with an account",
-              "Your e-mail address, the name you give us, a one-way hash of your password (never the password itself), the listings you save, and your e-mail preferences. For security: where you are signed in (a shortened network prefix, the browser and system family such as “Chrome on Windows”, and the start and last-use time of each session), and records of sign-ins, failed sign-ins (stored as one-way hashes), password changes and account requests.",
+              "Your e-mail address, the name you give us, the phone number you give when you register, a record of when you agreed to the Terms of Service and this policy and to which version, a one-way hash of your password (never the password itself), the listings you save, and your e-mail preferences. For security: where you are signed in (a shortened network prefix, the browser and system family such as “Chrome on Windows”, and the start and last-use time of each session), and records of sign-ins, failed sign-ins (stored as one-way hashes), password changes and account requests. If you choose **Sign in with Google**, we receive your Google name, the e-mail address Google has verified and Google’s identifier for your account; we never receive your Google password or your contacts.",
             ],
             [
               "A jobseeker who fills in the optional profile",
@@ -231,6 +237,7 @@ export const PRIVACY: LegalDocument = {
           t: "ul",
           items: [
             "**E-mail delivery: Resend.** Our selected e-mail delivery provider. When we send you a message it receives your e-mail address and the message text. We have not made any statement that delivery works until it has been tested with real mailboxes.",
+            "**Sign in with Google (only if you choose it).** Google learns that you are signing in to UPNEXT and handles that under its own privacy policy. We receive only the name, verified e-mail address and account identifier described above.",
             "**Hosting.** The service runs on a server that we administer, supplied by a hosting provider. It holds everything described in this policy.",
             "**Backup storage.** Encrypted copies of the database may be held by a separate storage provider. Such a provider receives only encrypted files that it cannot read.",
             "**Professional advisers and authorities.** Where the law requires it, or to establish, exercise or defend legal claims, we may disclose information to the competent authority or our advisers.",

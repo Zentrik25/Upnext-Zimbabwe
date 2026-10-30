@@ -10,6 +10,9 @@ Format: each row names its table and column in backticks. "Who sees it" means pe
 |---|---|---|---|---|---|
 | E-mail address | `accounts_user.email` | sign-in, confirmation, notices | the person; no staff list shows it (staff pages hide it) | until deletion; then replaced by a non-identifying placeholder (tombstone) | yes (tombstone) |
 | Display name | `accounts_user.display_name` | greeting in messages and the account page | the person | until deletion | yes ("Deleted account") |
+| Phone number (E.164) | `accounts_user.phone_number` | a way to reach the person if needed; not used for marketing and not shown to anyone else | the person; no staff list shows it | until deletion | yes (removed) |
+| Acceptance of the Terms and Privacy Policy: time and version | `accounts_user.terms_accepted_at`, `accounts_user.terms_version` | proof that the person agreed, and to which wording | nobody outside the account record | until deletion | kept as state on the tombstone |
+| Google account identifier (only if the person signs in with Google) | `accounts_user.google_subject` | recognising the same Google account at the next sign-in | nobody | until deletion | yes (removed) |
 | Password (one-way hash) | `accounts_user.password` | sign-in | nobody | until deletion | yes (unusable) |
 | Confirmation time, last sign-in, status, deletion request time | `accounts_user.email_verified_at` | account state | the person | until deletion | cleared or kept as state |
 | New address awaiting confirmation | `accounts_authtoken.new_email` | change of e-mail address | nobody | link rows are removed 7 days after use or expiry | yes |

@@ -46,6 +46,13 @@ class User(AbstractBaseUser):
         max_length=24, choices=AccountStatus.choices, default=AccountStatus.PENDING_VERIFICATION
     )
     display_name = models.CharField(max_length=80)
+    # Contact number given at registration, E.164 ("+263781234567"). Private; scrubbed on deletion.
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    # When, and to which version of the Terms and Privacy Policy, the person agreed (proof of acceptance).
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_version = models.CharField(max_length=16, blank=True, default="")
+    # Google account identifier ("sub") once the person signs in with Google; scrubbed on deletion.
+    google_subject = models.CharField(max_length=64, null=True, blank=True, unique=True)
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     row_version = models.PositiveIntegerField(default=0)
