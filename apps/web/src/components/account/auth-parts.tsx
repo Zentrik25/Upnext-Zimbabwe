@@ -16,7 +16,7 @@ export function AuthPage({ title, children }: { title: string; children: ReactNo
       />
       <div className="w-full max-w-[404px] px-3 py-2 sm:px-4 sm:py-6 [&_a]:text-accent">
         <div className="rounded-feature border border-border-panel bg-surface p-3.5 shadow-ambient sm:p-6">
-          <h1 className="auth-title mb-2.5 text-title tracking-title sm:mb-3">{title}</h1>
+          <h1 className="mb-2.5 text-title tracking-title sm:mb-3">{title}</h1>
           {children}
         </div>
       </div>

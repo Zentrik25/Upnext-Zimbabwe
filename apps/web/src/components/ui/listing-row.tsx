@@ -51,7 +51,7 @@ export function ListingRow({
           {initials(organisation)}
         </div>
         <div className="min-w-0">
-          <h3 className="text-title font-strong leading-title">
+          <h3 className="text-base font-strong leading-title">
             <a href={href}>{title}</a>
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>

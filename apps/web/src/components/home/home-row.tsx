@@ -43,7 +43,7 @@ export function HomeListingRow({
         {initials(row.organisation.name)}
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="font-headline text-base leading-title">
+        <h3 className="text-base font-strong leading-title">
           <Link href={`/opportunities/${row.slug}`} className="hover:underline">
             {row.title}
           </Link>

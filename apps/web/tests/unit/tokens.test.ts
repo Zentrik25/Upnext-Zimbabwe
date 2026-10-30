@@ -162,11 +162,11 @@ describe("design tokens (VIS-*, A11Y-06/07/08)", () => {
     expect(tokens.fontSizes).toMatchObject({
       base: "16px",
       lead: "18px",
-      title: "20px",
-      sub: "24px",
-      section: "28px",
-      display: "clamp(28px, 3.6vw, 40px)",
-      hero: "clamp(32px, 5vw, 52px)",
+      title: "clamp(20px, 3.4vw, 22px)",
+      sub: "clamp(22px, 4vw, 26px)",
+      section: "clamp(26px, 5vw, 32px)",
+      display: "clamp(30px, 4vw, 48px)",
+      hero: "clamp(32px, 5.2vw, 56px)",
     });
     expect(tokens.tracking).toMatchObject({
       hero: "-1.4px",
