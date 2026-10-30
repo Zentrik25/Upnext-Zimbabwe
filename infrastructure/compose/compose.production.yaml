@@ -29,7 +29,10 @@ x-api-env: &api-env
   UPNEXT_THROTTLE_PEPPER: ${UPNEXT_THROTTLE_PEPPER:?}
   UPNEXT_ENVIRONMENT: production
   UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
-  DJANGO_ALLOWED_HOSTS: upnext.co.zw
+  # The public host, plus `api`: the web container reads the API over the internal network as http://api:8000, so its
+  # Host header is `api:8000`. Without it Django answers every one of those server-side reads with 400. The edge still
+  # serves, and rewrites the Host to, upnext.co.zw only.
+  DJANGO_ALLOWED_HOSTS: upnext.co.zw,api
   DJANGO_CSRF_TRUSTED_ORIGINS: https://upnext.co.zw
   DJANGO_HSTS_SECONDS: "31536000"
   DJANGO_SSL_REDIRECT: "false" # TLS and the http->https redirect belong to the edge
