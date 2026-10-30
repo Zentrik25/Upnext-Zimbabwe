@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { Button, Field, TextInput } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { AuthField, AuthSwitch } from "./auth-parts";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
 import { FormError, FormSuccess } from "./parts";
 
@@ -24,28 +25,24 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
 
   if (!token || state === "invalid") {
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <FormError>This link is invalid or has expired.</FormError>
-        <p className="text-ctl">
-          <Link href="/forgot-password" className="text-accent underline">
-            Request a new link
-          </Link>
-        </p>
+        <AuthSwitch>
+          <Link href="/forgot-password">Request a new link</Link>
+        </AuthSwitch>
       </div>
     );
   }
   if (state === "done") {
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <FormSuccess>
           <p className="font-strong">Password changed</p>
           <p className="mt-1">You have been signed out everywhere. Sign in with your new password.</p>
         </FormSuccess>
-        <p>
-          <Link href="/sign-in" className="text-accent underline">
-            Go to sign in
-          </Link>
-        </p>
+        <AuthSwitch>
+          <Link href="/sign-in">Go to sign in</Link>
+        </AuthSwitch>
       </div>
     );
   }
@@ -68,26 +65,22 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
+    <form onSubmit={submit} className="grid gap-3">
       {failure ? <FormError>{failure}</FormError> : null}
-      <Field
+      <AuthField
         id="new_password"
+        name="new_password"
         label="New password"
+        type="password"
+        reveal
         hint="At least 10 characters."
         error={errors.new_password?.[0]}
-      >
-        <TextInput
-          id="new_password"
-          name="new_password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
-          maxLength={128}
-          invalid={Boolean(errors.new_password)}
-        />
-      </Field>
-      <Button type="submit" disabled={busy}>
+        autoComplete="new-password"
+        required
+        minLength={10}
+        maxLength={128}
+      />
+      <Button type="submit" disabled={busy} className="sm:min-h-field">
         {busy ? "Saving…" : "Change password"}
       </Button>
     </form>

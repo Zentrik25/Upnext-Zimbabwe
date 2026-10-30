@@ -59,7 +59,7 @@ export default function HomePage() {
       <section aria-labelledby="latest-title" className="border-b border-line pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="latest-title" className="font-headline text-[20px] tracking-title">
+            <h2 id="latest-title" className="text-title tracking-title">
               Latest opportunities
             </h2>
             <Link

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
-import { SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
+import { AuthHeader, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
@@ -34,6 +34,9 @@ const sourceCode = localFont({
   display: "swap",
   preload: false,
 });
+
+// Sign-in, registration and the password pages are one-screen forms with a logo-only bar (Stripe pattern, D-53).
+const AUTH_PATHS = ["/sign-in", "/register", "/forgot-password", "/reset-password"];
 
 // Applies a remembered Light or Dark choice before the first paint (no flash). Auto leaves the attribute off.
 const THEME_SCRIPT = `try{var t=localStorage.getItem("upnext-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
@@ -72,6 +75,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   // The staff workspace (D-49) has its own shell: no public header, footer or skip link from the site.
   const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
+  const pathname = requestHeaders.get("x-pathname") ?? "";
+  const auth = AUTH_PATHS.includes(pathname);
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html
@@ -85,6 +90,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         {workspace ? (
           children
+        ) : auth ? (
+          <>
+            <SkipLink />
+            <AuthHeader />
+            <main id="main">{children}</main>
+          </>
         ) : (
           <>
             <SkipLink />

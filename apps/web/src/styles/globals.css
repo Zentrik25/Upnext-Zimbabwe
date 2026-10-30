@@ -163,3 +163,9 @@ dd a {
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
 }
+
+/* Titles of the one-screen forms (sign-in, registration, FormPage): Stripe sets them at regular weight, one step
+   above the light headline default. Unlayered so it wins over the heading rule above. */
+h1.auth-title {
+  font-weight: 400;
+}

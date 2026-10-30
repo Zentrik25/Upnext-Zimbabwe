@@ -11,21 +11,21 @@ import { BRAND } from "@/lib/brand";
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VERIFICATION } from "@/lib/format";
 
-/** Every search control is one outlined box: 44px tall, 16px text (no zoom on focus in iOS), icon on the left. */
+/** Every search control is one outlined box: 40px tall, 14px text, icon on the left (Stripe form scale, D-53). */
 const FIELD =
-  "block min-h-search w-full rounded-control border border-control-border bg-surface pl-11 pr-3 text-base font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
-const SELECT = `${FIELD.replace("pr-3", "pr-10")} appearance-none truncate`;
+  "block min-h-field w-full rounded-control border border-control-border bg-surface pl-10 pr-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/25";
+const SELECT = `${FIELD.replace("pr-3", "pr-9")} appearance-none truncate`;
 
 function IconControl({ icon, select, children }: { icon: IconName; select?: boolean; children: ReactNode }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">
-        <Icon name={icon} className="h-5 w-5" />
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">
+        <Icon name={icon} className="h-[18px] w-[18px]" />
       </span>
       {children}
       {select ? (
         <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink">
-          <Icon name="chevronDown" className="h-5 w-5" />
+          <Icon name="chevronDown" className="h-[18px] w-[18px]" />
         </span>
       ) : null}
     </div>
@@ -70,25 +70,31 @@ function FilterSelect({
  *  and a slot for the search. It holds no data, so it is sent at once; only the search below it can be pending. */
 export function HeroFrame({ children }: { children: ReactNode }) {
   return (
-    <section aria-labelledby="home-title" className="bg-surface-pale">
-      <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
-        <p className="font-headline text-ctl uppercase tracking-[0.24em] text-accent">Your next chapter</p>
+    <section aria-labelledby="home-title" className="relative isolate overflow-hidden bg-surface">
+      {/* The system's ruby-to-magenta accent as hard-edged diagonal bands behind the illustration (decorative). */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-16 -right-24 -z-10 h-[460px] w-[150px] rotate-[28deg] bg-linear-to-b from-magenta to-ruby opacity-25 md:right-[8%] md:w-[230px] md:opacity-30"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -right-6 -z-10 h-[420px] w-[70px] rotate-[28deg] bg-linear-to-b from-ruby to-magenta opacity-20 md:right-[2%] md:w-[110px] md:opacity-25"
+      />
+      <Container className="pt-5 pb-5 md:pt-10 md:pb-10">
+        <p className="text-ctl text-muted">Your next chapter</p>
         <div className="mt-1 grid items-center">
           <div className="relative z-10 col-start-1 row-start-1">
-            <h1
-              id="home-title"
-              className="font-headline text-[clamp(28px,8vw,64px)] leading-[1.06] tracking-[-0.035em] text-ink"
-            >
+            <h1 id="home-title" className="text-[clamp(30px,8.4vw,56px)] leading-hero tracking-hero text-ink">
               <span className="block whitespace-nowrap">Find your next </span>
               <span className="block text-accent">opportunity </span>
               <span className="block">in Zimbabwe.</span>
             </h1>
-            <p className="mt-2 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
+            <p className="mt-3 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
               Jobs, internships and opportunities to move you forward.
             </p>
           </div>
           {/* Behind the text, as in the mockup: it takes the right 46% and may touch the end of the headline. */}
-          <div className="col-start-1 row-start-1 -mr-[3%] w-[46%] max-w-[460px] justify-self-end">
+          <div className="col-start-1 row-start-1 -mr-[3%] w-[46%] max-w-[420px] justify-self-end">
             <JobSeekerArt priority />
           </div>
         </div>
@@ -112,7 +118,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
       action="/opportunities"
       method="get"
       aria-label="Search opportunities"
-      className="mt-3 grid gap-2.5 md:max-w-[720px]"
+      className="mt-4 grid gap-2.5 md:max-w-[640px]"
     >
       <label htmlFor="home-q" className="sr-only">
         Search by title, organisation or keyword
@@ -148,8 +154,8 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
         />
       </div>
       <details className="group">
-        <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2.5 text-base text-accent [&::-webkit-details-marker]:hidden">
-          <Icon name="sliders" className="h-5 w-5" />
+        <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2 text-ctl text-accent [&::-webkit-details-marker]:hidden">
+          <Icon name="sliders" className="h-[18px] w-[18px]" />
           <span className="group-open:hidden">More filters</span>
           <span className="hidden group-open:inline">Fewer filters</span>
         </summary>
@@ -180,10 +186,9 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
           />
         </div>
       </details>
-      <Button type="submit" className="relative min-h-[48px] w-full gap-3 text-base">
-        <Icon name="search" className="h-5 w-5" />
+      <Button type="submit" className="relative min-h-[44px] w-full gap-2 text-ctl">
         Find opportunities
-        <Icon name="arrowRight" className="absolute right-4 h-5 w-5" />
+        <Icon name="arrowRight" className="h-[18px] w-[18px]" />
       </Button>
     </SearchForm>
   );
@@ -192,7 +197,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
 /** What the search form looks like while its lists load: same boxes, same gaps, same button. */
 export function HeroSearchSkeleton() {
   return (
-    <LoadingRegion label="search" heading={false} className="mt-3 grid gap-2.5 md:max-w-[720px]">
+    <LoadingRegion label="search" heading={false} className="mt-4 grid gap-2.5 md:max-w-[640px]">
       <SkeletonInput label={false} />
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
         <SkeletonInput label={false} />
@@ -201,7 +206,7 @@ export function HeroSearchSkeleton() {
       <div className="flex min-h-[22px] items-center">
         <SkeletonLine className="h-[14px] w-[120px]" />
       </div>
-      <div className="h-[48px] w-full rounded-control bg-line" />
+      <div className="h-[44px] w-full rounded-control bg-line" />
     </LoadingRegion>
   );
 }
@@ -213,7 +218,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
     <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
         <div className="border-b border-line pb-5">
-          <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
+          <h2 id="categories-title" className="text-title tracking-title">
             Explore by category
           </h2>
           <nav aria-label="Browse by category" className="mt-3">
@@ -222,7 +227,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
                 <li key={category.code}>
                   <Link
                     href={`/opportunities?category=${category.code}`}
-                    className="flex min-h-[66px] items-center max-[400px]:min-h-[84px] max-[400px]:flex-col max-[400px]:justify-center max-[400px]:text-center gap-2.5 rounded-control border border-border-panel bg-surface px-3 text-small leading-tight text-ink break-words hover:bg-row-hover max-sm:gap-2 max-sm:px-2.5 sm:text-ctl"
+                    className="flex min-h-[66px] items-center max-[400px]:min-h-[84px] max-[400px]:flex-col max-[400px]:justify-center max-[400px]:text-center gap-2.5 rounded-control border border-border-panel bg-surface px-3 text-small leading-tight text-ink break-words shadow-subtle hover:shadow-ambient max-sm:gap-2 max-sm:px-2.5 sm:text-ctl"
                   >
                     <Icon
                       name={CATEGORY_ICON[category.code] ?? "grid"}
