@@ -237,7 +237,10 @@ class TwoStepView(APIView):
         if not mfa.verify(user, code):
             return error_response(
                 "invalid_code",
-                "That code is not valid. Enter the current code or an unused recovery code.",
+                (
+                    "That code is not valid. Each code works once, so wait for the next one on your device, "
+                    "or use an unused recovery code. Check that your phone's time is set automatically."
+                ),
                 400,
             )
         mark_verified(request._request)

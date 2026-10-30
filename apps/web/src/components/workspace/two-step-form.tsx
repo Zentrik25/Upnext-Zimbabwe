@@ -11,11 +11,13 @@ export function TwoStepForm({
   enrolling,
   secret,
   uri,
+  qr,
   next,
 }: {
   enrolling: boolean;
   secret?: string;
   uri?: string;
+  qr?: string;
   next: string;
 }) {
   const router = useRouter();
@@ -76,11 +78,22 @@ export function TwoStepForm({
       {enrolling ? (
         <>
           <p className="m-0 text-base text-muted">
-            Staff accounts need a second step. In an authenticator app, add an account with this setup key
-            (time-based, 6 digits), then enter the code it shows.
+            Staff accounts need a second step. In an authenticator app (Google Authenticator, Microsoft
+            Authenticator, Authy, 1Password), scan this code, then enter the 6-digit code it shows.
           </p>
+          {qr ? (
+            // eslint-disable-next-line @next/next/no-img-element -- generated data URL, nothing to optimise
+            <img
+              src={qr}
+              width={224}
+              height={224}
+              alt="QR code that adds your UPNEXT account to an authenticator app"
+              className="rounded-card border border-border bg-white"
+            />
+          ) : null}
           <p className="m-0 text-base">
-            Setup key: <code className="font-mono">{secret}</code>
+            Cannot scan? Choose &ldquo;enter a setup key&rdquo;, pick time-based, and type this key:{" "}
+            <code className="font-mono">{secret}</code>
           </p>
           {uri ? (
             <p className="m-0 text-small text-muted">
@@ -93,14 +106,15 @@ export function TwoStepForm({
         </>
       ) : (
         <p className="m-0 text-base text-muted">
-          Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+          Enter the 6-digit code from your authenticator app, or one of your recovery codes. If it keeps
+          failing, check that your phone&apos;s date and time are set automatically.
         </p>
       )}
       {failure ? <FormError>{failure}</FormError> : null}
       <Field id="code" label="Code">
         <TextInput
           id="code"
-          inputMode="numeric"
+          inputMode="text"
           autoComplete="one-time-code"
           maxLength={32}
           required
