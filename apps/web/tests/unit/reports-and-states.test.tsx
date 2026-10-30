@@ -102,7 +102,8 @@ describe("ReportForm", () => {
       contact_email: null,
       website: "",
     });
-    expect(document.activeElement).toBe(screen.getByTestId("report-done"));
+    // focus moves in an effect that runs just after the confirmation appears: wait for it instead of racing it
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("report-done")));
     expect(screen.getByText(/not removed automatically/)).toBeTruthy();
   });
 

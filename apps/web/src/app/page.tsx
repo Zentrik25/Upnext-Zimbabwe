@@ -7,7 +7,7 @@ import { HomeListingRow } from "@/components/home/home-row";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listCategories, listLocations, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
-import { BRAND, openGraphFor } from "@/lib/brand";
+import { BRAND, socialFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import { websiteFor } from "@/lib/structured-data";
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   title: { absolute: BRAND.homeTitle },
   description: BRAND.homeDescription,
-  openGraph: openGraphFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
+  ...socialFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
 };
 
 export default async function HomePage() {

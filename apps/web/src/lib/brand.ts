@@ -49,6 +49,29 @@ export function openGraphFor(url: string, extra: { title?: string; description?:
     url,
     title: extra.title ?? BRAND.name,
     description: extra.description ?? BRAND.description,
-    images: [{ url: BRAND.assets.ogImage, width: 1200, height: 630, alt: BRAND.name }],
+    images: [
+      {
+        url: BRAND.assets.ogImage,
+        width: 1200,
+        height: 630,
+        alt: `${BRAND.name}: jobs and opportunities in Zimbabwe`,
+      },
+    ],
   };
+}
+
+/** Twitter/X card for a page. Like `openGraph`, Next.js replaces the layout's `twitter` block as a whole, so a page
+ *  that sets its own Open Graph title must set the card too, or the card keeps the site-wide title. */
+export function twitterFor(extra: { title?: string; description?: string } = {}) {
+  return {
+    card: "summary_large_image" as const,
+    title: extra.title ?? BRAND.name,
+    description: extra.description ?? BRAND.description,
+    images: [BRAND.assets.ogImage],
+  };
+}
+
+/** Open Graph and Twitter blocks together, from the same title and description (spread into `Metadata`). */
+export function socialFor(url: string, extra: { title?: string; description?: string } = {}) {
+  return { openGraph: openGraphFor(url, extra), twitter: twitterFor(extra) };
 }

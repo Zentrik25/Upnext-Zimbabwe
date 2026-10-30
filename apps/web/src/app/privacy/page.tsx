@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
 import { LegalDocument } from "@/components/content/legal-document";
 import { PRIVACY } from "@/content/legal/privacy";
 import { legalPublished } from "@/content/legal/operator";
@@ -12,7 +12,7 @@ export function generateMetadata(): Metadata {
     title: PRIVACY.title,
     description: PRIVACY.description,
     alternates: { canonical: "/privacy" },
-    openGraph: openGraphFor("/privacy", { title: PRIVACY.title, description: PRIVACY.description }),
+    ...socialFor("/privacy", { title: PRIVACY.title, description: PRIVACY.description }),
     robots: legalPublished() ? { index: true, follow: true } : { index: false, follow: true },
   };
 }

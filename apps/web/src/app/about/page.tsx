@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
 import Link from "next/link";
 import { Bullets, ProsePage, Section } from "@/components/content/prose";
 import { VERIFICATION } from "@/lib/format";
 
+const DESCRIPTION =
+  "What UPNEXT Careers is, where its listings come from and what its verification labels mean.";
 export const metadata: Metadata = {
   title: "About",
-  description: "What UPNEXT Careers is, where its listings come from and what its verification labels mean.",
+  description: DESCRIPTION,
   alternates: { canonical: "/about" },
-  openGraph: openGraphFor("/about"),
+  ...socialFor("/about", { title: "About UPNEXT Careers", description: DESCRIPTION }),
 };
 
 export default function AboutPage() {
@@ -52,7 +54,11 @@ export default function AboutPage() {
         <p>
           UPNEXT does not receive applications. Each listing tells you where to apply: the issuer&apos;s
           website, an e-mail address or written instructions. Before you apply, check the details on the
-          issuer&apos;s own channel, and be careful with any request that asks you to pay.
+          issuer&apos;s own channel, and be careful with any request that asks you to pay. Our guide explains{" "}
+          <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
+            how to apply safely and avoid scams
+          </Link>
+          .
         </p>
       </Section>
       <Section title="Corrections">
@@ -62,7 +68,11 @@ export default function AboutPage() {
             contact page
           </Link>
           . Listings that are withdrawn by their issuer or that pass their deadline are marked as closed and
-          leave the search results.
+          leave the search results. The full process is described in{" "}
+          <Link href="/guides/how-listings-are-verified" className="text-accent underline">
+            how listings are checked and verified
+          </Link>
+          .
         </p>
       </Section>
     </ProsePage>

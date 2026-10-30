@@ -6,7 +6,15 @@ vi.mock("server-only", () => ({}));
 import { JsonLd } from "@/components/seo/json-ld";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import { absolute, contactEmail, siteUrl } from "@/lib/site";
-import { breadcrumbFor, jobPostingFor, plainText, safeJson, websiteFor } from "@/lib/structured-data";
+import {
+  articleFor,
+  breadcrumbFor,
+  isOpen,
+  jobPostingFor,
+  plainText,
+  safeJson,
+  websiteFor,
+} from "@/lib/structured-data";
 
 const base = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -38,7 +46,11 @@ describe("structured data", () => {
     expect(data.validThrough).toBe("2026-12-02T14:30:00Z");
     expect(data.employmentType).toBe("CONTRACTOR");
     expect(data.directApply).toBe(false);
-    expect(data.identifier).toBe("GEE-2026-07");
+    expect(data.identifier).toEqual({
+      "@type": "PropertyValue",
+      name: "Example Power Services",
+      value: "GEE-2026-07",
+    });
     expect(data.baseSalary).toEqual({
       "@type": "MonetaryAmount",
       currency: "USD",
@@ -52,14 +64,45 @@ describe("structured data", () => {
       deadline: { at: null, timezone: null, is_date_only: false, state: "unknown" },
       salary: null,
       employment_type: "permanent",
-      locations: [],
       reference_number: null,
     } as unknown as OpportunityDetail;
     const data = jobPostingFor(sparse, "https://example.test/x")!;
-    for (const key of ["validThrough", "baseSalary", "employmentType", "jobLocation", "identifier"])
+    for (const key of ["validThrough", "baseSalary", "employmentType", "identifier"])
       expect(data).not.toHaveProperty(key);
-    const remote = jobPostingFor({ ...base, work_mode: "remote" } as OpportunityDetail, "u")!;
+  });
+  it("marks up pay only with figures, an ISO currency and a period, never a guessed unit", () => {
+    const pay = (salary: unknown) =>
+      jobPostingFor({ ...base, salary } as unknown as OpportunityDetail, "u")!.baseSalary;
+    expect(pay({ min: "700.00", max: "700.00", currency: "USD", period: "month" })).toEqual({
+      "@type": "MonetaryAmount",
+      currency: "USD",
+      value: { "@type": "QuantitativeValue", unitText: "MONTH", value: 700 },
+    });
+    expect(pay({ min: "700.00", max: "900.00", currency: "USD", period: null })).toBeUndefined();
+    expect(pay({ min: "700.00", max: "900.00", currency: "usd", period: "month" })).toBeUndefined();
+    expect(pay({ min: "abc", max: null, currency: "USD", period: "month" })).toBeUndefined();
+    expect(pay({ min: null, max: null, currency: "USD", period: "month" })).toBeUndefined();
+  });
+  it("describes where the job is only from stated places, and emits nothing when none is stated", () => {
+    const at = (over: Record<string, unknown>) =>
+      jobPostingFor({ ...base, ...over } as unknown as OpportunityDetail, "u");
+    // no place at all: Google requires one, so there is no markup rather than invalid markup
+    expect(at({ locations: [] })).toBeNull();
+    // country-wide on site: the country only, no invented town
+    const wide = at({ locations: [{ slug: "zimbabwe", name: "Zimbabwe", is_primary: true }] })!;
+    expect(wide.jobLocation).toEqual({
+      "@type": "Place",
+      address: { "@type": "PostalAddress", addressCountry: "ZW" },
+    });
+    // remote: needs the country applicants may be in, taken only from a "Zimbabwe" location
+    expect(at({ work_mode: "remote" })).toBeNull();
+    const remote = at({
+      work_mode: "remote",
+      locations: [{ slug: "zimbabwe", name: "Zimbabwe", is_primary: true }],
+    })!;
     expect(remote.jobLocationType).toBe("TELECOMMUTE");
+    expect(remote.applicantLocationRequirements).toEqual({ "@type": "Country", name: "Zimbabwe" });
+    expect(remote).not.toHaveProperty("jobLocation");
   });
   it("is not emitted for other categories or for closed listings", () => {
     expect(
@@ -67,6 +110,13 @@ describe("structured data", () => {
     ).toBeNull();
     for (const status of ["expired", "withdrawn"])
       expect(jobPostingFor({ ...base, status } as OpportunityDetail, "u")).toBeNull();
+  });
+  it("is not emitted once the deadline has passed, even before the expiry job has run", () => {
+    const late = { ...base, deadline: { ...base.deadline, state: "expired" } } as OpportunityDetail;
+    expect(late.status).toBe("published");
+    expect(jobPostingFor(late, "u")).toBeNull();
+    expect(isOpen(late)).toBe(false);
+    expect(isOpen(base)).toBe(true);
   });
   it("builds a breadcrumb and the site description", () => {
     const crumbs = breadcrumbFor([
@@ -78,6 +128,21 @@ describe("structured data", () => {
     expect(site!["@type"]).toBe("WebSite");
     expect(JSON.stringify(site)).toContain("https://x/opportunities?q={search_term_string}");
     expect(org!["@type"]).toBe("Organization");
+  });
+  it("describes an editorial guide as an Article by the organisation, never as a job", () => {
+    const article = articleFor({
+      headline: "H",
+      description: "D",
+      url: "https://x.test/guides/g",
+      datePublished: "2026-10-30",
+      dateModified: "2026-10-30",
+    });
+    expect(article).toMatchObject({
+      "@type": "Article",
+      mainEntityOfPage: "https://x.test/guides/g",
+      author: { "@type": "Organization", name: "UPNEXT Careers" },
+      publisher: { "@type": "Organization", url: "https://x.test" },
+    });
   });
   it("turns sanitised HTML into plain text", () => {
     expect(plainText("<p>One</p><p>Two &lt;b&gt;</p>")).toBe("One Two <b>");

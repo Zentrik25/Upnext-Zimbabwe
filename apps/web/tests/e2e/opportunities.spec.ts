@@ -20,7 +20,7 @@ async function openFirst(page: Page, title: string) {
 test.describe("browse and search", () => {
   test("lists only public opportunities and names the count", async ({ page }) => {
     await page.goto("/opportunities");
-    await expect(page).toHaveTitle(/Opportunities \| UPNEXT Careers/);
+    await expect(page).toHaveTitle(/^Latest Jobs & Opportunities in Zimbabwe \| UPNEXT Careers$/);
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
     await expect(page.getByTestId("result-count")).toHaveText("12 opportunities");
     const body = await page.locator("main").innerText();

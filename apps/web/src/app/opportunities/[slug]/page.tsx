@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -23,7 +23,8 @@ import {
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
 import { absolute } from "@/lib/site";
-import { breadcrumbFor, jobPostingFor } from "@/lib/structured-data";
+import { CATEGORY_SEO } from "@/lib/category-seo";
+import { breadcrumbFor, isOpen, jobPostingFor } from "@/lib/structured-data";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -35,13 +36,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const result = await getOpportunity(slug);
   if (!result.ok || result.data === null) return { title: "Opportunity not found", robots: { index: false } };
   const listing = result.data;
+  const title = `${listing.title} at ${listing.organisation.name}`;
+  const description =
+    listing.summary || `${listing.category.name} listing from ${listing.organisation.name}.`;
   return {
-    title: `${listing.title} · ${listing.organisation.name}`,
-    description: listing.summary,
+    title,
+    description,
     alternates: { canonical: listing.canonical_path },
-    openGraph: openGraphFor(listing.canonical_path, { title: listing.title, description: listing.summary }),
-    // Expired and withdrawn listings stay readable but are not promoted by search engines (OQ-20 default).
-    robots: listing.status === "published" ? undefined : { index: false },
+    ...socialFor(listing.canonical_path, { title, description }),
+    // Closed, withdrawn and past-deadline listings stay readable but are not promoted by search engines (OQ-20 default).
+    robots: isOpen(listing) ? undefined : { index: false },
   };
 }
 
@@ -72,10 +76,18 @@ export default async function OpportunityPage({ params }: Props) {
   return (
     <>
       {posting ? <JsonLd data={posting} /> : null}
-      {listing.status === "published" ? (
+      {isOpen(listing) ? (
         <JsonLd
           data={breadcrumbFor([
             { name: "Opportunities", url: absolute("/opportunities") },
+            ...(CATEGORY_SEO[listing.category.code]
+              ? [
+                  {
+                    name: listing.category.name,
+                    url: absolute(`/opportunities?category=${listing.category.code}`),
+                  },
+                ]
+              : []),
             { name: listing.title, url: pageUrl },
           ])}
         />
@@ -262,6 +274,13 @@ export default async function OpportunityPage({ params }: Props) {
                 >
                   Report this opportunity
                 </Link>
+              </p>
+              <p className="mt-2 text-small text-muted">
+                Before you apply, read{" "}
+                <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
+                  how to apply safely and avoid scams
+                </Link>
+                .
               </p>
             </Panel>
           </aside>
