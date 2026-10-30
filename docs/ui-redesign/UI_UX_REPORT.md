@@ -40,5 +40,6 @@ Branch `ccr-e260651c-jojraz` (contains the integration branch and the merged SEO
 | Playwright foundation + mobile-menu | 32 pass, 2 fail: both need the Nginx `/api` proxy (not available here) |
 | Playwright a11y, legal, seo, opportunities, controls, mobile-budget, report-journey | 38 pass, 85 skipped (skips need staff/seeker fixtures not provisioned), 0 failed |
 | axe on `/` (390, 1440, dark), mobile menu | pass after fixing one `link-in-text-block` defect found by the first run |
+| Overflow audit (20 routes × 320/360/390/430/768/1024/1440) | after: no horizontal overflow, no errors (before: `/` overflowed 5px at 1024, fixed with `overflow-x-clip` on the hero) |
 | Backend pytest, employer/auth/saved E2E journeys | **not run** |
 | Visual diff tooling | not available; manual screenshot comparison only |
