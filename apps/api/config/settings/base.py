@@ -13,11 +13,9 @@ DEBUG = get_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = get_list("DJANGO_ALLOWED_HOSTS", [])
 
 INSTALLED_APPS = [
-    "core.admin_config.StaffAdminConfig",  # django.contrib.admin plus the UPNEXT staff site
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "rest_framework",
@@ -43,8 +41,6 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "core.middleware.StaffHardeningMiddleware",
-    "core.staff_mfa.StaffMfaMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.RequestLogMiddleware",
 ]
@@ -56,14 +52,11 @@ ASGI_APPLICATION = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # The staff site branding (D-42) must win over Django admin's own base_site.html.
-        "DIRS": [BASE_DIR / "core" / "staff_templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
             ]
         },
     }

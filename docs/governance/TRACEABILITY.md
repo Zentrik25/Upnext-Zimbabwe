@@ -79,8 +79,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | SC-09 | For You | /for-you | §19 Screen 6 | incomplete profile (still useful results), no matches |
 | SC-10 | Saved | /saved | §19 Screen 7 | empty, expired item, unavailable item |
 | SC-11 | Account settings | /account/settings | §19 Screen 8 | profile, email change, password, sessions, deletion request |
-| SC-12 | Staff editorial (Django Admin initially; OQ-16, IA) | /staff/ (noindex) | §19 Screen 9 | draft form, provenance, review queue, approval queue, verification, history, conflict, rejection |
-| SC-13 | Staff administration | /staff/ (noindex) | §17 admin nav | users, roles, status, taxonomies, audit, outbox, settings |
+| SC-12 | Staff editorial (Next.js workspace, D-46) | /workspace (noindex) | §19 Screen 9 | draft form, provenance, review queue, approval queue, verification, history, conflict, rejection |
+| SC-13 | Staff administration | /workspace (noindex) | §17 admin nav | users, roles, status, taxonomies, audit, outbox, settings |
 | SC-14 | Static pages | /about, /contact, privacy, terms | §17 | content OQ-09 |
 | SC-16 | Job alerts and unsubscribe | /alerts, /alerts/unsubscribe | Phase 6B | off, on, consent missing, delivery not yet verified, invalid link |
 | SC-17 | Jobseeker dashboard | /dashboard | Phase 6B | empty profile, recommendations, saved, alerts off or on |

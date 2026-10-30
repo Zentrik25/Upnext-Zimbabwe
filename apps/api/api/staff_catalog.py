@@ -172,11 +172,7 @@ def _values(form: forms.ModelForm) -> dict[str, Any]:  # type: ignore[type-arg]
 
 
 def _schema(kind: Kind, instance: Any | None) -> list[dict[str, Any]]:
-    fields = _form_fields(kind.form)
-    for f in fields:
-        if f["kind"] == "reference":
-            f["lookup"] = "locations" if kind.key == "locations" else "organisations"
-    return fields
+    return _form_fields(kind.form)
 
 
 def _shape(user: User, kind: Kind, obj: Any) -> dict[str, Any]:
@@ -241,6 +237,7 @@ class CatalogListView(StaffView):
                 "kind": {"key": spec.key, "label": spec.label, "description": spec.description},
                 "columns": [{"key": k, "label": lbl} for k, lbl in spec.columns],
                 "can_add": spec.add is not None and user.has_permission_code(spec.add),
+                "fields": _form_fields(spec.form),
                 "data": [{"id": str(o.pk), "cells": spec.row(o)} for o in items],
                 "page": page,
             }

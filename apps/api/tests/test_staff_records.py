@@ -213,6 +213,10 @@ def test_outbox_masks_addresses_and_failed_messages_can_be_retried(people: dict[
     admin = signed_in(people["admin"])
     listing = admin.get(f"{R}/outbox").json()
     assert listing["data"][0]["cells"]["address"] == "s***@e***"
+    detail = admin.get(f"{R}/outbox/{row.pk}").json()
+    assert "someone@example.org" not in str(detail) and any(
+        f["value"] == "s***@e***" for f in detail["facts"]
+    )
     assert signed_in(people["editor"]).get(f"{R}/outbox").status_code == 404
     retried = send(admin, "post", f"{R}/outbox/{row.pk}/actions/retry", {})
     assert retried.status_code == 200, retried.content

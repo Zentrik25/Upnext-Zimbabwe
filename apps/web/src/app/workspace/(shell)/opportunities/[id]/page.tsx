@@ -165,7 +165,8 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
           What you can do now
         </h2>
         <ActionPanel
-          id={o.id}
+          endpoint={`staff/opportunities/${o.id}/actions`}
+          editHref={`/workspace/opportunities/${o.id}/edit`}
           rowVersion={o.row_version}
           actions={o.actions}
           initial={initial}

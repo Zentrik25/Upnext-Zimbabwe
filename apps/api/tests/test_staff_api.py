@@ -234,3 +234,22 @@ def test_content_health_is_for_editors_and_administrators(people: dict[str, User
     body = signed_in(people["editor"]).get(f"{S}/content-health").json()
     assert body["target"]["listings"]["goal"] >= 1 and body["sod_violations"] == []
     assert isinstance(body["live_per_category"], list)
+
+
+def test_search_never_reveals_another_persons_draft(world: World, people: dict[str, User]) -> None:
+    new_draft(world, people["author"], "grants-1", **varied(world, "grants-1", "zebra-secret"))
+
+    def hits(who: str) -> list[Any]:
+        return list(signed_in(people[who]).get(f"{S}/search?q=zebra-secret").json()["groups"])
+
+    assert hits("editor") == [] and hits("author_editor") == []
+    assert hits("author") != [] and hits("admin") != []
+
+
+def test_the_activity_log_is_scoped_to_visible_listings(world: World, people: dict[str, User]) -> None:
+    new_draft(world, people["author_editor"], "grants-1", **varied(world, "grants-1", "hidden-draft"))
+    editor = signed_in(people["editor"]).get(f"{S}/activity").json()["data"]
+    assert "hidden-draft" not in " ".join(r["listing"] for r in editor)
+    admin = signed_in(people["admin"]).get(f"{S}/activity").json()["data"]
+    assert "hidden-draft" in " ".join(r["listing"] for r in admin)
+    assert signed_in(people["author_editor"]).get(f"{S}/activity").status_code == 200

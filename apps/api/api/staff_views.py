@@ -33,7 +33,7 @@ from audit import services as audit
 from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
-from core.staff_mfa import SESSION_FLAG, _mark_verified
+from core.staff_mfa import SESSION_FLAG, mark_verified
 from opportunities import health, workflow
 from opportunities.errors import WorkflowError
 from opportunities.models import (
@@ -93,8 +93,8 @@ ATTENTION_TARGETS = {
     "ready": "/workspace/opportunities?queue=ready",
     "mine": "/workspace/opportunities?queue=mine",
     "closing": "/workspace/opportunities?status=published&deadline=soon",
-    "employers": "/staff/employers/organisationclaim/?status__exact=pending",
-    "reports": "/staff/reports/listingreport/?queue=open",
+    "employers": "/workspace/records/claims?status=pending",
+    "reports": "/workspace/records/reports?queue=open",
 }
 
 
@@ -232,7 +232,7 @@ class TwoStepView(APIView):
                     "That code did not match. Check the setup key and your device clock, then try again.",
                     400,
                 )
-            _mark_verified(request._request)
+            mark_verified(request._request)
             return Response({"verified": True, "recovery_codes": codes})
         if not mfa.verify(user, code):
             return error_response(
@@ -240,7 +240,7 @@ class TwoStepView(APIView):
                 "That code is not valid. Enter the current code or an unused recovery code.",
                 400,
             )
-        _mark_verified(request._request)
+        mark_verified(request._request)
         return Response({"verified": True})
 
 
@@ -436,11 +436,17 @@ def _form_fields(form_class: type[forms.BaseForm]) -> list[dict[str, Any]]:
             kind = "textarea"
         else:
             kind = "text"
+        lookup = None
+        if isinstance(field, forms.ModelChoiceField):
+            lookup = {"organisation": "organisations", "location": "locations"}.get(
+                field.queryset.model._meta.model_name or ""  # type: ignore[union-attr]
+            )
         out.append(
             {
                 "name": name,
                 "label": str(field.label or name.replace("_", " ").capitalize()),
                 "kind": kind,
+                "lookup": lookup,
                 "required": field.required,
                 "help": str(field.help_text or ""),
                 "choices": [
@@ -769,7 +775,7 @@ class SearchView(StaffView):
                     {
                         "label": o.name,
                         "hint": "Organisation",
-                        "href": f"/staff/catalog/organisation/{o.pk}/change/",
+                        "href": f"/workspace/manage/organisations/{o.pk}",
                     }
                     for o in orgs[:SEARCH_PER_GROUP]
                 ]
@@ -781,7 +787,7 @@ class SearchView(StaffView):
                     {
                         "label": r.reference,
                         "hint": r.get_status_display(),
-                        "href": f"/staff/reports/listingreport/{r.pk}/change/",
+                        "href": f"/workspace/records/reports/{r.pk}",
                     }
                     for r in reports[:SEARCH_PER_GROUP]
                 ]

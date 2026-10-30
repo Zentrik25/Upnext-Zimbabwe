@@ -195,7 +195,14 @@ describe("action panel", () => {
         return new Response("{}", { status: 200 });
       }),
     );
-    render(<ActionPanel id="abc" rowVersion={7} actions={actions} />);
+    render(
+      <ActionPanel
+        endpoint="staff/opportunities/abc/actions"
+        editHref="/workspace/opportunities/abc/edit"
+        rowVersion={7}
+        actions={actions}
+      />,
+    );
     expect(screen.getByRole("link", { name: "Edit the draft" })).toHaveAttribute(
       "href",
       "/workspace/opportunities/abc/edit",
@@ -233,7 +240,7 @@ describe("action panel", () => {
             ),
       ),
     );
-    render(<ActionPanel id="abc" rowVersion={1} actions={[actions[2]!]} />);
+    render(<ActionPanel endpoint="staff/opportunities/abc/actions" rowVersion={1} actions={[actions[2]!]} />);
     fireEvent.click(screen.getByRole("button", { name: "Publish" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm: Publish" }));
     expect(await screen.findByText(/The content is not valid/)).toBeInTheDocument();
@@ -243,7 +250,7 @@ describe("action panel", () => {
   });
 
   it("explains separation of duties when no action is available", () => {
-    render(<ActionPanel id="abc" rowVersion={1} actions={[]} />);
+    render(<ActionPanel endpoint="staff/opportunities/abc/actions" rowVersion={1} actions={[]} />);
     expect(screen.getByText(/need a different person/)).toBeInTheDocument();
   });
 });
@@ -292,14 +299,15 @@ describe("workspace plumbing", () => {
     expect(safeNext("/workspace")).toBe("/workspace");
     expect(safeNext("/workspace/opportunities?queue=review")).toBe("/workspace/opportunities?queue=review");
     expect(safeNext("/workspace/opportunities/11111111-1111-4111-8111-111111111111/edit")).toContain("/edit");
-    expect(safeNext("/workspace/anything-else")).toBe("/account");
+    expect(safeNext("/workspace/records/claims?status=pending")).toBe(
+      "/workspace/records/claims?status=pending",
+    );
+    expect(safeNext("/workspace/a/b/c/d/e")).toBe("/account");
+    expect(safeNext("/workspace/..%2f..")).toBe("/account");
     expect(safeNext("//evil.example/workspace")).toBe("/account");
   });
 
-  it("keeps the staff site token file generated from tokens.json and the workspace out of search indexes", () => {
-    const css = readRepoFile("apps/api/core/static/core/staff-tokens.css");
-    expect(css).toContain("--u-accent-solid: #533afd");
-    expect(css).toContain("--u-brand-dark: #1c1e54");
+  it("keeps the workspace out of search indexes", () => {
     expect(readRepoFile("apps/web/src/app/robots.ts")).toContain('"/workspace"');
     expect(readRepoFile("apps/web/src/app/workspace/layout.tsx")).toContain("index: false");
   });

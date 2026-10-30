@@ -100,7 +100,7 @@ export default async function DashboardPage() {
             <ul className="m-0 list-none p-0">
               {attention.map((row) => (
                 <li key={row.key} className="border-t border-line">
-                  <RowLink
+                  <Link
                     href={row.href}
                     className="flex min-h-[48px] items-center gap-3 px-4 py-2 text-ink hover:bg-row-hover"
                   >
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
                       {row.count}
                     </span>
                     <Icon name="chevron-right" className="h-4 w-4 text-muted" />
-                  </RowLink>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -185,26 +185,5 @@ export default async function DashboardPage() {
         )}
       </section>
     </>
-  );
-}
-
-/** Dashboard links point at workspace pages or at the classic staff site (a different application). */
-function RowLink({
-  href,
-  className,
-  children,
-}: {
-  href: string;
-  className: string;
-  children: React.ReactNode;
-}) {
-  return href.startsWith("/workspace") ? (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  ) : (
-    <a href={href} className={className}>
-      {children}
-    </a>
   );
 }

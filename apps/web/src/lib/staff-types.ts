@@ -34,7 +34,9 @@ export type StaffAction = {
 export type ActionField = {
   name: string;
   label: string;
-  kind: "boolean" | "choice" | "integer" | "textarea" | "text";
+  kind: "boolean" | "choice" | "integer" | "textarea" | "text" | "reference";
+  /** For `reference` fields: what to search (`organisations` or `locations`). */
+  lookup?: string | null;
   required: boolean;
   help: string;
   choices: { value: string; label: string }[] | null;
@@ -190,4 +192,65 @@ export type ActivityRow = {
 export type SearchGroups = {
   query: string;
   groups: { group: string; items: { label: string; hint: string; href: string }[] }[];
+};
+
+export type Cell = string | { text: string; tone: StatusTone } | null;
+
+export type RecordList = {
+  resource: { key: string; label: string; description: string };
+  columns: { key: string; label: string; kind: "text" | "datetime" | "badge" }[];
+  filters: { name: string; label: string; choices: { value: string; label: string }[] }[];
+  searchable: boolean;
+  data: { id: string; cells: Record<string, Cell> }[];
+  page: PageInfo;
+};
+
+export type RecordDetail = {
+  resource: { key: string; label: string };
+  id: string;
+  title: string;
+  status: { label: string; tone: StatusTone } | null;
+  facts: { label: string; value: string }[];
+  sections: { title: string; headers: string[]; rows: { href?: string; cells: string[] }[] }[];
+  notice: string | null;
+  row_version: number | null;
+  actions: StaffAction[];
+};
+
+export type CatalogKind = { key: string; label: string; description: string; can_add: boolean };
+
+export type CatalogList = {
+  kind: { key: string; label: string; description: string };
+  columns: { key: string; label: string }[];
+  can_add: boolean;
+  fields: ActionField[];
+  data: { id: string; cells: Record<string, string> }[];
+  page: PageInfo;
+};
+
+export type CatalogRecord = {
+  kind: { key: string; label: string };
+  id: string;
+  title: string;
+  values: Record<string, string | number | boolean>;
+  fields: ActionField[];
+  readonly: Record<string, string>;
+  can_edit: boolean;
+  row_version: number | null;
+};
+
+export type ContentHealth = {
+  target: {
+    listings: { goal: number; current_source_checked: number; current_live: number };
+    issuers: { goal: number; have: number };
+    categories: { goal: number; covered: number; missing: string[] };
+    met: boolean;
+  };
+  live_per_category: { code: string; live: number }[];
+  pipeline: { status: string; count: number }[];
+  oldest_waiting_review_hours: number | null;
+  closing_within_7_days: number;
+  unknown_deadline_over_30_days: number;
+  live_not_verified: number;
+  sod_violations: { rule: string; version_id: string }[];
 };

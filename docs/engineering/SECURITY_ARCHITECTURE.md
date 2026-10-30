@@ -14,7 +14,7 @@ Status: DRAFT for review. Replaces the outline in `SECURITY.md` (retained as the
 
 ```
 Browser ──HTTPS──▶ Traefik (existing, shared) ──▶ Nginx (existing) ──▶ UPNEXT edge ─┬▶ web (Next.js)     path /
-                                                                                    └▶ api (Django/DRF)  path /api/, staff UI path /staff/
+                                                                                    └▶ api (Django/DRF)  path /api/ (the staff workspace is a Next.js page under /workspace on the staff API /api/v1/staff/)
                                                          internal Docker network ──▶ PostgreSQL (no host port)
 ```
 - One public hostname, path-routed, so browser calls to `/api/*` are **same-origin**: no CORS, first-party cookies, `SameSite=Lax` works. If OQ-01 forces separate hostnames, ADR-0003 topology and this section must be revisited (cookie `Domain`, CORS allow-list, CSRF trusted origins).
@@ -101,7 +101,7 @@ Registration and reset screens state that email may take a few minutes, offer a 
 See `ROLE_PERMISSION_MATRIX.md`. Summary: DRF permission classes per endpoint; the `publishing.policy` service for transitions and separation of duties; object-level filtering for `/me/*`; 404 for non-public objects; Django Admin permissions mapped from the matrix with state fields read-only; DB triggers as the last line of defence.
 
 ### 5.1 Staff interface
-Django Admin is the initial staff UI `[expected, IA still OPEN]`, mounted under `/staff/`, `noindex`, `X-Robots-Tag`, shorter sessions, no seeker login redirect loops. Optional network restriction and MFA are [OQ-16]. `is_staff` is derived from an active role assignment, never set manually. All transitions are admin actions that call services.
+The staff UI is the Next.js workspace (`/workspace`, D-46, ADR-0025) on the staff API (`/api/v1/staff/`); the Django Admin is retired. The workspace is `noindex` and in `robots.txt`; the API needs an active staff role and the second step in the same session (`two_step_required` otherwise), CSRF on unsafe methods, per-user write throttling and the shorter staff sessions. Optional network restriction is [OQ-16]. `is_staff` is derived from an active role assignment, never set manually. Every transition is an API action that calls the same services the Django Admin used (permission, separation of duties, exact revision, audit, database triggers).
 
 ## 6. Application-level controls
 
@@ -177,4 +177,4 @@ No critical/high known defects; authorisation matrix tests green; SoD tests gree
 
 ## 12. Implementation status (Phase 3)
 Built: §3 (identity, sessions with idle and absolute limits, CSRF, registration, verification, login, reset, token construction), §4 (outbox, port, retries, worker; provider adapter waits for OQ-03) and the §8 limits for the endpoints that exist, with the values in the decision register (P3-03). Differences from this draft: session records keep the session key instead of a hash (P3-08); the staff absolute limit is 8 hours; sensitive actions always ask for the password (no 10-minute freshness window); `job_run` is not built (the worker writes a heartbeat file that the Compose health check reads).
-Staff protections (OQ-16, P3-07): two-step verification (TOTP and recovery codes) in front of `/staff/`, a staff Content-Security-Policy, 30-minute idle sessions, audited sign-in and second-step events. Not built: network restriction, WebAuthn, second-administrator confirmation (OQ-13), per-IP lockout beyond the limiter.
+Staff protections (OQ-16, P3-07): two-step verification (TOTP and recovery codes) required by the staff API (`/api/v1/staff/`), the Content-Security-Policy with a per-request nonce on the workspace pages, 30-minute idle sessions, audited sign-in and second-step events. Not built: network restriction, WebAuthn, second-administrator confirmation (OQ-13), per-IP lockout beyond the limiter.

@@ -16,14 +16,13 @@ type Item = {
   label: string;
   href: string;
   icon: string;
-  /** Pages of the classic staff site (Django Admin) are separate applications: plain links. */
-  classic?: boolean;
   badge?: number;
   active?: (path: string, params: URLSearchParams) => boolean;
 };
 type Group = { title: string; items: Item[] };
 
 const LIST = "/workspace/opportunities";
+const startsWith = (prefix: string) => (p: string) => p.startsWith(prefix);
 const exact = (path: string, wanted: Record<string, string>) => (p: string, q: URLSearchParams) =>
   p === path && Object.entries(wanted).every(([k, v]) => q.get(k) === v);
 
@@ -98,47 +97,84 @@ function groups(session: StaffSession): Group[] {
   if (has("employer.review")) {
     editorial.push({
       label: "Employer submissions",
-      href: "/staff/employers/organisationclaim/?status__exact=pending",
+      href: "/workspace/records/claims",
       icon: "users",
-      classic: true,
       badge: count("employers"),
+      active: startsWith("/workspace/records/claims"),
     });
     editorial.push({
       label: "Employer profiles",
-      href: "/staff/employers/profilerevision/",
+      href: "/workspace/records/profiles",
       icon: "building",
-      classic: true,
+      active: startsWith("/workspace/records/profiles"),
+    });
+    editorial.push({
+      label: "Verifications",
+      href: "/workspace/records/verifications",
+      icon: "shield",
+      active: startsWith("/workspace/records/verifications"),
+    });
+    editorial.push({
+      label: "Employer members",
+      href: "/workspace/records/memberships",
+      icon: "user",
+      active: startsWith("/workspace/records/memberships"),
     });
   }
   if (has("org.create"))
     editorial.push({
       label: "Organisations",
-      href: "/staff/catalog/organisation/",
+      href: "/workspace/manage/organisations",
       icon: "grid",
-      classic: true,
+      active: startsWith("/workspace/manage/organisations"),
     });
   if (has("report.read"))
     editorial.push({
       label: "Public reports",
-      href: "/staff/reports/listingreport/?queue=open",
+      href: "/workspace/records/reports",
       icon: "flag",
-      classic: true,
       badge: count("reports"),
+      active: startsWith("/workspace/records/reports"),
     });
   if (editorial.length) out.push({ title: "Editorial", items: editorial });
   if (has("taxonomy.manage"))
     out.push({
       title: "Content",
       items: [
-        { label: "Categories", href: "/staff/catalog/category/", icon: "layers", classic: true },
-        { label: "Locations", href: "/staff/catalog/location/", icon: "pin", classic: true },
-        { label: "Sectors", href: "/staff/catalog/sector/", icon: "tag", classic: true },
-        { label: "Skills", href: "/staff/catalog/skill/", icon: "tag", classic: true },
+        {
+          label: "Categories",
+          href: "/workspace/manage/categories",
+          icon: "layers",
+          active: startsWith("/workspace/manage/categories"),
+        },
+        {
+          label: "Locations",
+          href: "/workspace/manage/locations",
+          icon: "pin",
+          active: startsWith("/workspace/manage/locations"),
+        },
+        {
+          label: "Sectors",
+          href: "/workspace/manage/sectors",
+          icon: "tag",
+          active: startsWith("/workspace/manage/sectors"),
+        },
+        {
+          label: "Skills",
+          href: "/workspace/manage/skills",
+          icon: "tag",
+          active: startsWith("/workspace/manage/skills"),
+        },
       ],
     });
   const reports: Item[] = [];
   if (has("opp.review.approve"))
-    reports.push({ label: "Content health", href: "/staff/content-health/", icon: "chart", classic: true });
+    reports.push({
+      label: "Content health",
+      href: "/workspace/content-health",
+      icon: "chart",
+      active: startsWith("/workspace/content-health"),
+    });
   reports.push({
     label: "Activity log",
     href: "/workspace/activity",
@@ -146,25 +182,42 @@ function groups(session: StaffSession): Group[] {
     active: (p) => p === "/workspace/activity",
   });
   if (has("audit.read_all"))
-    reports.push({ label: "Audit log", href: "/staff/audit/auditevent/", icon: "shield", classic: true });
+    reports.push({
+      label: "Audit log",
+      href: "/workspace/records/audit",
+      icon: "shield",
+      active: startsWith("/workspace/records/audit"),
+    });
   out.push({ title: "Reports", items: reports });
   const settings: Item[] = [];
   if (has("user.role.grant")) {
-    settings.push({ label: "Users", href: "/staff/accounts/user/", icon: "user", classic: true });
+    settings.push({
+      label: "Users",
+      href: "/workspace/records/users",
+      icon: "user",
+      active: startsWith("/workspace/records/users"),
+    });
     settings.push({
       label: "Staff roles",
-      href: "/staff/accounts/staffroleassignment/",
+      href: "/workspace/records/roles",
       icon: "key",
-      classic: true,
+      active: startsWith("/workspace/records/roles"),
     });
   }
-  if (has("settings.manage"))
+  if (has("settings.manage")) {
     settings.push({
       label: "Outgoing e-mail",
-      href: "/staff/notifications/emailoutbox/",
+      href: "/workspace/records/outbox",
       icon: "mail",
-      classic: true,
+      active: startsWith("/workspace/records/outbox"),
     });
+    settings.push({
+      label: "E-mail delivery proof",
+      href: "/workspace/records/delivery",
+      icon: "check",
+      active: startsWith("/workspace/records/delivery"),
+    });
+  }
   if (settings.length) out.push({ title: "Settings", items: settings });
   return out;
 }
@@ -291,20 +344,14 @@ export function Chrome({ session, children }: { session: StaffSession; children:
                   );
                   return (
                     <li key={item.href}>
-                      {item.classic ? (
-                        <a href={item.href} className={cls} onClick={() => setOpen(false)}>
-                          {inner}
-                        </a>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className={cls}
-                          aria-current={active ? "page" : undefined}
-                          onClick={() => setOpen(false)}
-                        >
-                          {inner}
-                        </Link>
-                      )}
+                      <Link
+                        href={item.href}
+                        className={cls}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setOpen(false)}
+                      >
+                        {inner}
+                      </Link>
                     </li>
                   );
                 })}

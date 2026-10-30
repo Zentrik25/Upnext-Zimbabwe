@@ -10,7 +10,6 @@ from typing import Any
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import Client
 
 from accounts.models import User
 from audit.models import AuditEvent
@@ -226,27 +225,3 @@ def test_the_command_prints_the_report(db: None, capsys: pytest.CaptureFixture[s
     call_command("content_health")
     assert "target met: False" in capsys.readouterr().out
     call_command("content_health", "--json")
-
-
-def test_the_staff_page_is_for_editors_and_administrators_only(
-    db: None, people: dict[str, User], world: World
-) -> None:
-    published(world, people["author"], people["editor"])
-
-    def get(user: User | None) -> Any:
-        c = Client(HTTP_HOST="localhost")
-        if user is not None:
-            c.force_login(user)
-            s = c.session
-            s["mfa_ok"] = True
-            s.save()
-        return c.get("/staff/content-health/", secure=True)
-
-    assert get(None).status_code == 302  # to the staff sign-in
-    assert get(people["seeker"]).status_code in (302, 403)
-    assert get(people["author"]).status_code == 403  # a contributor has no use for it
-    page = get(people["editor"])
-    assert page.status_code == 200
-    html = page.content.decode()
-    assert "Launch target" in html and "Separation-of-duties audit" in html
-    assert get(people["admin"]).status_code == 200

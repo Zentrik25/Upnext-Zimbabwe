@@ -238,6 +238,6 @@ test("7. an employer cannot reach staff pages or other people's pages", async ({
   await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
   await page.goto("/employer/organisations/00000000-0000-4000-8000-000000000000/profile");
   await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
-  await page.goto("/staff/");
-  await expect(page).toHaveURL(/\/staff\/login\/|\/staff\/mfa\//);
+  await page.goto("/workspace");
+  await expect(page).toHaveURL(/\/$|\/account/); // not staff: sent away, never shown a staff page
 });

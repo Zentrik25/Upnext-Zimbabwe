@@ -91,7 +91,7 @@ bash tools/scan-secrets.sh                                                      
 Production settings **refuse to start** with a short or default secret key, an empty host list, or insecure cookies.
 
 ## 5. How the pieces fit
-`browser → proxy (Nginx, local only) → web (Next.js, /) | api (Django/DRF, /api/, /health/, /staff/, /static/) → db (PostgreSQL)`. The web app calls the API server-side over the internal network; the browser only ever talks to the single origin (cookie sessions, CSRF header, no CORS). Logs are JSON on stdout with a request id and no credentials, e-mail addresses or query strings.
+`browser → proxy (Nginx, local only) → web (Next.js, /) | api (Django/DRF, /api/, /health/, /static/) → db (PostgreSQL)`. The web app calls the API server-side over the internal network; the browser only ever talks to the single origin (cookie sessions, CSRF header, no CORS). Logs are JSON on stdout with a request id and no credentials, e-mail addresses or query strings.
 
 ## 6. What is not here yet
 Registration/verification/reset flows, the opportunity workflow and CMS, search, matching, notifications, deployment. See `docs/phase1/PHASE1_SCOPE_AND_GATES.md`.
@@ -105,7 +105,7 @@ docker compose up --build            # as in §1
 docker compose exec api python manage.py seed_demo --force   # fictional demo data, development only
 ```
 
-`seed_demo` creates four staff accounts (`contributor@`, `editor@`, `second-editor@`, `admin@demo.upnext.example`) with **random passwords printed once** (never stored in the repository), 12 published fictional listings covering all six categories and four non-public items (draft, in review, approved, rejected). Open `http://localhost:8080/staff/`, sign in with an e-mail address and the printed password.
+`seed_demo` creates four staff accounts (`contributor@`, `editor@`, `second-editor@`, `admin@demo.upnext.example`) with **random passwords printed once** (never stored in the repository), 12 published fictional listings covering all six categories and four non-public items (draft, in review, approved, rejected). Open `http://localhost:8080/workspace`, sign in with an e-mail address and the printed password, then enter the two-step code (`manage.py demo_totp_code --email …` on a demo stack).
 
 Try the workflow: sign in as the Contributor, **Listings → Add**, choose a category and organisation, fill in the draft (including a source), **Submit for review**; sign in as the Editor, open **Listings** and filter *Awaiting my review*, **Approve** it; the Contributor-only author cannot publish, the Editor can. A person who holds both Contributor and Editor roles can publish their own listing only after someone else approved it, and can never approve it. Everything is recorded under **Audit events** (Administrator) and in each listing's history.
 

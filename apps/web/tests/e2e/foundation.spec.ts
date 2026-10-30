@@ -41,15 +41,12 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     expect((await missing.json()).error.code).toBe("not_found");
   });
 
-  test("the staff sign-in page renders with its stylesheet through the proxy", async ({ page, request }) => {
-    const response = await page.goto("/staff/login/");
-    expect(response?.status()).toBe(200);
-    await expect(page.locator("#id_username")).toBeVisible();
-    const css = page.locator('link[rel="stylesheet"]').first();
-    const href = await css.getAttribute("href");
-    expect(href).toMatch(/^\/static\/admin\/css\//);
-    expect((await request.get(href ?? "")).status()).toBe(200);
-    expect(response?.headers()["x-robots-tag"]).toContain("noindex");
+  test("the staff workspace sends a visitor to sign in and is never indexed", async ({ page, request }) => {
+    await page.goto("/workspace");
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fworkspace/);
+    const api = await request.get("/api/v1/staff/dashboard");
+    expect([401, 403]).toContain(api.status());
+    expect((await request.get("/robots.txt")).status()).toBe(200);
   });
 
   test("unknown pages show the designed not-found state", async ({ page }) => {

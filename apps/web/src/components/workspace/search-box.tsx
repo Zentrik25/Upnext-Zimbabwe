@@ -53,8 +53,7 @@ export function SearchBox() {
 
   function go(href: string) {
     setOpen(false);
-    if (href.startsWith("/workspace")) router.push(href);
-    else window.location.assign(href); // the classic staff site is a separate application
+    router.push(href);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

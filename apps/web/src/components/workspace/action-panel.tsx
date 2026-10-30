@@ -7,6 +7,7 @@ import { FormError, FormSuccess } from "@/components/account/parts";
 import { Button, Checkbox, Field, Select, Textarea, TextInput } from "@/components/ui";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
 import { humanise } from "@/lib/format";
+import { LookupSelect } from "./lookup-select";
 import type { ActionField, StaffAction } from "@/lib/staff-types";
 
 type Values = Record<string, string | boolean>;
@@ -23,17 +24,24 @@ function start(fields: ActionField[], defaults: Record<string, string | number>)
  * the service said is possible and carries the row version the person was looking at.
  */
 export function ActionPanel({
-  id,
+  endpoint,
+  editHref,
   rowVersion,
   actions,
   initial,
   defaults = {},
+  noActionsText = "No actions are available to you here right now. Review and approval need a different person from whoever wrote or submitted it.",
 }: {
-  id: string;
-  rowVersion: number;
+  /** The API path that actions post to, without the action name: `staff/opportunities/<id>/actions`. */
+  endpoint: string;
+  /** Where the "edit" pseudo-action goes (listings only). */
+  editHref?: string;
+  /** The version the person was looking at; null for records that have none. */
+  rowVersion: number | null;
   actions: StaffAction[];
   initial?: string;
   defaults?: Record<string, string | number>;
+  noActionsText?: string;
 }) {
   const router = useRouter();
   const doable = actions.filter((a) => a.name !== "edit");
@@ -61,12 +69,12 @@ export function ActionPanel({
     setBusy(true);
     setErrors({});
     setFailure(null);
-    const body: Record<string, unknown> = { row_version: rowVersion };
+    const body: Record<string, unknown> = rowVersion === null ? {} : { row_version: rowVersion };
     for (const f of action.fields ?? []) {
       const v = values[f.name];
       body[f.name] = f.kind === "integer" && typeof v === "string" ? (v === "" ? null : Number(v)) : v;
     }
-    const result = await apiFetch("POST", `staff/opportunities/${id}/actions/${action.name}`, body);
+    const result = await apiFetch("POST", `${endpoint}/${action.name}`, body);
     setBusy(false);
     if (!result.ok) {
       if (result.code === "validation_failed" || result.code === "duplicate_detected")
@@ -80,23 +88,20 @@ export function ActionPanel({
     router.refresh();
   }
 
-  if (!doable.length && !edit) {
+  if (!doable.length && !(edit && editHref)) {
     return (
       <div className="grid gap-3">
         {done ? <FormSuccess>{done}</FormSuccess> : null}
-        <p className="m-0 text-ctl text-muted">
-          No actions are available to you on this listing right now. Review and approval need a different
-          person from whoever wrote or submitted it.
-        </p>
+        <p className="m-0 text-ctl text-muted">{noActionsText}</p>
       </div>
     );
   }
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap gap-2">
-        {edit ? (
+        {edit && editHref ? (
           <Link
-            href={`/workspace/opportunities/${id}/edit`}
+            href={editHref}
             className="inline-flex min-h-control items-center rounded-control border border-border-strong px-4 py-2 text-ctl text-secondary-text hover:bg-accent/5"
           >
             {edit.label}
@@ -161,6 +166,14 @@ export function ActionPanel({
                       </option>
                     ))}
                   </Select>
+                ) : f.kind === "reference" ? (
+                  <LookupSelect
+                    id={fid}
+                    lookup={f.lookup ?? "organisations"}
+                    value={String(values[f.name] ?? "")}
+                    invalid={!!err}
+                    onChange={(v) => setValues({ ...values, [f.name]: v })}
+                  />
                 ) : f.kind === "textarea" ? (
                   <Textarea
                     id={fid}
