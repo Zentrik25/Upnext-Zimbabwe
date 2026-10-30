@@ -23,7 +23,7 @@ for (const w of WIDTHS) {
   const page = await ctx.newPage();
   for (const p of PAGES) {
     try {
-      await page.goto(base + p, { waitUntil: "networkidle", timeout: 30000 });
+      await page.goto(base + p, { waitUntil: "load", timeout: 30000 }); await page.waitForTimeout(400);
       const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
       results.push({ path: p, width: w, overflow: m.sw > m.cw, sw: m.sw });
       if (SHOT.has(w)) await page.screenshot({ path: `${out}/${p.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "") || "home"}-${w}.png`, fullPage: true });

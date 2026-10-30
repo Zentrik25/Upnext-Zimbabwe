@@ -71,7 +71,7 @@ function FilterSelect({
  *  and a slot for the search. It holds no data, so it is sent at once; only the search below it can be pending. */
 export function HeroFrame({ children }: { children: ReactNode }) {
   return (
-    <section aria-labelledby="home-title" className="bg-surface-pale">
+    <section aria-labelledby="home-title" className="overflow-x-clip bg-surface-pale">
       <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
         <p className="font-headline text-ctl uppercase tracking-[0.24em] text-accent">Your next chapter</p>
         <div className="mt-1 grid items-center">
