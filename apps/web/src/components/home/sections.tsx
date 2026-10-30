@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { LoadingRegion, SkeletonInput, SkeletonLine } from "@/components/ui/skeleton";
 import { SearchForm } from "@/components/ui/search-form";
 import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
@@ -65,13 +66,9 @@ function FilterSelect({
   );
 }
 
-/** Hero: eyebrow, three-line headline with the middle word in the accent colour, the illustration beside it, and
- *  the search. The search works against the real API; Location and Category are always shown, the rest sit behind
- *  "More filters" (a native disclosure, so it needs no script and its fields are sent whether open or closed). */
-export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
-  const places = locations
-    .filter((l) => l.kind !== "remote" && l.kind !== "country")
-    .map((l) => [l.slug, l.name] as const);
+/** Hero frame: eyebrow, three-line headline with the middle word in the accent colour, the illustration beside it,
+ *  and a slot for the search. It holds no data, so it is sent at once; only the search below it can be pending. */
+export function HeroFrame({ children }: { children: ReactNode }) {
   return (
     <section aria-labelledby="home-title" className="bg-surface-pale">
       <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
@@ -96,87 +93,116 @@ export function Hero({ categories, locations }: { categories: Category[]; locati
           </div>
         </div>
 
-        <SearchForm
-          bare
-          action="/opportunities"
-          method="get"
-          aria-label="Search opportunities"
-          className="mt-3 grid gap-2.5 md:max-w-[720px]"
-        >
-          <label htmlFor="home-q" className="sr-only">
-            Search by title, organisation or keyword
-          </label>
-          <IconControl icon="search">
-            <input
-              id="home-q"
-              name="q"
-              type="search"
-              maxLength={100}
-              enterKeyHint="search"
-              autoComplete="off"
-              placeholder="Job title or keyword"
-              className={FIELD}
-            />
-          </IconControl>
-          <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
-            <FilterSelect
-              id="home-location"
-              name="location"
-              label="Location"
-              icon="pin"
-              all="Location"
-              options={places}
-            />
-            <FilterSelect
-              id="home-category"
-              name="category"
-              label="Category"
-              icon="grid"
-              all="Category"
-              options={categories.map((c) => [c.code, c.name] as const)}
-            />
-          </div>
-          <details className="group">
-            <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2.5 text-base text-accent [&::-webkit-details-marker]:hidden">
-              <Icon name="sliders" className="h-5 w-5" />
-              <span className="group-open:hidden">More filters</span>
-              <span className="hidden group-open:inline">Fewer filters</span>
-            </summary>
-            <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-3">
-              <FilterSelect
-                id="home-type"
-                name="employment_type"
-                label="Type of work"
-                icon="briefcase"
-                all="Type of work"
-                options={EMPLOYMENT}
-              />
-              <FilterSelect
-                id="home-mode"
-                name="work_mode"
-                label="Work arrangement"
-                icon="building"
-                all="Arrangement"
-                options={MODES}
-              />
-              <FilterSelect
-                id="home-deadline"
-                name="deadline_state"
-                label="Deadline"
-                icon="calendar"
-                all="Deadline"
-                options={DEADLINES}
-              />
-            </div>
-          </details>
-          <Button type="submit" className="relative min-h-[48px] w-full gap-3 text-base">
-            <Icon name="search" className="h-5 w-5" />
-            Find opportunities
-            <Icon name="arrowRight" className="absolute right-4 h-5 w-5" />
-          </Button>
-        </SearchForm>
+        {children}
       </Container>
     </section>
+  );
+}
+
+/** The search form. The search works against the real API; Location and Category are always shown, the rest sit behind
+ *  "More filters" (a native disclosure, so it needs no script and its fields are sent whether open or closed).
+ *  The two lists come from the API, so this is the part that can be pending. */
+export function HeroSearch({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+  const places = locations
+    .filter((l) => l.kind !== "remote" && l.kind !== "country")
+    .map((l) => [l.slug, l.name] as const);
+  return (
+    <SearchForm
+      bare
+      action="/opportunities"
+      method="get"
+      aria-label="Search opportunities"
+      className="mt-3 grid gap-2.5 md:max-w-[720px]"
+    >
+      <label htmlFor="home-q" className="sr-only">
+        Search by title, organisation or keyword
+      </label>
+      <IconControl icon="search">
+        <input
+          id="home-q"
+          name="q"
+          type="search"
+          maxLength={100}
+          enterKeyHint="search"
+          autoComplete="off"
+          placeholder="Job title or keyword"
+          className={FIELD}
+        />
+      </IconControl>
+      <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+        <FilterSelect
+          id="home-location"
+          name="location"
+          label="Location"
+          icon="pin"
+          all="Location"
+          options={places}
+        />
+        <FilterSelect
+          id="home-category"
+          name="category"
+          label="Category"
+          icon="grid"
+          all="Category"
+          options={categories.map((c) => [c.code, c.name] as const)}
+        />
+      </div>
+      <details className="group">
+        <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2.5 text-base text-accent [&::-webkit-details-marker]:hidden">
+          <Icon name="sliders" className="h-5 w-5" />
+          <span className="group-open:hidden">More filters</span>
+          <span className="hidden group-open:inline">Fewer filters</span>
+        </summary>
+        <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-3">
+          <FilterSelect
+            id="home-type"
+            name="employment_type"
+            label="Type of work"
+            icon="briefcase"
+            all="Type of work"
+            options={EMPLOYMENT}
+          />
+          <FilterSelect
+            id="home-mode"
+            name="work_mode"
+            label="Work arrangement"
+            icon="building"
+            all="Arrangement"
+            options={MODES}
+          />
+          <FilterSelect
+            id="home-deadline"
+            name="deadline_state"
+            label="Deadline"
+            icon="calendar"
+            all="Deadline"
+            options={DEADLINES}
+          />
+        </div>
+      </details>
+      <Button type="submit" className="relative min-h-[48px] w-full gap-3 text-base">
+        <Icon name="search" className="h-5 w-5" />
+        Find opportunities
+        <Icon name="arrowRight" className="absolute right-4 h-5 w-5" />
+      </Button>
+    </SearchForm>
+  );
+}
+
+/** What the search form looks like while its lists load: same boxes, same gaps, same button. */
+export function HeroSearchSkeleton() {
+  return (
+    <LoadingRegion label="search" heading={false} className="mt-3 grid gap-2.5 md:max-w-[720px]">
+      <SkeletonInput label={false} />
+      <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+        <SkeletonInput label={false} />
+        <SkeletonInput label={false} />
+      </div>
+      <div className="flex min-h-[22px] items-center">
+        <SkeletonLine className="h-[14px] w-[120px]" />
+      </div>
+      <div className="h-[48px] w-full rounded-control bg-line" />
+    </LoadingRegion>
   );
 }
 
@@ -209,6 +235,30 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
             </ul>
           </nav>
         </div>
+      </Container>
+    </section>
+  );
+}
+
+/** The category tiles while the categories load: six tiles of the real tile size, in the real grid. */
+export function CategoryGridSkeleton() {
+  return (
+    <section aria-label="Explore by category" className="pt-5">
+      <Container>
+        <LoadingRegion label="categories" heading={false} className="border-b border-line pb-5">
+          {/* the real heading is 20px type at the body line height (22px): the slot is as tall, the bar is not */}
+          <div className="flex h-[22px] items-center">
+            <SkeletonLine className="h-[18px] w-[200px]" />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-3 max-sm:gap-2 md:grid-cols-6">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div
+                key={index}
+                className="min-h-[66px] rounded-control border border-border-panel bg-surface max-[400px]:min-h-[84px]"
+              />
+            ))}
+          </div>
+        </LoadingRegion>
       </Container>
     </section>
   );

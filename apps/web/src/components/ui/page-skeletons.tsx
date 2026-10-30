@@ -1,0 +1,278 @@
+import type { ReactNode } from "react";
+import { SeekerNav, type SeekerSection } from "@/components/seeker/seeker-nav";
+import { Container } from "@/components/layout";
+import {
+  LoadingRegion,
+  SkeletonButton,
+  SkeletonCard,
+  SkeletonHeading,
+  SkeletonInput,
+  SkeletonLine,
+  SkeletonListingRows,
+  SkeletonMetricGrid,
+  SkeletonPageHeader,
+  SkeletonTable,
+  SkeletonTabs,
+  SkeletonText,
+} from "./skeleton";
+
+/**
+ * Page-level compositions of the primitives, one per page shape, for the route-level `loading.tsx` files of the
+ * private routes. Each keeps what is static on the real page (its navigation) and draws placeholders only for what
+ * waits for data. None of them renders a name, an e-mail address, a count or any other value: until the session and
+ * the data are resolved nothing private is known, so nothing private can be shown.
+ */
+
+/** A jobseeker page: header band, the shared navigation (static, so it is real), then the body. */
+export function SeekerPageLoading({
+  current,
+  label,
+  children,
+}: {
+  current: SeekerSection;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <section className="border-b border-line py-[22px]">
+        <Container>
+          <LoadingRegion label={label}>
+            <SkeletonPageHeader />
+          </LoadingRegion>
+        </Container>
+      </section>
+      <SeekerNav current={current} />
+      <Container className="pt-[18px] pb-[65px]">
+        <div aria-hidden="true" className="skeleton-pulse">
+          {children}
+        </div>
+      </Container>
+    </>
+  );
+}
+
+/** Saved opportunities and For you: a category tab strip and a page of listing rows. */
+export function SeekerListLoading({ current, label }: { current: SeekerSection; label: string }) {
+  return (
+    <SeekerPageLoading current={current} label={label}>
+      <div className="-mt-[18px] mb-[18px]">
+        <SkeletonTabs />
+      </div>
+      <div className="border-t border-line">
+        <SkeletonListingRows count={5} />
+      </div>
+    </SeekerPageLoading>
+  );
+}
+
+/** The jobseeker overview: two lists, then the profile and alerts panels. */
+export function SeekerOverviewLoading() {
+  return (
+    <SeekerPageLoading current="dashboard" label="your dashboard">
+      <div className="grid gap-8">
+        {[0, 1].map((section) => (
+          <div key={section}>
+            <SkeletonHeading size="section" className="mb-3" />
+            <div className="border-t border-line">
+              <SkeletonListingRows count={3} />
+            </div>
+          </div>
+        ))}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={3} />
+        </div>
+      </div>
+    </SeekerPageLoading>
+  );
+}
+
+/** A settings page: a few cards, each a title and form fields. */
+export function SeekerFormLoading({ current, label }: { current: SeekerSection; label: string }) {
+  return (
+    <SeekerPageLoading current={current} label={label}>
+      <div className="grid max-w-[640px] gap-4">
+        <SkeletonCard>
+          <SkeletonHeading size="title" />
+          <SkeletonInput />
+          <SkeletonInput />
+          <SkeletonButton />
+        </SkeletonCard>
+        <SkeletonCard>
+          <SkeletonHeading size="title" />
+          <SkeletonText lines={2} />
+          <SkeletonInput />
+        </SkeletonCard>
+      </div>
+    </SeekerPageLoading>
+  );
+}
+
+/** The account page: title, then the profile, password, sessions and deletion panels. */
+export function AccountLoading() {
+  return (
+    <Container className="pt-6 pb-[65px]">
+      <LoadingRegion label="your account">
+        <SkeletonPageHeader />
+        <div className="mt-4 grid max-w-[640px] gap-4">
+          <SkeletonCard>
+            <SkeletonHeading size="title" />
+            <SkeletonInput />
+            <SkeletonInput />
+          </SkeletonCard>
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={4} />
+        </div>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** The employer dashboard: title, the organisation's figures, then its submitted opportunities. */
+export function EmployerDashboardLoading() {
+  return (
+    <Container className="pt-6 pb-[65px]">
+      <LoadingRegion label="the employer portal">
+        <SkeletonPageHeader action />
+        <div className="mt-2 grid gap-5">
+          <SkeletonMetricGrid count={3} />
+          <div>
+            <SkeletonHeading size="section" className="mb-2" />
+            <div className="border-b border-line">
+              <SkeletonTable rows={5} columns={4} />
+            </div>
+          </div>
+        </div>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** An employer form or detail page: back link, title, and a card of fields. */
+export function EmployerFormLoading({ label }: { label: string }) {
+  return (
+    <Container className="pt-6 pb-[65px]">
+      <LoadingRegion label={label}>
+        <SkeletonLine className="mb-3 w-[120px]" />
+        <SkeletonPageHeader />
+        <div className="grid max-w-[760px] gap-4">
+          <SkeletonCard>
+            <SkeletonHeading size="title" />
+            <SkeletonInput />
+            <SkeletonInput />
+            <SkeletonText lines={4} />
+          </SkeletonCard>
+          <SkeletonCard lines={3} />
+        </div>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** The workspace dashboard: welcome band, figures, two panels, and the latest opportunities table. */
+export function WorkspaceDashboardLoading() {
+  return (
+    <LoadingRegion label="the workspace">
+      <div className="mb-5 min-h-[180px] rounded-feature border border-border-interest bg-match-bg p-6 sm:min-h-[200px]">
+        <div className="grid max-w-[46ch] gap-3">
+          <SkeletonLine className="h-[34px] w-2/3" />
+          <SkeletonLine className="w-full" />
+          <SkeletonButton className="mt-2 w-[160px]" />
+        </div>
+      </div>
+      <div className="mb-5">
+        <SkeletonMetricGrid count={5} />
+      </div>
+      <div className="@container mb-4">
+        <div className="grid gap-4 @min-[820px]:grid-cols-[5fr_7fr]">
+          <WorkspacePanel rows={4} />
+          <WorkspacePanel rows={4} />
+        </div>
+      </div>
+      <div className="min-w-0 rounded-card border border-border-panel bg-surface shadow-subtle">
+        <div className="px-4 pt-[14px] pb-[10px]">
+          <SkeletonHeading size="title" />
+        </div>
+        <SkeletonTable rows={5} columns={6} />
+      </div>
+    </LoadingRegion>
+  );
+}
+
+function WorkspacePanel({ rows }: { rows: number }) {
+  return (
+    <div className="min-w-0 rounded-card border border-border-panel bg-surface shadow-subtle">
+      <div className="px-4 pt-[14px] pb-[10px]">
+        <SkeletonHeading size="title" />
+      </div>
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className="flex min-h-[48px] items-center gap-3 border-t border-line px-4 py-2">
+          <div className="h-[18px] w-[18px] flex-none bg-line" />
+          <SkeletonLine className="w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A workspace list: title and action, an optional filter bar, and the table (cards below 768px). */
+export function WorkspaceListLoading({
+  label,
+  filters = true,
+  action = false,
+  columns = 6,
+}: {
+  label: string;
+  filters?: boolean;
+  action?: boolean;
+  columns?: number;
+}) {
+  return (
+    <LoadingRegion label={label}>
+      <SkeletonPageHeader action={action} />
+      {filters ? (
+        <>
+          <SkeletonTabs count={7} />
+          <div className="my-4 grid gap-3 rounded-card border border-line bg-surface-pale p-3 sm:grid-cols-2 min-[1100px]:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+            <SkeletonInput label={false} />
+            <SkeletonInput label={false} />
+            <SkeletonInput label={false} className="max-sm:hidden" />
+            <SkeletonInput label={false} className="max-sm:hidden" />
+            <SkeletonButton className="max-sm:hidden" />
+          </div>
+        </>
+      ) : null}
+      <div className="rounded-card border border-border-panel bg-surface shadow-subtle">
+        <SkeletonTable rows={10} columns={columns} />
+      </div>
+    </LoadingRegion>
+  );
+}
+
+/** A workspace record or listing: back link, title with status, then cards of fields. */
+export function WorkspaceDetailLoading({ label }: { label: string }) {
+  return (
+    <LoadingRegion label={label}>
+      <SkeletonLine className="w-[160px]" />
+      <div className="mt-3 mb-4">
+        <SkeletonPageHeader action />
+      </div>
+      <div className="grid gap-4">
+        <SkeletonCard lines={2} />
+        <SkeletonCard>
+          <SkeletonHeading size="title" />
+          {Array.from({ length: 6 }, (_, index) => (
+            <div
+              key={index}
+              className="grid gap-1 border-t border-line py-2 sm:grid-cols-[200px_1fr] sm:gap-4"
+            >
+              <SkeletonLine className="w-1/2" />
+              <SkeletonLine className="w-5/6" />
+            </div>
+          ))}
+        </SkeletonCard>
+      </div>
+    </LoadingRegion>
+  );
+}

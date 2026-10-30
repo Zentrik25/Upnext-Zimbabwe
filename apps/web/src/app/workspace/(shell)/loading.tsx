@@ -1,13 +1,3 @@
-import { LoadingRegion, SkeletonBlock, SkeletonPageHeading, SkeletonPanel } from "@/components/ui";
+import { WorkspaceDashboardLoading } from "@/components/ui/page-skeletons";
 
-export default function Loading() {
-  return (
-    <LoadingRegion label="Loading the workspace">
-      <SkeletonPageHeading />
-      <div className="mt-4 grid gap-4">
-        <SkeletonBlock className="h-[160px]" />
-        <SkeletonPanel />
-      </div>
-    </LoadingRegion>
-  );
-}
+export default WorkspaceDashboardLoading;

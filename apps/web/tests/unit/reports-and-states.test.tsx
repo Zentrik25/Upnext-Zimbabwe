@@ -181,7 +181,7 @@ describe("loading placeholders", () => {
     expect(await violations(container)).toEqual([]);
   });
 
-  it("uses no animation", () => {
+  it("keeps individual blocks still: the only motion is one pulse on the region (see skeleton-system.test.tsx)", () => {
     const { container } = render(<SkeletonListingRows count={2} />);
     expect(container.innerHTML).not.toMatch(/animate-|transition|shimmer|pulse/);
   });
