@@ -81,6 +81,8 @@ def execute(user_id: uuid.UUID, now: datetime | None = None, *, restored: bool =
         EmailOutbox.objects.filter(user=user).update(to_address=SCRUBBED_ADDRESS, payload={}, user=None)
         user.email = f"deleted-{user.pk}@deleted.invalid"
         user.display_name = TOMBSTONE_NAME
+        user.phone_number = None
+        user.google_subject = None
         user.set_unusable_password()
         user.status = AccountStatus.DEACTIVATED
         user.email_verified_at = None

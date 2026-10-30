@@ -14,6 +14,8 @@ class RegisterSerializer(StrictSerializer):
     email = serializers.EmailField(max_length=254)
     password = serializers.CharField(min_length=10, **PASSWORD)  # type: ignore[arg-type]
     display_name = serializers.CharField(min_length=1, max_length=80)
+    phone_number = serializers.CharField(min_length=8, max_length=24)
+    accept_terms = serializers.BooleanField()
 
 
 class EmailOnlySerializer(StrictSerializer):

@@ -171,7 +171,13 @@ def test_the_address_can_register_again_after_deletion(make_user: Callable[..., 
     request_deletion(client)
     user.refresh_from_db()
     deletion.execute(user.pk, requested(user) + timedelta(days=DAYS, seconds=1))
-    services.register(email="again@example.org", password=PASSWORD, display_name="New Start")
+    services.register(
+        email="again@example.org",
+        password=PASSWORD,
+        display_name="New Start",
+        phone_number="+263781234567",
+        accept_terms=True,
+    )
     fresh = User.objects.get(email="again@example.org")
     assert fresh.pk != user.pk and fresh.status == AccountStatus.PENDING_VERIFICATION
 

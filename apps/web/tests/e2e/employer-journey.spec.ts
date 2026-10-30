@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { fillRegistration } from "./register";
 import { lastEmail, linkIn, manage } from "./exec";
 
 /**
@@ -94,9 +95,7 @@ test("2. an employer registers, confirms the address and signs in to an empty da
   page,
 }) => {
   await page.goto("/employers/register");
-  await page.getByLabel("Name").fill("Rudo Chikwanha");
-  await page.getByLabel("E-mail address").fill(EMAIL);
-  await page.getByLabel("Password").fill(PASSWORD);
+  await fillRegistration(page, { name: "Rudo Chikwanha", email: EMAIL, password: PASSWORD });
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByText("Check your e-mail")).toBeVisible();
   const mail = await lastEmail(EMAIL, "email_verification");

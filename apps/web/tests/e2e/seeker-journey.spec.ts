@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { fillRegistration } from "./register";
 import { lastEmail, linkIn, manage } from "./exec";
 
 /**
@@ -37,9 +38,7 @@ async function signIn(page: Page, email: string, next?: string) {
 
 async function register(page: Page, email: string, name: string) {
   await page.goto("/register");
-  await page.getByLabel("Name").fill(name);
-  await page.getByLabel("E-mail address").fill(email);
-  await page.getByLabel("Password").fill(PASSWORD);
+  await fillRegistration(page, { name, email, password: PASSWORD });
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByText("Check your e-mail")).toBeVisible();
   const mail = await lastEmail(email, "email_verification");

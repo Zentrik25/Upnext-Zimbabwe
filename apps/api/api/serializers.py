@@ -31,6 +31,8 @@ class StrictSerializer(serializers.Serializer[None]):
 class LoginSerializer(StrictSerializer):
     email = serializers.EmailField(max_length=254)
     password = serializers.CharField(max_length=128, trim_whitespace=False, style={"input_type": "password"})
+    # "Remember me": true keeps the session for the usual period; false ends it when the browser closes.
+    remember = serializers.BooleanField(required=False, default=True)
 
 
 class UserSerializer(serializers.ModelSerializer[User]):

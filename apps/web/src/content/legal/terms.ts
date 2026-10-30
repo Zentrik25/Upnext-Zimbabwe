@@ -7,10 +7,16 @@ export const TERMS: LegalDocument = {
     "The rules for using UPNEXT Careers: accounts, listings, employers, scams, acceptable use, liability and disputes.",
   intro:
     "These terms are the agreement between you and the operator of UPNEXT Careers. They are short on legal ritual and long on the things that matter to jobseekers and employers: honest listings, no fees to apply, and no guarantees we cannot keep.",
-  version: "1.0",
+  version: "1.1",
   effective: "2026-10-29",
   updated: "2026-10-29",
   history: [
+    {
+      version: "1.1",
+      effective: "2026-10-29",
+      summary:
+        "Accounts can be opened with a phone number or with Google; acceptance is recorded at registration.",
+    },
     { version: "1.0", effective: "2026-10-29", summary: "First full version of the Terms of Service." },
   ],
   sections: [
@@ -47,6 +53,7 @@ export const TERMS: LegalDocument = {
           items: [
             "Give accurate details, keep them up to date and confirm your e-mail address when asked.",
             "One account is for one person. Keep your password to yourself and use a password you use nowhere else.",
+            "When you register you give a phone number that works and tick the box agreeing to these terms and the Privacy Policy; we record when you agreed and to which version. You may instead sign in with your Google account, in which case the same terms apply.",
             "You are responsible for what happens under your account. Tell us promptly at support@upnext.co.zw if you think someone else has used it.",
             "You can delete your account at any time from your account page. The Privacy Policy explains what happens to your information.",
           ],
