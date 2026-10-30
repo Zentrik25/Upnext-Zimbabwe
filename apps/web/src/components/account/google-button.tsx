@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 /** Google's own multicolour "G" (brand guidelines: unmodified colours, on a white button). */
 function GoogleMark() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" className="h-5 w-5 shrink-0">
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" className="h-[18px] w-[18px] shrink-0">
       <path
         fill="#EA4335"
         d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -25,7 +25,7 @@ function GoogleMark() {
 }
 
 const base =
-  "inline-flex min-h-field w-full items-center justify-center gap-3 rounded-control border border-border-strong bg-surface px-4 text-ctl font-medium text-ink";
+  "inline-flex min-h-[36px] w-full items-center justify-center gap-2.5 rounded-control border border-control-border bg-surface px-4 text-ctl font-medium text-ink sm:min-h-field";
 
 /** "Continue with Google". A real link to the sign-in flow when Google is set up on this installation; otherwise a
  *  disabled button that says so, never a control that appears to work and does not. */
@@ -58,12 +58,12 @@ export function GoogleButton({ enabled, next }: { enabled: boolean; next?: strin
   );
 }
 
-/** The "OR" rule between the password form and the Google button. */
-export function OrDivider() {
+/** The "Or sign in with" rule between the password form and the Google button. */
+export function OrDivider({ label = "Or" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-small text-muted" role="separator" aria-label="or">
+    <div className="flex items-center gap-3 text-ctl text-check-text" role="separator" aria-label="or">
       <span className="h-px flex-1 bg-line" />
-      <span aria-hidden="true">OR</span>
+      <span aria-hidden="true">{label}</span>
       <span className="h-px flex-1 bg-line" />
     </div>
   );

@@ -89,11 +89,11 @@
   --text-small: 12px;
   --text-ctl: 14px;
   --text-base: 16px;
-  --text-title: 22px;
-  --text-sub: 26px;
-  --text-section: 32px;
-  --text-display: clamp(32px, 4vw, 48px);
-  --text-hero: clamp(36px, 5.2vw, 56px);
+  --text-title: clamp(20px, 3.4vw, 22px);
+  --text-sub: clamp(22px, 4vw, 26px);
+  --text-section: clamp(26px, 5vw, 32px);
+  --text-display: clamp(30px, 4vw, 48px);
+  --text-hero: clamp(32px, 5.2vw, 56px);
   --text-lead: 18px;
   --text-logo: 22px;
   --font-weight-light: 300;

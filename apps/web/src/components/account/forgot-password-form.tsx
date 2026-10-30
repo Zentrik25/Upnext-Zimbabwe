@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { Button, Field, TextInput } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { AuthField, AuthSwitch } from "./auth-parts";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { FormError, FormSuccess } from "./parts";
 
@@ -28,7 +29,7 @@ export function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <FormSuccess>
           <p className="font-strong">Check your e-mail</p>
           <p className="mt-1">
@@ -36,28 +37,31 @@ export function ForgotPasswordForm() {
             minutes and works for 60 minutes.
           </p>
         </FormSuccess>
-        <p className="text-ctl">
-          <Link href="/sign-in" className="inline-flex min-h-[44px] items-center text-accent underline">
-            Back to sign in
-          </Link>
-        </p>
+        <AuthSwitch>
+          <Link href="/sign-in">Back to sign in</Link>
+        </AuthSwitch>
       </div>
     );
   }
   return (
-    <form onSubmit={submit} className="grid gap-4">
+    <form onSubmit={submit} className="grid gap-3">
+      <p className="text-ctl text-muted">Enter your e-mail address and we will send you a link.</p>
       {failure ? <FormError>{failure}</FormError> : null}
-      <Field id="email" label="E-mail address">
-        <TextInput id="email" name="email" type="email" autoComplete="email" required maxLength={254} />
-      </Field>
-      <Button type="submit" disabled={busy}>
+      <AuthField
+        id="email"
+        name="email"
+        label="E-mail address"
+        type="email"
+        autoComplete="email"
+        required
+        maxLength={254}
+      />
+      <Button type="submit" disabled={busy} className="sm:min-h-field">
         {busy ? "Sending…" : "Send reset link"}
       </Button>
-      <p className="text-ctl">
-        <Link href="/sign-in" className="inline-flex min-h-[44px] items-center text-accent underline">
-          Back to sign in
-        </Link>
-      </p>
+      <AuthSwitch>
+        <Link href="/sign-in">Back to sign in</Link>
+      </AuthSwitch>
     </form>
   );
 }

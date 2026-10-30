@@ -16,7 +16,7 @@ export function SearchGroup({
 }
 
 const part =
-  "min-h-search border-0 border-r border-line bg-surface px-[11px] py-2 text-base text-ink max-sm:border max-sm:border-control-border";
+  "min-h-field border-0 border-r border-line bg-surface px-[11px] py-2 text-ctl text-ink max-sm:border max-sm:border-control-border";
 
 SearchGroup.Input = function SearchInput({
   className,

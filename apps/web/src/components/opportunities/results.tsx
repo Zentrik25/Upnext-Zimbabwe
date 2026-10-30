@@ -78,7 +78,12 @@ export async function Results({
     : `${count} ${count === 1 ? "opportunity" : "opportunities"}`;
   return (
     <>
-      <p role="status" aria-live="polite" className="mb-2 text-ctl text-muted" data-testid="result-count">
+      <p
+        role="status"
+        aria-live="polite"
+        className="tnum mb-2 text-ctl text-muted"
+        data-testid="result-count"
+      >
         {heading}
       </p>
       {data.length === 0 ? (
