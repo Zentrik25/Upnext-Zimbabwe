@@ -50,6 +50,10 @@ x-api-env: &api-env
   UPNEXT_SMTP_USER: ${UPNEXT_SMTP_USER:-}
   UPNEXT_SMTP_PASSWORD: ${UPNEXT_SMTP_PASSWORD:-}
   UPNEXT_RESEND_WEBHOOK_SECRET: ${UPNEXT_RESEND_WEBHOOK_SECRET:-}
+  # Sign in with Google (D-50): the button stays disabled until both are set. Redirect URI to register with Google:
+  # https://upnext.co.zw/api/v1/auth/google/callback
+  UPNEXT_GOOGLE_CLIENT_ID: ${UPNEXT_GOOGLE_CLIENT_ID:-}
+  UPNEXT_GOOGLE_CLIENT_SECRET: ${UPNEXT_GOOGLE_CLIENT_SECRET:-}
   UPNEXT_ALERT_WEBHOOK_URL: ${UPNEXT_ALERT_WEBHOOK_URL:-}
   UPNEXT_ALERT_CERT_HOST: upnext.co.zw:443
   UPNEXT_BACKUP_EXPECTED: ${UPNEXT_BACKUP_EXPECTED:-1}
