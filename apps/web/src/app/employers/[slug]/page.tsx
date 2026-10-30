@@ -68,7 +68,10 @@ export default async function EmployerProfilePage({ params }: Props) {
       <Container className="pt-8 pb-[65px]">
         <article className="max-w-[720px]" aria-labelledby="employer-title">
           <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">Employer</p>
-          <h1 id="employer-title" className="mt-1 text-section font-strong tracking-section">
+          <h1
+            id="employer-title"
+            className="mt-1 text-[28px] font-strong leading-[1.15] tracking-section sm:text-section"
+          >
             {p.organisation.name}
           </h1>
           {p.tagline ? <p className="mt-1 text-title text-company">{p.tagline}</p> : null}

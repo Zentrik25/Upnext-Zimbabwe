@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
+import { InfoCard } from "@/components/content/blocks";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion, SkeletonInput, SkeletonLine } from "@/components/ui/skeleton";
 import { SearchForm } from "@/components/ui/search-form";
@@ -213,9 +214,18 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
     <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
         <div className="border-b border-line pb-5">
-          <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
-            Explore by category
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
+              Explore by category
+            </h2>
+            <Link
+              href="/categories"
+              className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent"
+            >
+              All categories
+              <Icon name="arrowRight" className="h-4 w-4" />
+            </Link>
+          </div>
           <nav aria-label="Browse by category" className="mt-3">
             <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 max-sm:gap-2 md:grid-cols-6">
               {categories.map((category) => (
@@ -266,51 +276,43 @@ export function CategoryGridSkeleton() {
 
 /** What the editorial process really guarantees today (see About and the verification labels). */
 export function TrustSection() {
-  const levels = Object.values(VERIFICATION);
   return (
-    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-8">
+    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-6 sm:py-8">
       <Container>
-        <h2 id="trust-title" className="text-display font-strong tracking-display">
+        <h2 id="trust-title" className="text-[22px] font-strong tracking-title sm:text-sub">
           How listings are checked
         </h2>
         <p className="mt-2 max-w-[640px] text-base text-muted">
           {BRAND.name} lists opportunities published by other organisations. It does not take applications,
           and it says plainly what has and has not been checked.
         </p>
-        <div className="mt-6 grid grid-cols-3 gap-4 max-md:grid-cols-1">
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">Every listing names its source</h3>
-            <p className="mt-2 text-base text-muted">
-              A listing cannot be published without at least one source. You see where the information came
-              from and when it was last looked at.
-            </p>
-          </div>
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">An editor reviews it first</h3>
-            <p className="mt-2 text-base text-muted">
-              Nobody approves their own work. A second person reviews the exact version that goes live, and
-              any later change needs a new review.
-            </p>
-          </div>
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">Verification is labelled, not assumed</h3>
-            <ul className="m-0 mt-2 grid list-none gap-1 p-0 text-base text-muted">
-              {levels.map((level) => (
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <InfoCard title="Every listing names its source">
+            A listing cannot be published without at least one source. You see where the information came from
+            and when it was last looked at.
+          </InfoCard>
+          <InfoCard title="An editor reviews it first">
+            Nobody approves their own work. A second person reviews the exact version that goes live, and any
+            later change needs a new review.
+          </InfoCard>
+          <InfoCard title="Verification is labelled, not assumed">
+            <ul className="m-0 grid list-none gap-0.5 p-0">
+              {Object.values(VERIFICATION).map((level) => (
                 <li key={level.label}>
                   <strong className="text-ink">{level.label}.</strong>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-base text-muted">
+            <p className="mt-2">
               A listing that is not verified still names its source.{" "}
-              <Link href="/about" className="text-accent underline">
+              <Link href="/about" className="text-accent">
                 What the labels mean
               </Link>
               .
             </p>
-          </div>
+          </InfoCard>
         </div>
-        <p className="mt-5 text-base text-muted">
+        <p className="mt-4 text-base text-muted">
           Seen something wrong? Every listing has a{" "}
           <strong className="text-ink">Report this opportunity</strong> link. A report is read by staff; it
           does not remove a listing by itself.

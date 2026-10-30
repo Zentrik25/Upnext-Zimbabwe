@@ -22,7 +22,9 @@ export default async function AccountPage() {
   return (
     <Container className="pt-6 pb-[65px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-section font-strong tracking-section">Your account</h1>
+        <h1 className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section">
+          Your account
+        </h1>
         <SignOutButton />
       </div>
       {staff ? (

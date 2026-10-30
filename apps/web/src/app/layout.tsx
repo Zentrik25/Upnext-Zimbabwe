@@ -60,6 +60,7 @@ export const metadata: Metadata = {
   },
 };
 export const viewport: Viewport = {
+  viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
   themeColor: "#ffffff", // light is the default theme; an explicit dark choice does not change the browser chrome colour

@@ -123,7 +123,10 @@ export default async function OpportunityPage({ params }: Props) {
             <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
               {listing.category.name}
             </p>
-            <h1 id="listing-title" className="mt-1 text-section font-strong leading-title tracking-section">
+            <h1
+              id="listing-title"
+              className="mt-1 text-[28px] font-strong leading-[1.15] tracking-section sm:text-section"
+            >
               {listing.title}
             </h1>
             <p className="mt-1 text-title text-company">

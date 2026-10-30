@@ -42,7 +42,7 @@ export function ListingRow({
   extra,
 }: ListingRowProps) {
   return (
-    <article className="border-b border-line px-[14px] py-[15px] hover:bg-row-hover">
+    <article className="border-b border-line px-[14px] py-3 hover:bg-row-hover sm:py-[15px]">
       <div className="flex items-start gap-[11px]">
         <div
           aria-hidden="true"
@@ -51,7 +51,7 @@ export function ListingRow({
           {initials(organisation)}
         </div>
         <div className="min-w-0">
-          <h3 className="text-title font-strong leading-title">
+          <h3 className="text-[18px] font-strong leading-title sm:text-title">
             <a href={href}>{title}</a>
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
@@ -62,7 +62,7 @@ export function ListingRow({
           <SaveButton title={title} saved={saved} className="ml-auto" />
         )}
       </div>
-      <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
+      <ul className="m-0 my-2 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
         {facts.map((fact) => (
           <li key={fact}>{fact}</li>
         ))}
@@ -73,7 +73,7 @@ export function ListingRow({
         ))}
       </ul>
       {extra}
-      <div className="mt-[13px] flex items-center justify-between gap-2">
+      <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-small text-muted">{sourceNote}</span>
         <ButtonLink
           variant="secondary"

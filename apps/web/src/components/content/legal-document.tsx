@@ -16,7 +16,7 @@ function longDate(iso: string): string {
 function Toc({ doc, label }: { doc: Doc; label: string }) {
   return (
     <nav aria-label={label}>
-      <ol className="m-0 grid list-none gap-1 p-0 text-small">
+      <ol className="m-0 grid list-none gap-1 p-0 text-ctl">
         {doc.sections.map((section) => (
           <li key={section.id}>
             <a
@@ -45,8 +45,10 @@ export function LegalDocument({ doc }: { doc: Doc }) {
   return (
     <Container className="pt-8 pb-[65px]">
       <header className="max-w-[720px]">
-        <h1 className="text-section font-strong tracking-section">{doc.title}</h1>
-        <p className="mt-2 text-base text-muted">{doc.intro}</p>
+        <h1 className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section">
+          {doc.title}
+        </h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{doc.intro}</p>
         <dl
           className="mt-3 grid gap-x-4 gap-y-1 text-small text-muted sm:grid-cols-[auto_1fr]"
           data-testid="legal-meta"
@@ -96,7 +98,10 @@ export function LegalDocument({ doc }: { doc: Doc }) {
               className="mb-8 scroll-mt-6"
               id={section.id}
             >
-              <h2 id={`h-${section.id}`} className="group border-b border-line pb-1 text-title font-strong">
+              <h2
+                id={`h-${section.id}`}
+                className="group border-b border-line pb-2 text-[22px] font-strong leading-title tracking-title"
+              >
                 {section.title}{" "}
                 <a
                   href={`#${section.id}`}
@@ -106,7 +111,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                   #
                 </a>
               </h2>
-              <div className="mt-3 grid gap-3 text-base">
+              <div className="mt-3 grid gap-3 text-base leading-relaxed">
                 {section.blocks.map((block, index) => {
                   if (block.t === "p")
                     return (
@@ -116,7 +121,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                     );
                   if (block.t === "ul")
                     return (
-                      <ul key={index} className="m-0 grid list-disc gap-2 pl-5">
+                      <ul key={index} className="m-0 grid list-disc gap-2 pl-5 marker:text-muted">
                         {block.items.map((item, i) => (
                           <li key={i}>{renderInline(item)}</li>
                         ))}
@@ -124,7 +129,7 @@ export function LegalDocument({ doc }: { doc: Doc }) {
                     );
                   if (block.t === "ol")
                     return (
-                      <ol key={index} className="m-0 grid list-decimal gap-2 pl-5">
+                      <ol key={index} className="m-0 grid list-decimal gap-2 pl-5 marker:text-muted">
                         {block.items.map((item, i) => (
                           <li key={i}>{renderInline(item)}</li>
                         ))}

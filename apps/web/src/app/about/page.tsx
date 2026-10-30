@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { socialFor } from "@/lib/brand";
-import Link from "next/link";
-import { Bullets, ProsePage, Section } from "@/components/content/prose";
-import { VERIFICATION } from "@/lib/format";
+import { Container } from "@/components/layout";
+import {
+  ContentSection,
+  PageCTA,
+  PageHeader,
+  TextLink,
+  VerificationLevels,
+} from "@/components/content/blocks";
+import { ButtonLink } from "@/components/ui";
 
 const DESCRIPTION =
   "What UPNEXT Careers is, where its listings come from and what its verification labels mean.";
@@ -15,66 +21,71 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <ProsePage
-      title="About UPNEXT Careers"
-      intro="UPNEXT Careers helps people in Zimbabwe find jobs, internships, graduate programmes, scholarships, tenders and grants in one place."
-    >
-      <Section title="What UPNEXT does">
-        <p>
-          We collect opportunities published by employers, institutions and funders, check where each one came
-          from, and present it with its source. You can browse and search without an account. An account lets
-          you save listings and come back to them.
-        </p>
-        <p>
-          <Link href="/opportunities" className="text-accent underline">
-            Browse opportunities
-          </Link>
-        </p>
-      </Section>
-      <Section title="Where listings come from">
-        <p>
-          Every listing names at least one source: the issuer&apos;s own website or notice, a newspaper, a
-          gazette, a message from the issuer, or similar. The page shows the source, the date we looked at it
-          and, where there is one, a link to it.
-        </p>
-      </Section>
-      <Section title="What the labels mean">
-        <p>
-          Publishing a listing does not mean we have verified it. The label says what we actually checked.
-        </p>
-        <Bullets
-          items={(["not_verified", "source_checked", "issuer_verified"] as const).map((level) => (
-            <span key={level}>
-              <strong>{VERIFICATION[level].label}.</strong> {VERIFICATION[level].explanation}
-            </span>
-          ))}
-        />
-      </Section>
-      <Section title="How you apply">
-        <p>
-          UPNEXT does not receive applications. Each listing tells you where to apply: the issuer&apos;s
-          website, an e-mail address or written instructions. Before you apply, check the details on the
-          issuer&apos;s own channel, and be careful with any request that asks you to pay. Our guide explains{" "}
-          <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
-            how to apply safely and avoid scams
-          </Link>
-          .
-        </p>
-      </Section>
-      <Section title="Corrections">
-        <p>
-          If a listing is wrong or has closed, tell us on the{" "}
-          <Link href="/contact" className="text-accent underline">
-            contact page
-          </Link>
-          . Listings that are withdrawn by their issuer or that pass their deadline are marked as closed and
-          leave the search results. The full process is described in{" "}
-          <Link href="/guides/how-listings-are-verified" className="text-accent underline">
-            how listings are checked and verified
-          </Link>
-          .
-        </p>
-      </Section>
-    </ProsePage>
+    <>
+      <PageHeader
+        eyebrow="About"
+        title="About UPNEXT Careers"
+        intro="UPNEXT Careers helps people in Zimbabwe find jobs, internships, graduate programmes, scholarships, tenders and grants in one place."
+        actions={<ButtonLink href="/opportunities">Browse opportunities</ButtonLink>}
+      />
+      <Container className="pb-[65px]">
+        <div className="max-w-[760px]">
+          <ContentSection id="what-we-do" title="What UPNEXT does">
+            <p className="text-base">
+              We collect opportunities published by employers, institutions and funders, check where each one
+              came from, and present it with its source. You can browse and search without an account. An
+              account lets you save listings and come back to them.
+            </p>
+          </ContentSection>
+          <ContentSection id="sources" title="Where listings come from" className="border-t border-line">
+            <p className="text-base">
+              Every listing names at least one source: the issuer&apos;s own website or notice, a newspaper, a
+              gazette, a message from the issuer, or similar. The page shows the source, the date we looked at
+              it and, where there is one, a link to it.
+            </p>
+          </ContentSection>
+          <ContentSection
+            id="labels"
+            title="What the labels mean"
+            lead="Publishing a listing does not mean we have verified it. The label says what we actually checked."
+            className="border-t border-line"
+          >
+            <VerificationLevels />
+          </ContentSection>
+          <ContentSection id="apply" title="How you apply" className="border-t border-line">
+            <p className="text-base">
+              UPNEXT does not receive applications. Each listing tells you where to apply: the issuer&apos;s
+              website, an e-mail address or written instructions. Before you apply, check the details on the
+              issuer&apos;s own channel, and be careful with any request that asks you to pay. Our guide
+              explains{" "}
+              <TextLink href="/guides/apply-safely-and-avoid-scams">
+                how to apply safely and avoid scams
+              </TextLink>
+              .
+            </p>
+          </ContentSection>
+          <ContentSection id="corrections" title="Corrections" className="border-t border-line">
+            <p className="text-base">
+              If a listing is wrong or has closed, tell us on the{" "}
+              <TextLink href="/contact">contact page</TextLink>. Listings that are withdrawn by their issuer
+              or that pass their deadline are marked as closed and leave the search results. The full process
+              is described in{" "}
+              <TextLink href="/guides/how-listings-are-verified">
+                how listings are checked and verified
+              </TextLink>
+              .
+            </p>
+          </ContentSection>
+          <PageCTA
+            title="Explore opportunities"
+            href="/opportunities"
+            label="Browse opportunities"
+            secondary={{ href: "/categories", label: "Browse by category" }}
+          >
+            Search by keyword, location or category. Every listing names its source.
+          </PageCTA>
+        </div>
+      </Container>
+    </>
   );
 }
