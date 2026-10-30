@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { AuthPage } from "@/components/account/auth-parts";
 import { GoogleButton, OrDivider } from "@/components/account/google-button";
+import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
 import { safeNext } from "@/lib/safe-next";
 import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
@@ -25,7 +26,8 @@ export default async function SignInPage({
     >
       <SignInForm
         next={next}
-        googleFailed={query.error === "google"}
+        notice={query.error === "google" ? <GoogleFailedNotice /> : undefined}
+        options={<SignInOptions />}
         social={
           <>
             <OrDivider />
