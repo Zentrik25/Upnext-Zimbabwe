@@ -1,134 +1,214 @@
 import Link from "next/link";
-import { Monogram } from "@/components/brand/logo";
+import type { ReactNode } from "react";
+import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
-import { ButtonLink, SearchGroup } from "@/components/ui";
 import { Button } from "@/components/ui/button";
+import { SearchForm } from "@/components/ui/search-form";
+import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { BRAND } from "@/lib/brand";
-import { CATEGORY_SUMMARY, EMPLOYMENT } from "@/lib/filters";
+import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VERIFICATION } from "@/lib/format";
 
-/** Hero: headline, one honest sentence, and the search that works against the real API. */
-export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+/** Every search control is one outlined box: 44px tall, 16px text (no zoom on focus in iOS), icon on the left. */
+const FIELD =
+  "block min-h-search w-full rounded-control border border-control-border bg-surface pl-11 pr-3 text-base font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus";
+const SELECT = `${FIELD.replace("pr-3", "pr-10")} appearance-none truncate`;
+
+function IconControl({ icon, select, children }: { icon: IconName; select?: boolean; children: ReactNode }) {
   return (
-    <section aria-labelledby="home-title" className="relative overflow-hidden border-b border-line">
-      {/* Decorative ruby-to-magenta accent (Stripe design system, hero decoration only): hidden from assistive
-          technology and simplified away on phones. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -right-40 h-[460px] w-[640px] rotate-[16deg] rounded-feature bg-linear-to-br from-ruby/15 via-magenta/15 to-magenta/0 max-md:hidden"
-      />
-      <Monogram className="pointer-events-none absolute -right-16 -bottom-20 h-[340px] w-auto text-surface-pale max-md:hidden" />
-      <Container className="relative pt-16 pb-14 max-sm:pt-10 max-sm:pb-10">
-        <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
-          Opportunities across Zimbabwe
-        </p>
-        <h1
-          id="home-title"
-          className="mt-3 max-w-[760px] text-hero font-strong leading-hero tracking-hero text-ink"
-        >
-          Your next opportunity starts here.
-        </h1>
-        <p className="mt-4 max-w-[600px] text-title leading-body text-muted">
-          Explore jobs, internships and career opportunities across Zimbabwe, all in one place.
-        </p>
-        <SearchGroup
+    <div className="relative">
+      <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-muted">
+        <Icon name={icon} className="h-5 w-5" />
+      </span>
+      {children}
+      {select ? (
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-ink">
+          <Icon name="chevronDown" className="h-5 w-5" />
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function FilterSelect({
+  id,
+  name,
+  label,
+  icon,
+  all,
+  options,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  icon: IconName;
+  all: string;
+  options: readonly (readonly [string, string])[];
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <IconControl icon={icon} select>
+        <select id={id} name={name} defaultValue="" className={SELECT}>
+          <option value="">{all}</option>
+          {options.map(([value, text]) => (
+            <option key={value} value={value}>
+              {text}
+            </option>
+          ))}
+        </select>
+      </IconControl>
+    </div>
+  );
+}
+
+/** Hero: eyebrow, three-line headline with the middle word in the accent colour, the illustration beside it, and
+ *  the search. The search works against the real API; Location and Category are always shown, the rest sit behind
+ *  "More filters" (a native disclosure, so it needs no script and its fields are sent whether open or closed). */
+export function Hero({ categories, locations }: { categories: Category[]; locations: Location[] }) {
+  const places = locations
+    .filter((l) => l.kind !== "remote" && l.kind !== "country")
+    .map((l) => [l.slug, l.name] as const);
+  return (
+    <section aria-labelledby="home-title" className="bg-surface-pale">
+      <Container className="pt-4 pb-4 md:pt-6 md:pb-8">
+        <p className="font-headline text-ctl uppercase tracking-[0.24em] text-accent">Your next chapter</p>
+        <div className="mt-1 grid items-center">
+          <div className="relative z-10 col-start-1 row-start-1">
+            <h1
+              id="home-title"
+              className="font-headline text-[clamp(28px,8vw,64px)] leading-[1.06] tracking-[-0.035em] text-ink"
+            >
+              <span className="block whitespace-nowrap">Find your next </span>
+              <span className="block text-accent">opportunity </span>
+              <span className="block">in Zimbabwe.</span>
+            </h1>
+            <p className="mt-2 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
+              Jobs, internships and opportunities to move you forward.
+            </p>
+          </div>
+          {/* Behind the text, as in the mockup: it takes the right 46% and may touch the end of the headline. */}
+          <div className="col-start-1 row-start-1 -mr-[3%] w-[46%] max-w-[460px] justify-self-end">
+            <JobSeekerArt priority />
+          </div>
+        </div>
+
+        <SearchForm
+          bare
           action="/opportunities"
           method="get"
           aria-label="Search opportunities"
-          className="mt-8 max-w-none bg-surface"
+          className="mt-3 grid gap-2.5 md:max-w-[720px]"
         >
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
           </label>
-          <SearchGroup.Input
-            id="home-q"
-            name="q"
-            type="search"
-            maxLength={100}
-            placeholder="Title, organisation or keyword"
-          />
-          <label htmlFor="home-category" className="sr-only">
-            Category
-          </label>
-          <SearchGroup.Select id="home-category" name="category" defaultValue="">
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </SearchGroup.Select>
-          <label htmlFor="home-location" className="sr-only">
-            Location
-          </label>
-          <SearchGroup.Select id="home-location" name="location" defaultValue="">
-            <option value="">Any location</option>
-            {locations
-              .filter((l) => l.kind !== "remote" && l.kind !== "country")
-              .map((l) => (
-                <option key={l.slug} value={l.slug}>
-                  {l.name}
-                </option>
-              ))}
-          </SearchGroup.Select>
-          <label htmlFor="home-type" className="sr-only">
-            Type of work
-          </label>
-          <SearchGroup.Select id="home-type" name="employment_type" defaultValue="">
-            <option value="">Any type</option>
-            {EMPLOYMENT.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </SearchGroup.Select>
-          <Button type="submit" size="search" className="max-sm:w-full">
+          <IconControl icon="search">
+            <input
+              id="home-q"
+              name="q"
+              type="search"
+              maxLength={100}
+              enterKeyHint="search"
+              autoComplete="off"
+              placeholder="Job title or keyword"
+              className={FIELD}
+            />
+          </IconControl>
+          <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+            <FilterSelect
+              id="home-location"
+              name="location"
+              label="Location"
+              icon="pin"
+              all="Location"
+              options={places}
+            />
+            <FilterSelect
+              id="home-category"
+              name="category"
+              label="Category"
+              icon="grid"
+              all="Category"
+              options={categories.map((c) => [c.code, c.name] as const)}
+            />
+          </div>
+          <details className="group">
+            <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2.5 text-base text-accent [&::-webkit-details-marker]:hidden">
+              <Icon name="sliders" className="h-5 w-5" />
+              <span className="group-open:hidden">More filters</span>
+              <span className="hidden group-open:inline">Fewer filters</span>
+            </summary>
+            <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-3">
+              <FilterSelect
+                id="home-type"
+                name="employment_type"
+                label="Type of work"
+                icon="briefcase"
+                all="Type of work"
+                options={EMPLOYMENT}
+              />
+              <FilterSelect
+                id="home-mode"
+                name="work_mode"
+                label="Work arrangement"
+                icon="building"
+                all="Arrangement"
+                options={MODES}
+              />
+              <FilterSelect
+                id="home-deadline"
+                name="deadline_state"
+                label="Deadline"
+                icon="calendar"
+                all="Deadline"
+                options={DEADLINES}
+              />
+            </div>
+          </details>
+          <Button type="submit" className="relative min-h-[48px] w-full gap-3 text-base">
+            <Icon name="search" className="h-5 w-5" />
             Find opportunities
+            <Icon name="arrowRight" className="absolute right-4 h-5 w-5" />
           </Button>
-        </SearchGroup>
-        <p className="mt-5">
-          <ButtonLink href="#categories" variant="secondary">
-            Explore categories
-          </ButtonLink>
-        </p>
+        </SearchForm>
       </Container>
     </section>
   );
 }
 
-/** The six categories, with the names the API returns. */
+/** Explore by category: one outlined tile per category (icon, name), same destinations as the list filter. */
 export function CategoryGrid({ categories }: { categories: Category[] }) {
   if (categories.length === 0) return null;
   return (
-    <section id="categories" aria-labelledby="categories-title" className="border-b border-line py-14">
+    <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
-        <h2 id="categories-title" className="text-display font-strong tracking-display">
-          Browse by category
-        </h2>
-        <p className="mt-2 max-w-[560px] text-base text-muted">
-          Six kinds of opportunity, each with the same labelled sources and deadlines.
-        </p>
-        <nav aria-label="Browse by category" className="mt-6">
-          <ul className="m-0 grid list-none grid-cols-3 gap-4 p-0 max-md:grid-cols-2 max-sm:grid-cols-1">
-            {categories.map((category) => (
-              <li key={category.code}>
-                <Link
-                  href={`/opportunities?category=${category.code}`}
-                  className="group block h-full rounded-card border border-border-panel bg-surface p-5 hover:border-ink hover:bg-row-hover"
-                >
-                  <span className="block text-title font-strong text-ink">{category.name}</span>
-                  {CATEGORY_SUMMARY[category.code] ? (
-                    <span className="mt-1 block text-base text-muted">{CATEGORY_SUMMARY[category.code]}</span>
-                  ) : null}
-                  <span className="mt-4 inline-flex min-h-[24px] items-center text-ctl text-accent underline">
-                    View {category.name.toLowerCase()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="border-b border-line pb-5">
+          <h2 id="categories-title" className="font-headline text-[20px] tracking-title">
+            Explore by category
+          </h2>
+          <nav aria-label="Browse by category" className="mt-3">
+            <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 max-sm:gap-2 md:grid-cols-6">
+              {categories.map((category) => (
+                <li key={category.code}>
+                  <Link
+                    href={`/opportunities?category=${category.code}`}
+                    className="flex min-h-[66px] items-center max-[400px]:min-h-[84px] max-[400px]:flex-col max-[400px]:justify-center max-[400px]:text-center gap-2.5 rounded-control border border-border-panel bg-surface px-3 text-small leading-tight text-ink break-words hover:bg-row-hover max-sm:gap-2 max-sm:px-2.5 sm:text-ctl"
+                  >
+                    <Icon
+                      name={CATEGORY_ICON[category.code] ?? "grid"}
+                      className="h-6 w-6 shrink-0 text-accent max-sm:h-[22px] max-sm:w-[22px]"
+                    />
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </Container>
     </section>
   );
@@ -138,7 +218,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
 export function TrustSection() {
   const levels = Object.values(VERIFICATION);
   return (
-    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-14">
+    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-8">
       <Container>
         <h2 id="trust-title" className="text-display font-strong tracking-display">
           How listings are checked
@@ -185,48 +265,6 @@ export function TrustSection() {
           <strong className="text-ink">Report this opportunity</strong> link. A report is read by staff; it
           does not remove a listing by itself.
         </p>
-      </Container>
-    </section>
-  );
-}
-
-/** The employer portal as it exists: claim, review, post, track. */
-export function EmployerSection() {
-  return (
-    <section aria-labelledby="employer-title" className="bg-brand-dark py-14 text-brand-dark-text">
-      <Container className="grid grid-cols-[1.2fr_1fr] items-center gap-10 max-md:grid-cols-1">
-        <div>
-          <h2 id="employer-title" className="text-display font-strong tracking-display text-white">
-            For employers and organisations
-          </h2>
-          <p className="mt-3 max-w-[560px] text-title text-brand-dark-text">
-            Claim your organisation, get it verified by our editors and submit listings for review.
-            Applications stay on your own channel.
-          </p>
-          <p className="mt-6 flex flex-wrap gap-3">
-            <ButtonLink href="/employers" variant="inverse">
-              Employer services
-            </ButtonLink>
-            <ButtonLink href="/employer" variant="outline-inverse">
-              Employer sign-in
-            </ButtonLink>
-          </p>
-        </div>
-        <ul className="m-0 grid list-none gap-3 p-0 text-base">
-          {[
-            "Organisation verification by an editor, with the method recorded",
-            "Draft, submit and amend listings; an editor publishes them",
-            "See each listing's status and its aggregate views and apply clicks",
-            "A public company profile once it has been reviewed",
-          ].map((line) => (
-            <li key={line} className="flex gap-3 border-t border-white/20 pt-3">
-              <span aria-hidden="true" className="text-white">
-                •
-              </span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
       </Container>
     </section>
   );

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { openGraphFor } from "@/lib/brand";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/account/register-form";
-import { FormPage } from "@/components/account/parts";
-import { getCurrentUser } from "@/lib/session";
+import { AuthPage } from "@/components/account/auth-parts";
+import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -15,12 +15,13 @@ export const metadata: Metadata = {
 
 export default async function RegisterPage() {
   if (await getCurrentUser()) redirect("/account");
+  const providers = await getAuthProviders();
   return (
-    <FormPage
+    <AuthPage
       title="Create your account"
       intro="An account lets you save opportunities and come back to them. Browsing never needs one."
     >
-      <RegisterForm />
-    </FormPage>
+      <RegisterForm googleEnabled={providers.google} />
+    </AuthPage>
   );
 }

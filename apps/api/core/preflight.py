@@ -296,7 +296,7 @@ def http_findings(
     pages = {
         "web": base_url.rstrip("/") + "/",
         "api": base_url.rstrip("/") + "/api/v1/opportunities?limit=1",
-        "staff": base_url.rstrip("/") + "/staff/login/",
+        "staff": base_url.rstrip("/") + "/staff/sign-in",
     }
     for label, url in pages.items():
         try:
@@ -359,7 +359,7 @@ def http_findings(
         )
     except OSError as e:
         c.check("CSRF endpoint answers", False, str(e))
-    for path in ("/api/schema", "/.env", "/staff/../.git/config"):
+    for path in ("/api/schema", "/.env", "/django-admin/../.git/config"):
         try:
             status, _, _, _ = _fetch(base_url.rstrip("/") + path, ctx)
         except OSError:

@@ -3,7 +3,7 @@
 Status: DRAFT for owner review (OQ-13 and OQ-16 are open). Commands run in the `api` or `worker` container of the deployed stack by a person with server access. Every action below is audited; none needs the database to be edited by hand.
 
 ## 1. Principles
-- Staff sign in on the public sign-in page and open the staff workspace at `/workspace` (D-46; there is no Django Admin), then pass a second step: a 6-digit code from an authenticator app, or an unused recovery code. The second step is required in production and cannot be switched off there.
+- Staff sign in on the public sign-in page and open the staff workspace at `/workspace` (D-49; there is no Django Admin), then pass a second step: a 6-digit code from an authenticator app, or an unused recovery code. The second step is required in production and cannot be switched off there.
 - Roles are additive and revoked, never deleted. There is no Publisher role (D-23). Nobody approves their own submission (D-18, D-22).
 - Staff sessions end after 30 minutes idle or 8 hours in all.
 

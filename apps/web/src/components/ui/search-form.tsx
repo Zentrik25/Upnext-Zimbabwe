@@ -8,8 +8,9 @@ export function SearchForm({
   className,
   children,
   onSubmit,
+  bare,
   ...props
-}: FormHTMLAttributes<HTMLFormElement> & { children: ReactNode }) {
+}: FormHTMLAttributes<HTMLFormElement> & { children: ReactNode; bare?: boolean }) {
   function guard(event: Parameters<NonNullable<FormHTMLAttributes<HTMLFormElement>["onSubmit"]>>[0]) {
     onSubmit?.(event);
     if (event.defaultPrevented) return;
@@ -38,7 +39,8 @@ export function SearchForm({
     <form
       role="search"
       className={cn(
-        "flex max-w-[790px] sm:rounded-control border border-control-border max-sm:flex-wrap max-sm:gap-[7px] max-sm:border-0",
+        !bare &&
+          "flex max-w-[790px] sm:rounded-control border border-control-border max-sm:flex-wrap max-sm:gap-[7px] max-sm:border-0",
         className,
       )}
       onSubmit={guard}

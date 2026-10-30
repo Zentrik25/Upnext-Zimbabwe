@@ -1,5 +1,5 @@
 """Root URL configuration. The staff interface is the Next.js workspace (`/workspace`) on the staff API
-(`/api/v1/staff/`, D-46); there is no Django Admin."""
+(`/api/v1/staff/`, D-49); there is no Django Admin."""
 
 from django.urls import include, path
 

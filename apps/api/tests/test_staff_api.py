@@ -195,9 +195,9 @@ def test_create_and_save_draft_use_the_publishing_service(world: World, people: 
             editor,
             "post",
             f"{S}/opportunities",
-            {"category": "jobs", "organisation_id": org["id"], "title": "Nope"},
+            {"category": "jobs", "organisation_id": org["id"], "title": "Editors may draft too (D-46)"},
         ).status_code
-        == 403
+        == 201
     )
 
 

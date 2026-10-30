@@ -1,4 +1,4 @@
-# ADR-0025 — Staff workspace in Next.js on a staff API (D-46) — DRAFT
+# ADR-0025 — Staff workspace in Next.js on a staff API (D-49) — DRAFT
 
 Status: DRAFT. Owner instruction of 2026-10-29 ("I need next js staff app"). Not merged, not deployed. It amends P2-06 and OQ-16 for the staff UI only.
 

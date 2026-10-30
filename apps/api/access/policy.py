@@ -132,3 +132,29 @@ def can_publish(
     if facts.approved_hash != facts.content_hash:
         return _deny(Reason.APPROVAL_STALE)
     return ALLOW
+
+
+def can_publish_direct(
+    actor: Actor,
+    facts: RevisionFacts,
+    *,
+    author_id: Hashable,
+    employer_owned: bool,
+    registry: PermissionRegistry = DEFAULT_REGISTRY,
+) -> Decision:
+    """Direct publication (D-46): the staff author of a still-open draft publishes it on their own authority.
+
+    This is the single, explicit exception to "nobody approves their own work". It needs both
+    `opp.publish_direct` and `opp.publish`, the actor must be the author of the draft, and a listing an
+    employer owns can never use it: employer submissions keep the independent-approval path (D-18, D-22,
+    D-35).
+    """
+    for code in (Permission.OPP_PUBLISH_DIRECT, Permission.OPP_PUBLISH):
+        denied = _check(actor, code, registry)
+        if denied is not None:  # NB: a denied Decision is falsy, so test identity, not truthiness
+            return denied
+    if employer_owned:
+        return _deny(Reason.SEPARATION_OF_DUTIES)
+    if facts.state != "draft" or actor.user_id != author_id:
+        return _deny(Reason.INVALID_TRANSITION)
+    return ALLOW

@@ -1,4 +1,4 @@
-"""Staff-side rules for listings, shared by the staff API (D-46): who may see which listing, the work queues,
+"""Staff-side rules for listings, shared by the staff API (D-49): who may see which listing, the work queues,
 search, the action table that posts to the publishing service, and the words staff see for statuses.
 
 Nothing here writes state directly: every action calls `opportunities.workflow`, which holds the permission and
@@ -202,6 +202,26 @@ def _approve(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
     workflow.approve(user, opp.pk, expected_row_version=opp.row_version, checklist=checklist)
 
 
+def _publish_direct(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
+    """D-46: an Editor or Administrator publishes their own staff-created draft in one audited step."""
+    checklist = {
+        "source_reviewed": True,
+        "duplicates_reviewed": True,
+        "content_matches_source": True,
+        **({"applicant_payment_reviewed": True} if data.get("applicant_payment_reviewed") else {}),
+    }
+    ack = None
+    if data.get("duplicate_of"):
+        ack = {"duplicate_of": data["duplicate_of"], "reason": data.get("duplicate_reason", "")}
+    workflow.publish_direct(
+        user,
+        opp.pk,
+        expected_row_version=opp.row_version,
+        checklist=checklist,
+        duplicate_acknowledgement=ack,
+    )
+
+
 def _simple(fn_name: str, **extra: str) -> Any:
     def run(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
         kwargs: dict[str, Any] = {name: data[key] for name, key in extra.items()}
@@ -222,6 +242,7 @@ ACTIONS: dict[str, Action] = {
     "approve": Action("Approve", "Approve this exact revision. Anyone who wrote or submitted it cannot do this.", staff_forms.ApproveForm, _approve),
     "reject": Action("Reject", "Return the revision to its author with reasons.", staff_forms.ReasonCodeForm, _simple("reject", reason_code="reason_code", reason="reason")),
     "return": Action("Return (withdraw approval)", "Void the approval and send the revision back with reasons.", staff_forms.ReasonCodeForm, _simple("return_approved", reason_code="reason_code", reason="reason")),
+    "publish_direct": Action("Publish directly", "Publish your own draft in one step. The same checks run and the decision is audited as direct and self-approved. Verification stays independent.", staff_forms.PublishDirectForm, _publish_direct),
     "publish": Action("Publish", "Publish this revision. It must have been approved, unchanged, by another person.", staff_forms.ConfirmForm, _simple("publish")),
     "withdraw": Action("Withdraw", "The issuer withdrew the opportunity. It stays readable, marked withdrawn.", staff_forms.ReasonForm, _simple("withdraw", reason="reason")),
     "expire": Action("Mark as expired", "Close the listing ahead of, or without, its deadline.", staff_forms.ReasonForm, _simple("expire", reason="reason")),

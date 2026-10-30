@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/account/register-form";
 import { FormPage } from "@/components/account/parts";
-import { getCurrentUser } from "@/lib/session";
+import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -16,12 +16,13 @@ export const metadata: Metadata = {
 
 export default async function EmployerRegisterPage() {
   if (await getCurrentUser()) redirect("/employer");
+  const providers = await getAuthProviders();
   return (
     <FormPage
       title="Create an employer account"
       intro="Use your work e-mail address. After you confirm it, sign in and claim your organisation. An editor verifies the organisation before you can post."
     >
-      <RegisterForm />
+      <RegisterForm googleEnabled={providers.google} />
       <p className="mt-4 text-small text-muted">
         Employer accounts are ordinary accounts. Your authority to post comes only from an approved claim.{" "}
         <Link href="/employers" className="text-accent underline">

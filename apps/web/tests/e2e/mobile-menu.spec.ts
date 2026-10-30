@@ -25,8 +25,8 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     expect(box.width).toBeGreaterThanOrEqual(389);
     expect(box.height).toBeGreaterThanOrEqual(843);
     const nav = panel.getByRole("navigation", { name: "Menu" });
-    await expect(nav.getByRole("link", { name: "Opportunities" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "For employers" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Jobs" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "For Employers" })).toBeVisible();
     await expect(panel.getByRole("link", { name: "Register" })).toBeVisible();
     await expect(panel.getByRole("link", { name: "Sign in" })).toBeVisible();
     // the page behind cannot scroll
@@ -42,7 +42,7 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toBeHidden();
     await page.getByTestId("menu-button").click();
-    await page.getByRole("dialog").getByRole("link", { name: "Opportunities" }).click();
+    await page.getByRole("dialog").getByRole("link", { name: "Jobs" }).click();
     await expect(page).toHaveURL(/\/opportunities$/);
     await expect(page.getByRole("dialog")).toBeHidden();
   });

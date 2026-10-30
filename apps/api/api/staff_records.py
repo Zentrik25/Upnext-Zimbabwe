@@ -1,4 +1,4 @@
-"""Staff records API (`/api/v1/staff/records/`, D-46): the review queues and registers that used to be Django Admin
+"""Staff records API (`/api/v1/staff/records/`, D-49): the review queues and registers that used to be Django Admin
 pages, as one small generic API.
 
 A *resource* names a queryset, the people who may read it, the columns of its list, the facts of its detail page

@@ -1,4 +1,4 @@
-"""Public-report moderation and employer review through the staff records API (D-46): the scenarios the Django
+"""Public-report moderation and employer review through the staff records API (D-49): the scenarios the Django
 Admin screens used to be tested with. The services hold the rules; these tests pin that the API shows only what a
 person may attempt and passes every decision to them."""
 

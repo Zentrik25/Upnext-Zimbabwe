@@ -1,4 +1,4 @@
-"""Staff reference data API (`/api/v1/staff/catalog/`, D-46): organisations and the taxonomies (categories,
+"""Staff reference data API (`/api/v1/staff/catalog/`, D-49): organisations and the taxonomies (categories,
 locations, sectors, skills).
 
 Permissions are the ones the Django Admin used: contributors and editors may create organisations, editors and

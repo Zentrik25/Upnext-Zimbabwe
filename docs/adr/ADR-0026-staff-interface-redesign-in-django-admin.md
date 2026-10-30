@@ -1,6 +1,6 @@
-# ADR-0024 — Staff interface redesign inside Django Admin (D-46) — DRAFT
+# ADR-0024 — Staff interface redesign inside Django Admin (D-49) — DRAFT
 
-Status: DRAFT. Recorded with D-46 (owner instruction, 2026-10-29). **Superseded by ADR-0025:** the owner then asked for a Next.js staff app and, after it covered every page, for the Django Admin to be retired; the re-skin described here was removed and P-STAFFUI-01 is withdrawn. Kept as the record of the first approach. Not merged, not deployed.
+Status: DRAFT. Recorded with D-49 (owner instruction, 2026-10-29). **Superseded by ADR-0025:** the owner then asked for a Next.js staff app and, after it covered every page, for the Django Admin to be retired; the re-skin described here was removed and P-STAFFUI-01 is withdrawn. Kept as the record of the first approach. Not merged, not deployed.
 
 ## Context
 The owner asked for a full redesign of the staff interface to match an approved dashboard screenshot and the Stripe design system already adopted for the public site (D-45). The request assumed existing Next.js staff routes and an editorial API. Neither exists: the staff interface is the Django Admin under `/staff/` and "no editorial or administration API is exposed" (P2-06, OQ-16). Adding a staff application in Next.js would need new write endpoints for review, approval and publication, a second authorisation surface, and a decision to change P2-06.

@@ -10,8 +10,11 @@ vi.mock("next/navigation", () => ({
 import { MobileMenu } from "@/components/layout/mobile-menu";
 
 const ITEMS = [
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/employers", label: "For employers" },
+  [
+    { href: "/", label: "Home", icon: "home" as const },
+    { href: "/opportunities", label: "Jobs", icon: "briefcase" as const },
+  ],
+  [{ href: "/employers", label: "For Employers", icon: "building" as const }],
 ];
 
 describe("MobileMenu (hamburger on phones)", () => {
@@ -34,7 +37,7 @@ describe("MobileMenu (hamburger on phones)", () => {
   });
 
   it("starts closed: only the button exists, labelled, collapsed and controlling the menu", () => {
-    render(<MobileMenu items={ITEMS} signedIn={false} />);
+    render(<MobileMenu groups={ITEMS} signedIn={false} />);
     const button = screen.getByRole("button", { name: "Open menu" });
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(button.getAttribute("aria-controls")).toBe("mobile-menu");
@@ -42,12 +45,12 @@ describe("MobileMenu (hamburger on phones)", () => {
   });
 
   it("opens a modal menu with the header links, Register and Sign in, locks scrolling and focuses Close", () => {
-    render(<MobileMenu items={ITEMS} signedIn={false} />);
+    render(<MobileMenu groups={ITEMS} signedIn={false} />);
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(screen.getByRole("link", { name: "Opportunities" }).getAttribute("href")).toBe("/opportunities");
-    expect(screen.getByRole("link", { name: "For employers" }).getAttribute("href")).toBe("/employers");
+    expect(screen.getByRole("link", { name: "Jobs" }).getAttribute("href")).toBe("/opportunities");
+    expect(screen.getByRole("link", { name: "For Employers" }).getAttribute("href")).toBe("/employers");
     expect(screen.getByRole("link", { name: "Register" }).getAttribute("href")).toBe("/register");
     expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/sign-in");
     expect(document.documentElement.style.overflow).toBe("hidden");
@@ -55,7 +58,7 @@ describe("MobileMenu (hamburger on phones)", () => {
   });
 
   it("Escape and Close shut it, restore scrolling and return focus to the menu button", () => {
-    render(<MobileMenu items={ITEMS} signedIn={false} />);
+    render(<MobileMenu groups={ITEMS} signedIn={false} />);
     const open = screen.getByRole("button", { name: "Open menu" });
     fireEvent.click(open);
     fireEvent.keyDown(document, { key: "Escape" });
@@ -68,7 +71,7 @@ describe("MobileMenu (hamburger on phones)", () => {
   });
 
   it("keeps Tab inside the open menu", () => {
-    render(<MobileMenu items={ITEMS} signedIn={false} />);
+    render(<MobileMenu groups={ITEMS} signedIn={false} />);
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     const first = screen.getByRole("link", { name: /home$/ });
     const last = screen.getByRole("link", { name: "Sign in" });
@@ -81,16 +84,22 @@ describe("MobileMenu (hamburger on phones)", () => {
   });
 
   it("closes when a link is chosen", () => {
-    render(<MobileMenu items={ITEMS} signedIn={false} />);
+    render(<MobileMenu groups={ITEMS} signedIn={false} />);
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    fireEvent.click(screen.getByRole("link", { name: "Opportunities" }));
+    fireEvent.click(screen.getByRole("link", { name: "Jobs" }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("signed in: shows the account destinations and a Sign out button instead of Register", () => {
     render(
       <MobileMenu
-        items={[...ITEMS, { href: "/for-you", label: "For you" }, { href: "/saved", label: "Saved" }]}
+        groups={[
+          ...ITEMS,
+          [
+            { href: "/for-you", label: "For you", icon: "home" },
+            { href: "/saved", label: "Saved", icon: "bookmark" },
+          ],
+        ]}
         signedIn
       />,
     );

@@ -18,6 +18,7 @@ export {
   type TextInputProps,
 } from "./field";
 export { EmptyState } from "./empty-state";
+export { Icon, CATEGORY_ICON, type IconName } from "./icons";
 export { ListingRow, type ListingRowProps } from "./listing-row";
 export { Logo } from "./logo";
 export { Notice } from "./notice";

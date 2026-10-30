@@ -50,6 +50,17 @@ class ApproveForm(ActionForm):
     )
 
 
+class PublishDirectForm(ApproveForm):
+    duplicate_of = forms.CharField(
+        required=False,
+        label="Existing listing id",
+        help_text="Only if this is a deliberate separate listing.",
+    )
+    duplicate_reason = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=1000, label="Why it is separate"
+    )
+
+
 class SubmitForm(ActionForm):
     duplicate_of = forms.CharField(
         required=False,

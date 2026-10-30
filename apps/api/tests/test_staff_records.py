@@ -1,4 +1,4 @@
-"""The staff records API (`/api/v1/staff/records/`, D-46): the registers and queues that used to be Django Admin
+"""The staff records API (`/api/v1/staff/records/`, D-49): the registers and queues that used to be Django Admin
 pages. Reading follows each register's permission; every action calls the service that owns the rule."""
 
 from __future__ import annotations

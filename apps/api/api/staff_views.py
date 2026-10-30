@@ -1,4 +1,4 @@
-"""Staff API (`/api/v1/staff/`, openapi tag `staff`, D-46): what the Next.js staff workspace calls.
+"""Staff API (`/api/v1/staff/`, openapi tag `staff`, D-49): what the Next.js staff workspace calls.
 
 Nothing in this module decides anything. Every state change goes through `opportunities.workflow` (permission,
 separation of duties, the exact-revision rule, audit, database triggers); every read starts from

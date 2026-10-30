@@ -92,6 +92,17 @@
   }
 }
 
+/* Staff console surfaces (D-46): a pale canvas with white cards in light, the preview-dark surface with raised
+   cards in dark. Both come from the design tokens; nothing here is a new colour. */
+:root {
+  --staff-canvas: var(--color-surface-pale);
+  --staff-card: var(--color-surface);
+}
+:root[data-theme="dark"] {
+  --staff-canvas: var(--color-surface);
+  --staff-card: var(--color-surface-pale);
+}
+
 /* On the black footer and employer band the dark focus colour would vanish: use white there (WCAG 2.4.7, 1.4.11). */
 .bg-brand-dark :focus-visible {
   outline-color: #ffffff;
@@ -104,6 +115,30 @@ h2,
 h3,
 h4 {
   font-weight: var(--font-weight-light);
+}
+
+/* No link is underlined anywhere (owner instruction 2026-10-29, D-47). Unlayered on purpose: it must win over the
+   `underline` utilities used on individual links. Links stay recognisable by colour and weight, and keep the focus
+   ring; inline links in running text use the heavier weight (below) so they do not rely on colour alone. */
+a,
+a:hover,
+a:focus-visible {
+  text-decoration: none;
+}
+
+/* Inline links in running text (weight 300) are set heavier (400) so they are not told apart by colour alone
+   (WCAG 1.4.1, axe link-in-text-block). Headings, tiles and navigation keep their own weights. */
+p a,
+li a,
+dd a {
+  font-weight: 400;
+}
+
+/* Home page headlines (owner instruction 2026-10-29, D-47): bold Inter. Outside the layers on purpose, like the
+   heading rule above, so it wins over the light-weight heading default. */
+.font-headline {
+  font-family: var(--font-inter-bold), var(--font-sans);
+  font-weight: 700;
 }
 
 /* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */

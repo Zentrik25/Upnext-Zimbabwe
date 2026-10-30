@@ -241,6 +241,12 @@ UPNEXT_EMAIL_WEBHOOK_SECRET = get_str("UPNEXT_EMAIL_WEBHOOK_SECRET", "")  # off 
 # Resend signs webhooks with a Svix secret ("whsec_..."). Off until set; never commit it (D-34).
 UPNEXT_RESEND_WEBHOOK_SECRET = get_str("UPNEXT_RESEND_WEBHOOK_SECRET", "")
 UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
+# Version of the Terms and Privacy Policy a new account agrees to (matches the legal content files).
+UPNEXT_TERMS_VERSION = get_str("UPNEXT_TERMS_VERSION", "1.1")
+# Sign in with Google (OpenID Connect, authorisation-code flow with PKCE). Off until both values are set; the
+# redirect address to register with Google is UPNEXT_PUBLIC_BASE_URL + /api/v1/auth/google/callback.
+UPNEXT_GOOGLE_CLIENT_ID = get_str("UPNEXT_GOOGLE_CLIENT_ID", "")
+UPNEXT_GOOGLE_CLIENT_SECRET = get_str("UPNEXT_GOOGLE_CLIENT_SECRET", "")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": f"{UPNEXT_BRAND_SHORT} Careers API",

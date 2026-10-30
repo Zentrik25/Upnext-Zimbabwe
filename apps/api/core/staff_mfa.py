@@ -1,4 +1,4 @@
-"""The second step for staff sessions (OQ-16 provisional default P3-07; D-46).
+"""The second step for staff sessions (OQ-16 provisional default P3-07; D-49).
 
 An account that holds a staff role must prove a TOTP or recovery code in the current session before the staff
 API serves it anything (`api.staff_views.IsVerifiedStaff`). The flag lives in the server-side session, so it

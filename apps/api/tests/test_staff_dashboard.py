@@ -1,4 +1,4 @@
-"""The dashboard figures behind `/api/v1/staff/dashboard` (D-46): real counts scoped to what the person may see, no
+"""The dashboard figures behind `/api/v1/staff/dashboard` (D-49): real counts scoped to what the person may see, no
 review count for people who cannot review or for their own submissions, and activity from the workflow history."""
 
 from __future__ import annotations

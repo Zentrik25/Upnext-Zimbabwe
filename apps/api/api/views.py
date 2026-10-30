@@ -8,19 +8,19 @@ from typing import Any
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import check_password, make_password
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import exceptions, status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts import services
+from accounts import google, services
 from accounts.models import AccountStatus, User
 from accounts.sessions import client_ip
 from audit import services as audit
@@ -124,6 +124,8 @@ class LoginView(APIView):
 
         login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
         request._request.session.pop(STAFF_SESSION_FLAG, None)  # every sign-in earns its own second step
+        if not serializer.validated_data["remember"]:
+            request.session.set_expiry(0)  # a browser-session cookie: gone when the browser closes
         EmailFailureLimiter.reset(email)
         logger.info("login succeeded", extra={"event": "auth.login.success", "user_id": str(user.pk)})
         audit.record(
@@ -156,3 +158,78 @@ def api_not_found(request: HttpRequest, *args: Any, **kwargs: Any) -> JsonRespon
         {"error": {"code": "not_found", "message": "Not found.", "request_id": get_request_id()}},
         status=404,
     )
+
+
+class ProvidersView(APIView):
+    """Which sign-in options this installation offers (so the page never shows a button that cannot work)."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        operation_id="listAuthProviders",
+        tags=["auth"],
+        responses={200: OpenApiResponse(description="{google: boolean}")},
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"google": google.configured()})
+
+
+def _sign_in_failed(reason: str) -> HttpResponseRedirect:
+    logger.info("google sign-in refused", extra={"event": "auth.google.refused", "reason": reason})
+    return HttpResponseRedirect("/sign-in?error=google")
+
+
+class GoogleStartView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    @extend_schema(
+        operation_id="startGoogleSignIn",
+        tags=["auth"],
+        parameters=[OpenApiParameter("next", str, required=False)],
+        responses={302: OpenApiResponse(description="Redirect to Google, or back to /sign-in?error=google")},
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        if not google.configured():
+            return _sign_in_failed("not configured")
+        return HttpResponseRedirect(google.begin(request._request, request.query_params.get("next")))
+
+
+class GoogleCallbackView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    @extend_schema(
+        operation_id="googleSignInCallback",
+        tags=["auth"],
+        parameters=[
+            OpenApiParameter("code", str, required=False),
+            OpenApiParameter("state", str, required=False),
+        ],
+        responses={
+            302: OpenApiResponse(
+                description="Signed in: redirect to the requested page; otherwise /sign-in?error=google"
+            )
+        },
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        code, state = request.query_params.get("code", ""), request.query_params.get("state", "")
+        if not google.configured():
+            return _sign_in_failed("not configured")
+        if not code or not state or len(code) > 2048 or len(state) > 200:
+            request._request.session.pop(google.SESSION_KEY, None)
+            return _sign_in_failed("missing code or state")
+        try:
+            identity, next_path = google.exchange(request._request, code, state)
+            user = google.resolve_user(identity)
+        except google.GoogleSignInError as exc:
+            return _sign_in_failed(exc.reason)
+        login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+        audit.record(
+            action="auth.login",
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            changes={"method": "google", "ip_hash": hash_key(client_ip(request._request) or "-")},
+        )
+        return HttpResponseRedirect(next_path)

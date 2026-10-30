@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { fillRegistration } from "./register";
 
 /**
  * Accessibility and mobile audit of every public and account page (A11Y-01…A11Y-05): axe at four widths, no
@@ -176,22 +177,39 @@ test.describe("keyboard", () => {
 
   test("the sign-in form submits with Enter and ties errors to their fields", async ({ page }) => {
     await page.goto("/register");
-    await page.getByLabel("Name").fill("Keyboard User");
-    await page.getByLabel("E-mail address").fill("keyboard@example.org");
-    await page.getByLabel("Password").fill("password1234");
+    await fillRegistration(page, {
+      name: "Keyboard User",
+      email: "keyboard@example.org",
+      password: "password1234",
+    });
     await page.keyboard.press("Enter");
-    const field = page.getByLabel("Password");
+    const field = page.getByLabel("Password", { exact: true });
     await expect(field).toHaveAttribute("aria-invalid", "true");
     const describedBy = await field.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     await expect(page.locator(`#${describedBy}`)).toContainText("Error:");
   });
 
+  test("sign-in offers Remember me and a Google button that is honest about availability", async ({
+    page,
+  }) => {
+    await page.goto("/sign-in");
+    await expect(page.getByLabel("Remember me")).toBeChecked({ checked: false });
+    const google = page.getByRole("link", { name: /Google/ });
+    if (await google.count()) await expect(google).toHaveAttribute("href", /\/api\/v1\/auth\/google\/start/);
+    else await expect(page.getByText("Google sign-in is not available yet.")).toBeVisible();
+  });
+
   test("forms name the purpose of their fields for autofill", async ({ page }) => {
     await page.goto("/register");
-    await expect(page.getByLabel("Name")).toHaveAttribute("autocomplete", "name");
+    await expect(page.getByLabel("Full name")).toHaveAttribute("autocomplete", "name");
     await expect(page.getByLabel("E-mail address")).toHaveAttribute("autocomplete", "email");
-    await expect(page.getByLabel("Password")).toHaveAttribute("autocomplete", "new-password");
+    await expect(page.getByLabel("Phone number")).toHaveAttribute("autocomplete", "tel-national");
+    await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+      "autocomplete",
+      "new-password",
+    );
+    await expect(page.getByLabel("Confirm password")).toHaveAttribute("autocomplete", "new-password");
     await page.goto("/sign-in");
     await expect(page.getByLabel("Password")).toHaveAttribute("autocomplete", "current-password");
   });

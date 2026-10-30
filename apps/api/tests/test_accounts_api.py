@@ -26,7 +26,14 @@ NEW_PASSWORD = "a completely different passphrase 77"
 
 
 def register(client: APIClient, email: str = "new@example.org", **extra: Any) -> Any:
-    body = {"email": email, "password": PASSWORD, "display_name": "Nia Moyo", **extra}
+    body = {
+        "email": email,
+        "password": PASSWORD,
+        "display_name": "Nia Moyo",
+        "phone_number": "+263 78 123 4567",
+        "accept_terms": True,
+        **extra,
+    }
     return post_json(client, "/api/v1/auth/register", body)
 
 

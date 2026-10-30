@@ -1,4 +1,4 @@
-/** Shapes returned by the staff API (`/api/v1/staff/`, D-46). Mirrors apps/api/api/staff_views.py. */
+/** Shapes returned by the staff API (`/api/v1/staff/`, D-49). Mirrors apps/api/api/staff_views.py. */
 
 export type StaffSession = {
   user: { id: string; name: string; role: string; roles: string[] };

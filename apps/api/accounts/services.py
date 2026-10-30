@@ -91,14 +91,31 @@ def _dummy_hash_work(password: str) -> None:
 
 
 # --- registration and verification -------------------------------------------------------------------
-def register(*, email: str, password: str, display_name: str) -> None:
+_PHONE = re.compile(r"^\+[1-9]\d{7,14}$")
+
+
+def normalise_phone(value: str) -> str:
+    """Spaces, hyphens, dots and brackets are formatting; what is left must be an international number."""
+    return re.sub(r"[\s\-().]", "", value)
+
+
+def phone_problem(value: str) -> str | None:
+    if not _PHONE.match(value):
+        return "Enter the number with its country code, for example +263 78 123 4567."
+    return None
+
+
+def register(*, email: str, password: str, display_name: str, phone_number: str, accept_terms: bool) -> None:
     """Indistinguishable from the caller's side; validation errors concern only the submitted values."""
     email, display_name = normalise_email(email), display_name.strip()
+    phone_number = normalise_phone(phone_number)
     _ensure(
         {
             "email": [m] if (m := email_problem(email)) else [],
             "display_name": [m] if (m := display_name_problem(display_name)) else [],
+            "phone_number": [m] if (m := phone_problem(phone_number)) else [],
             "password": password_problems(password, email=email, display_name=display_name),
+            "accept_terms": [] if accept_terms else ["Agree to the Terms of Service and Privacy Policy."],
         }
     )
     try:
@@ -110,6 +127,9 @@ def register(*, email: str, password: str, display_name: str) -> None:
                 normalise_password(password),
                 display_name,
                 status=AccountStatus.PENDING_VERIFICATION,
+                phone_number=phone_number,
+                terms_accepted_at=timezone.now(),
+                terms_version=settings.UPNEXT_TERMS_VERSION,
             )
             token = tokens.issue(user, TokenPurpose.EMAIL_VERIFICATION)
             outbox.enqueue(

@@ -1,4 +1,4 @@
-"""Editorial workflow through the staff API (D-46): who may see and edit what, that every action goes through the
+"""Editorial workflow through the staff API (D-49): who may see and edit what, that every action goes through the
 publishing service, stale versions, audit with the acting role, and bounded queries. These are the scenarios the
 Django Admin screens used to be tested with."""
 
@@ -118,7 +118,7 @@ def test_contributor_starts_a_draft_and_the_category_is_fixed(world: World, peop
         O,
         {"category": "tenders", "organisation_id": org, "title": "Nope"},
     )
-    assert editor.status_code == 403
+    assert editor.status_code == 201  # Editors and Administrators draft their own listings too (D-46)
     again = send(
         signed_in(people["author"]), "post", O, {"category": "nonsense", "organisation_id": org, "title": "X"}
     )
@@ -378,3 +378,22 @@ def test_seed_demo_loads_every_category_and_respects_the_rules(
     call_command("seed_demo", "--force")  # idempotent
     assert Opportunity.objects.count() == 16
     assert OpportunityVersion.objects.filter(state="published").count() == 12
+
+
+def test_an_editor_publishes_their_own_draft_directly_through_the_staff_api(
+    world: World, people: dict[str, User]
+) -> None:
+    """D-46 stays in force in the workspace: the one self-approval exception, audited as direct."""
+    editor = signed_in(people["editor"])
+    opp = new_draft(world, people["editor"], "jobs-1")
+    detail = editor.get(f"{O}/{opp.pk}").json()
+    assert "publish_direct" in [a["name"] for a in detail["actions"]]
+    done = act(editor, opp, "publish_direct", **APPROVE)
+    assert done.status_code == 200, done.content
+    opp.refresh_from_db()
+    assert opp.status == ListingStatus.PUBLISHED and opp.live_version is not None
+    assert opp.live_version.direct_publication
+    assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.publish_direct").exists()
+    # a contributor cannot, and another person's draft is never theirs to publish
+    other = new_draft(world, people["author"], "grants-1", **varied(world, "grants-1", "c"))
+    assert act(signed_in(people["editor"]), other, "publish_direct", **APPROVE).status_code in (403, 404)

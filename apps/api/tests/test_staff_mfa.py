@@ -1,4 +1,4 @@
-"""Staff two-step verification through the staff API (provisional default P3-07 for OQ-16; D-46)."""
+"""Staff two-step verification through the staff API (provisional default P3-07 for OQ-16; D-49)."""
 
 from __future__ import annotations
 

@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
+import { fillRegistration } from "./register";
 import { lastEmail, linkIn } from "./exec";
 
 /**
@@ -69,17 +70,15 @@ test("2. registration validates, answers the same for any address, and blocks si
 }) => {
   await page.goto("/register");
   await shot(page, "acct-01-register");
-  await page.getByLabel("Name").fill(NAME);
-  await page.getByLabel("E-mail address").fill(EMAIL);
-  await page.getByLabel("Password").fill("short");
+  await fillRegistration(page, { name: NAME, email: EMAIL, password: "short" });
   await page.getByRole("button", { name: "Create account" }).click();
   // browser validation (minlength) stops a too-short password before the server is asked
   await expect(page).toHaveURL(/\/register$/);
-  await page.getByLabel("Password").fill("password1234");
+  await fillRegistration(page, { name: NAME, email: EMAIL, password: "password1234", agree: false });
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByText("Error:")).toBeVisible();
   await shot(page, "acct-02-register-error");
-  await page.getByLabel("Password").fill(PASSWORD);
+  await fillRegistration(page, { name: NAME, email: EMAIL, password: PASSWORD, agree: false });
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByText("Check your e-mail")).toBeVisible();
   await shot(page, "acct-03-register-accepted");

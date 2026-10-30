@@ -13,7 +13,7 @@ const ALLOWED = [
   /^\/employer(\/claim)?$/,
   /^\/employer\/listings\/[0-9a-f-]{36}$/,
   /^\/employer\/organisations\/[0-9a-f-]{36}\/profile$/,
-  // Staff workspace (D-46): pages only; the API and the two-step page decide who may see them.
+  // Staff workspace (D-49): pages only; the API and the two-step page decide who may see them.
   /^\/workspace(\/[a-z0-9-]{1,40}){0,3}$/,
 ];
 
