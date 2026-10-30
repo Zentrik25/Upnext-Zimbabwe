@@ -22,12 +22,14 @@ export function SignInForm({ next }: { next?: string }) {
     setBusy(true);
     setFailure(null);
     setUnverifiedEmail(null);
-    const outcome = await apiFetch("POST", "auth/login", {
+    const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login", {
       email,
       password: String(form.get("password") ?? ""),
     });
     if (outcome.ok) {
-      router.replace(safeNext(next));
+      // Staff go straight to the workspace (and its second step) unless they were sent here from somewhere.
+      const staff = (outcome.data?.roles?.length ?? 0) > 0;
+      router.replace(safeNext(next, staff ? "/workspace" : "/account"));
       router.refresh();
       return;
     }

@@ -15,6 +15,7 @@ from accounts import mfa
 from accounts.models import StaffMfaDevice, StaffRecoveryCode, User, UserSession
 from audit.models import AuditEvent
 
+from .conftest import PASSWORD
 from .test_staff_api import S, send, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -212,3 +213,13 @@ def test_the_gate_can_be_switched_off_only_by_configuration(
 ) -> None:
     settings.UPNEXT_STAFF_MFA_REQUIRED = False
     assert signed_in(make_user(roles=("editor",))).get(f"{S}/dashboard").status_code == 200
+
+
+def test_signing_in_again_requires_the_second_step_again(make_user: Callable[..., User]) -> None:
+    user = make_user(roles=("editor",))
+    client = signed_in(user)
+    enrol(client, user)
+    assert client.get(f"{S}/dashboard").status_code == 200
+    again = send(client, "post", "/api/v1/auth/login", {"email": user.email, "password": PASSWORD})
+    assert again.status_code == 200, again.content
+    assert client.get(f"{S}/dashboard").status_code == 403  # the flag from the earlier sign-in is gone
