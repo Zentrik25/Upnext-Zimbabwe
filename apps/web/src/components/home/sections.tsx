@@ -81,8 +81,7 @@ export function HeroFrame({ children }: { children: ReactNode }) {
         className="pointer-events-none absolute -top-24 -right-6 -z-10 h-[420px] w-[70px] rotate-[28deg] bg-linear-to-b from-ruby to-magenta opacity-20 md:right-[2%] md:w-[110px] md:opacity-25"
       />
       <Container className="pt-5 pb-5 md:pt-10 md:pb-10">
-        <p className="text-ctl text-muted">Your next chapter</p>
-        <div className="mt-1 grid items-center">
+        <div className="grid items-center">
           <div className="relative z-10 col-start-1 row-start-1">
             <h1 id="home-title" className="text-[clamp(30px,8.4vw,56px)] leading-hero tracking-hero text-ink">
               <span className="block whitespace-nowrap">Find your next </span>
