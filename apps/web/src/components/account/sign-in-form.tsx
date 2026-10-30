@@ -85,7 +85,10 @@ export function SignInForm({
         type="password"
         reveal
         aside={
-          <Link href="/forgot-password" className="text-ctl text-accent">
+          <Link
+            href="/forgot-password"
+            className="inline-flex min-h-[24px] items-center text-ctl text-accent"
+          >
             Forgot your password?
           </Link>
         }

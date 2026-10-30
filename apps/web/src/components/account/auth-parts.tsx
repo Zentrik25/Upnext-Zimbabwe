@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
  *  form, nothing else. No illustration or intro paragraph, so even the long registration form fits one screen. */
 export function AuthPage({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="relative isolate flex min-h-[calc(100dvh-49px)] justify-center overflow-hidden bg-surface-pale">
+    <div className="relative isolate flex min-h-[calc(100dvh-82px)] justify-center overflow-hidden bg-surface-pale">
       {/* The system's ruby-to-magenta accent as one soft diagonal band, wide screens only (decorative). */}
       <div
         aria-hidden="true"
