@@ -22,7 +22,10 @@ export default async function AlertsPage() {
     <>
       <section aria-labelledby="alerts-title" className="border-b border-line py-[22px]">
         <Container>
-          <h1 id="alerts-title" className="text-section font-strong tracking-section">
+          <h1
+            id="alerts-title"
+            className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section"
+          >
             Job alerts
           </h1>
           <p className="mt-1 text-base text-muted">

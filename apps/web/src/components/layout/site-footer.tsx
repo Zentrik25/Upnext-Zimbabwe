@@ -10,12 +10,12 @@ const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[
     title: "Opportunities",
     links: [
       ["/opportunities", "All opportunities"],
-      ["/#categories", "Browse by category"],
+      ["/categories", "Browse by category"],
     ],
   },
   {
     title: "Guides",
-    links: GUIDES.map((g) => [g.path, g.title] as const),
+    links: [["/guides", "All guides"] as const, ...GUIDES.map((g) => [g.path, g.title] as const)],
   },
   {
     title: "Employers",

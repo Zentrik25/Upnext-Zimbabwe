@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bullets, Section } from "@/components/content/prose";
+import { VerificationLevels } from "@/components/content/blocks";
 import { GuidePage } from "@/components/content/guide-page";
 import { socialFor } from "@/lib/brand";
 import { guideAt } from "@/lib/guides";
-import { VERIFICATION } from "@/lib/format";
 
 const PATH = "/guides/how-listings-are-verified" as const;
 const guide = guideAt(PATH);
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   ...socialFor(PATH, { title: guide.title, description: guide.description }),
 };
 
-const a = "text-accent underline";
+const a = "text-accent";
 
 export default function VerificationGuide() {
   return (
@@ -45,13 +45,7 @@ export default function VerificationGuide() {
         <p>
           Publishing a listing does not mean it has been verified. The label says what was actually checked.
         </p>
-        <Bullets
-          items={(["not_verified", "source_checked", "issuer_verified"] as const).map((level) => (
-            <span key={level}>
-              <strong>{VERIFICATION[level].label}.</strong> {VERIFICATION[level].explanation}
-            </span>
-          ))}
-        />
+        <VerificationLevels />
         <p>A label is not an endorsement of the issuer, the pay or the outcome of an application.</p>
       </Section>
       <Section title="Closed and withdrawn listings">

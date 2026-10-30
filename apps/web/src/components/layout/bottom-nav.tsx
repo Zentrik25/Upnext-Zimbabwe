@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
   { href: "/", label: "Home", icon: "home", match: (p) => p === "/" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
-  { href: "/#categories", label: "Categories", icon: "grid", match: () => false },
+  { href: "/categories", label: "Categories", icon: "grid", match: (p) => p.startsWith("/categories") },
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
   {
     href: "/account",
@@ -27,7 +27,7 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Quick navigation"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="m-0 grid list-none grid-cols-5 p-0">
           {TABS.map((tab) => {
@@ -39,7 +39,7 @@ export function BottomNav() {
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-[56px] flex-col items-center justify-center gap-0.5 border-t-2 text-small",
+                    "flex min-h-[56px] flex-col items-center justify-center gap-0.5 border-t-2 text-small leading-none",
                     active ? "border-accent-solid text-accent" : "border-transparent text-muted",
                   )}
                 >
@@ -52,7 +52,7 @@ export function BottomNav() {
         </ul>
       </nav>
       {/* keeps the footer clear of the fixed bar */}
-      <div aria-hidden="true" className="h-[58px] sm:hidden" />
+      <div aria-hidden="true" className="h-[calc(58px+env(safe-area-inset-bottom))] sm:hidden" />
     </>
   );
 }

@@ -1,0 +1,842 @@
+[
+ {
+  "path": "/",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/opportunities",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/categories",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/saved",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/sign-in",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/register",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/forgot-password",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/about",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/employers",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/privacy",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/terms",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/contact",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/guides",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/no-such-page",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 320,
+  "overflow": false,
+  "sw": 320
+ },
+ {
+  "path": "/",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/opportunities",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/categories",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/saved",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/sign-in",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/register",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/forgot-password",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/about",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/employers",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/privacy",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/terms",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/contact",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/guides",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/no-such-page",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 360,
+  "overflow": false,
+  "sw": 360
+ },
+ {
+  "path": "/",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/opportunities",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/categories",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/saved",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/sign-in",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/register",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/forgot-password",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/about",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/employers",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/privacy",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/terms",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/contact",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/guides",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/no-such-page",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 390,
+  "overflow": false,
+  "sw": 390
+ },
+ {
+  "path": "/",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/opportunities",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/categories",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/saved",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/sign-in",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/register",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/forgot-password",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/about",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/employers",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/privacy",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/terms",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/contact",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/guides",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/no-such-page",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 430,
+  "overflow": false,
+  "sw": 430
+ },
+ {
+  "path": "/",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/opportunities",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/categories",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/saved",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/sign-in",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/register",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/forgot-password",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/about",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/employers",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/privacy",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/terms",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/contact",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/guides",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/no-such-page",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 768,
+  "overflow": false,
+  "sw": 768
+ },
+ {
+  "path": "/",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/opportunities",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/categories",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/saved",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/sign-in",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/register",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/forgot-password",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/about",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/employers",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/privacy",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/terms",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/contact",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/guides",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/no-such-page",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 1024,
+  "overflow": false,
+  "sw": 1024
+ },
+ {
+  "path": "/",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/opportunities",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/opportunities?category=jobs",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/categories",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/saved",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/sign-in",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/register",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/forgot-password",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/about",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/employers",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/privacy",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/terms",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/contact",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/guides",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/guides/how-to-find-jobs-in-zimbabwe",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/guides/apply-safely-and-avoid-scams",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/guides/how-listings-are-verified",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/no-such-page",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ },
+ {
+  "path": "/opportunities/consultancy-water-network-assessment-6xa8zw/report",
+  "width": 1440,
+  "overflow": false,
+  "sw": 1440
+ }
+]

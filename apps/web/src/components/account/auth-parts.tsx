@@ -19,8 +19,8 @@ export function AuthPage({
     <div className="bg-surface-pale">
       <div className="mx-auto w-full max-w-[460px] px-6 pt-8 pb-14 max-sm:px-4">
         <h1 className="text-center text-section font-strong tracking-section max-sm:text-sub">{title}</h1>
-        <p className="mt-2 text-center text-base text-muted">{intro}</p>
-        <JobSeekerArt size="form" className="mx-auto my-3 max-w-[260px]" />
+        <p className="mt-2 mb-4 text-center text-base text-muted sm:mb-0">{intro}</p>
+        <JobSeekerArt size="form" className="mx-auto my-3 max-w-[260px] max-sm:hidden" />
         <div className="rounded-feature border border-border-panel bg-surface p-6 shadow-subtle max-sm:p-4">
           {children}
         </div>

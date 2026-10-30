@@ -79,7 +79,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     <>
       <section aria-labelledby="results-title" className="border-b border-line py-[22px]">
         <Container>
-          <h1 id="results-title" className="text-section font-strong tracking-section">
+          <h1
+            id="results-title"
+            className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section"
+          >
             {headingCategory ? CATEGORY_SEO[headingCategory]!.heading : "Opportunities"}
           </h1>
           <p className="mt-1 mb-[14px] text-base text-muted">
