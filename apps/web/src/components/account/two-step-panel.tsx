@@ -174,7 +174,7 @@ export function TwoStepPanel({
       ) : step === "password" ? (
         <form onSubmit={start} className="mt-3 grid gap-3">
           <p className="text-base">
-            Enter your password to start. Your other signed-in browsers will be signed out once it is on.
+            Enter your password to start. You stay signed in, and you can turn it off again at any time.
           </p>
           {passwordField}
           <div className="flex gap-2">

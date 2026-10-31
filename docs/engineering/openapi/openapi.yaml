@@ -669,7 +669,7 @@ paths:
     post:
       tags: [me]
       operationId: confirmTwoStepSetup
-      description: Confirms the pending key with a code, turns two-step verification on, returns 8 single-use recovery codes (shown once) and signs out the caller's other sessions.
+      description: Confirms the pending key with a code, turns two-step verification on, returns 8 single-use recovery codes (shown once). The caller and their other sessions stay signed in.
       security: [{ cookieAuth: [], csrf: [] }]
       requestBody:
         required: true

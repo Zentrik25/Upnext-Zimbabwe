@@ -11,7 +11,7 @@ from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from accounts import login_challenge, mfa
-from accounts.models import StaffMfaDevice, User, UserSession
+from accounts.models import StaffMfaDevice, User
 from audit.models import AuditEvent
 
 from .conftest import PASSWORD, csrf
@@ -104,14 +104,20 @@ def test_wrong_code_does_not_turn_it_on_and_right_code_does(make_user: Callable[
     assert not any(a.startswith("staff.") for a in actions)
 
 
-def test_turning_it_on_signs_out_other_browsers(make_user: Callable[..., User]) -> None:
+def test_turning_it_on_does_not_sign_anyone_out(make_user: Callable[..., User]) -> None:
     user = make_user()
     other, mine = sign_in(user), sign_in(user)
     send(mine, "post", SETUP, {"password": PASSWORD})
     send(mine, "post", CONFIRM, {"code": code_now(user)})
-    assert other.get(ME).status_code in (401, 403)
-    assert mine.get(ME).status_code == 200
-    assert UserSession.objects.filter(user=user, revoked_at__isnull=True).count() == 1
+    assert other.get(ME).status_code == 200 and mine.get(ME).status_code == 200
+
+
+def test_an_abandoned_setup_never_blocks_sign_in(make_user: Callable[..., User]) -> None:
+    user = make_user()
+    client = sign_in(user)
+    send(client, "post", SETUP, {"password": PASSWORD})  # started, never confirmed
+    assert StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=True).exists()
+    assert sign_in(user).get(ME).status_code == 200
 
 
 def test_setup_and_confirm_are_refused_when_already_on(make_user: Callable[..., User]) -> None:

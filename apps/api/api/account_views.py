@@ -341,8 +341,6 @@ class TwoStepConfirmView(TwoStepBaseView):
                 "That code did not match. Check the setup key and your device clock, then try again.",
                 status.HTTP_400_BAD_REQUEST,
             )
-        # Other browsers signed in before the second step existed are signed out; this one carries on.
-        services.revoke_sessions(user, except_key=request.session.session_key)
         return Response({"recovery_codes": codes})
 
 
