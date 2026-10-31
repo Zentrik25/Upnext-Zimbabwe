@@ -59,7 +59,7 @@ Navigation; hero ("Your next opportunity starts here.", the supported search: ke
 
 ## 8. E-mail
 
-Sender name **UPNEXT Careers**, from and reply-to **info@upnext.co.zw** (`UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO` default to it). Plain-text templates take the brand from the context (`brand_name`, `brand_short`); the HTML alternative is a text wordmark (UPNEXT, CAREERS beneath), black on white, no images. Subjects use the brand name. Real sending is unchanged: off until `delivery_verified()` (B-01).
+Sender name **UPNEXT Careers**, from and reply-to **info@upnext.co.zw** (`UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO` default to it). Plain-text templates take the brand from the context (`brand_name`, `brand_short`); the HTML alternative (D-55, `docs/engineering/EMAIL_DESIGN_SYSTEM.md`) has a brand-dark header with the white lockup as a PNG on the site's own origin, a purple button and a compact footer, and uses no other image except the verification illustration. Subjects use the brand name. Real sending is unchanged: off until `delivery_verified()` (B-01).
 
 ## 9. Domain, SEO and the move from the old name
 

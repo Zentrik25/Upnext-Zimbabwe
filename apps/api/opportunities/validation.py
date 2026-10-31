@@ -74,7 +74,7 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         _add(errors, "title", "invalid_format", "The title must not be mostly capital letters.")
     if _URL_IN_TEXT.search(version.title):
         _add(errors, "title", "invalid_format", "The title must not contain a web address.")
-    # The overview is optional (D-55): empty is fine, a short stub is not.
+    # The overview is optional (D-56): empty is fine, a short stub is not.
     if version.summary:
         _length(errors, "summary", version.summary, 20, 300)
     # The body is the responsibilities and the qualifications together: neither is forced to repeat the other.
@@ -108,7 +108,7 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         if version.employment_type:
             _add(errors, "employment_type", "invalid_choice", "Not applicable to this category.")
     elif version.employment_type and version.employment_type not in allowed_types:
-        # An empty type is "not stated" (D-55); a stated one must fit the category.
+        # An empty type is "not stated" (D-56); a stated one must fit the category.
         _add(
             errors, "employment_type", "invalid_choice", f"Choose one of: {', '.join(sorted(allowed_types))}."
         )

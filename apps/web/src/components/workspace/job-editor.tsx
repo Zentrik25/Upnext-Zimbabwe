@@ -106,7 +106,7 @@ const counter = (value: string, max: number) => (
 );
 
 /**
- * The staff job editor (D-55): the eleven things a verified listing needs, in order, then three collapsed sections.
+ * The staff job editor (D-56): the eleven things a verified listing needs, in order, then three collapsed sections.
  * Drafts autosave (the API refuses a stale `row_version`, so two tabs cannot overwrite each other); publishing and
  * submitting go through the audited actions, never around them.
  */

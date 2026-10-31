@@ -98,7 +98,7 @@ SINGLE_LINE = {
     "og_title": 90,
     "og_description": 200,
 }
-# Staff-only content: an employer's draft never carries a chosen address or search/sharing text (D-55).
+# Staff-only content: an employer's draft never carries a chosen address or search/sharing text (D-56).
 STAFF_ONLY_KEYS = frozenset({"slug", "seo_title", "seo_description", "og_title", "og_description"})
 MULTI_LINE = {"description_md": 20000, "requirements_md": 10000, "application_instructions": 2000}
 ENUMS: dict[str, type[Any]] = {
@@ -448,7 +448,7 @@ def slug_errors(
     cleaned: Mapping[str, Any], *, opportunity_id: uuid.UUID | None, current_slug: str | None
 ) -> FieldErrors:
     """A chosen address must be free: not another listing's slug and not another open draft's choice. Once a
-    listing has its permanent slug the address cannot change (permanent URLs, D-55)."""
+    listing has its permanent slug the address cannot change (permanent URLs, D-56)."""
     hint = cleaned.get("slug_hint")
     errors: FieldErrors = {}
     if not hint:
@@ -594,7 +594,7 @@ COPIED_COLUMNS = (
     "contact_details",
     "detail",
     "detail_schema_version",
-    # Added in D-55. Optional, and hashed only when set, so every revision approved before they existed keeps
+    # Added in D-56. Optional, and hashed only when set, so every revision approved before they existed keeps
     # the hash it was approved with.
     "salary_text",
     "application_email_subject",

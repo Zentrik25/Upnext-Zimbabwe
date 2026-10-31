@@ -707,7 +707,7 @@ def _apply_publication(actor: User, opportunity: Opportunity, version: Opportuni
 
 
 def _assign_slug(opportunity: Opportunity, title: str, hint: str | None = None) -> str:
-    """The editor's chosen address when it is still free, otherwise one made from the title (D-55)."""
+    """The editor's chosen address when it is still free, otherwise one made from the title (D-56)."""
     if hint and not Opportunity.objects.filter(slug=hint).exclude(pk=opportunity.pk).exists():
         return hint
     for _ in range(8):

@@ -474,12 +474,11 @@ def test_every_employer_message_renders_with_a_plain_link_and_no_token(
 
 
 def test_every_new_kind_has_a_subject_and_a_template() -> None:
-    from pathlib import Path
+    from notifications import content, samples
 
-    templates = Path(__file__).resolve().parents[1] / "notifications" / "templates" / "notifications"
     for kind in EMPLOYER_KINDS:
-        assert kind in {str(k) for k in outbox.SUBJECTS}, kind
-        assert (templates / f"{kind}_v1.txt").is_file(), kind
+        assert kind in {str(k) for k in content.BUILDERS}, kind
+        assert content.build(kind, samples.sample_context(kind)).subject.endswith("| UPNEXT Careers"), kind
         assert len(kind) <= 32  # EmailOutbox.kind is 32 characters wide
 
 

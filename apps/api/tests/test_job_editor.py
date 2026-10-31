@@ -1,4 +1,4 @@
-"""The simplified job editor's data rules (D-55): what the eleven essential fields map to, what stays optional,
+"""The simplified job editor's data rules (D-56): what the eleven essential fields map to, what stays optional,
 what is refused, and that nothing weakens the publishing safeguards."""
 
 from __future__ import annotations

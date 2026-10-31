@@ -1,5 +1,5 @@
 /**
- * The simplified job editor's form state and how it maps to the stored draft (D-55).
+ * The simplified job editor's form state and how it maps to the stored draft (D-56).
  *
  * The eleven essential fields are edited directly; everything else the draft holds is kept as it is and sent
  * back unchanged unless the editor opened "More details" and changed it. Nothing is invented: an empty input is

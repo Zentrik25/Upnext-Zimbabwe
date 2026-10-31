@@ -1,7 +1,0 @@
-Hello {{ display_name }},
-
-The e-mail address of your {{ brand_name }} account was changed. From now on, sign in with the new address and expect {{ brand_name }} messages there. This address no longer receives them.
-
-If you did not make this change, use the password reset on the sign-in page with your new address if you can, or contact us using the details on the Contact page.
-
-{{ brand_name }} never asks for your password by e-mail.
