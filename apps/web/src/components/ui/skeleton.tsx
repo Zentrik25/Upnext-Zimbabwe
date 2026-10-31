@@ -89,7 +89,8 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
   );
 }
 
-const HEADING = { page: "h-[28px]", section: "h-[24px]", title: "h-[20px]" } as const;
+/** `page` is the real page title at its two sizes: 29px under 651px, 35px from there (26px and 32px type at 1.1). */
+const HEADING = { page: "h-[29px] sm:h-[35px]", section: "h-[24px]", title: "h-[20px]" } as const;
 
 /** A heading: `page` (page title), `section` (section title) or `title` (card or panel title). */
 export function SkeletonHeading({
@@ -218,8 +219,29 @@ export function SkeletonMetricGrid({ count = 5 }: { count?: number }) {
   );
 }
 
-/** A page title with its introduction and, optionally, the action on its right. */
-export function SkeletonPageHeader({ action = false }: { action?: boolean }) {
+/**
+ * A page title with its introduction and, optionally, the action on its right.
+ *
+ * `intro` is the height class of the real introduction at its two widths (for example `h-[67px] sm:h-[22px]`, three
+ * lines on a phone and one on a desktop). It also switches to the real page's spacing (4px under the title, no bottom
+ * padding), so the header is exactly as tall as the real one. Without it the header keeps its generic shape.
+ */
+export function SkeletonPageHeader({ action = false, intro }: { action?: boolean; intro?: string }) {
+  if (intro) {
+    return (
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid min-w-0 flex-1 gap-1">
+          <SkeletonHeading size="page" className="w-1/3 max-sm:w-2/3" />
+          <div className={cn("grid content-start gap-2 overflow-hidden", intro)}>
+            <SkeletonLine className="w-full" />
+            <SkeletonLine className="w-full" />
+            <SkeletonLine className="w-2/3" />
+          </div>
+        </div>
+        {action ? <SkeletonButton /> : null}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 pb-4">
       <div className="grid min-w-0 flex-1 gap-2">
@@ -227,6 +249,23 @@ export function SkeletonPageHeader({ action = false }: { action?: boolean }) {
         <SkeletonLine className="w-1/2 max-sm:w-full" />
       </div>
       {action ? <SkeletonButton /> : null}
+    </div>
+  );
+}
+
+/** A labelled group of check boxes or radios: a legend line, then rows (two columns from 651px). */
+export function SkeletonChoiceGroup({ rows = 8, className }: { rows?: number; className?: string }) {
+  return (
+    <div className={cn("grid content-start gap-3", className)}>
+      <SkeletonLine className="h-[18px] w-1/3" />
+      <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        {Array.from({ length: rows }, (_, index) => (
+          <div key={index} className="flex h-[24px] items-center gap-3">
+            <div className="h-[24px] w-[24px] shrink-0 rounded-micro border border-control-border bg-surface" />
+            <SkeletonLine className={index % 3 === 2 ? "w-1/2" : "w-2/3"} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

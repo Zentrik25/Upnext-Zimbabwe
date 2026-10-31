@@ -29,7 +29,9 @@ import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/o
 import { Results } from "@/components/opportunities/results";
 import {
   AccountLoading,
+  AlertsLoading,
   EmployerDashboardLoading,
+  ProfileLoading,
   SeekerListLoading,
   SeekerOverviewLoading,
   WorkspaceDashboardLoading,
@@ -307,9 +309,16 @@ describe("private and staff skeletons expose nothing private", () => {
   it("each page skeleton renders placeholders only: no text but the one status line", () => {
     const pages = [
       <AccountLoading key="a" />,
+      <ProfileLoading key="p" />,
+      <AlertsLoading key="al" />,
       <EmployerDashboardLoading key="e" />,
       <SeekerOverviewLoading key="o" />,
-      <SeekerListLoading key="l" current="saved" label="your saved opportunities" />,
+      <SeekerListLoading
+        key="l"
+        current="saved"
+        label="your saved opportunities"
+        intro="h-[67px] sm:h-[22px]"
+      />,
       <WorkspaceDashboardLoading key="w" />,
       <WorkspaceListLoading key="wl" label="the opportunities" action />,
       <WorkspaceDetailLoading key="wd" label="the record" />,
@@ -327,7 +336,9 @@ describe("private and staff skeletons expose nothing private", () => {
   });
 
   it("the jobseeker skeleton keeps its (static) navigation and the page still has one level-1 heading role", () => {
-    render(<SeekerListLoading current="saved" label="your saved opportunities" />);
+    render(
+      <SeekerListLoading current="saved" label="your saved opportunities" intro="h-[67px] sm:h-[22px]" />,
+    );
     expect(screen.getByRole("link", { name: "Saved" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
@@ -404,5 +415,50 @@ describe("route wiring", () => {
     expect(readFileSync(join(src, "components/opportunities/results.tsx"), "utf8")).toContain("cache(");
     const detail = readFileSync(join(app, "opportunities/[slug]/page.tsx"), "utf8");
     expect(detail).toContain("cache(fetchOpportunity)");
+  });
+});
+
+describe("skeletons are the size of the real thing (measured against a running stack, 2026-10-31)", () => {
+  const read = (path: string) => readFileSync(join(src, path), "utf8");
+
+  it("the search skeletons use the 40px field height of the real search controls, not the old 44px", () => {
+    const real = read("components/home/sections.tsx");
+    expect(real).toMatch(/block min-h-field w-full/); // the real hero control
+    expect(real).toContain('className="relative h-[44px] w-full gap-2 text-ctl"'); // an explicit height: min-h-control would win
+    const { container } = render(<HeroSearchSkeleton />);
+    expect(container.innerHTML).not.toContain("h-search");
+    expect(container.querySelectorAll(".h-field")).toHaveLength(3);
+    expect(container.querySelector(".h-\\[44px\\]")).not.toBeNull();
+    cleanup();
+    const group = render(<SearchSkeleton />).container;
+    expect(group.innerHTML).not.toContain("h-search");
+    expect(group.querySelector(".h-\\[42px\\]")).not.toBeNull(); // 40px field plus its two 1px borders
+    expect(group.querySelectorAll(".h-field")).toHaveLength(2);
+    expect(read("components/ui/search-group.tsx")).toContain("min-h-field");
+  });
+
+  it("a page header skeleton given the real introduction height is exactly as tall as the real header", () => {
+    const { container } = render(<SkeletonPageHeader intro="h-[67px] sm:h-[22px]" />);
+    expect(container.querySelector(".h-\\[67px\\]")).not.toBeNull();
+    expect(container.querySelector(".sm\\:h-\\[22px\\]")).not.toBeNull();
+    expect(container.querySelector(".h-\\[29px\\]")).not.toBeNull(); // the page title at phone width (26px type)
+    expect(container.querySelector(".pb-4")).toBeNull(); // the real header has no bottom padding
+  });
+
+  it("the account skeleton has the five panels of the real page", () => {
+    const { container } = render(<AccountLoading />);
+    expect(container.querySelectorAll(".rounded-card.border")).toHaveLength(5);
+    expect(read("app/account/page.tsx")).toContain("<DeletionPanel");
+  });
+
+  it("the profile and alerts skeletons are long forms, and every seeker loading file names its introduction height", () => {
+    for (const file of ["saved", "for-you"]) {
+      expect(read(`app/${file}/loading.tsx`)).toMatch(/intro="h-\[\d+px\] sm:h-\[\d+px\]"/);
+    }
+    expect(read("app/profile/loading.tsx")).toContain("ProfileLoading");
+    expect(read("app/alerts/loading.tsx")).toContain("AlertsLoading");
+    const { container } = render(<ProfileLoading />);
+    expect(container.querySelectorAll("input, select, textarea")).toHaveLength(0);
+    expect(container.querySelectorAll("[aria-hidden='true'] .h-\\[24px\\]").length).toBeGreaterThan(20);
   });
 });
