@@ -351,7 +351,7 @@ def job_alert(ctx: Context) -> EmailContent:
         ),
         links=(
             Link("Change what you receive", str(ctx["manage_url"])),
-            Link("Stop these emails", str(ctx["unsubscribe_url"])),
+            Link("Stop these e-mails", str(ctx["unsubscribe_url"])),
         ),
     )
 

@@ -238,7 +238,7 @@ def test_published_message_says_publication_is_not_verification() -> None:
 def test_job_alert_respects_consent_and_unsubscribes() -> None:
     _, markup, text = render(EmailKind.JOB_ALERT)
     assert "because you switched on job alerts" in markup
-    assert f"{samples.SAMPLE_BASE}/alerts/unsubscribe?token=" in text and "Stop these emails" in markup
+    assert f"{samples.SAMPLE_BASE}/alerts/unsubscribe?token=" in text and "Stop these e-mails" in markup
     assert markup.count("View opportunity") == 3  # one button per listing, nothing invented
 
 
