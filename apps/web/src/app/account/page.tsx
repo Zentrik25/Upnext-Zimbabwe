@@ -25,7 +25,7 @@ export default async function AccountPage() {
           </a>
         </p>
       ) : null}
-      <div className="mt-4 grid max-w-[640px] gap-3">
+      <div className="mt-4 grid max-w-[640px] gap-3 [&>*]:min-w-0">
         <section
           aria-label="Your profile"
           className="flex items-center gap-3 rounded-card border border-border-panel bg-surface p-3 shadow-subtle"

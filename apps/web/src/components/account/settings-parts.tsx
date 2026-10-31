@@ -79,7 +79,7 @@ export function AccountSection({
       </Link>
       <h1 className="mt-2 text-section font-strong tracking-section">{title}</h1>
       <p className="mt-1 text-base text-muted">{description}</p>
-      <div className="mt-4 grid max-w-[640px] gap-4">{children}</div>
+      <div className="mt-4 grid max-w-[640px] gap-4 [&>*]:min-w-0">{children}</div>
     </Container>
   );
 }

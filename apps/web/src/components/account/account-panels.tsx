@@ -48,7 +48,7 @@ export function ProfilePanel({ displayName, email }: { displayName: string; emai
       <form onSubmit={submit} className="mt-3 grid gap-3">
         {failure ? <FormError>{failure}</FormError> : null}
         {saved ? <FormSuccess>Name saved.</FormSuccess> : null}
-        <p className="text-base">
+        <p className="text-base break-all">
           <span className="text-small text-muted">E-mail address</span>
           <br />
           {email}
@@ -107,7 +107,7 @@ export function EmailChangePanel({ currentEmail }: { currentEmail: string }) {
         <div className="mt-3">
           <FormSuccess>
             <p className="font-strong">Check your new inbox</p>
-            <p className="mt-1">
+            <p className="mt-1 break-all">
               If that address can be used, we have sent it a link. Your account keeps {currentEmail} until you
               open the link. We also told your current address about this request.
             </p>
