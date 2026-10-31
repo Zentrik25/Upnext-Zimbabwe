@@ -313,6 +313,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | MAIL-04 | Stale 'sending' rows recovered |
 | MAIL-05 | Idempotency key prevents duplicate enqueue |
 | MAIL-06 | Fake/console sender contract test; provider adapter contract test (after OQ-03) |
+| MAIL-07 | `apps/api/tests/test_email_design.py::test_every_kind_renders_in_every_variant; ::test_html_and_text_carry_the_same_links; ::test_markup_is_email_safe; ::test_only_verification_has_an_illustration` (D-55: every message uses the shared kit, HTML and plain text agree, email-safe markup, own-origin images only) | executed; real Gmail, Outlook and Apple Mail rendering is not verified |
+| MAIL-08 | `apps/api/tests/test_email_design.py::test_verification_message; ::test_password_reset_message; ::test_text_colours_meet_wcag_aa` (subjects, expiry from the token policy, token only inside URLs, contrast) | executed |
+| MAIL-09 | `apps/api/tests/test_email_design.py::test_welcome_message_exists_but_nothing_queues_it; ::test_employer_messages_never_claim_verification; ::test_nothing_promises_a_response_time; ::test_job_alert_respects_consent_and_unsubscribes` (no new trigger, no verification claim, no promised response time) | executed |
+| MAIL-10 | `apps/api/tests/test_email_design.py::test_preview_command_writes_every_message_and_refuses_production; tools/email_preview_screenshots.mjs` (development preview on synthetic data; 360 captures, no overflow at 760, 375, 320 px) | executed |
 | MAIL-07 | Heartbeat and dead-letter alerting |
 | MAIL-08 | Suppression list: a permanently refused recipient is not retried and the list holds no addresses |
 | ADM-01 | User list never exposes hashes/tokens |

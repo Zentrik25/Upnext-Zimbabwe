@@ -10,20 +10,18 @@ import logging
 import random
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import F
-from django.template import Context
-from django.template.loader import get_template
 from django.utils import timezone
 
 from accounts import tokens
 from accounts.models import AuthToken, TokenPurpose, User
 
-from . import suppression
-from .htmlmail import render_html
+from . import emailkit, suppression
+from .content import build as build_content
 from .models import EmailKind, EmailOutbox, OutboxStatus
 from .sender import DeliveryResult, EmailMessage, EmailSender, get_sender
 
@@ -39,28 +37,6 @@ BACKOFF = [
 MAX_ATTEMPTS = 6  # PROPOSED, OQ-17
 STUCK_AFTER = timedelta(minutes=5)
 
-BRAND = settings.UPNEXT_BRAND_NAME
-SUBJECTS = {
-    EmailKind.EMAIL_VERIFICATION: f"Confirm your {BRAND} e-mail address",
-    EmailKind.ACCOUNT_EXISTS: f"You already have a {BRAND} account",
-    EmailKind.PASSWORD_RESET: f"Reset your {BRAND} password",
-    EmailKind.PASSWORD_CHANGED_NOTICE: f"Your {BRAND} password was changed",
-    EmailKind.ACCOUNT_DELETION_NOTICE: f"We received your {BRAND} account deletion request",
-    EmailKind.ACCOUNT_DELETION_COMPLETED: f"Your {BRAND} account has been deleted",
-    EmailKind.ACCOUNT_DELETION_CANCELLED: f"Your {BRAND} account deletion request was cancelled",
-    EmailKind.EMAIL_CHANGE_CONFIRM: f"Confirm your new {BRAND} e-mail address",
-    EmailKind.EMAIL_CHANGE_REQUESTED_NOTICE: f"A change of your {BRAND} e-mail address was requested",
-    EmailKind.EMAIL_CHANGED_NOTICE: f"Your {BRAND} e-mail address was changed",
-    EmailKind.JOB_ALERT: f"New opportunities matching your {BRAND} alert",
-    EmailKind.EMPLOYER_CLAIM_RECEIVED: f"We received your {BRAND} organisation claim",
-    EmailKind.EMPLOYER_CLAIM_APPROVED: f"Your {BRAND} organisation claim was approved",
-    EmailKind.EMPLOYER_CLAIM_REJECTED: f"Your {BRAND} organisation claim was not approved",
-    EmailKind.EMPLOYER_LISTING_SUBMITTED: f"Your {BRAND} listing was submitted for review",
-    EmailKind.EMPLOYER_LISTING_PUBLISHED: f"Your listing is now published on {BRAND}",
-    EmailKind.EMPLOYER_LISTING_REJECTED: f"Your {BRAND} listing needs changes before publication",
-    EmailKind.EMPLOYER_LISTING_EXPIRING: f"Your {BRAND} listing closes soon",
-    EmailKind.EMPLOYER_LISTING_EXPIRED: f"Your {BRAND} listing has closed",
-}
 _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
     EmailKind.PASSWORD_RESET: "/reset-password",
@@ -147,17 +123,17 @@ def build_message(row: EmailOutbox) -> EmailMessage | None:
             return None
         context.update(extra)
         headers = messages.headers_for(row)
-    # Plain text: nothing is HTML-escaped (a link's "&" or a name such as "Tom & Jerry" must arrive as typed).
-    template = get_template(f"notifications/{row.template_key}_v{row.template_version}.txt")
-    body = str(cast(Any, template).template.render(Context(context, autoescape=False)))
-    subject = str(row.payload.get("subject") or SUBJECTS[EmailKind(row.kind)])
+    # One structured message, rendered twice: the plain text escapes nothing (a link's "&" or a name such as
+    # "Tom & Jerry" must arrive as typed) and the HTML escapes everything a person wrote.
+    content = build_content(row.kind, context)
+    brand = emailkit.brand_context()
     return EmailMessage(
         idempotency_key=row.idempotency_key,
         to=row.to_address,
-        subject=subject,
-        body=body,
+        subject=content.subject,
+        body=emailkit.render_text(content, brand),
         kind=row.kind,
-        html=render_html(subject=subject, body=body),
+        html=emailkit.render_html(content, brand),
         headers=headers,
     )
 

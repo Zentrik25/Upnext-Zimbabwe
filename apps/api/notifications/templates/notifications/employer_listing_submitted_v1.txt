@@ -1,7 +1,0 @@
-Hello {{ display_name }},
-
-{% if amendment %}Your amendment to "{{ title }}"{% else %}Your listing "{{ title }}"{% endif %} was submitted for review. Our staff check every submission, and someone other than its author must approve it. You will get another e-mail when there is a decision.
-
-See where it stands: {{ listing_url }}
-
-You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.

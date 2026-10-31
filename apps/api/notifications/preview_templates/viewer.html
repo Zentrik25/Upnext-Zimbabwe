@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>E-mail viewer (development)</title>
+<style>body{font:14px system-ui;margin:0;background:#e5edf5}nav{padding:10px 16px;background:#fff}
+iframe{display:block;margin:16px auto;border:1px solid #cbd5e1;background:#fff;height:calc(100vh - 90px)}</style></head>
+<body><nav><a href="index.html">All messages</a> &nbsp; <button data-w="680">Desktop</button>
+<button data-w="375">Phone</button> <button data-w="320">Small phone</button></nav><iframe title="Message"></iframe>
+<script>const f=document.querySelector('iframe');const m=new URLSearchParams(location.search).get('m')||'';
+if(/^[a-z_]+\.(normal|long|minimal)$/.test(m))f.src=m+'.html';f.style.width='680px';
+document.querySelectorAll('button').forEach(b=>b.onclick=()=>f.style.width=b.dataset.w+'px')</script></body></html>
