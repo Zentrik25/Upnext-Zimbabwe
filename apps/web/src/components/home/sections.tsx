@@ -185,7 +185,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
           />
         </div>
       </details>
-      <Button type="submit" className="relative min-h-[44px] w-full gap-2 text-ctl">
+      <Button type="submit" className="relative h-[44px] w-full gap-2 text-ctl">
         Find opportunities
         <Icon name="arrowRight" className="h-[18px] w-[18px]" />
       </Button>
@@ -197,12 +197,12 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
 export function HeroSearchSkeleton() {
   return (
     <LoadingRegion label="search" heading={false} className="mt-4 grid gap-2.5 md:max-w-[640px]">
-      <SkeletonInput label={false} />
+      <SkeletonInput label={false} field="h-field" />
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
-        <SkeletonInput label={false} />
-        <SkeletonInput label={false} />
+        <SkeletonInput label={false} field="h-field" />
+        <SkeletonInput label={false} field="h-field" />
       </div>
-      <div className="flex min-h-[22px] items-center">
+      <div className="flex min-h-[32px] items-center">
         <SkeletonLine className="h-[14px] w-[120px]" />
       </div>
       <div className="h-[44px] w-full rounded-control bg-line" />
