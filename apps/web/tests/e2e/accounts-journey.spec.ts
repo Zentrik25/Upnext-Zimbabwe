@@ -159,6 +159,9 @@ test("4. a signed-in person can save and unsave from the list, the detail page a
 
 test("5. account settings: name, password, sessions, deletion request", async ({ page, browser }) => {
   await signIn(page, EMAIL, PASSWORD);
+  // The sign-in request must finish (it ends in the redirect to /account) before navigating on, or the
+  // navigation cancels it and the next page opens signed out.
+  await expect(page).toHaveURL(/\/account$/);
   await page.goto("/account/personal");
   await page.getByLabel("Name").fill("Tendai M. Moyo");
   await page.getByRole("button", { name: "Save name" }).click();
