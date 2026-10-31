@@ -319,6 +319,7 @@ test("9b. change of e-mail address: the new address must confirm, the old one is
   const NEW_EMAIL = `moved.${STAMP}@example.org`;
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page).toHaveURL(/\/account$/);
+  await page.goto("/account/personal");
   await expect(page.getByRole("heading", { name: "Change your e-mail address" })).toBeVisible();
   await shot(page, "acct-16-email-change");
   await axeClean(page);
