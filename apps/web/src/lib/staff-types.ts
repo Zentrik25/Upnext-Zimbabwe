@@ -106,6 +106,7 @@ export type DraftContent = {
   employment_type: string | null;
   experience_level: string | null;
   salary: Money | null;
+  salary_text: string | null;
   funding: Money | null;
   deadline_at: string | null;
   deadline_timezone: string | null;
@@ -113,6 +114,7 @@ export type DraftContent = {
   application_method: string;
   application_url: string | null;
   application_email: string | null;
+  application_email_subject: string | null;
   application_instructions: string | null;
   reference_number: string | null;
   contact_details: string | null;
@@ -121,6 +123,11 @@ export type DraftContent = {
   sectors: { id: string; name: string }[];
   sources: SourceRow[];
   detail: Record<string, unknown>;
+  slug: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  og_title: string | null;
+  og_description: string | null;
 };
 
 export type VersionView =

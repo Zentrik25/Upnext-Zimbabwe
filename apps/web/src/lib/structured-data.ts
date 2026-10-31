@@ -10,6 +10,7 @@ export function plainText(html: string, max = 5000): string {
 
 const JOB_CATEGORIES = new Set(["jobs", "internships", "graduate-programmes"]);
 const EMPLOYMENT: Record<string, string> = {
+  full_time: "FULL_TIME",
   contract: "CONTRACTOR",
   temporary: "TEMPORARY",
   part_time: "PART_TIME",

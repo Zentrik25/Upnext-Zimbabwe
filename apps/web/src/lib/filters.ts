@@ -1,5 +1,6 @@
 /** Option lists for the search filters. One source for the homepage search and the results page. */
 export const EMPLOYMENT = [
+  ["full_time", "Full time"],
   ["permanent", "Permanent"],
   ["contract", "Contract"],
   ["temporary", "Temporary"],

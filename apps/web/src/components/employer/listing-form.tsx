@@ -11,6 +11,7 @@ type LocationOption = { id: string; name: string };
 
 const EMPLOYMENT: Record<string, [string, string][]> = {
   jobs: [
+    ["full_time", "Full time"],
     ["permanent", "Permanent"],
     ["contract", "Contract"],
     ["temporary", "Temporary"],

@@ -4,6 +4,7 @@ import { Container } from "@/components/layout";
 import {
   LoadingRegion,
   SkeletonAvatar,
+  SkeletonBlock,
   SkeletonButton,
   SkeletonCard,
   SkeletonChoiceGroup,
@@ -189,6 +190,61 @@ export function AccountSectionLoading({ label, cards = 1 }: { label: string; car
         </div>
       </LoadingRegion>
     </Container>
+  );
+}
+
+/**
+ * The job editor: back link, title, then the eleven fields in a single column of the editor's own maximum width,
+ * three collapsed section headers and the action bar. Sizes follow the real controls (label line, 40px field).
+ */
+export function JobEditorLoading({ label = "the editor" }: { label?: string }) {
+  const field = (
+    <div className="grid gap-1">
+      <SkeletonLine className="w-[110px]" />
+      <SkeletonBlock className="h-[40px] w-full rounded-control border border-border-panel" />
+    </div>
+  );
+  const area = (rows: number) => (
+    <div className="grid gap-1">
+      <SkeletonLine className="w-[150px]" />
+      <SkeletonBlock
+        className={`${rows > 4 ? "h-[170px]" : "h-[92px]"} w-full rounded-control border border-border-panel`}
+      />
+    </div>
+  );
+  return (
+    <LoadingRegion label={label}>
+      <SkeletonLine className="w-[140px]" />
+      <div className="mt-3 mb-4 grid gap-2">
+        <SkeletonHeading size="title" className="w-[200px]" />
+        <SkeletonLine className="w-[60%] max-sm:w-full" />
+      </div>
+      <div className="grid max-w-[760px] gap-4">
+        {field}
+        {field}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {field}
+          {field}
+        </div>
+        {field}
+        {field}
+        {area(2)}
+        {area(7)}
+        {area(5)}
+        {field}
+        {field}
+        <div className="grid gap-2">
+          {Array.from({ length: 3 }, (_, index) => (
+            <SkeletonBlock key={index} className="h-[44px] w-full rounded-card border border-border-panel" />
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <SkeletonButton />
+          <SkeletonButton />
+          <SkeletonButton />
+        </div>
+      </div>
+    </LoadingRegion>
   );
 }
 

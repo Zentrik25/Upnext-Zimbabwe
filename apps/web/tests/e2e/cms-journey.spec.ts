@@ -52,41 +52,40 @@ async function run(page: Page, label: string, fill?: () => Promise<void>) {
   await page.locator(`form[aria-label="${label}"] button[type=submit]`).click();
 }
 
-/** Fills the draft editor with a complete, valid listing (unique addresses via `tag`). */
+/** Fills the job editor (D-55) with a complete, valid listing (unique addresses via `tag`). */
 async function fillDraft(page: Page, tag: string) {
   await page
     .locator("#summary")
     .fill("Support community water projects and site visits for a water authority in Harare.");
   await page
-    .locator("#description_md")
+    .locator("#responsibilities")
     .fill(
       "Example Water Authority is recruiting a **Field Officer** to support community water projects across the province.\n\n- Visit sites\n- Prepare reports",
     );
   await page.locator("#employment_type").selectOption("contract");
-  await page.locator("#work_mode").selectOption("on_site");
   const day = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
   await page.locator("#deadline_day").fill(day);
-  await page.locator("#application_url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
-  await page.locator("#location_id").selectOption({ label: "Harare" });
-  await page.locator("#source_0_kind").selectOption("issuer_website");
-  await page.locator("#source_0_name").fill("Example Water Authority vacancies page");
-  await page.locator("#source_0_url").fill(`https://water.example.org/vacancies/${tag}`);
-  await page.locator("#source_0_observed_on").fill(new Date().toISOString().slice(0, 10));
+  await page.locator("#apply-url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
+  await page.getByLabel("Search locations").fill("Harare");
+  await page.getByRole("option", { name: "Harare", exact: true }).click();
+  await page.locator("#source_kind").selectOption("issuer_website");
+  await page.locator("#source_url").fill(`https://water.example.org/vacancies/${tag}`);
 }
 
+/** Opens the new-opportunity form and sets the three things a draft needs: category, title, organisation. */
 async function createDraft(page: Page, organisation: string, title: string) {
   await page.goto("/workspace/opportunities/new");
   await page.locator("#category").selectOption({ label: "Jobs" });
-  await page.locator("#org-search").fill(organisation);
-  await expect(page.locator("#organisation option", { hasText: organisation })).toHaveCount(1);
-  await page.locator("#organisation").selectOption({ label: organisation });
   await page.locator("#title").fill(title);
-  await page.getByRole("button", { name: "Create draft" }).click();
-  await expect(page).toHaveURL(/\/edit$/);
+  await page.locator("#organisation").fill(organisation);
+  await page.getByRole("option", { name: organisation, exact: true }).click();
 }
 
+/** Saves the draft (the first save creates it), then opens its listing page through "Preview". */
 async function saveAndView(page: Page) {
-  await page.getByRole("button", { name: "Save and view" }).click();
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Saved at/ })).toBeVisible();
+  await page.getByRole("link", { name: "Preview" }).click();
   await expect(page).toHaveURL(/\/workspace\/opportunities\/[0-9a-f-]{36}$/);
 }
 

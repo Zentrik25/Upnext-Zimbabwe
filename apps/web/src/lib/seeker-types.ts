@@ -80,6 +80,7 @@ export const EXPERIENCE_LEVELS: { value: string; label: string }[] = [
 ];
 
 export const EMPLOYMENT_TYPES: { value: string; label: string }[] = [
+  { value: "full_time", label: "Full time" },
   { value: "permanent", label: "Permanent" },
   { value: "contract", label: "Contract" },
   { value: "temporary", label: "Temporary" },

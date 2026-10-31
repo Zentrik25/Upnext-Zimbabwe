@@ -4,6 +4,7 @@ const WORD: Record<string, string> = {
   on_site: "On site",
   hybrid: "Hybrid",
   remote: "Remote",
+  full_time: "Full time",
   permanent: "Permanent",
   contract: "Contract",
   temporary: "Temporary",
