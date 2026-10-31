@@ -1636,6 +1636,7 @@ components:
                 method: { type: string, enum: [external_url, email, both, instructions], description: '`both` carries a web address and an e-mail address (D-55).' }
                 url: { type: [string, 'null'], format: uri }
                 email: { type: [string, 'null'], format: email }
+                email_subject: { type: [string, 'null'], maxLength: 150, description: 'Optional subject line for the e-mail application (D-55).' }
                 instructions: { type: [string, 'null'] }
             sources: { type: array, items: { $ref: '#/components/schemas/Source' } }
             detail: { type: object, additionalProperties: true, description: 'Category-specific attributes validated against the versioned schema' }
@@ -1812,6 +1813,7 @@ components:
         application_method: { type: string, enum: [external_url, email, both, instructions], x-open: OQ-05 }
         application_url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
         application_email: { type: [string, 'null'], format: email }
+        application_email_subject: { type: [string, 'null'], maxLength: 150 }
         application_instructions: { type: [string, 'null'], maxLength: 2000 }
         reference_number: { type: [string, 'null'], maxLength: 100 }
         contact_details: { type: [string, 'null'], maxLength: 500 }

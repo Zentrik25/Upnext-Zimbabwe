@@ -68,6 +68,7 @@ ALLOWED_KEYS = frozenset(
         "application_method",
         "application_url",
         "application_email",
+        "application_email_subject",
         "application_instructions",
         "reference_number",
         "contact_details",
@@ -91,6 +92,7 @@ SINGLE_LINE = {
     "reference_number": 100,
     "contact_details": 500,
     "salary_text": 120,
+    "application_email_subject": 150,
     "seo_title": 70,
     "seo_description": 200,
     "og_title": 90,
@@ -123,6 +125,7 @@ NULLABLE = {
     "reference_number",
     "contact_details",
     "salary_text",
+    "application_email_subject",
     "seo_title",
     "seo_description",
     "og_title",
@@ -594,6 +597,7 @@ COPIED_COLUMNS = (
     # Added in D-55. Optional, and hashed only when set, so every revision approved before they existed keeps
     # the hash it was approved with.
     "salary_text",
+    "application_email_subject",
     "seo_title",
     "seo_description",
     "og_title",
@@ -601,7 +605,15 @@ COPIED_COLUMNS = (
     "slug_hint",
 )
 OPTIONAL_HASHED = frozenset(
-    {"salary_text", "seo_title", "seo_description", "og_title", "og_description", "slug_hint"}
+    {
+        "salary_text",
+        "application_email_subject",
+        "seo_title",
+        "seo_description",
+        "og_title",
+        "og_description",
+        "slug_hint",
+    }
 )
 
 

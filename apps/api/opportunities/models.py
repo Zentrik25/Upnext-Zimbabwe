@@ -242,6 +242,8 @@ class OpportunityVersion(models.Model):
     application_url = models.CharField(max_length=2048, null=True, blank=True)
     application_email = models.CharField(max_length=254, null=True, blank=True)
     application_instructions = models.TextField(null=True, blank=True)
+    # Optional subject line for "Apply via Email" (D-55); the e-mail address is application_email.
+    application_email_subject = models.CharField(max_length=150, null=True, blank=True)
     reference_number = models.CharField(max_length=100, null=True, blank=True)
     contact_details = models.CharField(max_length=500, null=True, blank=True)
 

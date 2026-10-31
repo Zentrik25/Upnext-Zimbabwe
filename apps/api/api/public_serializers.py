@@ -113,6 +113,7 @@ class ApplicationSerializer(serializers.Serializer[None]):
     method = serializers.ChoiceField(choices=ApplicationMethod.values)
     url = serializers.CharField(allow_null=True)
     email = serializers.EmailField(allow_null=True)
+    email_subject = serializers.CharField(allow_null=True)
     instructions = serializers.CharField(allow_null=True)
 
 

@@ -124,6 +124,7 @@ BOTH: dict[str, Any] = {
     "application_method": "both",
     "application_url": "https://example.org/apply",
     "application_email": "jobs@example.org",
+    "application_email_subject": "Application: Accountant",
 }
 
 

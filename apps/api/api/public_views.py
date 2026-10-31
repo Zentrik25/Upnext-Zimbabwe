@@ -132,6 +132,7 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
                 "method": version.application_method,
                 "url": version.application_url,
                 "email": version.application_email,
+                "email_subject": version.application_email_subject,
                 "instructions": version.application_instructions,
             },
             "sources": [

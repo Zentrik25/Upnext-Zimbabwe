@@ -504,6 +504,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "application_method": version.application_method,
             "application_url": version.application_url,
             "application_email": version.application_email,
+            "application_email_subject": version.application_email_subject,
             "application_instructions": version.application_instructions,
             "reference_number": version.reference_number,
             "contact_details": version.contact_details,
