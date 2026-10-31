@@ -475,7 +475,7 @@ export function JobEditor({
         <BulletTextarea
           id="responsibilities"
           title={pays ? "Key responsibilities" : "Description"}
-          hint="One item per line. Copy only what the source says."
+          hint="Use • List to turn lines into bullets. Copy only what the source says."
           value={state.responsibilities}
           onChange={(responsibilities) => set({ responsibilities })}
           error={e("description_md")}

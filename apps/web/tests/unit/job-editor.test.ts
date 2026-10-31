@@ -153,6 +153,50 @@ describe("state from a stored draft", () => {
   });
 });
 
+describe("drafts saved before the simplified editor", () => {
+  it("opens with the new fields absent, shows what was stored, and saves without inventing anything", () => {
+    const legacy = { ...stored } as unknown as Record<string, unknown>;
+    for (const key of [
+      "salary_text",
+      "application_email_subject",
+      "slug",
+      "seo_title",
+      "seo_description",
+      "og_title",
+      "og_description",
+    ])
+      delete legacy[key];
+    legacy.employment_type = "permanent"; // a type the old editor offered and the category still accepts
+    legacy.application_method = "external_url";
+    legacy.salary = { min: "500.00", max: "700.00", currency: "USD", period: "month" };
+    const draft = legacy as unknown as DraftContent;
+    const s = stateFromDraft(draft, jobs, org);
+    expect(s.employmentType).toBe("permanent");
+    expect([s.salaryMode, s.salaryMin, s.salaryMax]).toEqual(["range", "500.00", "700.00"]);
+    expect([s.slug, s.seoTitle, s.ogTitle, s.applySubject, s.salaryText]).toEqual(["", "", "", "", ""]);
+    const { content } = buildContent(s, jobs, draft, opts);
+    expect(content.salary).toMatchObject({ min: "500.00", max: "700.00" });
+    expect(content.salary_text).toBeNull();
+    expect(content.employment_type).toBe("permanent");
+    expect(content.seo_title).toBeNull();
+  });
+
+  it("keeps a stored work arrangement and experience level that the main form no longer shows", () => {
+    const draft = {
+      ...stored,
+      work_mode: "hybrid",
+      experience_level: "senior",
+      contact_details: "HR office",
+    } as unknown as DraftContent;
+    const { content } = buildContent(stateFromDraft(draft, jobs, org), jobs, draft, opts);
+    expect([content.work_mode, content.experience_level, content.contact_details]).toEqual([
+      "hybrid",
+      "senior",
+      "HR office",
+    ]);
+  });
+});
+
 describe("the request body", () => {
   it("round-trips a stored draft without inventing or losing anything", () => {
     const s = stateFromDraft(stored, jobs, org);
