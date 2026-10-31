@@ -21,7 +21,7 @@ Status: verified against the repository at the commit of this change (2026-10-29
 | Delivered list of alerts kept 30 days | `alerts/service.py` `LEDGER_DAYS = 30` | yes (test) |
 | Employer notices (claim, listing submitted, published, returned, closing soon) | D-41, `EMPLOYER_NOTIFICATIONS.md` | yes |
 | Permanently refused addresses stored only as keyed hashes | `notifications/suppression.py` | yes |
-| E-mails contain no tracking images | `notifications/htmlmail.py` | yes |
+| E-mails contain no tracking images (D-55: only the identical own-origin logo and, for verification, one illustration; no per-recipient URL, query string or 1×1 image) | `notifications/emailkit.py`, `tests/test_email_design.py` | yes |
 | Resend is the selected delivery provider; delivery not claimed verified | D-34; B-01 open | yes |
 | Hosting on a server we administer; encrypted backups, possibly with a separate storage provider | `compose.production.yaml`, `backup.sh`, `offsite.sh`; no provider named because none is chosen | yes (no provider named) |
 | Security measures (HTTPS/HSTS, rate limits, HttpOnly cookies, staff two-step, short staff sessions, audit record, no self-approval, least-privilege DB role, redacted logs, encrypted backups) | `PRODUCTION_CONFIGURATION.md` §1 and §5, `core/logging.py`, `provision_db_roles`, D-18/D-22 | yes |

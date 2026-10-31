@@ -439,7 +439,11 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | EMP-12 | Public company profile and the listing-page link appear only for verified organisations with an approved profile |
 | EMP-13 | Browser: employer journey over HTTP and TLS with axe at four widths, no horizontal scroll |
 | EMP-14 | Web units: listing request body, claim, profile and listing forms, view and apply beacon |
-| MAIL-11 | Transactional messages are UPNEXT Careers branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
+| MAIL-11 | Transactional messages are UPNEXT Careers branded, multipart, escaped, free of scripts and of any image except the own-origin logo and verification illustration (D-55); cancelling a deletion request sends a notice |
+| EML-01 | Every e-mail kind renders from the shared kit in every variant; HTML and plain text carry the same links; markup is e-mail safe (D-55) |
+| EML-02 | Verification and password-reset messages: subjects, expiry from the token policy, token only inside URLs, WCAG contrast of every colour pair |
+| EML-03 | No new trigger: the welcome template exists but nothing queues it; employer messages never claim verification; no promised response time; job alerts respect consent |
+| EML-04 | Development preview writes every message on synthetic data and refuses production |
 | PRF-01 | Profile: private by construction, own account only, no id in any route, not in Django Admin, audit records the change and never its content |
 | PRF-02 | Profile validation: limits, unknown and inactive taxonomy values, home place must be a city or province, duplicates folded, clear-on-null |
 | PRF-03 | Reset clears the preference fields and keeps the about-you fields; delete removes the row and is idempotent |
@@ -683,6 +687,10 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | EMP-14 | `apps/web/tests/unit/employer.test.tsx` | executed |
 | MAIL-10 | `apps/api/tests/test_resend_webhook.py (Resend/Svix signature, replay, duplicates, bounce semantics, config checks)` | executed with locally computed signatures only; no real Resend request |
 | MAIL-11 | `apps/api/tests/test_brand_email.py (branded multipart messages, deletion-cancelled notice)` | executed |
+| EML-01 | `apps/api/tests/test_email_design.py::test_every_kind_renders_in_every_variant; ::test_html_and_text_carry_the_same_links; ::test_markup_is_email_safe; ::test_only_verification_has_an_illustration` | executed; real Gmail, Outlook and Apple Mail rendering is not verified |
+| EML-02 | `apps/api/tests/test_email_design.py::test_verification_message; ::test_password_reset_message; ::test_text_colours_meet_wcag_aa` | executed |
+| EML-03 | `apps/api/tests/test_email_design.py::test_welcome_message_exists_but_nothing_queues_it; ::test_employer_messages_never_claim_verification; ::test_nothing_promises_a_response_time; ::test_job_alert_respects_consent_and_unsubscribes` | executed |
+| EML-04 | `apps/api/tests/test_email_design.py::test_preview_command_writes_every_message_and_refuses_production; tools/email_preview_screenshots.mjs` | executed; 360 captures, no overflow at 760, 375 and 320 px |
 | MAIL-09 | `apps/api/tests/test_email_provider.py (signed feed)` | executed against the neutral format; no provider's own format exists |
 | PRF-01 | `apps/api/tests/test_profiles.py (own account only, no route by id, not in the admin, audit without content)` | executed |
 | PRF-02 | `apps/api/tests/test_profiles.py (validation, taxonomy, home place, duplicates, null)` | executed |

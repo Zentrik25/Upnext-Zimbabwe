@@ -96,7 +96,7 @@ test("3. the e-mailed link confirms the address (explicit click, token removed f
   page,
 }) => {
   const mail = await lastEmail(EMAIL, "email_verification");
-  expect(mail.subject).toContain("Confirm");
+  expect(mail.subject).toBe("Verify your email address | UPNEXT Careers");
   const link = linkIn(mail.body);
   await page.goto(link);
   await expect(page.getByRole("button", { name: "Confirm e-mail address" })).toBeVisible();
