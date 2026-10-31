@@ -287,6 +287,9 @@ test("8. the account pages fit every width and are accessible", async ({ page })
   await page.setViewportSize({ width: 390, height: 900 });
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page).toHaveURL(/\/account$/);
+  // The URL changes before the page has streamed in (its title arrives with it): wait for the real page, or axe
+  // checks the loading placeholder, which has no title yet.
+  await expect(page.getByRole("heading", { level: 1, name: "Account settings", exact: true })).toBeVisible();
   await shot(page, "acct-16-account-390");
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
