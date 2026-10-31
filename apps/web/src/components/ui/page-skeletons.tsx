@@ -3,6 +3,7 @@ import { SeekerNav, type SeekerSection } from "@/components/seeker/seeker-nav";
 import { Container } from "@/components/layout";
 import {
   LoadingRegion,
+  SkeletonAvatar,
   SkeletonButton,
   SkeletonCard,
   SkeletonHeading,
@@ -115,14 +116,52 @@ export function AccountLoading() {
     <Container className="pt-6 pb-[65px]">
       <LoadingRegion label="your account">
         <SkeletonPageHeader />
-        <div className="mt-4 grid max-w-[640px] gap-4">
-          <SkeletonCard>
-            <SkeletonHeading size="title" />
-            <SkeletonInput />
-            <SkeletonInput />
-          </SkeletonCard>
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={4} />
+        <div className="mt-1 grid max-w-[640px] gap-3">
+          <div className="flex items-center gap-3 rounded-card border border-border-panel p-3">
+            <SkeletonAvatar className="h-14 w-14 rounded-feature" />
+            <div className="grid min-w-0 flex-1 gap-2">
+              <SkeletonLine className="h-[18px] w-1/2" />
+              <SkeletonLine className="w-2/3" />
+            </div>
+            <SkeletonButton className="w-[56px]" />
+          </div>
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              key={index}
+              className="flex min-h-[56px] items-center gap-3 rounded-card border border-border-panel px-3 py-3"
+            >
+              <SkeletonAvatar className="h-9 w-9" />
+              <div className="grid min-w-0 flex-1 gap-2">
+                <SkeletonLine className="h-[16px] w-1/3" />
+                <SkeletonLine className="w-3/4" />
+              </div>
+            </div>
+          ))}
+          <SkeletonButton />
+        </div>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** An account settings sub-page: back link, title and description, then one or two cards of fields. */
+export function AccountSectionLoading({ label, cards = 1 }: { label: string; cards?: number }) {
+  return (
+    <Container className="pt-4 pb-[65px]">
+      <LoadingRegion label={label}>
+        <SkeletonLine className="h-[24px] w-[140px]" />
+        <div className="mt-2">
+          <SkeletonPageHeader />
+        </div>
+        <div className="grid max-w-[640px] gap-4">
+          {Array.from({ length: cards }, (_, index) => (
+            <SkeletonCard key={index}>
+              <SkeletonHeading size="title" />
+              <SkeletonInput />
+              <SkeletonInput />
+              <SkeletonButton />
+            </SkeletonCard>
+          ))}
         </div>
       </LoadingRegion>
     </Container>

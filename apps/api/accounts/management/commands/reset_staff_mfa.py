@@ -1,4 +1,4 @@
-"""Remove a staff member's two-step device so they can enrol again (audited, privileged).
+"""Remove a person's two-step device (any account) so they can enrol again (audited, privileged).
 
 An Administrator resets someone else with `--by`. Without `--by` it is the break-glass route for
 a person with shell access to the server (recorded as a system action). An Administrator
@@ -40,4 +40,7 @@ class Command(BaseCommand):
                 raise CommandError("Administrators cannot reset their own two-step verification.")
         if not mfa.reset(target, actor=actor, reason=options["reason"].strip()):
             raise CommandError("That user has no two-step device.")
-        self.stdout.write("Two-step verification reset; the user re-enrols at next staff sign-in.")
+        self.stdout.write(
+            "Two-step verification reset; the user can set it up again "
+            "(staff at next staff sign-in, everyone else on the account page)."
+        )

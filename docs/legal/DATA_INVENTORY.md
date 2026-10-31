@@ -38,7 +38,7 @@ No free text, no date of birth, gender, photo, CV, phone number or identity numb
 |---|---|---|---|---|
 | Same account data as above | `accounts_user.*` | sign-in | the person, Administrators | while the person has access, then per the deletion rules once roles are removed |
 | Roles and who granted them | `accounts_staffroleassignment.reason` | access control, accountability | Administrators | kept (audit) |
-| Second-step device secret parts | `accounts_staffmfadevice` (nonce; the secret is derived, not stored) | two-step verification | nobody | removed with the account |
+| Second-step device secret parts | `accounts_staffmfadevice` (nonce; the secret is derived, not stored; used by staff and, since D-54, by any account that turns two-step verification on) | two-step verification | nobody | removed with the account |
 | Everything a staff member did | `audit_auditevent` (opaque account id, action, changed field names) and the editorial history tables | accountability for editorial and security actions | Administrators | **kept; how long is undecided (OQ-09)**; holds an opaque id, never a name, e-mail or address |
 | Who authored, reviewed, verified and published each revision | foreign keys on `opportunities_opportunityversion`, `opportunities_reviewdecision`, `opportunities_verificationrecord`, `opportunities_publishingevent` | separation of duties | staff | kept with the listing |
 | Operator who verified e-mail delivery | `notifications_emaildeliveryverification.operator` | proof that mail was tested | Administrators | kept |

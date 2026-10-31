@@ -32,7 +32,7 @@ Browser ──HTTPS──▶ Traefik (existing, shared) ──▶ Nginx (existin
 | Concurrent sessions | allowed; listed to the user (`user_session`); user may revoke any; password change/reset revokes **all** others |
 | Account status check | on every request, the user's `status` and roles are read from the DB; suspended/deactivated users have their sessions invalidated immediately |
 | Sensitive actions (change password/email, delete account, revoke all sessions) | require password re-entry if the last authentication is older than 10 minutes `[PROPOSED]` |
-| MFA | not in Release 1 for seekers; **staff MFA is OPEN [OQ-16]**; the design leaves room for TOTP/WebAuthn without changing the session model |
+| MFA | optional for seekers and employers (D-54: TOTP and recovery codes, a sign-in challenge before any session exists); required for staff (P3-07); the design leaves room for TOTP/WebAuthn without changing the session model |
 | Tokens in JS | none. No JWT, no `localStorage` credentials (reference prototype's localStorage login is demo-only and must not be ported) |
 
 ### 3.1 CSRF

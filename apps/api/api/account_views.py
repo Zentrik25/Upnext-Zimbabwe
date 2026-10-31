@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from access.drf import HasRequiredPermission
 from access.registry import Permission
-from accounts import services
+from accounts import mfa, services
 from accounts.models import User, UserSession
 from catalog.models import Category
 from notifications import resend_webhook
@@ -32,10 +32,12 @@ from opportunities.models import OpportunityVersion
 from .account_serializers import (
     AcceptedSerializer,
     ChangePasswordSerializer,
+    CodeSerializer,
     DeletionRequestedSerializer,
     EmailChangeSerializer,
     EmailOnlySerializer,
     MeUpdateSerializer,
+    PasswordCodeSerializer,
     PasswordOnlySerializer,
     RegisterSerializer,
     ResetConfirmSerializer,
@@ -240,6 +242,162 @@ class ChangePasswordView(MeBaseView):
         update_session_auth_hash(request._request, user)
         UserSession.objects.filter(session_key=old_key).update(session_key=request.session.session_key)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# --- two-step verification (any account; staff manage theirs in the staff workspace) --------------------
+class TwoStepBaseView(MeBaseView):
+    def staff_refusal(self, request: Request) -> Response | None:
+        if self.user_of(request).is_staff:
+            return error_response(
+                "staff_account",
+                "Two-step verification for staff accounts is managed in the staff workspace.",
+                status.HTTP_409_CONFLICT,
+            )
+        return None
+
+    def check_code(self, user: User, code: str) -> Response | None:
+        """A fresh code (or an unused recovery code) for a sensitive change. None means it was accepted."""
+        if mfa.blocked(user):
+            return error_response(
+                "rate_limited",
+                "Too many incorrect codes. Try again in 15 minutes.",
+                status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not mfa.verify(user, code):
+            return error_response(
+                "invalid_code",
+                "That code is not valid. Each code works once, so wait for the next one on your device.",
+                status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
+
+class TwoStepView(TwoStepBaseView):
+    @extend_schema(
+        operation_id="getTwoStep",
+        tags=["me"],
+        responses=OpenApiResponse(description="{enabled, recovery_codes_left, staff}"),
+    )
+    def get(self, request: Request) -> Response:
+        user = self.user_of(request)
+        return Response(
+            {
+                "enabled": mfa.is_enrolled(user),
+                "recovery_codes_left": mfa.recovery_codes_left(user),
+                "staff": user.is_staff,
+            }
+        )
+
+
+class TwoStepSetupView(TwoStepBaseView):
+    @extend_schema(
+        operation_id="startTwoStepSetup",
+        tags=["me"],
+        request=PasswordOnlySerializer,
+        responses={200: OpenApiResponse(description="{secret, uri}"), 403: None, 409: None},
+    )
+    def post(self, request: Request) -> Response:
+        data = PasswordOnlySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        if refusal := self.staff_refusal(request):
+            return refusal
+        user = self.user_of(request)
+        self.reauthenticate(request, data.validated_data["password"])
+        if mfa.is_enrolled(user):
+            return error_response(
+                "already_enabled", "Two-step verification is already on.", status.HTTP_409_CONFLICT
+            )
+        enrolment = mfa.begin_enrolment(user)
+        return Response({"secret": enrolment.secret, "uri": enrolment.uri})
+
+
+class TwoStepConfirmView(TwoStepBaseView):
+    @extend_schema(
+        operation_id="confirmTwoStepSetup",
+        tags=["me"],
+        request=CodeSerializer,
+        responses={200: OpenApiResponse(description="{recovery_codes} shown once"), 400: None, 409: None},
+    )
+    def post(self, request: Request) -> Response:
+        data = CodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        if refusal := self.staff_refusal(request):
+            return refusal
+        user = self.user_of(request)
+        if mfa.is_enrolled(user):
+            return error_response(
+                "already_enabled", "Two-step verification is already on.", status.HTTP_409_CONFLICT
+            )
+        if mfa.blocked(user):
+            return error_response(
+                "rate_limited",
+                "Too many incorrect codes. Try again in 15 minutes.",
+                status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        codes = mfa.confirm_enrolment(user, data.validated_data["code"])
+        if codes is None:
+            return error_response(
+                "invalid_code",
+                "That code did not match. Check the setup key and your device clock, then try again.",
+                status.HTTP_400_BAD_REQUEST,
+            )
+        # Other browsers signed in before the second step existed are signed out; this one carries on.
+        services.revoke_sessions(user, except_key=request.session.session_key)
+        return Response({"recovery_codes": codes})
+
+
+class TwoStepDisableView(TwoStepBaseView):
+    @extend_schema(
+        operation_id="disableTwoStep",
+        tags=["me"],
+        request=PasswordCodeSerializer,
+        responses={
+            204: OpenApiResponse(description="Turned off; other sessions ended"),
+            400: None,
+            403: None,
+            409: None,
+        },
+    )
+    def post(self, request: Request) -> Response:
+        data = PasswordCodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        if refusal := self.staff_refusal(request):
+            return refusal
+        user = self.user_of(request)
+        self.reauthenticate(request, data.validated_data["password"])
+        if not mfa.is_enrolled(user):
+            return error_response("not_enabled", "Two-step verification is not on.", status.HTTP_409_CONFLICT)
+        if refusal := self.check_code(user, data.validated_data["code"]):
+            return refusal
+        mfa.disable(user)
+        services.revoke_sessions(user, except_key=request.session.session_key)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TwoStepRecoveryCodesView(TwoStepBaseView):
+    @extend_schema(
+        operation_id="replaceTwoStepRecoveryCodes",
+        tags=["me"],
+        request=PasswordCodeSerializer,
+        responses={
+            200: OpenApiResponse(description="{recovery_codes} shown once"),
+            400: None,
+            403: None,
+            409: None,
+        },
+    )
+    def post(self, request: Request) -> Response:
+        data = PasswordCodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        if refusal := self.staff_refusal(request):
+            return refusal
+        user = self.user_of(request)
+        self.reauthenticate(request, data.validated_data["password"])
+        if not mfa.is_enrolled(user):
+            return error_response("not_enabled", "Two-step verification is not on.", status.HTTP_409_CONFLICT)
+        if refusal := self.check_code(user, data.validated_data["code"]):
+            return refusal
+        return Response({"recovery_codes": mfa.regenerate_recovery_codes(user)})
 
 
 class SessionListView(MeBaseView):

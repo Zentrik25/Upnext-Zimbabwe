@@ -113,7 +113,7 @@ test("3. the e-mailed link confirms the address (explicit click, token removed f
 
   await signIn(page, EMAIL, PASSWORD);
   await expect(page).toHaveURL(/\/account$/);
-  await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Saved" })).toBeVisible();
   await shot(page, "acct-07-account");
 });
@@ -159,6 +159,7 @@ test("4. a signed-in person can save and unsave from the list, the detail page a
 
 test("5. account settings: name, password, sessions, deletion request", async ({ page, browser }) => {
   await signIn(page, EMAIL, PASSWORD);
+  await page.goto("/account/personal");
   await page.getByLabel("Name").fill("Tendai M. Moyo");
   await page.getByRole("button", { name: "Save name" }).click();
   await expect(page.getByText("Name saved.")).toBeVisible();
@@ -169,7 +170,7 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   await signIn(second, EMAIL, PASSWORD);
   await expect(second).toHaveURL(/\/account$/);
 
-  await page.reload();
+  await page.goto("/account/sessions");
   // earlier tests of this journey left their own sessions signed in, so there are several
   const sessions = page.getByRole("list", { name: "Sessions" });
   await expect(sessions.getByRole("listitem")).not.toHaveCount(1);
@@ -185,16 +186,22 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   await expect(second).toHaveURL(/\/sign-in\?next=%2Faccount/); // the revoked session is gone
   await other.close();
 
+  await page.goto("/account/security");
   await page.getByLabel("Current password").fill("not my password at all");
-  await page.getByLabel("New password").fill(NEW_PASSWORD);
+  await page.getByLabel("New password", { exact: true }).fill(NEW_PASSWORD);
+  await page.getByLabel("Confirm new password").fill(NEW_PASSWORD + "x");
+  await page.getByRole("button", { name: "Change password" }).click();
+  await expect(page.getByText("The two new passwords are not the same.")).toBeVisible();
+  await page.getByLabel("Confirm new password").fill(NEW_PASSWORD);
   await page.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Error:" })).toContainText("not correct");
   await page.getByLabel("Current password").fill(PASSWORD);
   await page.getByRole("button", { name: "Change password" }).click();
   await expect(page.getByText("Password changed. Your other sessions were signed out.")).toBeVisible();
-  await page.reload();
-  await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible(); // this session survived
+  await page.goto("/account");
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible(); // this session survived
 
+  await page.goto("/account/delete");
   await page.getByRole("button", { name: "Delete my account…" }).click();
   await page.getByLabel("Password").last().fill("not my password at all");
   await page.getByRole("button", { name: "Request deletion" }).click();
@@ -288,6 +295,7 @@ test("9a. where delivery is not verified (production mode, no demo tools) change
   test.skip(process.env.E2E_EMAIL_CHANGE_OFF !== "1", "only on a stack whose API runs without demo tools");
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page).toHaveURL(/\/account$/);
+  await page.goto("/account/personal");
   await expect(page.getByRole("heading", { name: "Change your e-mail address" })).toHaveCount(0);
   const csrf = await page.request.get("/api/v1/auth/csrf");
   const token = (await csrf.json()).csrf_token;

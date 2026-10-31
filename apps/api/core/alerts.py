@@ -117,12 +117,12 @@ def evaluate(now: datetime | None = None) -> list[Alert]:
         found.append(
             Alert("auth.login_failures", WARNING, f"{failures} failed sign-ins in 15 minutes", "auth")
         )
-    mfa = AuditEvent.objects.filter(action="staff.mfa_failed", occurred_at__gte=window).count()
+    mfa = AuditEvent.objects.filter(
+        action__in=("staff.mfa_failed", "auth.mfa_failed"), occurred_at__gte=window
+    ).count()
     if mfa >= _env_int("UPNEXT_ALERT_MFA_FAILURES", 5):
         found.append(
-            Alert(
-                "auth.mfa_failures", CRITICAL, f"{mfa} failed staff second-step checks in 15 minutes", "auth"
-            )
+            Alert("auth.mfa_failures", CRITICAL, f"{mfa} failed second-step checks in 15 minutes", "auth")
         )
 
     day = now - timedelta(hours=24)

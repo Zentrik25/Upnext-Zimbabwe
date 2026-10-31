@@ -36,6 +36,11 @@ def _key() -> bytes:
     return settings.UPNEXT_TOKEN_KEY.encode()
 
 
+def _action(user: User, name: str) -> str:
+    """Staff events keep the `staff.` prefix (the alert rules count them); everyone else's are `auth.`."""
+    return f"{'staff' if user.is_staff else 'auth'}.mfa_{name}"
+
+
 def secret_for(device: StaffMfaDevice) -> bytes:
     """20 bytes derived from the server key and the device's random nonce."""
     message = b"totp|" + device.id.bytes + b"|" + device.nonce.encode()
@@ -92,7 +97,7 @@ def _record_failure(user: User) -> None:
         except ValueError:
             cache.add(key, 1, FAILURE_WINDOW)
     audit.record(
-        action="staff.mfa_failed",
+        action=_action(user, "failed"),
         object_type="user",
         object_id=user.pk,
         actor_id=user.pk,
@@ -152,12 +157,9 @@ def confirm_enrolment(user: User, code: str) -> list[str] | None:
             return None
         device.confirmed_at, device.last_used_step = timezone.now(), step
         device.save(update_fields=["confirmed_at", "last_used_step"])
-        plain = [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(RECOVERY_CODES)]
-        StaffRecoveryCode.objects.bulk_create(
-            [StaffRecoveryCode(device=device, code_hash=_hash_recovery(c)) for c in plain]
-        )
+        plain = _issue_recovery_codes(device)
         audit.record(
-            action="staff.mfa_enrolled",
+            action=_action(user, "enrolled"),
             object_type="user",
             object_id=user.pk,
             actor_id=user.pk,
@@ -193,7 +195,7 @@ def verify(user: User, code: str) -> bool:
             _record_failure(user)
             return False
         audit.record(
-            action="staff.mfa_verified",
+            action=_action(user, "verified"),
             object_type="user",
             object_id=user.pk,
             actor_id=user.pk,
@@ -214,13 +216,72 @@ def reset(user: User, *, actor: User | None, reason: str) -> bool:
             return False
         revoke_sessions(user)
         audit.record(
-            action="staff.mfa_reset",
+            action=_action(user, "reset"),
             object_type="user",
             object_id=user.pk,
             actor_id=actor.pk if actor else None,
             actor_type=ActorType.USER if actor else ActorType.SYSTEM,
             severity=Severity.PRIVILEGED,
             changes={"reason": reason[:200]},
+        )
+    cache.delete(_fail_key(user))
+    return True
+
+
+# --- the person's own settings (any account; staff cannot turn it off while it is required) ---------
+def recovery_codes_left(user: User) -> int:
+    device = device_of(user)
+    if device is None or device.confirmed_at is None:
+        return 0
+    return StaffRecoveryCode.objects.filter(device=device, used_at__isnull=True).count()
+
+
+def _issue_recovery_codes(device: StaffMfaDevice) -> list[str]:
+    StaffRecoveryCode.objects.filter(device=device).delete()
+    plain = [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(RECOVERY_CODES)]
+    StaffRecoveryCode.objects.bulk_create(
+        [StaffRecoveryCode(device=device, code_hash=_hash_recovery(c)) for c in plain]
+    )
+    return plain
+
+
+def regenerate_recovery_codes(user: User) -> list[str] | None:
+    """Replace every recovery code with a new set (shown once). The caller has already checked a code."""
+    with transaction.atomic():
+        device = (
+            StaffMfaDevice.objects.select_for_update().filter(user=user, confirmed_at__isnull=False).first()
+        )
+        if device is None:
+            return None
+        plain = _issue_recovery_codes(device)
+        audit.record(
+            action=_action(user, "recovery_codes_replaced"),
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            severity=Severity.SECURITY,
+        )
+    return plain
+
+
+def abandon_pending(user: User) -> None:
+    """Drop an unconfirmed device so the next setup starts from a fresh key."""
+    StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=True).delete()
+
+
+def disable(user: User) -> bool:
+    """The person turns two-step verification off (the caller has checked their password and a code, and ends
+    their other sessions)."""
+    with transaction.atomic():
+        removed, _ = StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=False).delete()
+        if not removed:
+            return False
+        audit.record(
+            action=_action(user, "disabled"),
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            severity=Severity.SECURITY,
         )
     cache.delete(_fail_key(user))
     return True
