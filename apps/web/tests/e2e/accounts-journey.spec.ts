@@ -218,6 +218,8 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   await page.getByRole("button", { name: "Cancel the request" }).click();
   await expect(page.getByRole("button", { name: "Delete my account…" })).toBeVisible();
 
+  // Sign out lives on the account hub, not on the sub-pages.
+  await page.goto("/account");
   await signOut(page);
   await page.goto("/account");
   await expect(page).toHaveURL(/\/sign-in/);

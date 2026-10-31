@@ -247,14 +247,19 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
   const router = useRouter();
   const [failure, setFailure] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // A signed-out session leaves the list at once; the refresh below then re-syncs it with the server.
+  const [gone, setGone] = useState<string[]>([]);
+  const visible = sessions.filter((session) => !gone.includes(session.id));
 
   async function revoke(id: string) {
     setBusyId(id);
     setFailure(null);
     const outcome = await apiFetch("DELETE", `me/sessions/${id}`);
     setBusyId(null);
-    if (outcome.ok) router.refresh();
-    else setFailure(describeFailure(outcome));
+    if (outcome.ok) {
+      setGone((ids) => [...ids, id]);
+      router.refresh();
+    } else setFailure(describeFailure(outcome));
   }
 
   return (
@@ -271,7 +276,7 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
         </div>
       ) : null}
       <ul className="m-0 mt-3 grid list-none gap-3 p-0" aria-label="Sessions">
-        {sessions.map((session) => (
+        {visible.map((session) => (
           <li
             key={session.id}
             className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3"
