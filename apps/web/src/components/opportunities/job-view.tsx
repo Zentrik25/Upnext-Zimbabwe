@@ -398,9 +398,8 @@ export function JobView({
               </p>
             ) : null}
           </Section>
-
-          {related}
         </article>
+        {related}
       </div>
       {canApply && !preview ? (
         <StickyApply targetId="apply-primary">
