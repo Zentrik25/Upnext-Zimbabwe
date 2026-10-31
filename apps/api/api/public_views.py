@@ -83,6 +83,7 @@ def summary_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
         "salary": _money(
             version.salary_min, version.salary_max, version.salary_currency, version.salary_period
         ),
+        "salary_text": version.salary_text,
         "verification": {
             "level": opportunity.verification_level,
             "checked_at": _iso(opportunity.verification_checked_at),
@@ -146,6 +147,12 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
             ],
             "detail": version.detail,
             "detail_schema_version": version.detail_schema_version,
+            "seo": {
+                "title": version.seo_title,
+                "description": version.seo_description,
+                "og_title": version.og_title,
+                "og_description": version.og_description,
+            },
             "canonical_path": f"/opportunities/{opportunity.slug}",
             "updated_at": _iso(opportunity.last_published_at),
         }

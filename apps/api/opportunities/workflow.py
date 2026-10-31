@@ -336,6 +336,10 @@ def save_draft(
         if version.author_id != actor.pk:
             raise PermissionDeniedError("permission_denied", "Only the author can edit this draft.")
         cleaned, errors = content_mod.clean_draft(content)
+        for path, items in content_mod.slug_errors(
+            cleaned, opportunity_id=opportunity.pk, current_slug=opportunity.slug
+        ).items():
+            errors.setdefault(path, []).extend(items)
         content_mod.raise_if_errors(errors)
         if employer:
             employer_capability.check_content(binding, cleaned, content)
@@ -690,7 +694,7 @@ def _apply_publication(actor: User, opportunity: Opportunity, version: Opportuni
     version.save()
     _index(version)
     if opportunity.slug is None:
-        opportunity.slug = _assign_slug(opportunity, version.title)
+        opportunity.slug = _assign_slug(opportunity, version.title, version.slug_hint)
         opportunity.first_published_at = now
     opportunity.status = ListingStatus.PUBLISHED
     opportunity.live_version = version
@@ -702,7 +706,10 @@ def _apply_publication(actor: User, opportunity: Opportunity, version: Opportuni
     return before
 
 
-def _assign_slug(opportunity: Opportunity, title: str) -> str:
+def _assign_slug(opportunity: Opportunity, title: str, hint: str | None = None) -> str:
+    """The editor's chosen address when it is still free, otherwise one made from the title (D-55)."""
+    if hint and not Opportunity.objects.filter(slug=hint).exclude(pk=opportunity.pk).exists():
+        return hint
     for _ in range(8):
         slug = make_slug(title)
         if not Opportunity.objects.filter(slug=slug).exists():

@@ -21,7 +21,7 @@ from .models import ApplicationMethod, OpportunityVersion
 
 # Common-field applicability by category (CATEGORY_SCHEMA_EXAMPLES §2): R required, A allowed, F forbidden.
 _EMPLOYMENT_RULES: dict[str, set[str] | None] = {
-    "jobs": {"permanent", "contract", "temporary", "part_time"},
+    "jobs": {"full_time", "permanent", "contract", "temporary", "part_time"},
     "internships": {"internship"},
     "graduate-programmes": {"trainee"},
     "scholarships": None,
@@ -74,8 +74,19 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         _add(errors, "title", "invalid_format", "The title must not be mostly capital letters.")
     if _URL_IN_TEXT.search(version.title):
         _add(errors, "title", "invalid_format", "The title must not contain a web address.")
-    _length(errors, "summary", version.summary, 20, 300)
-    _length(errors, "description_md", version.description_md, 50, 20000)
+    # The overview is optional (D-55): empty is fine, a short stub is not.
+    if version.summary:
+        _length(errors, "summary", version.summary, 20, 300)
+    # The body is the responsibilities and the qualifications together: neither is forced to repeat the other.
+    if len(version.description_md) + len(version.requirements_md or "") < 50:
+        _add(
+            errors,
+            "description_md",
+            "required",
+            "Add the key responsibilities or the qualifications (at least 50 characters in all).",
+        )
+    if len(version.description_md) > 20000:
+        _add(errors, "description_md", "too_long", "At most 20000 characters.")
     for field in ("description_md", "requirements_md"):
         value = getattr(version, field)
         if value:
@@ -96,8 +107,11 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
     if allowed_types is None:
         if version.employment_type:
             _add(errors, "employment_type", "invalid_choice", "Not applicable to this category.")
-    elif version.employment_type not in allowed_types:
-        _add(errors, "employment_type", "required", f"Choose one of: {', '.join(sorted(allowed_types))}.")
+    elif version.employment_type and version.employment_type not in allowed_types:
+        # An empty type is "not stated" (D-55); a stated one must fit the category.
+        _add(
+            errors, "employment_type", "invalid_choice", f"Choose one of: {', '.join(sorted(allowed_types))}."
+        )
     if version.work_mode and category in _FORBIDDEN["work_mode"]:
         _add(errors, "work_mode", "invalid_choice", "Not applicable to this category.")
     if version.experience_level and category in _FORBIDDEN["experience_level"]:
@@ -106,6 +120,16 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         "salary"
     ]:
         _add(errors, "salary", "invalid_choice", "Not applicable to this category.")
+    if version.salary_text:
+        if category in _FORBIDDEN["salary"]:
+            _add(errors, "salary_text", "invalid_choice", "Not applicable to this category.")
+        elif version.salary_min is not None or version.salary_max is not None:
+            _add(
+                errors,
+                "salary_text",
+                "invalid_choice",
+                "Give either an amount or the source's wording, not both.",
+            )
     if (version.funding_min is not None or version.funding_max is not None) and category in _FORBIDDEN[
         "funding"
     ]:
@@ -121,7 +145,19 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
             _add(errors, "deadline_at", exc.code, str(exc))
 
     method = version.application_method
-    if method == ApplicationMethod.EXTERNAL_URL:
+    if method == ApplicationMethod.BOTH:
+        if not version.application_url:
+            _add(errors, "application_url", "required", "Add the address where people apply.")
+        else:
+            _recheck_url(errors, "application_url", version.application_url)
+        if not version.application_email:
+            _add(errors, "application_email", "required", "Add the application e-mail address.")
+        else:
+            try:
+                validate_email(version.application_email)
+            except TextError as exc:
+                _add(errors, "application_email", exc.code, str(exc))
+    elif method == ApplicationMethod.EXTERNAL_URL:
         if not version.application_url:
             _add(errors, "application_url", "required", "Add the address where people apply.")
         else:

@@ -55,6 +55,7 @@ class WorkMode(models.TextChoices):
 
 
 class EmploymentType(models.TextChoices):
+    FULL_TIME = "full_time"
     PERMANENT = "permanent"
     CONTRACT = "contract"
     TEMPORARY = "temporary"
@@ -82,6 +83,7 @@ class SalaryPeriod(models.TextChoices):
 class ApplicationMethod(models.TextChoices):
     EXTERNAL_URL = "external_url"
     EMAIL = "email"
+    BOTH = "both"  # a web address and an e-mail address, both genuine ways to apply (D-55)
     INSTRUCTIONS = "instructions"
 
 
@@ -221,6 +223,8 @@ class OpportunityVersion(models.Model):
     salary_max = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     salary_currency = models.CharField(max_length=3, null=True, blank=True)
     salary_period = models.CharField(max_length=8, choices=SalaryPeriod.choices, null=True, blank=True)
+    # The source's own wording when it gives no amount ("Competitive", "Negotiable"); never an amount (D-55).
+    salary_text = models.CharField(max_length=120, null=True, blank=True)
     funding_min = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
     funding_max = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
     funding_currency = models.CharField(max_length=3, null=True, blank=True)
@@ -240,6 +244,15 @@ class OpportunityVersion(models.Model):
     application_instructions = models.TextField(null=True, blank=True)
     reference_number = models.CharField(max_length=100, null=True, blank=True)
     contact_details = models.CharField(max_length=500, null=True, blank=True)
+
+    # search-engine and sharing text; empty means "derive from the title and summary" (D-55)
+    seo_title = models.CharField(max_length=70, null=True, blank=True)
+    seo_description = models.CharField(max_length=200, null=True, blank=True)
+    og_title = models.CharField(max_length=90, null=True, blank=True)
+    og_description = models.CharField(max_length=200, null=True, blank=True)
+    # The address the editor wants for the first publication; ignored once the listing has its permanent
+    # slug (a slug never changes after it is assigned, D-55).
+    slug_hint = models.CharField(max_length=80, null=True, blank=True)
 
     # category detail (versioned JSONB, D-12)
     detail = models.JSONField(default=dict)

@@ -1515,7 +1515,7 @@ components:
         next_cursor: { type: [string, 'null'] }
         total: { type: [integer, 'null'], description: 'Exact count for filtered public lists when affordable, else null' }
     WorkMode: { type: string, enum: [on_site, hybrid, remote] }
-    EmploymentType: { type: string, enum: [permanent, contract, temporary, part_time, internship, trainee] }
+    EmploymentType: { type: string, enum: [full_time, permanent, contract, temporary, part_time, internship, trainee] }
     ExperienceLevel: { type: string, enum: [none, entry, mid, senior, executive], description: 'value set to confirm' }
     DeadlineState: { type: string, enum: [open, closing_soon, unknown, expired] }
     ListingStatus: { type: string, enum: [draft, in_review, approved, rejected, published, expired, withdrawn, archived] }
@@ -1606,6 +1606,7 @@ components:
         employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
         deadline: { $ref: '#/components/schemas/Deadline' }
         salary: { $ref: '#/components/schemas/Money' }
+        salary_text: { type: [string, 'null'], maxLength: 120, description: 'The source''s own wording when it gives no amount ("Competitive"); never an amount. Added in D-55; additive.' }
         verification: { $ref: '#/components/schemas/Verification' }
         primary_source_name: { type: [string, 'null'] }
         status: { type: string, enum: [published, expired, withdrawn] }
@@ -1632,13 +1633,14 @@ components:
               required: [method]
               description: NextJob never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
               properties:
-                method: { type: string, enum: [external_url, email, instructions] }
+                method: { type: string, enum: [external_url, email, both, instructions], description: '`both` carries a web address and an e-mail address (D-55).' }
                 url: { type: [string, 'null'], format: uri }
                 email: { type: [string, 'null'], format: email }
                 instructions: { type: [string, 'null'] }
             sources: { type: array, items: { $ref: '#/components/schemas/Source' } }
             detail: { type: object, additionalProperties: true, description: 'Category-specific attributes validated against the versioned schema' }
             detail_schema_version: { type: integer }
+            seo: { type: object, properties: { title: { type: [string, 'null'] }, description: { type: [string, 'null'] }, og_title: { type: [string, 'null'] }, og_description: { type: [string, 'null'] } }, description: 'Optional search-engine and sharing text set by staff; empty means derive from the title and summary (D-55).' }
             canonical_path: { type: string, examples: ['/opportunities/graduate-electrical-engineer-k7m3qp'] }
             updated_at: { type: string, format: date-time }
     User:
@@ -1802,16 +1804,22 @@ components:
         employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         salary: { $ref: '#/components/schemas/Money' }
+        salary_text: { type: [string, 'null'], maxLength: 120 }
         funding: { $ref: '#/components/schemas/Money' }
         deadline_at: { type: [string, 'null'], format: date-time }
         deadline_timezone: { type: [string, 'null'] }
         deadline_is_date_only: { type: boolean, x-open: OQ-22 }
-        application_method: { type: string, enum: [external_url, email, instructions], x-open: OQ-05 }
+        application_method: { type: string, enum: [external_url, email, both, instructions], x-open: OQ-05 }
         application_url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
         application_email: { type: [string, 'null'], format: email }
         application_instructions: { type: [string, 'null'], maxLength: 2000 }
         reference_number: { type: [string, 'null'], maxLength: 100 }
         contact_details: { type: [string, 'null'], maxLength: 500 }
+        slug: { type: [string, 'null'], minLength: 6, maxLength: 80, description: 'Staff only. The address wanted for the first publication; ignored once the listing has its permanent slug (D-55).' }
+        seo_title: { type: [string, 'null'], maxLength: 70, description: 'Staff only (D-55).' }
+        seo_description: { type: [string, 'null'], maxLength: 200, description: 'Staff only (D-55).' }
+        og_title: { type: [string, 'null'], maxLength: 90, description: 'Staff only (D-55).' }
+        og_description: { type: [string, 'null'], maxLength: 200, description: 'Staff only (D-55).' }
         skills: { type: array, maxItems: 30, items: { type: object, required: [skill_id, is_required], additionalProperties: false, properties: { skill_id: { type: string, format: uuid }, is_required: { type: boolean } } } }
         sector_ids: { type: array, maxItems: 5, items: { type: string, format: uuid } }
         sources:

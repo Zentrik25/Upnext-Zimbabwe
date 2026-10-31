@@ -494,6 +494,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "salary": _money(
                 version.salary_min, version.salary_max, version.salary_currency, version.salary_period
             ),
+            "salary_text": version.salary_text,
             "funding": _money(
                 version.funding_min, version.funding_max, version.funding_currency, version.funding_period
             ),
@@ -527,6 +528,11 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
                 for s in version.sources.all()
             ],
             "detail": version.detail,
+            "slug": version.slug_hint,
+            "seo_title": version.seo_title,
+            "seo_description": version.seo_description,
+            "og_title": version.og_title,
+            "og_description": version.og_description,
         },
     }
 
