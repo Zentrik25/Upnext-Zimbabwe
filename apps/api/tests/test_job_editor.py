@@ -347,3 +347,41 @@ def test_the_public_api_serves_wording_both_methods_and_search_text(
         and body["application"]["email"] == "jobs@example.org"
     )
     assert body["seo"]["title"] == "Public SEO title" and body["seo"]["og_title"] is None
+
+
+# --- the staff preview --------------------------------------------------------------------------------------------
+def test_the_preview_is_the_public_shape_of_the_open_draft(world: World, people: dict[str, User]) -> None:
+    opp = new_draft(
+        world, people["author"], salary=None, salary_text="Competitive", slug="preview-address-chosen", **BOTH
+    )
+    client = signed_in(people["author"])
+    response = client.get(f"{S}/opportunities/{opp.pk}/preview")
+    assert response.status_code == 200, response.content
+    body = response.json()
+    assert (
+        body["slug"] == "preview-address-chosen"
+        and body["canonical_path"] == "/opportunities/preview-address-chosen"
+    )
+    assert body["status"] == "published"  # drawn as it will read once public
+    assert body["salary_text"] == "Competitive" and body["application"]["method"] == "both"
+    assert body["description_html"]  # rendered by the same sanitiser as the public page
+    opp.refresh_from_db()
+    assert opp.status == ListingStatus.DRAFT and opp.slug is None  # looking changes nothing
+
+
+def test_the_preview_is_not_shown_to_someone_who_may_not_see_the_draft(
+    world: World, people: dict[str, User]
+) -> None:
+    opp = new_draft(world, people["author"])
+    other = signed_in(people["editor"])  # an Editor does not see another person's draft
+    assert other.get(f"{S}/opportunities/{opp.pk}/preview").status_code == 404
+    assert APIClient().get(f"{S}/opportunities/{opp.pk}/preview").status_code in (401, 403)
+
+
+def test_the_preview_of_a_listing_without_a_draft_is_the_live_revision(
+    world: World, people: dict[str, User]
+) -> None:
+    opp = published(world, people["author"], people["editor"])
+    response = signed_in(people["editor"]).get(f"{S}/opportunities/{opp.pk}/preview")
+    assert response.status_code == 200
+    assert response.json()["slug"] == opp.slug

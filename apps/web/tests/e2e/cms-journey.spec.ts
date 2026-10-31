@@ -81,11 +81,12 @@ async function createDraft(page: Page, organisation: string, title: string) {
   await page.getByRole("option", { name: organisation, exact: true }).click();
 }
 
-/** Saves the draft (the first save creates it), then opens its listing page through "Preview". */
+/** Saves the draft (the first save creates it; the address becomes .../edit), then opens its listing page. */
 async function saveAndView(page: Page) {
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByRole("status").filter({ hasText: /Saved at/ })).toBeVisible();
-  await page.getByRole("link", { name: "Preview" }).click();
+  await expect(page).toHaveURL(/\/workspace\/opportunities\/[0-9a-f-]{36}\/edit$/);
+  await page.goto(page.url().replace(/\/edit$/, ""));
   await expect(page).toHaveURL(/\/workspace\/opportunities\/[0-9a-f-]{36}$/);
 }
 

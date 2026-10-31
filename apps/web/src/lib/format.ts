@@ -132,3 +132,14 @@ export function domainOf(url: string): string {
     return url;
   }
 }
+
+/** The pay line of a listing: the amount when there is one, otherwise the source's own wording, otherwise null. */
+export function salaryLine(listing: { salary: Money | null; salary_text?: string | null }): string | null {
+  return formatMoney(listing.salary) ?? (listing.salary_text?.trim() || null);
+}
+
+/** `mailto:` with the subject only when one was given, encoded so spaces and punctuation survive every client. */
+export function mailtoHref(email: string, subject?: string | null): string {
+  const query = subject?.trim() ? `?subject=${encodeURIComponent(subject.trim())}` : "";
+  return `mailto:${email}${query}`;
+}

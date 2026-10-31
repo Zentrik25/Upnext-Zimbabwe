@@ -17,6 +17,7 @@ from typing import Any, NoReturn, cast
 from django import forms
 from django.conf import settings
 from django.db.models import Count, QuerySet
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -62,7 +63,7 @@ from reports.models import ListingReport
 
 from .employer_views import _body, _locations, _money, _refused
 from .errors import CodedPermissionDenied, error_response
-from .public_views import _iso
+from .public_views import _iso, detail_of
 from .throttles import UserWriteThrottle
 
 PAGE_SIZE = 25
@@ -628,6 +629,28 @@ class OpportunityDetailView(StaffView):
                 changes={"reason": "support read-only access"},
             )
         return Response(_detail(user, opp))
+
+
+class PreviewView(StaffView):
+    """How the open draft (or the live revision) will read to the public, in the public API's own shape, so
+    the staff preview is the public page. Read only; a draft is shown only to those who may see it."""
+
+    @extend_schema(
+        operation_id="previewStaffOpportunity",
+        tags=["staff"],
+        responses={200: OpenApiResponse(description="The public shape of the revision"), 404: None},
+    )
+    def get(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        opp = _visible_listing(user, opportunity_id)
+        if opp is None:
+            return _not_found()
+        version = next(
+            (v for v in (opp.pending_version, opp.live_version) if v is not None and _may_see(user, v)), None
+        )
+        if version is None:
+            return _not_found()
+        return Response(detail_of(version, timezone.now(), preview=True))
 
 
 class SaveDraftView(StaffView):

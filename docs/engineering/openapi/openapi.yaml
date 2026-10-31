@@ -1252,6 +1252,20 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/opportunities/{opportunityId}/preview:
+    get:
+      tags: [staff]
+      operationId: previewStaffOpportunity
+      summary: 'How the open draft (or the live revision) reads to the public (D-55)'
+      description: 'The public API''s own listing shape, with the chosen address and the present moment standing in for a slug and a publication time. Read only; a draft is shown only to people who may see it.'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /staff/opportunities/{opportunityId}/actions/{action}:
     post:
       tags: [staff]

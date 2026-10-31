@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
 import { Button, Checkbox, Select, TextInput, Textarea } from "@/components/ui";
@@ -126,6 +127,7 @@ export function JobEditor({
   canCreateOrganisation: boolean;
   today: string;
 }) {
+  const router = useRouter();
   const pending = listing?.pending && !listing.pending.hidden ? listing.pending : null;
   const firstCategory =
     listing?.category.code ??
@@ -309,6 +311,11 @@ export function JobEditor({
         .trim()
         .slice(0, 160),
   };
+
+  async function previewClick() {
+    // Whatever is typed is saved first, so the preview is exactly the draft.
+    if (await persist(true)) router.push(`/workspace/opportunities/${latest.current.id}/preview`);
+  }
 
   async function publishClick() {
     const ok = await persist(true);
@@ -996,12 +1003,9 @@ export function JobEditor({
             Save draft
           </Button>
           {id && detail ? (
-            <Link
-              href={`/workspace/opportunities/${id}`}
-              className="inline-flex min-h-control items-center rounded-control border border-border-strong px-4 py-2 text-ctl text-secondary-text hover:bg-accent/5"
-            >
+            <Button variant="secondary" onClick={() => void previewClick()} disabled={save === "saving"}>
               Preview
-            </Link>
+            </Button>
           ) : null}
           {verb ? (
             <Button variant="primary" onClick={() => void publishClick()} disabled={save === "saving"}>
