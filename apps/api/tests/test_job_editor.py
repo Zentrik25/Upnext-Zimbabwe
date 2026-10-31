@@ -120,7 +120,11 @@ def test_salary_wording_is_not_accepted_for_a_tender(world: World, people: dict[
 
 
 # --- application methods --------------------------------------------------------------------------------------
-BOTH = {
+BOTH: dict[str, Any] = {
+    "application_method": "both",
+    "application_url": "https://example.org/apply",
+    "application_email": "jobs@example.org",
+}
     "application_method": "both",
     "application_url": "https://example.org/apply",
     "application_email": "jobs@example.org",
