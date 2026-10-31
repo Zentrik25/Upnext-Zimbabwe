@@ -6,6 +6,7 @@ import {
   SkeletonAvatar,
   SkeletonButton,
   SkeletonCard,
+  SkeletonChoiceGroup,
   SkeletonHeading,
   SkeletonInput,
   SkeletonLine,
@@ -28,10 +29,13 @@ import {
 export function SeekerPageLoading({
   current,
   label,
+  intro,
   children,
 }: {
   current: SeekerSection;
   label: string;
+  /** Height class of the page's real introduction at phone and desktop widths (see `SkeletonPageHeader`). */
+  intro: string;
   children: ReactNode;
 }) {
   return (
@@ -39,7 +43,7 @@ export function SeekerPageLoading({
       <section className="border-b border-line py-[22px]">
         <Container>
           <LoadingRegion label={label}>
-            <SkeletonPageHeader />
+            <SkeletonPageHeader intro={intro} />
           </LoadingRegion>
         </Container>
       </section>
@@ -54,14 +58,24 @@ export function SeekerPageLoading({
 }
 
 /** Saved opportunities and For you: a category tab strip and a page of listing rows. */
-export function SeekerListLoading({ current, label }: { current: SeekerSection; label: string }) {
+export function SeekerListLoading({
+  current,
+  label,
+  intro,
+  rows = 5,
+}: {
+  current: SeekerSection;
+  label: string;
+  intro: string;
+  rows?: number;
+}) {
   return (
-    <SeekerPageLoading current={current} label={label}>
+    <SeekerPageLoading current={current} label={label} intro={intro}>
       <div className="-mt-[18px] mb-[18px]">
         <SkeletonTabs />
       </div>
       <div className="border-t border-line">
-        <SkeletonListingRows count={5} />
+        <SkeletonListingRows count={rows} />
       </div>
     </SeekerPageLoading>
   );
@@ -70,7 +84,7 @@ export function SeekerListLoading({ current, label }: { current: SeekerSection; 
 /** The jobseeker overview: two lists, then the profile and alerts panels. */
 export function SeekerOverviewLoading() {
   return (
-    <SeekerPageLoading current="dashboard" label="your dashboard">
+    <SeekerPageLoading current="dashboard" label="your dashboard" intro="h-[45px] sm:h-[22px]">
       <div className="grid gap-8">
         {[0, 1].map((section) => (
           <div key={section}>
@@ -89,28 +103,38 @@ export function SeekerOverviewLoading() {
   );
 }
 
-/** A settings page: a few cards, each a title and form fields. */
-export function SeekerFormLoading({ current, label }: { current: SeekerSection; label: string }) {
+/** The profile form: the "what you are looking for" fields, then the long lists of categories, places and sectors. */
+export function ProfileLoading() {
   return (
-    <SeekerPageLoading current={current} label={label}>
-      <div className="grid max-w-[640px] gap-4">
-        <SkeletonCard>
+    <SeekerPageLoading current="profile" label="your profile" intro="h-[112px] sm:h-[45px]">
+      <div className="grid gap-6">
+        <div className="grid min-h-[352px] content-start gap-3 sm:min-h-[199px]">
           <SkeletonHeading size="title" />
           <SkeletonInput />
           <SkeletonInput />
-          <SkeletonButton />
-        </SkeletonCard>
-        <SkeletonCard>
-          <SkeletonHeading size="title" />
-          <SkeletonText lines={2} />
-          <SkeletonInput />
-        </SkeletonCard>
+        </div>
+        <SkeletonChoiceGroup rows={24} />
+        <SkeletonButton className="w-[140px]" />
       </div>
     </SeekerPageLoading>
   );
 }
 
-/** The account page: title, then the profile, password, sessions and deletion panels. */
+/** The alerts form: how often, which categories, which places, then the save button. */
+export function AlertsLoading() {
+  return (
+    <SeekerPageLoading current="alerts" label="your alerts" intro="h-[67px] sm:h-[22px]">
+      <div className="grid gap-6">
+        <SkeletonChoiceGroup rows={2} />
+        <SkeletonChoiceGroup rows={6} />
+        <SkeletonChoiceGroup rows={16} />
+        <SkeletonButton className="w-[140px]" />
+      </div>
+    </SeekerPageLoading>
+  );
+}
+
+/** The account hub: title, profile summary, five settings rows and the sign-out button. */
 export function AccountLoading() {
   return (
     <Container className="pt-6 pb-[65px]">
