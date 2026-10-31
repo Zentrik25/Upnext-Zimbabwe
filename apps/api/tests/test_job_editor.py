@@ -125,10 +125,6 @@ BOTH: dict[str, Any] = {
     "application_url": "https://example.org/apply",
     "application_email": "jobs@example.org",
 }
-    "application_method": "both",
-    "application_url": "https://example.org/apply",
-    "application_email": "jobs@example.org",
-}
 
 
 def test_both_needs_a_web_address_and_an_e_mail_address(world: World, people: dict[str, User]) -> None:
