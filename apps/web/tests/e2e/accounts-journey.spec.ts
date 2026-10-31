@@ -43,6 +43,9 @@ async function signOut(page: Page) {
 }
 
 async function axeClean(page: Page) {
+  // A client-side navigation shows the new page before its title has arrived; axe's document-title rule would
+  // otherwise check the moment in between.
+  await expect(page).toHaveTitle(/\S/);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
     .analyze();
