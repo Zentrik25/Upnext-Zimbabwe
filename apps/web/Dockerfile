@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Node.js 24.22.0 LTS on Debian 13 (trixie), pinned by digest (D-25 / PHASE1_VERSION_VERIFICATION.md).
-FROM node:24.22.0-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315 AS base
+FROM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
