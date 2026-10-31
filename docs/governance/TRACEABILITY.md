@@ -11,7 +11,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-01 | Public discovery needs no account: search, filter, browse categories | PR-01; spec §6; D-03 | SC-01, SC-02 | listOpportunities, listCategories, listLocations, listSectors | E2E-01, API-01, API-02, A11Y-01 | OQ-18, OQ-24 |
 | R-02 | Opportunity detail shows title, organisation, category, location, source, verification, deadline state, external action; unknown fields are labelled unknown, never invented | PR-02; spec §10; PRODUCT content safety | SC-03 | getOpportunity | API-03, UT-01, E2E-02, VIS-02 | OQ-06, OQ-22 |
 | R-03 | Stable, shareable canonical URLs by immutable slug; internal ids immutable | PR-02; D-13; ADR-0006 | SC-03 | getOpportunity | DB-01, DB-02, UT-02, E2E-03 | OQ-28 |
-| R-04 | Account lifecycle: register, verify email, sign in/out, reset and change password, change email | PR-03; spec §7 | SC-04, SC-05, SC-06, SC-07, SC-11 | getCsrfToken, register, verifyEmail, resendVerification, login, logout, requestPasswordReset, confirmPasswordReset, changePassword, requestEmailChange, getMe, updateMe, listAuthProviders, startGoogleSignIn, googleSignInCallback | AUTH-01…AUTH-09, E2E-04, REG-01…REG-27 | OQ-03, OQ-04, OQ-17 |
+| R-04 | Account lifecycle: register, verify email, sign in/out, reset and change password, change email | PR-03; spec §7 | SC-04, SC-05, SC-06, SC-07, SC-11 | getCsrfToken, register, verifyEmail, resendVerification, login, logout, requestPasswordReset, confirmPasswordReset, changePassword, requestEmailChange, getMe, updateMe, listAuthProviders, startGoogleSignIn, googleSignInCallback, loginTwoStep, getTwoStep, startTwoStepSetup, confirmTwoStepSetup, disableTwoStep, replaceTwoStepRecoveryCodes | AUTH-01…AUTH-09, E2E-04, REG-01…REG-27 | OQ-03, OQ-04, OQ-17 |
 | R-05 | Session management and account deletion/export request | PR-03; spec §7, §25 | SC-11 | listSessions, revokeSession, requestAccountDeletion, cancelAccountDeletion | AUTH-10, AUTH-11, IT-05, E2E-05 | OQ-09 |
 | R-06 | Account status (pending, active, restricted, suspended, deactivated) enforced on the backend | spec §7 | SC-05, SC-11, SC-13 | login, getMe, changeUserStatus | AUTH-12, ADM-03 | OQ-15 |
 | R-07 | Optional, private seeker profile (home city or province, highest qualification, experience, skills, industries, categories, employment types, preferred places, work arrangements): the owner can review, edit, reset preferences and delete it; never public, never visible to employers or staff (D-38) | PR-04; spec §8; D-38; ADR-0023 | SC-08, SC-11 | getProfile, updateProfile, deleteProfile, resetProfilePreferences, searchSkills | PRF-01…PRF-06, UT-03, API-04, E2E-06, SKR-01 | OQ-21 |
@@ -128,6 +128,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `startGoogleSignIn` | GET `/auth/google/start` | auth | R-04 |
 | `googleSignInCallback` | GET `/auth/google/callback` | auth | R-04 |
 | `login` | POST `/auth/login` | auth | R-04, R-06, R-17, R-33 |
+| `loginTwoStep` | POST `/auth/login/two-step` | auth | R-04 |
 | `logout` | POST `/auth/logout` | auth | R-04 |
 | `requestPasswordReset` | POST `/auth/password-reset/request` | auth | R-04, R-17, R-18 |
 | `confirmPasswordReset` | POST `/auth/password-reset/confirm` | auth | R-04 |
@@ -135,6 +136,11 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getMe` | GET `/me` | me | R-04, R-06, R-33 |
 | `updateMe` | PATCH `/me` | me | R-04 |
 | `requestEmailChange` | POST `/me/email-change` | me | R-04, R-38 |
+| `getTwoStep` | GET `/me/two-step` | me | R-04 |
+| `startTwoStepSetup` | POST `/me/two-step/setup` | me | R-04 |
+| `confirmTwoStepSetup` | POST `/me/two-step/confirm` | me | R-04 |
+| `disableTwoStep` | POST `/me/two-step/disable` | me | R-04 |
+| `replaceTwoStepRecoveryCodes` | POST `/me/two-step/recovery-codes` | me | R-04 |
 | `requestAccountDeletion` | POST `/me/deletion-request` | me | R-05, R-23 |
 | `cancelAccountDeletion` | DELETE `/me/deletion-request` | me | R-05 |
 | `getProfile` | GET `/me/profile` | me | R-07, R-23 |

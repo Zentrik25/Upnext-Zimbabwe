@@ -25,6 +25,13 @@ const PATHS = {
   calendar: "M4 6h16v14H4V6Zm0 5h16M8 3v4m8-4v4",
   chevronDown: "m6 9 6 6 6-6",
   info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm0-10v5m0-9h.01",
+  shield: "M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6l-8-3Zm-3 9 2 2 4-4",
+  bell: "M6 17V11a6 6 0 1 1 12 0v6l2 2H4l2-2Zm4 4h4",
+  trash: "M4 7h16M10 7V4h4v3m-8 0 1 13h10l1-13M10 11v6m4-6v6",
+  device: "M7 3h10v18H7V3Zm4 15h2",
+  logOut: "M14 4h5v16h-5M10 8l-4 4 4 4m-4-4h10",
+  chevronRight: "m9 6 6 6-6 6",
+  arrowLeft: "M19 12H5m6-6-6 6 6 6",
   sliders:
     "M3 6h8m4 0h6M3 12h4m4 0h10M3 18h10m4 0h4M13 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM9 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM15 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
 } as const;

@@ -541,11 +541,24 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
       responses:
         '200':
-          description: Session cookie set (rotated); returns the user
+          description: 'Session cookie set (rotated); returns the user. For an account that turned on two-step verification (D-54, not staff) no session is created yet and the body is `{two_step_required: true}`; the code goes to `/auth/login/two-step`.'
           headers: { Set-Cookie: { schema: { type: string }, description: '__Host-upnext_sid; HttpOnly; Secure; SameSite=Lax' } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+          content: { application/json: { schema: { oneOf: [{ $ref: '#/components/schemas/User' }, { type: object, required: [two_step_required], properties: { two_step_required: { type: boolean, const: true } } }] } } }
         '401': { description: 'Generic `invalid_credentials`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: '`email_not_verified` or `account_unavailable` (only after correct credentials; x-open OQ-04/OQ-15)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/login/two-step:
+    post:
+      tags: [auth]
+      operationId: loginTwoStep
+      description: Second step of sign-in (D-54). Needs the pending state left by a correct password (or Google sign-in) in this browser's session, which lasts 10 minutes. A 6-digit code or an unused recovery code; 5 wrong codes per 15 minutes block further tries.
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '200': { description: 'Session cookie set (rotated); returns the user', content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '400': { description: '`invalid_code`, or `two_step_expired` when sign-in must start again', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /auth/logout:
     post:
@@ -628,6 +641,77 @@ paths:
         '403': { $ref: '#/components/responses/ReauthRequired' }
         '409': { $ref: '#/components/responses/Conflict' }
         '503': { description: 'e-mail delivery has not been verified, so the change is not available (`email_unavailable`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /me/two-step:
+    get:
+      tags: [me]
+      operationId: getTwoStep
+      description: Whether two-step verification is on for the caller (D-54). `staff` accounts manage theirs in the staff workspace.
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'State', content: { application/json: { schema: { type: object, required: [enabled, recovery_codes_left, staff], properties: { enabled: { type: boolean }, recovery_codes_left: { type: integer }, staff: { type: boolean } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/two-step/setup:
+    post:
+      tags: [me]
+      operationId: startTwoStepSetup
+      description: Password re-entry, then a pending authenticator key (the secret is derived, never stored). Nothing is on until a code is confirmed.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password], additionalProperties: false, properties: { password: { type: string, maxLength: 128 } } } } }
+      responses:
+        '200': { description: 'Setup key', content: { application/json: { schema: { type: object, required: [secret, uri], properties: { secret: { type: string }, uri: { type: string, description: 'otpauth:// URI for a QR code' } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /me/two-step/confirm:
+    post:
+      tags: [me]
+      operationId: confirmTwoStepSetup
+      description: Confirms the pending key with a code, turns two-step verification on, returns 8 single-use recovery codes (shown once). The caller and their other sessions stay signed in.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '200': { description: 'On', content: { application/json: { schema: { type: object, required: [recovery_codes], properties: { recovery_codes: { type: array, items: { type: string } } } } } } }
+        '400': { description: '`invalid_code`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /me/two-step/disable:
+    post:
+      tags: [me]
+      operationId: disableTwoStep
+      description: Turns it off. Needs the password and a current code (or recovery code); signs out the caller's other sessions. Refused for staff accounts.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password, code], additionalProperties: false, properties: { password: { type: string, maxLength: 128 }, code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '204': { description: 'Off' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /me/two-step/recovery-codes:
+    post:
+      tags: [me]
+      operationId: replaceTwoStepRecoveryCodes
+      description: Replaces every recovery code with a new set (shown once). Needs the password and a current code.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password, code], additionalProperties: false, properties: { password: { type: string, maxLength: 128 }, code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '200': { description: 'New codes', content: { application/json: { schema: { type: object, required: [recovery_codes], properties: { recovery_codes: { type: array, items: { type: string } } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /me/deletion-request:
     post:
       tags: [me]

@@ -3,6 +3,7 @@ import { SeekerNav, type SeekerSection } from "@/components/seeker/seeker-nav";
 import { Container } from "@/components/layout";
 import {
   LoadingRegion,
+  SkeletonAvatar,
   SkeletonButton,
   SkeletonCard,
   SkeletonChoiceGroup,
@@ -133,31 +134,56 @@ export function AlertsLoading() {
   );
 }
 
-/**
- * The account page: title with the sign-out button, then the profile, e-mail, password, sessions and deletion panels
- * at the height each has for a person with one session (the sessions panel grows by a row per session).
- */
+/** The account hub: title, profile summary, five settings rows and the sign-out button. */
 export function AccountLoading() {
-  const panels = [
-    "min-h-[237px] sm:min-h-[239px]",
-    "min-h-[258px] sm:min-h-[260px]",
-    "min-h-[280px] sm:min-h-[282px]",
-    "min-h-[171px] sm:min-h-[203px]",
-    "min-h-[181px] sm:min-h-[161px]",
-  ];
   return (
     <Container className="pt-6 pb-[65px]">
       <LoadingRegion label="your account">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SkeletonHeading size="page" className="w-1/3 max-sm:w-2/3" />
-          <SkeletonButton className="h-[38px]" />
+        <SkeletonPageHeader />
+        <div className="mt-1 grid max-w-[640px] gap-3">
+          <div className="flex items-center gap-3 rounded-card border border-border-panel p-3">
+            <SkeletonAvatar className="h-14 w-14 rounded-feature" />
+            <div className="grid min-w-0 flex-1 gap-2">
+              <SkeletonLine className="h-[18px] w-1/2" />
+              <SkeletonLine className="w-2/3" />
+            </div>
+            <SkeletonButton className="w-[56px]" />
+          </div>
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              key={index}
+              className="flex min-h-[56px] items-center gap-3 rounded-card border border-border-panel px-3 py-3"
+            >
+              <SkeletonAvatar className="h-9 w-9" />
+              <div className="grid min-w-0 flex-1 gap-2">
+                <SkeletonLine className="h-[16px] w-1/3" />
+                <SkeletonLine className="w-3/4" />
+              </div>
+            </div>
+          ))}
+          <SkeletonButton />
         </div>
-        <div className="mt-4 grid max-w-[640px] gap-4">
-          {panels.map((size, index) => (
-            <SkeletonCard key={index} className={`content-start ${size}`}>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** An account settings sub-page: back link, title and description, then one or two cards of fields. */
+export function AccountSectionLoading({ label, cards = 1 }: { label: string; cards?: number }) {
+  return (
+    <Container className="pt-4 pb-[65px]">
+      <LoadingRegion label={label}>
+        <SkeletonLine className="h-[24px] w-[140px]" />
+        <div className="mt-2">
+          <SkeletonPageHeader />
+        </div>
+        <div className="grid max-w-[640px] gap-4">
+          {Array.from({ length: cards }, (_, index) => (
+            <SkeletonCard key={index}>
               <SkeletonHeading size="title" />
               <SkeletonInput />
-              {index === 0 || index === 2 ? <SkeletonInput /> : <SkeletonText lines={2} />}
+              <SkeletonInput />
+              <SkeletonButton />
             </SkeletonCard>
           ))}
         </div>

@@ -94,6 +94,14 @@ export async function getSavedIds(ids: string[]): Promise<Set<string>> {
   return new Set(body.data.map((item) => item.opportunity_id));
 }
 
+export type TwoStepState = { enabled: boolean; recovery_codes_left: number; staff: boolean };
+
+/** Whether two-step verification is on for the caller; null when the service could not be reached. */
+export async function getTwoStep(): Promise<TwoStepState | null> {
+  const result = await authedJson<TwoStepState>("me/two-step");
+  return result.ok ? result.data : null;
+}
+
 export async function getSessions(): Promise<SessionInfo[]> {
   const response = await authedGet("me/sessions");
   if (!response || !response.ok) return [];

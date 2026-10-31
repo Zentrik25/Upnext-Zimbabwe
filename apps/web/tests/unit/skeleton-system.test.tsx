@@ -445,10 +445,19 @@ describe("skeletons are the size of the real thing (measured against a running s
     expect(container.querySelector(".pb-4")).toBeNull(); // the real header has no bottom padding
   });
 
-  it("the account skeleton has the five panels of the real page", () => {
+  it("the account skeleton is the hub: the profile card and the five settings rows of the real page", () => {
     const { container } = render(<AccountLoading />);
-    expect(container.querySelectorAll(".rounded-card.border")).toHaveLength(5);
-    expect(read("app/account/page.tsx")).toContain("<DeletionPanel");
+    // profile card + five rows + the sign-out button, as direct children of the 640px column
+    expect(container.querySelector(".max-w-\\[640px\\]")?.children).toHaveLength(7);
+    const page = read("app/account/page.tsx");
+    expect(page.match(/<SettingsRow/g)).toHaveLength(5);
+  });
+
+  it("every account settings sub-page has its own skeleton", () => {
+    for (const section of ["personal", "security", "sessions", "delete"]) {
+      expect(read(`app/account/${section}/loading.tsx`)).toContain("AccountSectionLoading");
+    }
+    expect(read("app/account/delete/page.tsx")).toContain("<DeletionPanel");
   });
 
   it("the profile and alerts skeletons are long forms, and every seeker loading file names its introduction height", () => {
