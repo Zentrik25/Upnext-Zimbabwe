@@ -20,6 +20,8 @@ from django.utils.dateparse import parse_datetime
 from catalog.models import Location, Organisation, Sector, Skill
 from catalog.text import TextError, clean_multiline, clean_single_line
 from catalog.validators import (
+    RESERVED_SLUGS,
+    SLUG_RE,
     parse_amount,
     validate_currency,
     validate_email,
@@ -29,9 +31,11 @@ from catalog.validators import (
 
 from .errors import FieldErrors, ValidationFailed
 from .models import (
+    OPEN_STATES,
     ApplicationMethod,
     EmploymentType,
     ExperienceLevel,
+    Opportunity,
     OpportunitySource,
     OpportunityVersion,
     SalaryPeriod,
@@ -56,6 +60,7 @@ ALLOWED_KEYS = frozenset(
         "employment_type",
         "experience_level",
         "salary",
+        "salary_text",
         "funding",
         "deadline_at",
         "deadline_timezone",
@@ -63,6 +68,7 @@ ALLOWED_KEYS = frozenset(
         "application_method",
         "application_url",
         "application_email",
+        "application_email_subject",
         "application_instructions",
         "reference_number",
         "contact_details",
@@ -70,6 +76,11 @@ ALLOWED_KEYS = frozenset(
         "sector_ids",
         "sources",
         "detail",
+        "slug",
+        "seo_title",
+        "seo_description",
+        "og_title",
+        "og_description",
     }
 )
 
@@ -80,7 +91,15 @@ SINGLE_LINE = {
     "geographic_eligibility": 500,
     "reference_number": 100,
     "contact_details": 500,
+    "salary_text": 120,
+    "application_email_subject": 150,
+    "seo_title": 70,
+    "seo_description": 200,
+    "og_title": 90,
+    "og_description": 200,
 }
+# Staff-only content: an employer's draft never carries a chosen address or search/sharing text (D-56).
+STAFF_ONLY_KEYS = frozenset({"slug", "seo_title", "seo_description", "og_title", "og_description"})
 MULTI_LINE = {"description_md": 20000, "requirements_md": 10000, "application_instructions": 2000}
 ENUMS: dict[str, type[Any]] = {
     "work_mode": WorkMode,
@@ -105,6 +124,12 @@ NULLABLE = {
     "application_instructions",
     "reference_number",
     "contact_details",
+    "salary_text",
+    "application_email_subject",
+    "seo_title",
+    "seo_description",
+    "og_title",
+    "og_description",
 }
 
 
@@ -278,6 +303,23 @@ def clean_draft(content: Mapping[str, Any]) -> tuple[dict[str, Any], FieldErrors
             except TextError as exc:
                 _err(errors, "application_email", exc.code, str(exc))
 
+    if "slug" in content:
+        raw = content["slug"]
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            out["slug_hint"] = None
+        elif not isinstance(raw, str):
+            _err(errors, "slug", "invalid_format", "Must be text.")
+        else:
+            candidate = raw.strip().lower()
+            if not 6 <= len(candidate) <= 80:
+                _err(errors, "slug", "invalid_format", "Use 6 to 80 characters.")
+            elif not SLUG_RE.match(candidate):
+                _err(errors, "slug", "invalid_format", "Use lower-case letters, digits and single hyphens.")
+            elif candidate in RESERVED_SLUGS:
+                _err(errors, "slug", "invalid_format", "That address is reserved.")
+            else:
+                out["slug_hint"] = candidate
+
     _clean_relations(content, out, errors)
     if "detail" in content:
         if isinstance(content["detail"], Mapping):
@@ -400,6 +442,30 @@ def _clean_sources(raw: Any, errors: FieldErrors) -> list[dict[str, Any]]:
     if sum(1 for r in rows if r.get("is_primary")) > 1:
         _err(errors, "sources", "primary_source_required", "Only one source can be primary.")
     return rows
+
+
+def slug_errors(
+    cleaned: Mapping[str, Any], *, opportunity_id: uuid.UUID | None, current_slug: str | None
+) -> FieldErrors:
+    """A chosen address must be free: not another listing's slug and not another open draft's choice. Once a
+    listing has its permanent slug the address cannot change (permanent URLs, D-56)."""
+    hint = cleaned.get("slug_hint")
+    errors: FieldErrors = {}
+    if not hint:
+        return errors
+    if current_slug is not None:
+        if hint != current_slug:
+            _err(errors, "slug", "immutable", "A published address cannot change.")
+        return errors
+    taken = Opportunity.objects.filter(slug=hint)
+    if opportunity_id is not None:
+        taken = taken.exclude(pk=opportunity_id)
+    chosen = OpportunityVersion.objects.filter(slug_hint=hint, state__in=OPEN_STATES)
+    if opportunity_id is not None:
+        chosen = chosen.exclude(opportunity_id=opportunity_id)
+    if taken.exists() or chosen.exists():
+        _err(errors, "slug", "duplicate_detected", "That address is already used by another listing.")
+    return errors
 
 
 def consistency_errors(version: OpportunityVersion) -> FieldErrors:
@@ -528,6 +594,26 @@ COPIED_COLUMNS = (
     "contact_details",
     "detail",
     "detail_schema_version",
+    # Added in D-56. Optional, and hashed only when set, so every revision approved before they existed keeps
+    # the hash it was approved with.
+    "salary_text",
+    "application_email_subject",
+    "seo_title",
+    "seo_description",
+    "og_title",
+    "og_description",
+    "slug_hint",
+)
+OPTIONAL_HASHED = frozenset(
+    {
+        "salary_text",
+        "application_email_subject",
+        "seo_title",
+        "seo_description",
+        "og_title",
+        "og_description",
+        "slug_hint",
+    }
 )
 
 
@@ -546,6 +632,8 @@ def snapshot(version: OpportunityVersion) -> dict[str, Any]:
     data: dict[str, Any] = {"category": version.opportunity.category.code}
     for column in COPIED_COLUMNS:
         value = getattr(version, column)
+        if column in OPTIONAL_HASHED and value in (None, ""):
+            continue
         if column == "deadline_at" and value is not None:
             value = value.astimezone(UTC).isoformat()
         data[column] = value

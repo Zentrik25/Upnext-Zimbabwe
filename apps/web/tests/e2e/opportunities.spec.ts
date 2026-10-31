@@ -130,7 +130,8 @@ test.describe("detail page", () => {
   test("unknown pay and deadline are shown as not stated", async ({ page }) => {
     await openFirst(page, "Public Health Programme Assistant");
     await expect(page.getByText("Deadline not stated").first()).toBeVisible();
-    await expect(page.locator("main")).not.toContainText("USD");
+    // The listing itself states no pay. (Related listings below it are other listings and may state theirs.)
+    await expect(page.locator('article[aria-labelledby="listing-title"]')).not.toContainText("USD");
   });
 
   test("an unverified listing says so and still names its source", async ({ page }) => {

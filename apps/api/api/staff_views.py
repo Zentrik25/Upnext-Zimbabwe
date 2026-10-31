@@ -17,6 +17,7 @@ from typing import Any, NoReturn, cast
 from django import forms
 from django.conf import settings
 from django.db.models import Count, QuerySet
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -62,7 +63,7 @@ from reports.models import ListingReport
 
 from .employer_views import _body, _locations, _money, _refused
 from .errors import CodedPermissionDenied, error_response
-from .public_views import _iso
+from .public_views import _iso, detail_of
 from .throttles import UserWriteThrottle
 
 PAGE_SIZE = 25
@@ -494,6 +495,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "salary": _money(
                 version.salary_min, version.salary_max, version.salary_currency, version.salary_period
             ),
+            "salary_text": version.salary_text,
             "funding": _money(
                 version.funding_min, version.funding_max, version.funding_currency, version.funding_period
             ),
@@ -503,6 +505,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "application_method": version.application_method,
             "application_url": version.application_url,
             "application_email": version.application_email,
+            "application_email_subject": version.application_email_subject,
             "application_instructions": version.application_instructions,
             "reference_number": version.reference_number,
             "contact_details": version.contact_details,
@@ -527,6 +530,11 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
                 for s in version.sources.all()
             ],
             "detail": version.detail,
+            "slug": version.slug_hint,
+            "seo_title": version.seo_title,
+            "seo_description": version.seo_description,
+            "og_title": version.og_title,
+            "og_description": version.og_description,
         },
     }
 
@@ -621,6 +629,28 @@ class OpportunityDetailView(StaffView):
                 changes={"reason": "support read-only access"},
             )
         return Response(_detail(user, opp))
+
+
+class PreviewView(StaffView):
+    """How the open draft (or the live revision) will read to the public, in the public API's own shape, so
+    the staff preview is the public page. Read only; a draft is shown only to those who may see it."""
+
+    @extend_schema(
+        operation_id="previewStaffOpportunity",
+        tags=["staff"],
+        responses={200: OpenApiResponse(description="The public shape of the revision"), 404: None},
+    )
+    def get(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        opp = _visible_listing(user, opportunity_id)
+        if opp is None:
+            return _not_found()
+        version = next(
+            (v for v in (opp.pending_version, opp.live_version) if v is not None and _may_see(user, v)), None
+        )
+        if version is None:
+            return _not_found()
+        return Response(detail_of(version, timezone.now(), preview=True))
 
 
 class SaveDraftView(StaffView):
