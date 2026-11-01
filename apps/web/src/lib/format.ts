@@ -102,9 +102,10 @@ export const VERIFICATION: Record<VerificationLevel, { label: string; explanatio
   },
 };
 
-/** Only a direct confirmation by the issuer is green; "source checked" is a weaker claim and stays neutral. */
-export function verificationTone(level: VerificationLevel): "default" | "good" {
-  return level === "issuer_verified" ? "good" : "default";
+/** Each level has its own colour, so none is mistaken for another: grey for not verified, green for a source check,
+ *  purple (the accent) for a direct confirmation by the issuer. The label text always carries the meaning. */
+export function verificationTone(level: VerificationLevel): "default" | "good" | "accent" {
+  return level === "issuer_verified" ? "accent" : level === "source_checked" ? "good" : "default";
 }
 
 export function locationLabel(row: OpportunitySummary): string | null {

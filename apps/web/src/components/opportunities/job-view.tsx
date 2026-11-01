@@ -8,8 +8,6 @@ import { ButtonLink, Tag } from "@/components/ui";
 import { Icon, type IconName } from "@/components/ui/icons";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import {
-  SOURCE_KIND,
-  VERIFICATION,
   deadlineView,
   domainOf,
   formatDate,
@@ -36,9 +34,12 @@ export function isHttps(url: string): boolean {
 
 function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="mt-6 scroll-mt-4">
-      <h2 className="border-b border-line pb-1 text-title font-strong">{title}</h2>
-      {children}
+    <section id={id} className="mt-4 scroll-mt-4">
+      <h2 className="font-headline border-b border-line pb-1 text-lead leading-title tracking-sub">
+        {title}
+      </h2>
+      {/* the first block sits close under its heading: no gap of its own above it */}
+      <div className="[&>:first-child]:mt-1.5">{children}</div>
     </section>
   );
 }
@@ -212,10 +213,10 @@ export function JobView({
         </nav>
 
         <article aria-labelledby="listing-title" className="mt-2">
-          <h1 id="listing-title" className="m-0 text-section font-strong leading-title tracking-section">
+          <h1 id="listing-title" className="font-headline m-0 text-sub leading-title tracking-sub">
             {listing.title}
           </h1>
-          <p className="m-0 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-title text-company">
+          <p className="m-0 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-company">
             {listing.organisation.profile_slug && !preview ? (
               <Link href={`/employers/${listing.organisation.profile_slug}`} className="underline">
                 {listing.organisation.name}
@@ -241,7 +242,7 @@ export function JobView({
             </figure>
           ) : null}
 
-          <ul className="m-0 mt-3 flex list-none flex-wrap gap-x-4 gap-y-1.5 p-0 text-ctl text-meta">
+          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-ctl text-meta">
             {where ? <Fact icon="pin">{where}</Fact> : null}
             {labelFor(listing.employment_type) ? (
               <Fact icon="briefcase">{labelFor(listing.employment_type)}</Fact>
@@ -263,11 +264,11 @@ export function JobView({
           </ul>
 
           {canApply ? (
-            <div className="mt-4 scroll-mt-4" id="apply" data-testid="apply">
+            <div className="mt-3 scroll-mt-4" id="apply" data-testid="apply">
               <div id="apply-primary">
                 <ApplyActions listing={listing} />
               </div>
-              <p className="m-0 mt-1.5 text-small text-muted">
+              <p className="m-0 mt-1 text-small text-muted">
                 {listing.application.method === "instructions"
                   ? "Follow the issuer's instructions."
                   : listing.application.method === "email"
@@ -284,7 +285,11 @@ export function JobView({
             </div>
           ) : null}
 
-          {listing.summary ? <p className="m-0 mt-5 text-base">{listing.summary}</p> : null}
+          {listing.summary ? (
+            <Section title="Overview">
+              <p className="m-0 text-base">{listing.summary}</p>
+            </Section>
+          ) : null}
 
           {listing.description_html ? (
             <Section title={pays ? "Key responsibilities" : "About this opportunity"}>
@@ -299,15 +304,15 @@ export function JobView({
 
           {more.length > 0 || listing.skills.length > 0 ? (
             <Section title="More details">
-              <dl className="mt-2 grid gap-2 text-base" data-testid="category-details">
+              <dl className="m-0 mt-1.5 grid gap-1.5 text-base" data-testid="category-details">
                 {more.map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-[200px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
+                  <div key={key} className="grid grid-cols-[170px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
                     <dt className="text-muted">{humanise(key)}</dt>
                     <dd className="m-0">{format(value, key)}</dd>
                   </div>
                 ))}
                 {listing.skills.length > 0 ? (
-                  <div className="grid grid-cols-[200px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
+                  <div className="grid grid-cols-[170px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
                     <dt className="text-muted">Skills</dt>
                     <dd className="m-0 flex flex-wrap gap-1.5">
                       {listing.skills.map((s) => (
@@ -322,7 +327,7 @@ export function JobView({
 
           {open ? (
             <Section id="how-to-apply" title="How to apply">
-              <div className="mt-2 grid gap-2 text-base">
+              <div className="m-0 grid gap-1.5 text-base">
                 {listing.application.instructions ? (
                   <p className="m-0 whitespace-pre-line">{listing.application.instructions}</p>
                 ) : null}
@@ -364,56 +369,21 @@ export function JobView({
             </Section>
           ) : null}
 
-          <Section title="Where this came from">
-            <p className="m-0 mt-2 text-small text-muted">
-              <strong>{VERIFICATION[listing.verification.level].label}.</strong>{" "}
-              {VERIFICATION[listing.verification.level].explanation}
-              {listing.verification.checked_at
-                ? ` Last checked ${formatDate(listing.verification.checked_at, "Africa/Harare")}.`
-                : ""}
-            </p>
-            <ul className="m-0 mt-2 grid list-none gap-2 p-0 text-base" aria-label="Sources">
-              {listing.sources.map((s) => (
-                <li key={`${s.name}-${s.observed_on}`}>
-                  <span className="font-strong">
-                    {s.name}
-                    {s.is_primary ? " (primary)" : ""}
-                  </span>{" "}
-                  <span className="text-small text-muted">
-                    · {SOURCE_KIND[s.kind] ?? humanise(s.kind)} · checked {formatDate(s.observed_on)}
-                  </span>
-                  {s.url && isHttps(s.url) ? (
-                    <>
-                      {" "}
-                      <a
-                        href={s.url}
-                        rel="noopener noreferrer nofollow ugc"
-                        target="_blank"
-                        className="text-small text-accent underline"
-                      >
-                        {domainOf(s.url)}
-                        <span className="sr-only"> (opens the source in a new tab)</span>
-                      </a>
-                    </>
-                  ) : null}
-                  {s.citation ? <span className="block text-small">{s.citation}</span> : null}
-                </li>
-              ))}
-            </ul>
-            {!preview ? (
-              <p className="m-0 mt-3 text-small text-muted">
+          {!preview ? (
+            <p className="m-0 mt-4 flex items-center gap-2 border-t border-line pt-3 text-small text-muted">
+              <Icon name="flag" className="h-4 w-4 shrink-0" />
+              <span>
                 Something wrong?{" "}
                 <Link
                   href={`/opportunities/${listing.slug}/report`}
-                  className="text-accent underline"
+                  className="text-accent"
                   data-testid="report-link"
                 >
                   Report this opportunity
                 </Link>
-                .
-              </p>
-            ) : null}
-          </Section>
+              </span>
+            </p>
+          ) : null}
         </article>
         {related}
       </div>

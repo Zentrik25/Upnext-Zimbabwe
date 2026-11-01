@@ -45,7 +45,7 @@ Publish uses the existing `publish_direct` action (Editors and Administrators, s
 
 ## 4. The public page
 
-Order: title; organisation with its genuine verification level; one line of the facts present (location, job type, work arrangement, salary or wording, vacancies, deadline); apply action(s); overview; key responsibilities; qualifications; more details; how to apply; where it came from; related verified opportunities. Each fact appears once.
+Order: title; organisation with its genuine verification level; one line of the facts present (location, job type, work arrangement, salary or wording, vacancies, deadline); apply action(s); overview; key responsibilities; qualifications; more details; how to apply; a small "Report this opportunity" line (D-60: the "Where this came from" block and the public source list were removed); related verified opportunities. Each fact appears once.
 
 | Method       | Button(s)                     | Destination                                                   |
 | ------------ | ----------------------------- | ------------------------------------------------------------- |

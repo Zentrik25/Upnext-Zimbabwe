@@ -34,6 +34,9 @@ const PATHS = {
   device: "M7 3h10v18H7V3Zm4 15h2",
   logOut: "M14 4h5v16h-5M10 8l-4 4 4 4m-4-4h10",
   chevronRight: "m9 6 6 6-6 6",
+  flag: "M5 21V4m0 0h12l-2.5 4.5L17 13H5",
+  layers: "m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5m-18 4 9 5 9-5",
+  checkCircle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-4-9 3 3 5-6",
   arrowLeft: "M19 12H5m6-6-6 6 6 6",
   sliders:
     "M3 6h8m4 0h6M3 12h4m4 0h10M3 18h10m4 0h4M13 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM9 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM15 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z",
