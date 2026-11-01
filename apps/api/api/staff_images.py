@@ -13,7 +13,7 @@ from typing import Any
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -29,7 +29,10 @@ MAX_BODY = images.MAX_BYTES + 64 * 1024
 
 
 class ImageUploadView(StaffView):
-    parser_classes = [MultiPartParser]
+    parser_classes = [
+        MultiPartParser,
+        JSONParser,
+    ]  # JSON is never used; it lets auth and CSRF answer before a 415
     throttle_classes = [StaffUploadThrottle]
 
     @extend_schema(
