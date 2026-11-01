@@ -35,7 +35,9 @@ export function isHttps(url: string): boolean {
 function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
     <section id={id} className="mt-4 scroll-mt-4">
-      <h2 className="font-headline border-b border-line pb-1 text-lead leading-title tracking-sub">{title}</h2>
+      <h2 className="font-headline border-b border-line pb-1 text-lead leading-title tracking-sub">
+        {title}
+      </h2>
       {/* the first block sits close under its heading: no gap of its own above it */}
       <div className="[&>:first-child]:mt-1.5">{children}</div>
     </section>

@@ -276,12 +276,7 @@ describe("the apply actions", () => {
     );
     const view = screen.getByRole("link", { name: "View Application Instructions" });
     expect(view).toHaveAttribute("href", "#how-to-apply");
-    expect(
-      links().filter(
-        (l) =>
-          /^(https?:|mailto:)/.test(l.getAttribute("href") ?? ""),
-      ),
-    ).toHaveLength(0);
+    expect(links().filter((l) => /^(https?:|mailto:)/.test(l.getAttribute("href") ?? ""))).toHaveLength(0);
     expect(screen.getByText("Hand deliver your CV to reception before 4pm.")).toBeInTheDocument();
   });
 
