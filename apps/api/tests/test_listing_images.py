@@ -420,7 +420,7 @@ def test_the_production_proxy_serves_only_generated_names_and_allows_just_the_up
     conf = (repo_root / "infrastructure/compose/nginx.production.conf.template").read_text()
     assert "client_max_body_size 1m;" in conf  # everything else keeps the small limit
     assert "location = /api/v1/staff/images {\n        client_max_body_size 6m;" in conf
-    assert r"location ~ ^/media/listings/[0-9a-f]{32}\.jpg$" in conf and "root /srv;" in conf
+    assert r'location ~ "^/media/listings/[0-9a-f]{32}\.jpg$"' in conf and "root /srv;" in conf
     assert "X-Content-Type-Options" in conf and "default-src 'none'" in conf
     assert "location /media/ {\n        return 404;" in conf  # nothing else under /media/ is served
     for name in ("nginx.conf", "nginx.tls.conf"):
