@@ -66,6 +66,10 @@ ACTION_LABELS = {
     "staff.removed": "Removed from the staff",
     "staff.reinstated": "Reinstated",
     "staff.sessions_revoked": "Sessions revoked",
+    "staff.trusted_devices_revoked": "Trusted devices revoked",
+    "auth.trusted_device_added": "Device trusted",
+    "auth.trusted_device_revoked": "Trusted device revoked",
+    "auth.trusted_devices_revoked": "Trusted devices revoked",
     "staff.recovery_sent": "Recovery link sent",
     "staff.profile_updated": "Profile updated",
     "account.password_reset": "Password reset",
@@ -345,6 +349,14 @@ def _actions(viewer: User, target: User, state: str) -> list[dict[str, Any]]:
         )
         out.append(
             {
+                "name": "revoke-trusted-devices",
+                "label": "Forget trusted devices",
+                "description": "Every trusted device of this person stops skipping the code: their next sign-in asks for one.",
+                "fields": [REASON],
+            }
+        )
+        out.append(
+            {
                 "name": "revoke-sessions",
                 "label": "Sign out everywhere",
                 "description": "Ends every session of this person. They can sign in again.",
@@ -525,6 +537,8 @@ class TeamActionView(TeamView):
                 staff_admin.resend_invitation(actor, target_id)
             elif action == "send-recovery":
                 staff_admin.send_recovery(actor, target_id)
+            elif action == "revoke-trusted-devices":
+                staff_admin.revoke_trusted_devices(actor, target_id, reason=str(data.get("reason") or ""))
             elif action == "revoke-sessions":
                 staff_admin.revoke_sessions(actor, target_id, reason=str(data.get("reason") or ""))
             else:

@@ -57,6 +57,12 @@ urlpatterns = [
     ),
     path("me/sessions", account_views.SessionListView.as_view(), name="me-sessions"),
     path("me/sessions/<uuid:session_id>", account_views.SessionDetailView.as_view(), name="me-session"),
+    path("me/trusted-devices", account_views.TrustedDeviceListView.as_view(), name="me-trusted-devices"),
+    path(
+        "me/trusted-devices/<uuid:device_id>",
+        account_views.TrustedDeviceDetailView.as_view(),
+        name="me-trusted-device",
+    ),
     path("me/profile", profile_views.ProfileView.as_view(), name="me-profile"),
     path(
         "me/profile/reset-preferences",

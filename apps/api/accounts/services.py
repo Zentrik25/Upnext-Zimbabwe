@@ -25,7 +25,7 @@ from notifications import services as outbox
 from notifications import verification
 from notifications.models import EmailKind
 
-from . import tokens
+from . import tokens, trusted_devices
 from .models import AccountStatus, AuthToken, TokenPurpose, User, UserSession
 
 _LOCAL_PART = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}$")
@@ -359,6 +359,7 @@ def confirm_password_reset(token_value: str, new_password: str) -> bool:
         token.used_at = now
         token.save(update_fields=["used_at"])
         revoke_sessions(user, now=now)
+        trusted_devices.revoke_all(user, "password_changed")
         outbox.enqueue(
             EmailKind.PASSWORD_CHANGED_NOTICE, user, user.email, context={"display_name": user.display_name}
         )
@@ -383,6 +384,7 @@ def change_password(user: User, *, current_password: str, new_password: str, ses
         user.set_password(normalise_password(new_password))
         user.save(update_fields=["password", "updated_at"])
         revoke_sessions(user, except_key=session_key)
+        trusted_devices.revoke_all(user, "password_changed")
         outbox.enqueue(
             EmailKind.PASSWORD_CHANGED_NOTICE, user, user.email, context={"display_name": user.display_name}
         )

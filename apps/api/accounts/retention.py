@@ -18,7 +18,7 @@ from employers.models import ListingDailyStat
 from notifications.models import EmailOutbox, OutboxStatus
 from reports import services as report_service
 
-from .models import AuthToken, UserSession
+from .models import AuthToken, TrustedDevice, UserSession
 
 SCRUBBED_ADDRESS = "scrubbed@deleted.invalid"
 
@@ -33,6 +33,9 @@ def run(now: datetime | None = None) -> dict[str, int]:
     counts["sessions"] = Session.objects.filter(expire_date__lt=now).delete()[0]
     counts["session_records"] = UserSession.objects.filter(
         revoked_at__lt=now - timedelta(days=settings.UPNEXT_RETENTION_REVOKED_SESSION_DAYS)
+    ).delete()[0]
+    counts["trusted_devices"] = TrustedDevice.objects.filter(
+        Q(revoked_at__lt=token_cutoff) | Q(expires_at__lt=token_cutoff)
     ).delete()[0]
     counts["outbox_sent"] = (
         EmailOutbox.objects.filter(

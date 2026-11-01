@@ -72,7 +72,10 @@ describe("sign-in second step", () => {
     type(/Verification code/, " 123456 ");
     fireEvent.click(screen.getByRole("button", { name: "Verify and sign in" }));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/saved"));
-    expect(calls.at(-1)).toEqual({ url: "/api/v1/auth/login/two-step", body: { code: "123456" } });
+    expect(calls.at(-1)).toEqual({
+      url: "/api/v1/auth/login/two-step",
+      body: { code: "123456", trust_device: false },
+    });
   });
 
   it("shows the API's message for a wrong code and keeps the form", async () => {

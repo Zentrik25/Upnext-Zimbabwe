@@ -23,6 +23,7 @@ from django.utils import timezone
 from audit import services as audit
 from audit.models import ActorType, Severity
 
+from . import trusted_devices
 from .models import StaffMfaDevice, StaffRecoveryCode, User
 
 PERIOD = 30
@@ -83,6 +84,10 @@ def _hash_recovery(code: str) -> str:
 # --- failure limiting ----------------------------------------------------------------------------------
 def _fail_key(user: User) -> str:
     return f"mfa-fail:{user.pk}"
+
+
+def recent_failures(user: User) -> int:
+    return int(cache.get(_fail_key(user), 0))
 
 
 def blocked(user: User) -> bool:
@@ -158,6 +163,7 @@ def confirm_enrolment(user: User, code: str) -> list[str] | None:
         device.confirmed_at, device.last_used_step = timezone.now(), step
         device.save(update_fields=["confirmed_at", "last_used_step"])
         plain = _issue_recovery_codes(device)
+        trusted_devices.revoke_all(user, "mfa_changed")
         audit.record(
             action=_action(user, "enrolled"),
             object_type="user",
@@ -215,6 +221,7 @@ def reset(user: User, *, actor: User | None, reason: str) -> bool:
         if not removed:
             return False
         revoke_sessions(user)
+        trusted_devices.revoke_all(user, "mfa_reset", actor_id=actor.pk if actor else None)
         audit.record(
             action=_action(user, "reset"),
             object_type="user",
@@ -254,6 +261,7 @@ def regenerate_recovery_codes(user: User) -> list[str] | None:
         if device is None:
             return None
         plain = _issue_recovery_codes(device)
+        trusted_devices.revoke_all(user, "mfa_changed")
         audit.record(
             action=_action(user, "recovery_codes_replaced"),
             object_type="user",
@@ -276,6 +284,7 @@ def disable(user: User) -> bool:
         removed, _ = StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=False).delete()
         if not removed:
             return False
+        trusted_devices.revoke_all(user, "mfa_changed")
         audit.record(
             action=_action(user, "disabled"),
             object_type="user",
