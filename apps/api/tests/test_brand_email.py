@@ -22,6 +22,7 @@ TOKEN_KINDS = {
     EmailKind.EMAIL_VERIFICATION: TokenPurpose.EMAIL_VERIFICATION,
     EmailKind.PASSWORD_RESET: TokenPurpose.PASSWORD_RESET,
     EmailKind.EMAIL_CHANGE_CONFIRM: TokenPurpose.EMAIL_CHANGE,
+    EmailKind.STAFF_INVITATION: TokenPurpose.STAFF_INVITATION,
 }
 BASE = "https://upnext.example.test"
 

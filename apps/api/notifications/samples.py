@@ -83,6 +83,14 @@ def sample_context(kind: str, variant: Variant = "normal") -> Context:
         ctx["link"] = f"{SAMPLE_BASE}/verify-email?token={PLACEHOLDER_TOKEN}{extra}"
     elif kind == EmailKind.PASSWORD_RESET:
         ctx["link"] = f"{SAMPLE_BASE}/reset-password?token={PLACEHOLDER_TOKEN}"
+    elif kind == EmailKind.STAFF_INVITATION:
+        ctx.update(
+            link=f"{SAMPLE_BASE}/accept-invitation?token={PLACEHOLDER_TOKEN}",
+            role_label="Editor",
+            invited_by="" if minimal else "Rudo Moyo",
+        )
+    elif kind == EmailKind.STAFF_ACCOUNT_CHANGE:
+        ctx.update(change="role", role_label="Administrator" if long else "Editor")
     elif kind == EmailKind.ACCOUNT_DELETION_NOTICE:
         ctx.update(scheduled_date="30 November 2026", days=30)
     elif kind == EmailKind.JOB_ALERT:

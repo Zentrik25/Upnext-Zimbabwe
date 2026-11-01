@@ -36,6 +36,7 @@ from employers import capability as employer_capability
 from employers.models import EmployerListing
 
 from . import content as content_mod
+from . import images
 from .duplicates import find_duplicates
 from .errors import (
     InvalidTransition,
@@ -343,12 +344,40 @@ def save_draft(
         content_mod.raise_if_errors(errors)
         if employer:
             employer_capability.check_content(binding, cleaned, content)
+        before_images = (version.featured_image, version.social_image)
         content_mod.apply_to_version(version, cleaned, actor_id=actor.pk)
         _bump(opportunity)
         _record(ctx, actor, opportunity, version, opportunity.status)
+        _images_changed(actor, opportunity, before_images, (version.featured_image, version.social_image))
         return version
 
     return _run(ctx, actor, opportunity_id, body)
+
+
+def _images_changed(
+    actor: User,
+    opportunity: Opportunity,
+    before: tuple[str | None, str | None],
+    after: tuple[str | None, str | None],
+) -> None:
+    """Audit an image being set, replaced or removed, and delete the file nothing refers to any more once the
+    transaction has committed (a rolled-back save must never lose a file a revision still uses)."""
+    if before == after:
+        return
+    changes: dict[str, str] = {}
+    for slot, old, new in (("featured", before[0], after[0]), ("social", before[1], after[1])):
+        if old != new:
+            changes[slot] = "removed" if new is None else "replaced" if old else "set"
+    audit.record(
+        action="opportunity.image_changed",
+        object_type="opportunity",
+        object_id=opportunity.pk,
+        actor_id=actor.pk,
+        changes=changes,
+    )
+    stale = [n for n in before if n and n not in after]
+    if stale:
+        transaction.on_commit(lambda: images.release(stale))
 
 
 def _validate_for_submission(

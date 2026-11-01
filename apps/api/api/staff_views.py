@@ -35,7 +35,7 @@ from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
 from core.staff_mfa import SESSION_FLAG, mark_verified
-from opportunities import health, workflow
+from opportunities import health, images, workflow
 from opportunities.errors import WorkflowError
 from opportunities.models import (
     ListingStatus,
@@ -535,6 +535,13 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "seo_description": version.seo_description,
             "og_title": version.og_title,
             "og_description": version.og_description,
+            "featured_image": version.featured_image,
+            "featured_image_alt": version.featured_image_alt,
+            "social_image": version.social_image,
+        },
+        "images": {
+            "featured": images.url_of(version.featured_image),
+            "social": images.url_of(version.social_image),
         },
     }
 

@@ -41,6 +41,7 @@ _TOKEN_PATHS = {
     EmailKind.EMAIL_VERIFICATION: "/verify-email",
     EmailKind.PASSWORD_RESET: "/reset-password",
     EmailKind.EMAIL_CHANGE_CONFIRM: "/verify-email",
+    EmailKind.STAFF_INVITATION: "/accept-invitation",
 }
 
 
@@ -93,6 +94,7 @@ def _link(row: EmailOutbox) -> str | None:
     purpose = {
         EmailKind.EMAIL_VERIFICATION: TokenPurpose.EMAIL_VERIFICATION,
         EmailKind.EMAIL_CHANGE_CONFIRM: TokenPurpose.EMAIL_CHANGE,
+        EmailKind.STAFF_INVITATION: TokenPurpose.STAFF_INVITATION,
     }.get(EmailKind(row.kind), TokenPurpose.PASSWORD_RESET)
     token = AuthToken.objects.filter(pk=token_id, purpose=purpose).first()
     if token is None:

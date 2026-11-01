@@ -50,6 +50,7 @@ export function OpportunityRow({
         },
       ]}
       extra={extra}
+      image={row.image?.featured ?? null}
       sourceNote={row.primary_source_name ? `Source: ${row.primary_source_name}` : "Source not named"}
       action={
         save ? (

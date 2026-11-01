@@ -39,6 +39,9 @@ class EmailKind(models.TextChoices):
     EMPLOYER_LISTING_REJECTED = "employer_listing_rejected"
     EMPLOYER_LISTING_EXPIRING = "employer_listing_expiring"
     EMPLOYER_LISTING_EXPIRED = "employer_listing_expired"
+    # Staff management (D-58): the invitation to set a password, and notices about changes to a staff account.
+    STAFF_INVITATION = "staff_invitation"
+    STAFF_ACCOUNT_CHANGE = "staff_account_change"
 
 
 class OutboxStatus(models.TextChoices):

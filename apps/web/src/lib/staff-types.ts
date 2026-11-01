@@ -128,6 +128,10 @@ export type DraftContent = {
   seo_description: string | null;
   og_title: string | null;
   og_description: string | null;
+  /** Stored names (`listings/<hex>.jpg`) of the uploaded pictures; the address is `/media/<name>`. */
+  featured_image?: string | null;
+  featured_image_alt?: string | null;
+  social_image?: string | null;
 };
 
 export type VersionView =

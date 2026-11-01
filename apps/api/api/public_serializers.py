@@ -89,6 +89,12 @@ class SummaryOrganisationSerializer(serializers.Serializer[None]):
     profile_slug = serializers.CharField(allow_null=True, required=False)  # detail only (Phase 6A)
 
 
+class ImageSerializer(serializers.Serializer[None]):
+    featured = serializers.URLField(allow_null=True)
+    social = serializers.URLField(allow_null=True)
+    alt = serializers.CharField(allow_null=True)
+
+
 class OpportunitySummarySerializer(serializers.Serializer[None]):
     id = serializers.UUIDField()
     slug = serializers.CharField()
@@ -105,6 +111,7 @@ class OpportunitySummarySerializer(serializers.Serializer[None]):
     location_text = serializers.CharField(allow_null=True)
     verification = VerificationSerializer()
     primary_source_name = serializers.CharField(allow_null=True)
+    image = ImageSerializer(allow_null=True)
     status = serializers.ChoiceField(choices=["published", "expired", "withdrawn"])
     published_at = serializers.DateTimeField()
     is_saved = serializers.BooleanField(allow_null=True)

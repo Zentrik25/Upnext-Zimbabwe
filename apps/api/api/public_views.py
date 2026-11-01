@@ -23,7 +23,7 @@ from access.registry import Permission
 from catalog.models import Category, Location, Sector, Skill
 from catalog.text import TextError, clean_single_line
 from employers.models import EmployerProfile
-from opportunities import public
+from opportunities import images, public
 from opportunities.models import PUBLIC_STATUSES, OpportunityVersion
 
 from .errors import error_response
@@ -54,6 +54,17 @@ def _money(low: Any, high: Any, currency: str | None, period: str | None) -> dic
         "currency": currency,
         "period": period,
     }
+
+
+def _image_of(version: OpportunityVersion) -> dict[str, Any] | None:
+    """The listing's own pictures as absolute https addresses (D-58). `None` when it has none: the page then
+    uses the plain UPNEXT fallback and never invents a picture of the employer. The social image falls back
+    to the featured one so a share card needs no second upload. A picture says nothing about verification."""
+    featured = images.url_of(version.featured_image)
+    social = images.url_of(version.social_image) or featured
+    if featured is None and social is None:
+        return None
+    return {"featured": featured, "social": social, "alt": version.featured_image_alt}
 
 
 def summary_of(version: OpportunityVersion, now: datetime, *, preview: bool = False) -> dict[str, Any]:
@@ -97,6 +108,7 @@ def summary_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fa
             "checked_at": _iso(opportunity.verification_checked_at),
         },
         "primary_source_name": primary.name if primary else None,
+        "image": _image_of(version),
         "status": opportunity.status if opportunity.status in PUBLIC_STATUSES else "published",
         "published_at": _iso(published_at),
         "is_saved": None,  # anonymous callers; saved items arrive with accounts (Phase 4)

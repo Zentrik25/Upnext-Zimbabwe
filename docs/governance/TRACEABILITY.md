@@ -63,6 +63,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-53 | Category specifications are reviewed against the loaded schemas and stay a proposal: no schema, migration or published-listing meaning changes before the owner approves OQ-06 | M2 (owner instruction 2026-10-28); D-21; P2-07 | — | — | CAT-01 | OQ-06 |
 | R-54 | Public identity is UPNEXT Careers: flat black-and-white UN monogram and wordmark, monochrome Stripe-inspired design with Inter, the one official mailbox info@upnext.co.zw, canonical domain upnext.co.zw, branded e-mail and metadata, homepage and staff site, without changing architecture, security or the editorial workflow | D-42 (owner instruction 2026-10-28); D-39; D-40; D-33 (superseded naming) | SC-01 | — | BRAND-01, BRAND-02, BRAND-03, BRAND-04 | B-01; B-02 |
 | R-55 | Staff workspace (Next.js, /workspace) on a staff API (/api/v1/staff/*) in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, records and catalogue management (claims, profiles, verifications, reports, outbox, delivery, users, roles, audit, organisations, taxonomies, content health), two-step proof shared with the session, themes, mobile drawer; no new write path and no bypass of the workflow; Django Admin retired; Administrators and Editors publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, never for employer-owned listings, verification still independent | D-46; D-49; ADR-0024; ADR-0025 | SC-12, SC-13 | getStaffSession, getStaffTwoStep, verifyStaffTwoStep, getStaffDashboard, listStaffOpportunities, createStaffDraft, getStaffOpportunity, saveStaffDraft, previewStaffOpportunity, runStaffAction, listStaffActivity, searchStaff, listStaffCategories, listStaffOrganisations, listStaffRecordKinds, listStaffRecords, getStaffRecord, runStaffRecordAction, getStaffContentHealth, listStaffCatalogKinds, listStaffCatalog, createStaffCatalogRecord, getStaffCatalogRecord, updateStaffCatalogRecord, lookupStaffReference | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-08 | OQ-13 |
+| R-56 | Staff management for Administrators (D-58): list, search, filter, sort and page staff; summary counts; profile with role, permissions, listing work, sessions and audit activity; invite by name, e-mail and an existing role with a single-use 72-hour link and no password sent; accept the invitation; resend; change role; suspend and reactivate; revoke sessions; send a recovery link; remove (deactivate, never delete) and reinstate; nobody changes their own access and the last active Administrator is protected; every change audited and the person told by branded e-mail; no Publisher role and no change to separation of duties | D-58; D-23; D-18; D-22; D-49 | SC-12, SC-13 | listStaffTeam, inviteStaff, getStaffMember, updateStaffMember, listStaffMemberActivity, runStaffMemberAction, acceptStaffInvitation | STAFFTEAM-01…STAFFTEAM-08 | OQ-13 |
+| R-57 | Listing images (D-58): featured and optional sharing image uploaded in the job editor (preview, replace, remove, progress, drag and drop, mobile); content-based validation (JPEG, PNG, WebP, size and dimension limits), orientation applied, metadata removed, re-encoded under generated names on persistent storage; staff-only, rate limited, no orphans; absolute https addresses on public pages, cards, structured previews and Open Graph/Twitter cards; standard UPNEXT image when none; a picture never implies employer verification | D-58; D-56; D-14 | SC-01, SC-12 | uploadListingImage | IMG-01…IMG-08 | B-07 |
 
 ## 2. Screen register
 
@@ -132,6 +134,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `logout` | POST `/auth/logout` | auth | R-04 |
 | `requestPasswordReset` | POST `/auth/password-reset/request` | auth | R-04, R-17, R-18 |
 | `confirmPasswordReset` | POST `/auth/password-reset/confirm` | auth | R-04 |
+| `acceptStaffInvitation` | POST `/auth/staff-invitation/accept` | auth | R-56 |
 | `changePassword` | POST `/auth/password/change` | auth | R-04 |
 | `getMe` | GET `/me` | me | R-04, R-06, R-33 |
 | `updateMe` | PATCH `/me` | me | R-04 |
@@ -177,6 +180,13 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffSession` | GET `/staff/session` | staff | R-55 |
 | `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
 | `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `uploadListingImage` | POST `/staff/images` | staff | R-57 |
+| `listStaffTeam` | GET `/staff/team` | staff | R-56 |
+| `inviteStaff` | POST `/staff/team` | staff | R-56 |
+| `getStaffMember` | GET `/staff/team/{targetId}` | staff | R-56 |
+| `updateStaffMember` | PATCH `/staff/team/{targetId}` | staff | R-56 |
+| `listStaffMemberActivity` | GET `/staff/team/{targetId}/activity` | staff | R-56 |
+| `runStaffMemberAction` | POST `/staff/team/{targetId}/actions/{action}` | staff | R-56 |
 | `getStaffDashboard` | GET `/staff/dashboard` | staff | R-55 |
 | `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
 | `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
@@ -206,6 +216,22 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 
 | Test id | Intent |
 |---|---|
+| STAFFTEAM-01 | Administrator invites staff: account pending with an unusable password, role recorded without authority, single-use 72-hour link, no password in the e-mail, audit without secrets, duplicate e-mail refused |
+| STAFFTEAM-02 | Invitation acceptance chooses the password, activates the account once, refuses weak passwords, reused or expired links with one answer, and cannot be replaced by e-mail verification |
+| STAFFTEAM-03 | Only Administrators reach any staff-management endpoint; Editors, Contributors, seekers and anonymous callers are refused; a seeker id is a 404; CSRF required; unknown fields are refused |
+| STAFFTEAM-04 | Role change replaces the role (revoked, never deleted), is audited, e-mailed and effective at once; no self-service; separation of duties is untouched |
+| STAFFTEAM-05 | Suspension blocks sign-in and ends sessions; reactivation restores access; revoking sessions signs the person out; recovery links are single-use resets |
+| STAFFTEAM-06 | The last active Administrator and one's own account are protected from role change, suspension and removal |
+| STAFFTEAM-07 | Removal deactivates without deleting listings, reviews, verifications or audit history; confirmation required; cancelled invitations are void; reinstatement works |
+| STAFFTEAM-08 | List, search, filters, sort, paging, summary counts, profile statistics and activity; Staff management pages, accept-invitation page and navigation (Vitest) |
+| IMG-01 | Validation by decoded content: JPEG, PNG and WebP accepted; scripts, GIF, BMP, PDF, truncated and fake-extension files refused; size and dimension limits |
+| IMG-02 | Normalisation: orientation applied, metadata removed, transparency flattened, first frame only, large pictures scaled down and optimised |
+| IMG-03 | Storage under generated names, persistence across a fresh storage object, only generated names accepted, media served in development and tests |
+| IMG-04 | Upload endpoint: authorised staff only, CSRF, rate limit, oversized body 413, meaningful error codes |
+| IMG-05 | Attach, replace and remove through the draft save: audited, old files removed when unreferenced, files used by a published revision kept, names re-validated, author only, employers refused |
+| IMG-06 | Unattached uploads are swept after a day; attached ones stay |
+| IMG-07 | Public API image block with absolute https addresses, sharing-image fallback, no invented picture, no verification claim; revision hash |
+| IMG-08 | Upload component, job-editor state and payload, job page image, card image and Open Graph/Twitter metadata (Vitest) |
 | UT-01 | Unknown salary/deadline/requirements render as 'Not stated'; never defaulted |
 | UT-02 | Slug generation: format, collision retry, reserved words; immutability after assignment |
 | UT-03 | Profile validation limits and clear-on-null semantics |
@@ -674,6 +700,22 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | STATE-02 | `apps/web/tests/unit/reports-and-states.test.tsx (loading placeholders); apps/web/tests/unit/skeleton-system.test.tsx (route wiring)` | executed |
 | STATE-04 | `apps/web/tests/unit/skeleton-system.test.tsx (motion, primitives)` | executed |
 | STATE-05 | `apps/web/tests/unit/skeleton-system.test.tsx (home page states, listing page results)` | executed |
+| STAFFTEAM-01 | `apps/api/tests/test_staff_team.py (invitation tests; audit and outbox hygiene)` | executed |
+| STAFFTEAM-02 | `apps/api/tests/test_staff_team.py (acceptance and expiry tests)` | executed |
+| STAFFTEAM-03 | `apps/api/tests/test_staff_team.py::test_only_administrators_reach_staff_management; ::test_unsafe_requests_need_csrf_and_a_seeker_id_is_not_a_profile` | executed |
+| STAFFTEAM-04 | `apps/api/tests/test_staff_team.py (role change tests)` | executed |
+| STAFFTEAM-05 | `apps/api/tests/test_staff_team.py (suspension, sessions, recovery tests)` | executed |
+| STAFFTEAM-06 | `apps/api/tests/test_staff_team.py::test_nobody_removes_their_own_access_and_the_last_administrator_is_protected; ::test_two_administrators_cannot_both_demote_each_other_away` | executed |
+| STAFFTEAM-07 | `apps/api/tests/test_staff_team.py::test_removal_deactivates_without_deleting_listings_or_audit_history; ::test_cancelling_an_invitation_voids_the_link_and_a_removed_person_can_be_reinstated` | executed |
+| STAFFTEAM-08 | `apps/api/tests/test_staff_team.py (list and profile tests); apps/web/tests/unit/team-and-images.test.tsx` | executed |
+| IMG-01 | `apps/api/tests/test_listing_images.py (validation tests)` | executed |
+| IMG-02 | `apps/api/tests/test_listing_images.py (normalisation tests)` | executed |
+| IMG-03 | `apps/api/tests/test_listing_images.py (storage tests)` | executed |
+| IMG-04 | `apps/api/tests/test_listing_images.py (upload API tests)` | executed |
+| IMG-05 | `apps/api/tests/test_listing_images.py (attach, replace, remove tests)` | executed |
+| IMG-06 | `apps/api/tests/test_listing_images.py::test_unattached_uploads_are_swept_after_a_day_but_attached_ones_stay` | executed |
+| IMG-07 | `apps/api/tests/test_listing_images.py (public output tests)` | executed |
+| IMG-08 | `apps/web/tests/unit/team-and-images.test.tsx` | executed |
 | STATE-06 | `apps/web/tests/unit/skeleton-system.test.tsx (private and staff skeletons, route wiring); apps/web/tests/unit/seo-readiness.test.tsx` | executed |
 | STATE-03 | `apps/web/tests/unit/reports-and-states.test.tsx (error views); apps/web/tests/e2e/report-journey.spec.ts (320, 390, 1440)` | unit executed; e2e runs in CI |
 | CAT-01 | `apps/api/tests/test_category_specifications.py` | executed |

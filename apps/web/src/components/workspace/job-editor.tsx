@@ -21,6 +21,7 @@ import {
 import type { ListingDetail, StaffCategory } from "@/lib/staff-types";
 import { ActionPanel } from "./action-panel";
 import { DetailInput } from "./detail-input";
+import { ImageUpload, mediaUrl } from "./image-upload";
 import { ApplyFields, BulletTextarea, OrganisationPicker, Row } from "./job-editor-parts";
 
 type Option = { id: string; name: string };
@@ -228,7 +229,7 @@ export function JobEditor({
                       k,
                     ),
                   ),
-                media: o.media || Object.keys(flat).some((k) => /^(slug|seo_|og_)/.test(k)),
+                media: o.media || Object.keys(flat).some((k) => /^(slug|seo_|og_|social_)/.test(k)),
                 source:
                   o.source ||
                   Object.keys(flat).some((k) => k.startsWith("sources.") && !k.startsWith("sources.0")),
@@ -287,6 +288,7 @@ export function JobEditor({
   const vacanciesHere = hasDetail(category, "vacancies");
   const more = moreDetailFields(category);
   const sourceErrors = e("sources");
+  const shareName = state.socialImage || state.featuredImage;
   const seoText = {
     title:
       state.ogTitle || state.seoTitle || [state.title, state.organisation?.name].filter(Boolean).join(" at "),
@@ -373,6 +375,26 @@ export function JobEditor({
             onChange={(organisation) => set({ organisation })}
             canCreate={canCreateOrganisation}
             error={e("organisation_id")}
+          />
+        </Row>
+
+        <Row
+          id="featured_image"
+          title="Featured image"
+          optional
+          error={e("featured_image")}
+          hint="Recommended aspect ratio: 16:9 (for example 1280 × 720). Shown on the job page and used when the link is shared. Use a real picture; it does not make the employer verified."
+        >
+          <ImageUpload
+            id="featured_image"
+            value={state.featuredImage}
+            onChange={(featuredImage) =>
+              set({ featuredImage, ...(featuredImage ? {} : { featuredAlt: "" }) })
+            }
+            alt={state.featuredAlt}
+            onAltChange={(featuredAlt) => set({ featuredAlt })}
+            describedBy="featured_image-hint"
+            error={e("featured_image")}
           />
         </Row>
 
@@ -707,6 +729,23 @@ export function JobEditor({
             onToggle={(v) => setOpen((o) => ({ ...o, media: v }))}
           >
             <Row
+              id="social_image"
+              title="Sharing image"
+              optional
+              error={e("social_image")}
+              hint="Optional. Shown when the link is shared on WhatsApp, Facebook, LinkedIn or X. Recommended 1200 × 630. Empty: the featured image is used, so there is no need to upload it twice."
+            >
+              <ImageUpload
+                id="social_image"
+                value={state.socialImage}
+                onChange={(socialImage) => set({ socialImage })}
+                ratio="1200 / 630"
+                buttonLabel="Upload sharing image"
+                describedBy="social_image-hint"
+                error={e("social_image")}
+              />
+            </Row>
+            <Row
               id="slug"
               title="Web address"
               error={e("slug")}
@@ -785,18 +824,40 @@ export function JobEditor({
             </Row>
             <div className="grid gap-1" aria-label="Sharing preview">
               <p className="m-0 text-ctl font-medium text-check-text">Sharing preview</p>
-              <div className="rounded-card border border-border-panel p-3">
-                <p className="m-0 text-small text-muted">upnext.co.zw</p>
-                <p className="m-0 mt-0.5 text-base font-medium">
-                  {seoText.title || "Job title at Organisation"}
-                </p>
-                <p className="m-0 mt-0.5 text-small text-muted">
-                  {seoText.description || "A short description appears here."}
-                </p>
+              <div className="max-w-[480px] overflow-hidden rounded-card border border-border-panel">
+                {shareName ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- a staff preview of an uploaded file
+                  <img
+                    src={mediaUrl(shareName)}
+                    alt=""
+                    className="block w-full object-cover"
+                    style={{ aspectRatio: "1200 / 630" }}
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="grid w-full place-items-center bg-surface-pale text-small text-muted"
+                    style={{ aspectRatio: "1200 / 630" }}
+                  >
+                    The standard UPNEXT image
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="m-0 text-small text-muted">upnext.co.zw</p>
+                  <p className="m-0 mt-0.5 text-base font-medium">
+                    {seoText.title || "Job title at Organisation"}
+                  </p>
+                  <p className="m-0 mt-0.5 text-small text-muted">
+                    {seoText.description || "A short description appears here."}
+                  </p>
+                </div>
               </div>
               <p className="m-0 text-small text-muted">
-                Featured and sharing images cannot be uploaded yet: links are shared with the standard UPNEXT
-                image.
+                {shareName
+                  ? state.socialImage
+                    ? "Shared links show the sharing image."
+                    : "Shared links show the featured image."
+                  : "With no image, shared links show the standard UPNEXT image."}
               </p>
             </div>
           </Section>
