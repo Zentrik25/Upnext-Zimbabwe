@@ -183,7 +183,10 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
             cs.borderBottomLeftRadius,
             cs.borderBottomRightRadius,
           ];
-          if (radii.some((r) => !allowed.includes(r))) bad.push(`radius ${el.tagName}.${el.className}`);
+          // The one exception (D-61): the fully rounded quick-link chips of the home page, nothing else.
+          const pill = el.closest('nav[aria-label="Quick links"]') !== null;
+          if (radii.some((r) => !allowed.includes(r) && !(pill && r === "999px")))
+            bad.push(`radius ${el.tagName}.${el.className}`);
           // Tailwind prefixes shadow utilities with fully transparent ring layers; only the visible layer counts.
           const visible =
             cs.boxShadow.replace(/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?/g, "").replace(/, $/, "") || "none";
