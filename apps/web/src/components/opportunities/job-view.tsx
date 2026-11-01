@@ -21,6 +21,7 @@ import {
 } from "@/lib/format";
 import { SafeHtml } from "@/lib/safe-html";
 import { isOpen } from "@/lib/structured-data";
+import { RETIRED_DETAIL } from "@/lib/job-editor";
 
 const PAY_CATEGORIES = ["jobs", "internships", "graduate-programmes"];
 
@@ -174,7 +175,9 @@ export function JobView({
   const pay = salaryLine(listing);
   const fundingLine = formatMoney(listing.funding);
   const vacancies = typeof listing.detail.vacancies === "number" ? listing.detail.vacancies : null;
-  const more = Object.entries(listing.detail).filter(([key]) => key !== "vacancies");
+  const more = Object.entries(listing.detail).filter(
+    ([key]) => key !== "vacancies" && !RETIRED_DETAIL.includes(key),
+  );
   const where = listing.locations.map((l) => l.name).join(", ") || listing.location_text;
   const canApply = open && destinations(listing).any;
   const closedNote =
@@ -229,7 +232,11 @@ export function JobView({
               <Fact icon="briefcase">{labelFor(listing.employment_type)}</Fact>
             ) : null}
             {labelFor(listing.work_mode) ? <Fact icon="building">{labelFor(listing.work_mode)}</Fact> : null}
-            {pay ? <Fact icon="coin">{pay}</Fact> : null}
+            {pays ? (
+              <Fact icon="coin">{pay ?? "Pay: TBA"}</Fact>
+            ) : pay ? (
+              <Fact icon="coin">{pay}</Fact>
+            ) : null}
             {fundingLine ? <Fact icon="coin">Funding: {fundingLine}</Fact> : null}
             {vacancies !== null ? (
               <Fact icon="users">{vacancies === 1 ? "1 vacancy" : `${vacancies} vacancies`}</Fact>
@@ -275,15 +282,9 @@ export function JobView({
             </Section>
           ) : null}
 
-          {more.length > 0 || listing.skills.length > 0 || listing.experience_level ? (
+          {more.length > 0 || listing.skills.length > 0 ? (
             <Section title="More details">
               <dl className="mt-2 grid gap-2 text-base" data-testid="category-details">
-                {listing.experience_level ? (
-                  <div className="grid grid-cols-[200px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
-                    <dt className="text-muted">Experience level</dt>
-                    <dd className="m-0">{labelFor(listing.experience_level)}</dd>
-                  </div>
-                ) : null}
                 {more.map(([key, value]) => (
                   <div key={key} className="grid grid-cols-[200px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
                     <dt className="text-muted">{humanise(key)}</dt>

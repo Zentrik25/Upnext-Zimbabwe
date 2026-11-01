@@ -82,6 +82,25 @@ def test_full_time_is_a_job_type_and_internship_stays_with_its_own_category(
     assert "invalid_choice" in codes(errors_of(bad), "employment_type")
 
 
+def test_a_written_location_is_enough_and_no_location_at_all_is_refused(
+    world: World, people: dict[str, User]
+) -> None:
+    written = new_draft(world, people["author"], locations=[], location_text="Harare CBD")
+    assert errors_of(written) == {}
+    blank = new_draft(world, people["author"], locations=[], location_text="  ")
+    assert "required" in codes(errors_of(blank), "locations")
+
+
+def test_the_public_page_and_cards_carry_the_written_location(
+    world: World, people: dict[str, User], client: APIClient
+) -> None:
+    opp = published(world, people["author"], people["editor"], locations=[], location_text="Near Joina City")
+    one = client.get(f"/api/v1/opportunities/{opp.slug}").json()
+    assert one["locations"] == [] and one["location_text"] == "Near Joina City"
+    listed = client.get("/api/v1/opportunities").json()["data"]
+    assert any(row["location_text"] == "Near Joina City" for row in listed)
+
+
 def test_vacancies_live_in_the_category_detail_and_are_validated_there(
     world: World, people: dict[str, User]
 ) -> None:

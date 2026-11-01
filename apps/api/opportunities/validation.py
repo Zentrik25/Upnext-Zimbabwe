@@ -99,7 +99,9 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
 
     locations = list(version.locations.all())
     if not locations:
-        _add(errors, "locations", "required", "Choose at least one location.")
+        # D-57: the location is one written line; structured places are matched from it and may be absent.
+        if not (version.location_text or "").strip():
+            _add(errors, "locations", "required", "Enter where the job is based.")
     elif sum(1 for r in locations if r.is_primary) != 1:
         _add(errors, "locations", "invalid_choice", "Exactly one location must be primary.")
 

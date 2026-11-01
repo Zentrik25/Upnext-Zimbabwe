@@ -126,6 +126,53 @@ describe("the order of the page", () => {
     expect(text()).toContain("Deadline not stated");
   });
 
+  it("shows Pay: TBA when no pay was typed, for a category that has pay, and nothing for one that has none", () => {
+    const { unmount } = render(<JobView listing={listing({ salary_text: null })} />);
+    expect(text()).toContain("Pay: TBA");
+    unmount();
+    render(
+      <JobView listing={listing({ salary_text: null, category: { code: "tenders", name: "Tenders" } })} />,
+    );
+    expect(text()).not.toContain("TBA");
+  });
+
+  it("does not show the details the owner retired, even when an older listing stored them", () => {
+    render(
+      <JobView
+        listing={listing({
+          experience_level: "senior",
+          detail: {
+            vacancies: 2,
+            benefits: ["Medical aid"],
+            minimum_qualification: "diploma",
+            minimum_experience_years: 3,
+            professional_registration: ["ZICA"],
+            languages_required: ["en"],
+            driving_licence_required: true,
+            contract_duration_months: 12,
+          },
+        })}
+      />,
+    );
+    const details = screen.getByTestId("category-details");
+    expect(details).toHaveTextContent("Contract duration months");
+    for (const gone of [
+      "Benefits",
+      "Minimum qualification",
+      "Minimum experience years",
+      "Professional registration",
+      "Languages required",
+      "Driving licence required",
+      "Experience level",
+    ])
+      expect(details).not.toHaveTextContent(gone);
+  });
+
+  it("falls back to the location as written when no structured place is attached", () => {
+    render(<JobView listing={listing({ locations: [], location_text: "Harare CBD" })} />);
+    expect(text()).toContain("Harare CBD");
+  });
+
   it("calls the body of a non-job category by its own name", () => {
     render(<JobView listing={listing({ category: { code: "tenders", name: "Tenders" } })} />);
     expect(screen.getByRole("heading", { name: "About this opportunity" })).toBeInTheDocument();

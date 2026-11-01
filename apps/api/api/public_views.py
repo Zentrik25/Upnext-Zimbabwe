@@ -91,6 +91,7 @@ def summary_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fa
             version.salary_min, version.salary_max, version.salary_currency, version.salary_period
         ),
         "salary_text": version.salary_text,
+        "location_text": version.location_text,
         "verification": {
             "level": opportunity.verification_level,
             "checked_at": _iso(opportunity.verification_checked_at),
@@ -121,7 +122,6 @@ def detail_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fal
             "description_html": public.render_html(version.description_md) or "",
             "requirements_html": public.render_html(version.requirements_md),
             "geographic_eligibility": version.geographic_eligibility,
-            "location_text": version.location_text,
             "experience_level": version.experience_level,
             "funding": _money(
                 version.funding_min, version.funding_max, version.funding_currency, version.funding_period

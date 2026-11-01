@@ -1621,6 +1621,7 @@ components:
         deadline: { $ref: '#/components/schemas/Deadline' }
         salary: { $ref: '#/components/schemas/Money' }
         salary_text: { type: [string, 'null'], maxLength: 120, description: 'The source''s own wording when it gives no amount ("Competitive"); never an amount. Added in D-56; additive.' }
+        location_text: { type: [string, 'null'], description: 'The location as written; shown when no structured place is attached. Added in D-57; additive.' }
         verification: { $ref: '#/components/schemas/Verification' }
         primary_source_name: { type: [string, 'null'] }
         status: { type: string, enum: [published, expired, withdrawn] }
@@ -1635,7 +1636,6 @@ components:
             description_html: { type: string, description: 'Server-sanitised HTML from the Markdown subset' }
             requirements_html: { type: [string, 'null'] }
             geographic_eligibility: { type: [string, 'null'] }
-            location_text: { type: [string, 'null'] }
             experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
             funding: { $ref: '#/components/schemas/Money' }
             skills: { type: array, items: { type: object, required: [name, is_required], properties: { name: { type: string }, is_required: { type: boolean } } } }
