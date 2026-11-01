@@ -555,9 +555,9 @@ paths:
       security: [{ csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 } } } } }
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 }, trust_device: { type: boolean, default: false, description: 'Trust this browser for 30 days (D-59): sets an HttpOnly, SameSite=Lax cookie whose hash is stored server side' } } } } }
       responses:
-        '200': { description: 'Session cookie set (rotated); returns the user', content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '200': { description: 'Session cookie set (rotated); returns the user. With trust_device, also the trusted-device cookie', headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
         '400': { description: '`invalid_code`, or `two_step_expired` when sign-in must start again', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /auth/logout:
@@ -844,6 +844,33 @@ paths:
         - { name: session_id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         '204': { description: 'Revoked' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/trusted-devices:
+    get:
+      tags: [me]
+      operationId: listTrustedDevices
+      description: 'Browsers the person trusted (D-59), newest use first; `current` marks this browser. `code_every_hours` is the staff limit (24), null for other accounts.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Devices', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [me]
+      operationId: revokeAllTrustedDevices
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Every trusted device forgotten' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/trusted-devices/{device_id}:
+    delete:
+      tags: [me]
+      operationId: revokeTrustedDevice
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { name: device_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: 'Forgotten' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
   /me/saved:
@@ -1279,7 +1306,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
   /staff/team/{targetId}/actions/{action}:
-    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-sessions] } }]
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-trusted-devices, revoke-sessions] } }]
     post:
       tags: [staff]
       operationId: runStaffMemberAction

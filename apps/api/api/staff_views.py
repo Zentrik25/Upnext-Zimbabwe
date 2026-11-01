@@ -28,13 +28,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from access.registry import DEFAULT_REGISTRY, Permission, Role
-from accounts import mfa
+from accounts import mfa, trusted_devices
 from accounts.models import User
 from audit import services as audit
 from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
-from core.staff_mfa import SESSION_FLAG, mark_verified
+from core.staff_mfa import is_fresh, mark_verified
 from opportunities import health, images, workflow
 from opportunities.errors import WorkflowError
 from opportunities.models import (
@@ -109,7 +109,7 @@ class IsStaffAccount(BasePermission):
 
 
 def mfa_satisfied(request: Request) -> bool:
-    return not settings.UPNEXT_STAFF_MFA_REQUIRED or bool(request._request.session.get(SESSION_FLAG))
+    return not settings.UPNEXT_STAFF_MFA_REQUIRED or is_fresh(request._request.session)
 
 
 class IsVerifiedStaff(IsStaffAccount):
@@ -234,7 +234,10 @@ class TwoStepView(APIView):
                     400,
                 )
             mark_verified(request._request)
-            return Response({"verified": True, "recovery_codes": codes})
+            done = Response({"verified": True, "recovery_codes": codes})
+            if data.get("trust_device") is True:
+                trusted_devices.trust(request._request, done, user)
+            return done
         if not mfa.verify(user, code):
             return error_response(
                 "invalid_code",
@@ -245,7 +248,12 @@ class TwoStepView(APIView):
                 400,
             )
         mark_verified(request._request)
-        return Response({"verified": True})
+        done = Response({"verified": True})
+        if data.get("trust_device") is True:
+            trusted_devices.trust(request._request, done, user)
+        else:
+            trusted_devices.note_verified(request._request, user)
+        return done
 
 
 # --- shapes ----------------------------------------------------------------------------------------------
