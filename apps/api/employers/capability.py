@@ -17,6 +17,7 @@ from django.conf import settings
 from access.registry import EMPLOYER_CATEGORIES
 from accounts.models import User
 from catalog.models import Organisation
+from opportunities.content import STAFF_ONLY_KEYS
 from opportunities.errors import PermissionDeniedError
 from opportunities.models import Opportunity, OpportunitySource, OpportunityVersion, SourceKind
 
@@ -75,6 +76,10 @@ def check_content(
     if "sources" in raw:
         raise PermissionDeniedError(
             "sources_not_allowed", "Sources are recorded automatically for employers."
+        )
+    if STAFF_ONLY_KEYS & set(raw):
+        raise PermissionDeniedError(
+            "staff_only_field", "The address and the search and sharing text are set by staff."
         )
     organisation = cleaned.get("organisation")
     if binding is not None and organisation is not None and organisation.pk != binding.organisation_id:

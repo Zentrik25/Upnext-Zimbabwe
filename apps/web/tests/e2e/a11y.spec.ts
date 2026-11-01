@@ -179,7 +179,8 @@ test.describe("keyboard", () => {
   });
 
   test("the home search is usable by keyboard alone", async ({ page }) => {
-    await page.goto("/");
+    // Wait for the page to hydrate: typing before that is lost when React takes over the field.
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.getByLabel("Search by title, organisation or keyword").focus();
     await page.keyboard.type("engineer");
     await page.keyboard.press("Enter");

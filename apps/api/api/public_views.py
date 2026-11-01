@@ -24,7 +24,7 @@ from catalog.models import Category, Location, Sector, Skill
 from catalog.text import TextError, clean_single_line
 from employers.models import EmployerProfile
 from opportunities import public
-from opportunities.models import OpportunityVersion
+from opportunities.models import PUBLIC_STATUSES, OpportunityVersion
 
 from .errors import error_response
 from .public_serializers import (
@@ -56,15 +56,22 @@ def _money(low: Any, high: Any, currency: str | None, period: str | None) -> dic
     }
 
 
-def summary_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
+def summary_of(version: OpportunityVersion, now: datetime, *, preview: bool = False) -> dict[str, Any]:
+    """The public summary of a revision. `preview` (staff only) lets an unpublished draft take the shape of a
+    live listing: it has no slug or publication time yet, so the chosen address and now stand in."""
     opportunity = version.opportunity
     locations = sorted(version.locations.all(), key=lambda r: (not r.is_primary, r.location.name))
     primary = next((s for s in version.sources.all() if s.is_primary), None)
-    assert opportunity.first_published_at is not None
-    assert opportunity.slug is not None
+    if preview:
+        slug = opportunity.slug or version.slug_hint or "preview"
+        published_at = opportunity.first_published_at or now
+    else:
+        assert opportunity.first_published_at is not None
+        assert opportunity.slug is not None
+        slug, published_at = opportunity.slug, opportunity.first_published_at
     return {
         "id": str(opportunity.pk),
-        "slug": opportunity.slug,
+        "slug": slug,
         "title": version.title,
         "summary": version.summary,
         "category": {"code": opportunity.category.code, "name": opportunity.category.name},
@@ -83,21 +90,23 @@ def summary_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
         "salary": _money(
             version.salary_min, version.salary_max, version.salary_currency, version.salary_period
         ),
+        "salary_text": version.salary_text,
         "verification": {
             "level": opportunity.verification_level,
             "checked_at": _iso(opportunity.verification_checked_at),
         },
         "primary_source_name": primary.name if primary else None,
-        "status": opportunity.status,
-        "published_at": _iso(opportunity.first_published_at),
+        "status": opportunity.status if opportunity.status in PUBLIC_STATUSES else "published",
+        "published_at": _iso(published_at),
         "is_saved": None,  # anonymous callers; saved items arrive with accounts (Phase 4)
     }
 
 
-def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
+def detail_of(version: OpportunityVersion, now: datetime, *, preview: bool = False) -> dict[str, Any]:
     opportunity = version.opportunity
-    assert opportunity.last_published_at is not None
-    out = summary_of(version, now)
+    if not preview:
+        assert opportunity.last_published_at is not None
+    out = summary_of(version, now, preview=preview)
     out["organisation"]["profile_slug"] = (
         EmployerProfile.objects.filter(
             organisation_id=version.organisation_id,
@@ -131,6 +140,7 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
                 "method": version.application_method,
                 "url": version.application_url,
                 "email": version.application_email,
+                "email_subject": version.application_email_subject,
                 "instructions": version.application_instructions,
             },
             "sources": [
@@ -146,8 +156,14 @@ def detail_of(version: OpportunityVersion, now: datetime) -> dict[str, Any]:
             ],
             "detail": version.detail,
             "detail_schema_version": version.detail_schema_version,
-            "canonical_path": f"/opportunities/{opportunity.slug}",
-            "updated_at": _iso(opportunity.last_published_at),
+            "seo": {
+                "title": version.seo_title,
+                "description": version.seo_description,
+                "og_title": version.og_title,
+                "og_description": version.og_description,
+            },
+            "canonical_path": f"/opportunities/{out['slug']}",
+            "updated_at": _iso(opportunity.last_published_at or now),
         }
     )
     return out

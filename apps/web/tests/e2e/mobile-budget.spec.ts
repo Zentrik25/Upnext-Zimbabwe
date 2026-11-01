@@ -18,6 +18,9 @@ const TRANSFER_KIB: Record<string, number> = { "/": 300, "/sign-in": 270 };
 // The sign-in page also carries the remember-me and Google sign-in features (D-50) and the staff redirect (D-49), so it
 // has a 152 KiB script allowance; every other page keeps 150 KiB.
 const SCRIPT_KIB: Record<string, number> = { "/sign-in": 152 };
+// The listing page carries the Share control and the phone-only Apply bar (D-56), two small client components on top
+// of the save control, so a listing has the same 152 KiB script allowance (the CI runner measured 150.6 KiB).
+SCRIPT_KIB.DETAIL = 152;
 
 for (const path of [...PAGES, "DETAIL"]) {
   test(`budget on ${path}`, async ({ page, request }, info) => {

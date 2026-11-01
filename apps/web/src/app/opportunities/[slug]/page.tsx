@@ -1,30 +1,19 @@
 import type { Metadata } from "next";
-import { socialFor } from "@/lib/brand";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache, Suspense, type ReactNode } from "react";
+import { cache, Suspense } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
+import { JobView } from "@/components/opportunities/job-view";
 import { ListingEvents } from "@/components/opportunities/listing-events";
-import { VerificationTag } from "@/components/opportunities/parts";
-import { Callout, EmptyState, Panel, Tag } from "@/components/ui";
-import { getOpportunity as fetchOpportunity } from "@/lib/catalog";
-import type { OpportunityDetail } from "@/lib/catalog-types";
-import {
-  VERIFICATION,
-  SOURCE_KIND,
-  deadlineView,
-  domainOf,
-  formatDate,
-  formatMoney,
-  humanise,
-  labelFor,
-} from "@/lib/format";
-import { SafeHtml } from "@/lib/safe-html";
-import { SkeletonLine } from "@/components/ui/skeleton";
-import { absolute } from "@/lib/site";
+import { OpportunityRow } from "@/components/opportunities/parts";
+import { EmptyState } from "@/components/ui";
+import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
+import { socialFor } from "@/lib/brand";
+import { getOpportunity as fetchOpportunity, listOpportunities } from "@/lib/catalog";
+import type { OpportunityDetail } from "@/lib/catalog-types";
+import { absolute } from "@/lib/site";
 import { breadcrumbFor, isOpen, jobPostingFor } from "@/lib/structured-data";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
@@ -35,19 +24,37 @@ type Props = { params: Promise<{ slug: string }> };
 /** The metadata and the page of one render share one request for the listing. */
 const getOpportunity = cache(fetchOpportunity);
 
+/** A short plain description when the editor wrote none: the start of what the listing says, never invented. */
+function plain(html: string, max = 160): string {
+  const text = html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await getOpportunity(slug);
   if (!result.ok || result.data === null) return { title: "Opportunity not found", robots: { index: false } };
   const listing = result.data;
-  const title = `${listing.title} at ${listing.organisation.name}`;
+  const seo = listing.seo;
+  const title = seo?.title || `${listing.title} at ${listing.organisation.name}`;
   const description =
-    listing.summary || `${listing.category.name} listing from ${listing.organisation.name}.`;
+    seo?.description ||
+    listing.summary ||
+    plain(listing.description_html) ||
+    `${listing.category.name} listing from ${listing.organisation.name}.`;
   return {
     title,
     description,
     alternates: { canonical: listing.canonical_path },
-    ...socialFor(listing.canonical_path, { title, description }),
+    ...socialFor(listing.canonical_path, {
+      title: seo?.og_title || title,
+      description: seo?.og_description || description,
+    }),
     // Closed, withdrawn and past-deadline listings stay readable but are not promoted by search engines (OQ-20 default).
     robots: isOpen(listing) ? undefined : { index: false },
   };
@@ -69,10 +76,6 @@ export default async function OpportunityPage({ params }: Props) {
   }
   if (result.data === null) notFound();
   const listing = result.data;
-  const deadline = deadlineView(listing.deadline, listing.status);
-  const salary = formatMoney(listing.salary);
-  const funding = formatMoney(listing.funding);
-
   const pageUrl = absolute(`/opportunities/${listing.slug}`);
   const posting = jobPostingFor(listing, pageUrl);
   return (
@@ -95,191 +98,19 @@ export default async function OpportunityPage({ params }: Props) {
         />
       ) : null}
       <ListingEvents slug={listing.slug} open={listing.status === "published"} />
-      <Container className="pt-[18px] pb-[65px]">
-        {listing.status !== "published" ? (
-          <div
-            role="status"
-            data-testid="status-banner"
-            className="mb-4 rounded-card border border-border-notice bg-surface-notice px-3 py-[10px] text-base"
-          >
-            <strong className="block text-title">
-              {listing.status === "expired" ? "Closed" : "Withdrawn by the issuer"}
-            </strong>
-            {listing.status === "expired"
-              ? "This opportunity has closed. It is kept here so shared links keep working."
-              : "The issuer has withdrawn this opportunity. It is kept here so shared links keep working."}
-          </div>
-        ) : null}
-        <p className="text-ctl">
-          <Link href="/opportunities" className="text-accent underline">
-            ← All opportunities
-          </Link>
-        </p>
-        <article
-          aria-labelledby="listing-title"
-          className="mt-3 grid grid-cols-[1fr_300px] gap-8 max-md:grid-cols-1"
-        >
-          <div className="min-w-0">
-            <p className="text-micro font-mono font-[500] uppercase tracking-eyebrow text-eyebrow">
-              {listing.category.name}
-            </p>
-            <h1 id="listing-title" className="mt-1 text-section font-strong leading-title tracking-section">
-              {listing.title}
-            </h1>
-            <p className="mt-1 text-title text-company">
-              {listing.organisation.profile_slug ? (
-                <Link href={`/employers/${listing.organisation.profile_slug}`} className="underline">
-                  {listing.organisation.name}
-                </Link>
-              ) : (
-                listing.organisation.name
-              )}
-            </p>
-            <Suspense fallback={listing.status === "published" ? <SaveSkeleton /> : null}>
-              <ListingSave listing={listing} />
-            </Suspense>
-            <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
-              {listing.locations.map((l) => (
-                <li key={l.slug}>{l.name}</li>
-              ))}
-              {[
-                labelFor(listing.employment_type),
-                labelFor(listing.work_mode),
-                labelFor(listing.experience_level),
-              ]
-                .filter((x): x is string => Boolean(x))
-                .map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
-              <li>
-                <Tag tone={deadline.tone}>{deadline.label}</Tag>
-              </li>
-              <li>
-                <VerificationTag level={listing.verification.level} />
-              </li>
-            </ul>
-            <p className="mt-2 text-base">{listing.summary}</p>
-            {listing.status === "published" ? (
-              <p className="mt-3 text-base md:hidden">
-                <a href="#apply" className="text-accent underline">
-                  How to apply
-                </a>
-              </p>
-            ) : null}
-
-            <Section title="About this opportunity">
-              <SafeHtml html={listing.description_html} />
-            </Section>
-            {listing.requirements_html ? (
-              <Section title="Requirements">
-                <SafeHtml html={listing.requirements_html} />
-              </Section>
-            ) : null}
-            {Object.keys(listing.detail).length > 0 ? (
-              <Section title="Details">
-                <DetailList detail={listing.detail} />
-              </Section>
-            ) : null}
-            {listing.skills.length > 0 ? (
-              <Section title="Skills">
-                <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-                  {listing.skills.map((s) => (
-                    <li key={s.name}>
-                      <Tag>{s.is_required ? `${s.name} (required)` : s.name}</Tag>
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            ) : null}
-          </div>
-
-          <aside aria-label="Key facts and how to apply" className="grid h-max gap-4">
-            <Apply listing={listing} />
-            <Panel>
-              <h2 className="text-title font-strong">Key facts</h2>
-              <dl className="mt-2 grid gap-2 text-base">
-                <Fact term="Deadline" value={deadline.label} />
-                <Fact
-                  term="Pay"
-                  value={salary ?? "Not stated"}
-                  hidden={
-                    listing.salary === null &&
-                    listing.category.code !== "jobs" &&
-                    listing.category.code !== "internships" &&
-                    listing.category.code !== "graduate-programmes"
-                  }
-                />
-                <Fact term="Funding" value={funding ?? "Not stated"} hidden={listing.funding === null} />
-                <Fact
-                  term="Eligible location"
-                  value={listing.geographic_eligibility}
-                  hidden={!listing.geographic_eligibility}
-                />
-                <Fact term="Where" value={listing.location_text} hidden={!listing.location_text} />
-                <Fact term="Reference" value={listing.reference_number} hidden={!listing.reference_number} />
-                <Fact term="Published" value={formatDate(listing.published_at, "Africa/Harare")} />
-              </dl>
-            </Panel>
-            <Panel>
-              <h2 className="text-title font-strong">Where this came from</h2>
-              <p className="mt-2 text-small text-muted">
-                <strong>{VERIFICATION[listing.verification.level].label}.</strong>{" "}
-                {VERIFICATION[listing.verification.level].explanation}
-                {listing.verification.checked_at
-                  ? ` Last checked ${formatDate(listing.verification.checked_at, "Africa/Harare")}.`
-                  : ""}
-              </p>
-              <ul className="m-0 mt-3 grid list-none gap-3 p-0 text-base" aria-label="Sources">
-                {listing.sources.map((s) => (
-                  <li key={`${s.name}-${s.observed_on}`}>
-                    <p className="font-strong">
-                      {s.name}
-                      {s.is_primary ? " (primary)" : ""}
-                    </p>
-                    <p className="text-small text-muted">
-                      {SOURCE_KIND[s.kind] ?? humanise(s.kind)} · checked {formatDate(s.observed_on)}
-                    </p>
-                    {s.url && isHttps(s.url) ? (
-                      <a
-                        href={s.url}
-                        rel="noopener noreferrer nofollow ugc"
-                        target="_blank"
-                        className="text-small text-accent underline"
-                      >
-                        {domainOf(s.url)} (opens the source in a new tab)
-                      </a>
-                    ) : null}
-                    {s.citation ? <p className="text-small">{s.citation}</p> : null}
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-            <Panel>
-              <h2 className="text-title font-strong">Something wrong?</h2>
-              <p className="mt-2 text-small text-muted">
-                Tell us about a suspected fake, a request for payment, wrong application details or an expired
-                listing.
-              </p>
-              <p className="mt-2 text-base">
-                <Link
-                  href={`/opportunities/${listing.slug}/report`}
-                  className="text-accent underline"
-                  data-testid="report-link"
-                >
-                  Report this opportunity
-                </Link>
-              </p>
-              <p className="mt-2 text-small text-muted">
-                Before you apply, read{" "}
-                <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
-                  how to apply safely and avoid scams
-                </Link>
-                .
-              </p>
-            </Panel>
-          </aside>
-        </article>
-      </Container>
+      <JobView
+        listing={listing}
+        personal={
+          <Suspense fallback={listing.status === "published" ? <SaveSkeleton /> : null}>
+            <ListingSave listing={listing} />
+          </Suspense>
+        }
+        related={
+          <Suspense fallback={<RelatedSkeleton />}>
+            <Related listing={listing} />
+          </Suspense>
+        }
+      />
     </>
   );
 }
@@ -295,7 +126,6 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
   if (listing.status !== "published" && !isSaved) return null;
   return (
     <SaveToggle
-      className="mt-2"
       opportunityId={listing.id}
       title={listing.title}
       initialSaved={isSaved}
@@ -309,147 +139,42 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
 /** Holds the save control's place (44px) and announces nothing: it is one small control, not a region. */
 function SaveSkeleton() {
   return (
-    <div aria-hidden="true" className="mt-2 flex min-h-[44px] items-center">
+    <div aria-hidden="true" className="flex min-h-[44px] items-center">
       <SkeletonLine className="w-[120px] skeleton-pulse" />
     </div>
   );
 }
 
-/** Outbound links are only ever rendered for https URLs (the API already enforces this; this is defence in depth). */
-function isHttps(url: string): boolean {
-  try {
-    return new URL(url).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/** Up to three other open listings in the category that have been checked against a source or the issuer. */
+async function Related({ listing }: { listing: OpportunityDetail }) {
+  const params = new URLSearchParams({ category: listing.category.code, limit: "8" });
+  const result = await listOpportunities(params);
+  if (!result.ok) return null;
+  const rows = result.data.data
+    .filter(
+      (r) => r.slug !== listing.slug && r.status === "published" && r.verification.level !== "not_verified",
+    )
+    .slice(0, 3);
+  if (!rows.length) return null;
   return (
-    <section className="mt-6">
-      <h2 className="border-b border-line pb-1 text-title font-strong">{title}</h2>
-      {children}
+    <section aria-labelledby="related-title" className="mt-8">
+      <h2 id="related-title" className="border-b border-line pb-1 text-title font-strong">
+        Related verified opportunities
+      </h2>
+      <div className="mt-1">
+        {rows.map((row) => (
+          <OpportunityRow key={row.id} row={row} />
+        ))}
+      </div>
     </section>
   );
 }
 
-function Fact({ term, value, hidden }: { term: string; value: string | null; hidden?: boolean }) {
-  if (hidden) return null;
+function RelatedSkeleton() {
   return (
-    <div>
-      <dt className="text-small text-muted">{term}</dt>
-      <dd className="m-0">{value ?? "Not stated"}</dd>
+    <div aria-hidden="true" className="mt-8 skeleton-pulse">
+      <SkeletonLine className="h-[22px] w-[240px]" />
+      <SkeletonListingRows count={2} />
     </div>
-  );
-}
-
-/** UPNEXT never receives applications: this only says where to go, and says that it leaves UPNEXT. */
-function Apply({ listing }: { listing: OpportunityDetail }) {
-  const { application } = listing;
-  if (listing.status !== "published") {
-    return (
-      <Callout>
-        <h2 className="text-title font-strong">Applications</h2>
-        <p className="mt-1 text-base">This opportunity is no longer open.</p>
-      </Callout>
-    );
-  }
-  return (
-    <Callout id="apply" data-testid="apply">
-      <h2 className="text-title font-strong">How to apply</h2>
-      {application.method === "external_url" && application.url && isHttps(application.url) ? (
-        <>
-          <p className="mt-1 text-base">
-            Applications are made on the issuer&apos;s website. You will leave UPNEXT; UPNEXT does not receive
-            or track applications.
-          </p>
-          <a
-            href={application.url}
-            data-listing-apply
-            rel="noopener noreferrer nofollow ugc"
-            target="_blank"
-            className="mt-3 inline-flex rounded-control min-h-control items-center justify-center border border-accent-solid bg-accent-solid px-3 py-[7px] text-ctl font-medium text-on-accent hover:bg-accent-solid-hover"
-          >
-            Go to {domainOf(application.url)} (new tab)
-          </a>
-        </>
-      ) : null}
-      {application.method === "email" && application.email ? (
-        <>
-          <p className="mt-1 text-base">Apply by e-mail. UPNEXT does not receive applications.</p>
-          <p className="mt-2 text-base">
-            <a href={`mailto:${application.email}`} data-listing-apply className="text-accent underline">
-              {application.email}
-            </a>
-          </p>
-        </>
-      ) : null}
-      {application.method === "instructions" && application.instructions ? (
-        <>
-          <p className="mt-1 text-small text-muted">
-            Follow the issuer&apos;s instructions. UPNEXT does not receive applications.
-          </p>
-          <p className="mt-2 whitespace-pre-line text-base">{application.instructions}</p>
-        </>
-      ) : null}
-      {listing.contact_details ? (
-        <p className="mt-2 text-small text-muted">Contact: {listing.contact_details}</p>
-      ) : null}
-    </Callout>
-  );
-}
-
-function format(value: unknown, key: string): ReactNode {
-  if (value === null || value === undefined) return "Not stated";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number") return String(value);
-  if (typeof value === "string") {
-    return key.endsWith("_at") && !Number.isNaN(Date.parse(value))
-      ? formatDate(value, "Africa/Harare", true)
-      : humaniseValue(value);
-  }
-  if (Array.isArray(value)) {
-    return (
-      <ul className="m-0 list-disc pl-5">
-        {value.map((item, i) => (
-          <li key={i}>{typeof item === "string" ? humaniseValue(item) : JSON.stringify(item)}</li>
-        ))}
-      </ul>
-    );
-  }
-  if (typeof value === "object") {
-    return (
-      <dl className="m-0 grid gap-1">
-        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
-          <div key={k}>
-            <dt className="inline text-muted">{humanise(k)}: </dt>
-            <dd className="m-0 inline">{format(v, k)}</dd>
-          </div>
-        ))}
-      </dl>
-    );
-  }
-  return String(value);
-}
-
-const LANGUAGES: Record<string, string> = { en: "English", sn: "Shona", nd: "Ndebele" };
-
-/** Enum-like values (`bachelors_degree`) read as words; free text is left untouched. */
-function humaniseValue(text: string): string {
-  if (LANGUAGES[text]) return LANGUAGES[text];
-  if (/^[a-z0-9]+(_[a-z0-9]+)+$/.test(text)) return humanise(text);
-  return /^[a-z]+$/.test(text) ? humanise(text) : text;
-}
-
-function DetailList({ detail }: { detail: Record<string, unknown> }) {
-  return (
-    <dl className="mt-2 grid gap-3 text-base" data-testid="category-details">
-      {Object.entries(detail).map(([key, value]) => (
-        <div key={key} className="grid grid-cols-[200px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
-          <dt className="text-muted">{humanise(key)}</dt>
-          <dd className="m-0">{format(value, key)}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

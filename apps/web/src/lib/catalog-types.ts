@@ -25,6 +25,8 @@ export type OpportunitySummary = {
   employment_type: string | null;
   deadline: Deadline;
   salary: Money | null;
+  /** The source's own wording when it gives no amount ("Competitive"); never an amount. */
+  salary_text?: string | null;
   verification: { level: VerificationLevel; checked_at: string | null };
   primary_source_name: string | null;
   status: ListingStatus;
@@ -53,10 +55,18 @@ export type OpportunityDetail = OpportunitySummary & {
   reference_number: string | null;
   contact_details: string | null;
   application: {
-    method: "external_url" | "email" | "instructions";
+    method: "external_url" | "email" | "both" | "instructions";
     url: string | null;
     email: string | null;
+    email_subject?: string | null;
     instructions: string | null;
+  };
+  /** Staff-set search and sharing text; null parts mean "derive from the title and summary". */
+  seo?: {
+    title: string | null;
+    description: string | null;
+    og_title: string | null;
+    og_description: string | null;
   };
   sources: Source[];
   detail: Record<string, unknown>;

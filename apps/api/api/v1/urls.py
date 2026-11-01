@@ -135,6 +135,11 @@ urlpatterns = [
         name="staff-opportunity",
     ),
     path(
+        "staff/opportunities/<uuid:opportunity_id>/preview",
+        staff_views.PreviewView.as_view(),
+        name="staff-opportunity-preview",
+    ),
+    path(
         "staff/opportunities/<uuid:opportunity_id>/draft",
         staff_views.SaveDraftView.as_view(),
         name="staff-opportunity-draft",
