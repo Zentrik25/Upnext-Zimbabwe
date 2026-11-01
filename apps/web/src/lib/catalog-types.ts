@@ -31,6 +31,8 @@ export type OpportunitySummary = {
   location_text?: string | null;
   verification: { level: VerificationLevel; checked_at: string | null };
   primary_source_name: string | null;
+  /** The listing's own pictures (absolute https addresses); null when it has none. Never an employer logo. */
+  image?: { featured: string | null; social: string | null; alt: string | null } | null;
   status: ListingStatus;
   published_at: string;
   is_saved: boolean | null;

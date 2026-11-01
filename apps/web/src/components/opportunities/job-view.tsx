@@ -226,6 +226,21 @@ export function JobView({
             <VerificationTag level={listing.verification.level} />
           </p>
 
+          {listing.image?.featured ? (
+            <figure className="m-0 mt-3" data-testid="featured-image">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the listing's own picture from our media path */}
+              <img
+                src={listing.image.featured}
+                alt={listing.image.alt || ""}
+                width={1280}
+                height={720}
+                fetchPriority="high"
+                className="block h-auto w-full rounded-card border border-line bg-surface-pale object-cover"
+                style={{ aspectRatio: "16 / 9" }}
+              />
+            </figure>
+          ) : null}
+
           <ul className="m-0 mt-3 flex list-none flex-wrap gap-x-4 gap-y-1.5 p-0 text-ctl text-meta">
             {where ? <Fact icon="pin">{where}</Fact> : null}
             {labelFor(listing.employment_type) ? (

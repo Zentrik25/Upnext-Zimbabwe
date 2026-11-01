@@ -58,7 +58,7 @@ Closed, withdrawn and past-deadline listings show their status and no apply acti
 
 ## 5. Not built, and why
 
-- **Featured image, social image, uploaded source evidence.** There is no file storage anywhere in the system. An upload path needs a decision on storage, type and size limits, malware scanning, retention and privacy, and it cannot be built honestly as a button. Until then links are shared with the standard UPNEXT image and the source is a link or a written reference. **Owner decision needed (new OQ).**
+- **(Superseded for images by D-58, 2026-11-01: featured and social images are now uploaded in the editor; see `STAFF_MANAGEMENT_AND_IMAGES.md`. Uploaded source evidence is still not built.)** **Featured image, social image, uploaded source evidence.** There is no file storage anywhere in the system. An upload path needs a decision on storage, type and size limits, malware scanning, retention and privacy, and it cannot be built honestly as a button. Until then links are shared with the standard UPNEXT image and the source is a link or a written reference. **Owner decision needed (new OQ).**
 - **Organisation logos.** There is no field and none is invented; the page shows the name.
 - **Autosave on a brand-new draft** starts once a category, organisation and title exist (they are what a draft needs); before that the editor says so.
 

@@ -10,7 +10,7 @@ import { OpportunityRow } from "@/components/opportunities/parts";
 import { EmptyState } from "@/components/ui";
 import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
-import { socialFor } from "@/lib/brand";
+import { shareImage, socialFor } from "@/lib/brand";
 import { getOpportunity as fetchOpportunity, listOpportunities } from "@/lib/catalog";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import { absolute } from "@/lib/site";
@@ -54,6 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ...socialFor(listing.canonical_path, {
       title: seo?.og_title || title,
       description: seo?.og_description || description,
+      // The listing's own sharing picture (or its featured one) as an absolute https address; otherwise the
+      // standard UPNEXT image. An employer's logo is never invented.
+      image: shareImage(listing.image),
     }),
     // Closed, withdrawn and past-deadline listings stay readable but are not promoted by search engines (OQ-20 default).
     robots: isOpen(listing) ? undefined : { index: false },

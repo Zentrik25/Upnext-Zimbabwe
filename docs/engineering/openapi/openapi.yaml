@@ -592,6 +592,19 @@ paths:
         '204': { description: 'Password changed' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/staff-invitation/accept:
+    post:
+      tags: [auth]
+      operationId: acceptStaffInvitation
+      description: 'The invited person chooses their password from the one-time link. Added in D-58.'
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [token, password], additionalProperties: false, properties: { token: { type: string, maxLength: 200 }, password: { type: string, minLength: 10, maxLength: 128, format: password } } } } }
+      responses:
+        '204': { description: 'Account active; sign in' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /auth/password/change:
     post:
       tags: [auth]
@@ -1192,6 +1205,94 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/images:
+    post:
+      tags: [staff]
+      operationId: uploadListingImage
+      summary: 'Upload a listing image (JPEG, PNG or WebP, up to 5 MB); returns its generated name and absolute address'
+      description: 'Multipart upload. The real content decides the type; the picture is re-encoded to JPEG, orientation applied, metadata removed, large pictures scaled down. Attach it by saving the name as featured_image or social_image in the draft content. Added in D-58.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/team:
+    get:
+      tags: [staff]
+      operationId: listStaffTeam
+      summary: 'Staff accounts with summary counts, filters, sorting and paging (Administrators only)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: inviteStaff
+      summary: 'Invite a staff member (name, email, role); sends a single-use, time-limited link'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/team/{targetId}:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      tags: [staff]
+      operationId: getStaffMember
+      summary: 'One staff profile: role, permissions, listing work, sessions, activity and the actions available'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [staff]
+      operationId: updateStaffMember
+      summary: 'Change the display name (the only editable detail)'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/team/{targetId}/activity:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      tags: [staff]
+      operationId: listStaffMemberActivity
+      summary: 'Audit events by or about this person, newest first'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/team/{targetId}/actions/{action}:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-sessions] } }]
+    post:
+      tags: [staff]
+      operationId: runStaffMemberAction
+      summary: 'Role change, suspend, reactivate, remove, reinstate, resend invitation, send recovery link, revoke sessions'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /staff/dashboard:
     get:
       tags: [staff]
@@ -1624,6 +1725,16 @@ components:
         location_text: { type: [string, 'null'], description: 'The location as written; shown when no structured place is attached. Added in D-57; additive.' }
         verification: { $ref: '#/components/schemas/Verification' }
         primary_source_name: { type: [string, 'null'] }
+        image:
+          description: 'The listing''s own pictures as absolute https addresses; null when it has none (the site then uses its standard image). The sharing picture falls back to the featured one. A picture never implies verification. Added in D-58; additive.'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [featured, social, alt]
+              properties:
+                featured: { type: [string, 'null'], format: uri }
+                social: { type: [string, 'null'], format: uri }
+                alt: { type: [string, 'null'], maxLength: 125 }
         status: { type: string, enum: [published, expired, withdrawn] }
         published_at: { type: string, format: date-time }
         is_saved: { type: [boolean, 'null'], description: 'null for anonymous callers' }

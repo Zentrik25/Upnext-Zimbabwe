@@ -22,7 +22,7 @@ export function readCsrfCookie(cookieString: string): string | null {
   return null;
 }
 
-async function csrfToken(): Promise<string> {
+export async function csrfToken(): Promise<string> {
   const existing = readCsrfCookie(document.cookie);
   if (existing) return existing;
   const response = await fetch("/api/v1/auth/csrf", { credentials: "same-origin", cache: "no-store" });

@@ -255,6 +255,11 @@ class OpportunityVersion(models.Model):
     # The address the editor wants for the first publication; ignored once the listing has its permanent
     # slug (a slug never changes after it is assigned, D-56).
     slug_hint = models.CharField(max_length=80, null=True, blank=True)
+    # Images (D-58). Storage names (`listings/<hex>.jpg`) from `opportunities.images`, never client paths.
+    # The social image falls back to the featured one, and neither is a claim about the employer.
+    featured_image = models.CharField(max_length=80, null=True, blank=True)
+    featured_image_alt = models.CharField(max_length=125, null=True, blank=True)
+    social_image = models.CharField(max_length=80, null=True, blank=True)
 
     # category detail (versioned JSONB, D-12)
     detail = models.JSONField(default=dict)

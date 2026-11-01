@@ -29,6 +29,7 @@ from catalog.validators import (
     validate_url,
 )
 
+from . import images
 from .errors import FieldErrors, ValidationFailed
 from .models import (
     OPEN_STATES,
@@ -81,6 +82,9 @@ ALLOWED_KEYS = frozenset(
         "seo_description",
         "og_title",
         "og_description",
+        "featured_image",
+        "featured_image_alt",
+        "social_image",
     }
 )
 
@@ -97,9 +101,21 @@ SINGLE_LINE = {
     "seo_description": 200,
     "og_title": 90,
     "og_description": 200,
+    "featured_image_alt": 125,
 }
 # Staff-only content: an employer's draft never carries a chosen address or search/sharing text (D-56).
-STAFF_ONLY_KEYS = frozenset({"slug", "seo_title", "seo_description", "og_title", "og_description"})
+STAFF_ONLY_KEYS = frozenset(
+    {
+        "slug",
+        "seo_title",
+        "seo_description",
+        "og_title",
+        "og_description",
+        "featured_image",
+        "featured_image_alt",
+        "social_image",
+    }
+)
 MULTI_LINE = {"description_md": 20000, "requirements_md": 10000, "application_instructions": 2000}
 ENUMS: dict[str, type[Any]] = {
     "work_mode": WorkMode,
@@ -130,6 +146,9 @@ NULLABLE = {
     "seo_description",
     "og_title",
     "og_description",
+    "featured_image",
+    "featured_image_alt",
+    "social_image",
 }
 
 
@@ -319,6 +338,18 @@ def clean_draft(content: Mapping[str, Any]) -> tuple[dict[str, Any], FieldErrors
                 _err(errors, "slug", "invalid_format", "That address is reserved.")
             else:
                 out["slug_hint"] = candidate
+
+    for key in ("featured_image", "social_image"):
+        if key in content:
+            raw = content[key]
+            if raw is None or (isinstance(raw, str) and not raw.strip()):
+                out[key] = None
+            elif not isinstance(raw, str) or not images.is_stored_name(raw):
+                _err(errors, key, "invalid_format", "Upload the image again.")
+            elif not images.exists(raw):
+                _err(errors, key, "not_found_reference", "That image is not available. Upload it again.")
+            else:
+                out[key] = raw
 
     _clean_relations(content, out, errors)
     if "detail" in content:
@@ -603,6 +634,10 @@ COPIED_COLUMNS = (
     "og_title",
     "og_description",
     "slug_hint",
+    # Added in D-58 (images). Hashed only when set, like the D-56 columns.
+    "featured_image",
+    "featured_image_alt",
+    "social_image",
 )
 OPTIONAL_HASHED = frozenset(
     {
@@ -613,6 +648,9 @@ OPTIONAL_HASHED = frozenset(
         "og_title",
         "og_description",
         "slug_hint",
+        "featured_image",
+        "featured_image_alt",
+        "social_image",
     }
 )
 

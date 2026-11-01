@@ -517,6 +517,80 @@ def employer_listing_expired(ctx: Context) -> EmailContent:
     )
 
 
+# --- staff management (D-58) ---------------------------------------------------------------------------
+def staff_invitation(ctx: Context) -> EmailContent:
+    brand = ctx["brand_name"]
+    role = one_line(str(ctx.get("role_label") or "staff member"), 40)
+    inviter = one_line(str(ctx.get("invited_by") or ""), 60)
+    who = f"{inviter} has" if inviter else "An administrator has"
+    return EmailContent(
+        subject=_subject(ctx, "You are invited to join the UPNEXT Careers team"),
+        preheader=f"Choose your password to start as {role} on {brand}.",
+        eyebrow="Staff invitation",
+        heading=_hello(ctx),
+        paragraphs=(
+            f"{who} invited you to work on {brand} as {role}. Use the button below to choose your own "
+            "password. After you sign in for the first time you will also set up two-step verification.",
+        ),
+        facts=(Fact("Your role", role),),
+        cta=Cta("Accept invitation and set password", ctx["link"]),
+        fallback=True,
+        notices=(
+            Notice(
+                f"This link works once and expires in {_link_ttl(TokenPurpose.STAFF_INVITATION)}.",
+                "If it has expired, ask an administrator to send a new invitation. "
+                "If you were not expecting this, ignore it: nothing is active until the link is used.",
+            ),
+            _never_asks(ctx, share=True),
+        ),
+        reason=f"You get this service message because an administrator invited you to {brand}.",
+    )
+
+
+_CHANGES = {
+    "role": ("Your role has changed", "Your role on {brand} is now {role}."),
+    "suspended": (
+        "Your staff account is suspended",
+        "Your {brand} staff account has been suspended. You cannot sign in to the staff workspace until an "
+        "administrator reactivates it.",
+    ),
+    "reactivated": (
+        "Your staff account is active again",
+        "An administrator reactivated your {brand} staff account. You can sign in again as {role}.",
+    ),
+    "removed": (
+        "Your staff access has ended",
+        "Your staff access to {brand} has been removed and you have been signed out. Your name stays on the "
+        "records of work you did, as the record of who did it.",
+    ),
+    "reinstated": (
+        "Your staff access is restored",
+        "An administrator restored your staff access to {brand} as {role}. Sign in to continue.",
+    ),
+}
+
+
+def staff_account_change(ctx: Context) -> EmailContent:
+    key = str(ctx.get("change") or "role")
+    title, body = _CHANGES.get(key, _CHANGES["role"])
+    brand = ctx["brand_name"]
+    role = one_line(str(ctx.get("role_label") or "a staff member"), 40)
+    return EmailContent(
+        subject=_subject(ctx, title),
+        preheader=body.format(brand=brand, role=role).split(".")[0] + ".",
+        eyebrow="Staff account",
+        heading=_hello(ctx),
+        paragraphs=(body.format(brand=brand, role=role),),
+        notices=(
+            Notice(
+                "Not what you expected?",
+                f"Write to {ctx['contact_email']}. {brand} never asks for your password by email.",
+            ),
+        ),
+        reason=f"You get this service message because it concerns your staff account on {brand}.",
+    )
+
+
 BUILDERS: dict[str, Callable[[Context], EmailContent]] = {
     EmailKind.EMAIL_VERIFICATION: email_verification,
     EmailKind.ACCOUNT_EXISTS: account_exists,
@@ -538,6 +612,8 @@ BUILDERS: dict[str, Callable[[Context], EmailContent]] = {
     EmailKind.EMPLOYER_LISTING_REJECTED: employer_listing_rejected,
     EmailKind.EMPLOYER_LISTING_EXPIRING: employer_listing_expiring,
     EmailKind.EMPLOYER_LISTING_EXPIRED: employer_listing_expired,
+    EmailKind.STAFF_INVITATION: staff_invitation,
+    EmailKind.STAFF_ACCOUNT_CHANGE: staff_account_change,
 }
 
 

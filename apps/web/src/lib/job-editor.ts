@@ -88,6 +88,10 @@ export type EditorState = {
   seoDescription: string;
   ogTitle: string;
   ogDescription: string;
+  /** Stored picture names ("" = none), the featured picture's description and the optional sharing picture. */
+  featuredImage: string;
+  featuredAlt: string;
+  socialImage: string;
 };
 
 const orNull = (value: string): string | null => (value.trim() === "" ? null : value.trim());
@@ -221,6 +225,9 @@ export function emptyState(category: string): EditorState {
     seoDescription: "",
     ogTitle: "",
     ogDescription: "",
+    featuredImage: "",
+    featuredAlt: "",
+    socialImage: "",
   };
 }
 
@@ -282,6 +289,9 @@ export function stateFromDraft(
   s.seoDescription = content.seo_description ?? "";
   s.ogTitle = content.og_title ?? "";
   s.ogDescription = content.og_description ?? "";
+  s.featuredImage = content.featured_image ?? "";
+  s.featuredAlt = content.featured_image_alt ?? "";
+  s.socialImage = content.social_image ?? "";
   return s;
 }
 
@@ -405,6 +415,9 @@ export function buildContent(
     seo_description: orNull(state.seoDescription),
     og_title: orNull(state.ogTitle),
     og_description: orNull(state.ogDescription),
+    featured_image: orNull(state.featuredImage),
+    featured_image_alt: state.featuredImage ? orNull(state.featuredAlt) : null,
+    social_image: orNull(state.socialImage),
   };
   if (pays) {
     content.salary = null;

@@ -26,7 +26,7 @@ from notifications import verification
 from notifications.models import EmailKind
 
 from . import tokens
-from .models import AccountStatus, TokenPurpose, User, UserSession
+from .models import AccountStatus, AuthToken, TokenPurpose, User, UserSession
 
 _LOCAL_PART = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}$")
 _URLISH = re.compile(r"(https?:|www\.|@|\.[a-z]{2,}/)", re.IGNORECASE)
@@ -280,7 +280,12 @@ def _decoy_work(kind: str) -> None:
 
 def resend_verification(email: str) -> None:
     user = User.objects.filter(email=normalise_email(email)).first()
-    if user is None or user.status != AccountStatus.PENDING_VERIFICATION:
+    if (
+        user is None
+        or user.status != AccountStatus.PENDING_VERIFICATION
+        # An invited staff member activates only through the invitation (single use, time limited, D-58).
+        or AuthToken.objects.filter(user=user, purpose=TokenPurpose.STAFF_INVITATION).exists()
+    ):
         _decoy_work(EmailKind.EMAIL_VERIFICATION)
         return
     with transaction.atomic():

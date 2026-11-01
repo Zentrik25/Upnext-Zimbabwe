@@ -39,6 +39,8 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.prod UPNEXT_ENVIRONMENT=local-prod-li
     POSTGRES_DB=build POSTGRES_USER=build POSTGRES_PASSWORD=build \
     python manage.py collectstatic --noinput \
  && chown -R upnext:upnext /app/staticfiles
+# The persistent media location (a named volume in production inherits this ownership when it is first created).
+RUN mkdir -p /srv/media && chown upnext:upnext /srv/media
 USER upnext
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \

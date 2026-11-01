@@ -190,6 +190,14 @@ function groups(session: StaffSession): Group[] {
     });
   out.push({ title: "Reports", items: reports });
   const settings: Item[] = [];
+  if (has("user.status.change")) {
+    settings.push({
+      label: "Staff management",
+      href: "/workspace/team",
+      icon: "users",
+      active: startsWith("/workspace/team"),
+    });
+  }
   if (has("user.role.grant")) {
     settings.push({
       label: "Users",

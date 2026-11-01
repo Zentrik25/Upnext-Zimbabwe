@@ -148,6 +148,13 @@ USE_TZ = True
 # --- Static files (Django admin assets) -----------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# --- Uploaded listing images (D-58) ---------------------------------------------
+# A persistent location: in production a named volume mounted here (never the container's own writable layer).
+MEDIA_ROOT = Path(get_str("UPNEXT_MEDIA_ROOT", str(BASE_DIR / "media")))
+MEDIA_URL = "/media/"
+# Django serves /media/ itself only where no proxy does (development and tests); production nginx serves it.
+UPNEXT_SERVE_MEDIA = get_bool("UPNEXT_SERVE_MEDIA", False)
+FILE_UPLOAD_PERMISSIONS = 0o644
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
@@ -186,6 +193,7 @@ REST_FRAMEWORK = {
         "for_you_user": get_str("UPNEXT_THROTTLE_FOR_YOU", "120/1m"),  # PROPOSED (Phase 6B)
         "unsubscribe_ip": get_str("UPNEXT_THROTTLE_UNSUBSCRIBE", "30/1h"),  # PROPOSED (Phase 6B)
         "report_ip": get_str("UPNEXT_THROTTLE_REPORT", "5/1h"),  # PROPOSED (M2)
+        "staff_upload": get_str("UPNEXT_THROTTLE_STAFF_UPLOAD", "30/10m"),  # PROPOSED (D-58)
     },
     "URL_FORMAT_OVERRIDE": None,
 }

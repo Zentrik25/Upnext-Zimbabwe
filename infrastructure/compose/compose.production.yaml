@@ -29,6 +29,8 @@ x-api-env: &api-env
   UPNEXT_THROTTLE_PEPPER: ${UPNEXT_THROTTLE_PEPPER:?}
   UPNEXT_ENVIRONMENT: production
   UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
+  # Uploaded listing images (D-58) live on the persistent `media` volume, never in a container's own layer.
+  UPNEXT_MEDIA_ROOT: /srv/media
   # The public host, plus `api`: the web container reads the API over the internal network as http://api:8000, so its
   # Host header is `api:8000`. Without it Django answers every one of those server-side reads with 400. The edge still
   # serves, and rewrites the Host to, upnext.co.zw only.
@@ -117,6 +119,8 @@ services:
     environment: *api-env
     user: "10001:10001"
     networks: [data, app]
+    volumes:
+      - media:/srv/media
     depends_on:
       db: {condition: service_healthy}
     # ALLOWED_HOSTS is the one public host, so the probe must present it (the image's own HEALTHCHECK does not).
@@ -138,6 +142,8 @@ services:
       <<: *api-env
       UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat
     user: "10001:10001"
+    volumes:
+      - media:/srv/media # the housekeeping sweep of unattached uploads (D-58)
     networks: [data, egress] # egress: the mail provider and the alert webhook, once enabled
     depends_on:
       api: {condition: service_healthy}
@@ -180,6 +186,7 @@ services:
       - "127.0.0.1:${UPNEXT_PROXY_PORT:-8090}:80" # loopback only
     volumes:
       - ./nginx.production.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - media:/srv/media:ro
     networks: [app]
     depends_on:
       web: {condition: service_started}
@@ -234,3 +241,5 @@ volumes:
     name: upnext-prod-pgdata
   backups:
     name: upnext-prod-backups
+  media: # uploaded listing images (D-58); NOT yet part of the database backup (B-07)
+    name: upnext-prod-media

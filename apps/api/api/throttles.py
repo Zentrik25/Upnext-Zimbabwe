@@ -108,6 +108,12 @@ class UserWriteThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": str(user.pk)}
 
 
+class StaffUploadThrottle(UserWriteThrottle):
+    """Image uploads cost more than other writes (decode and re-encode), so they have their own budget."""
+
+    scope = "staff_upload"
+
+
 class UnsubscribeIpThrottle(IpRateThrottle):
     scope = "unsubscribe_ip"
 

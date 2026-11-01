@@ -17,6 +17,7 @@ const config: NextConfig = {
       { source: "/api/:path*", destination: `${apiOrigin}/api/:path*` },
       { source: "/health/:path*", destination: `${apiOrigin}/health/:path*` },
       { source: "/static/:path*", destination: `${apiOrigin}/static/:path*` },
+      { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
     ];
   },
   async headers() {
