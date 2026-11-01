@@ -97,9 +97,44 @@ export function HeroFrame({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {children}
+        {/* One lavender panel holds the search (or its skeleton) and the quick links under it. */}
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 rounded-feature bg-match-bg p-3 max-sm:p-2.5 md:max-w-[640px] md:p-4">
+          {children}
+          <QuickLinks />
+        </div>
       </Container>
     </section>
+  );
+}
+
+/** The four shortcuts under the search: white chips with an icon. Static, so they are sent with the headline. */
+const QUICK_LINKS: readonly { label: string; href: string; icon: IconName }[] = [
+  { label: "Jobs", href: "/opportunities?category=jobs", icon: "briefcase" },
+  { label: "Tenders", href: "/opportunities?category=tenders", icon: "doc" },
+  { label: "Scholarships", href: "/opportunities?category=scholarships", icon: "cap" },
+  { label: "More", href: "#categories", icon: "grid" },
+];
+
+function QuickLinks() {
+  return (
+    <nav aria-label="Quick links">
+      <ul className="m-0 flex list-none justify-between gap-1.5 p-0 max-sm:gap-1">
+        {QUICK_LINKS.map((link) => (
+          <li key={link.label} className="min-w-0">
+            <Link
+              href={link.href}
+              className="inline-flex min-h-control items-center gap-1.5 rounded-pill bg-surface px-3.5 text-ctl text-ink shadow-subtle hover:shadow-ambient max-sm:gap-1 max-sm:px-2 max-sm:text-[13px] max-[380px]:text-small"
+            >
+              <Icon
+                name={link.icon}
+                className="h-[18px] w-[18px] shrink-0 text-ink max-sm:h-3.5 max-sm:w-3.5 max-[340px]:hidden"
+              />
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -116,7 +151,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
       action="/opportunities"
       method="get"
       aria-label="Search opportunities"
-      className="mt-4 grid gap-2.5 md:max-w-[640px]"
+      className="grid gap-2.5"
     >
       <label htmlFor="home-q" className="sr-only">
         Search by title, organisation or keyword
@@ -195,7 +230,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
 /** What the search form looks like while its lists load: same boxes, same gaps, same button. */
 export function HeroSearchSkeleton() {
   return (
-    <LoadingRegion label="search" heading={false} className="mt-4 grid gap-2.5 md:max-w-[640px]">
+    <LoadingRegion label="search" heading={false} className="grid gap-2.5">
       <SkeletonInput label={false} field="h-field" />
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
         <SkeletonInput label={false} field="h-field" />
