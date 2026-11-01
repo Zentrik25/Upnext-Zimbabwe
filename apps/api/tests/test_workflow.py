@@ -546,7 +546,14 @@ def test_verification_needs_an_evidence_note_and_a_staff_role(world: World, peop
 # --- validation at submit -------------------------------------------------------------------------------
 def test_submit_returns_every_publish_grade_failure_at_once(world: World, people: dict[str, User]) -> None:
     opp = new_draft(
-        world, people["author"], "jobs-1", sources=[], locations=[], title="Hi", summary="Too short"
+        world,
+        people["author"],
+        "jobs-1",
+        sources=[],
+        locations=[],
+        location_text=None,
+        title="Hi",
+        summary="Too short",
     )
     with pytest.raises(ValidationFailed) as excinfo:
         workflow.submit(people["author"], opp.pk, expected_row_version=opp.row_version)

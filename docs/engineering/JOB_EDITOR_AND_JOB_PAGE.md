@@ -1,4 +1,6 @@
-# Job editor and job page (D-56) — DRAFT
+# Job editor and job page (D-56, trimmed by D-57) — DRAFT
+
+> **D-57 (2026-11-01) supersedes the rows below where they differ:** Location is one written line (structured places are matched from it); Pay is one free-text line that the page shows as "Pay: TBA" when empty; experience level, minimum qualification, minimum experience years, professional registration, languages required, driving licence required and benefits are no longer edited or shown (stored values are kept); the "Source & verification" section is removed. The tables below describe D-56 as first merged.
 
 Status: DRAFT for owner review. Branch `ccr-9d9ecf81-ozrhfg`, draft pull request only: nothing is merged or deployed. Decision: D-56 in `docs/governance/DECISION_REGISTER.md`. Screenshots: `docs/design/job-editor/`.
 

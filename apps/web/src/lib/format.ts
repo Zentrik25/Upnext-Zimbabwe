@@ -108,7 +108,7 @@ export function verificationTone(level: VerificationLevel): "default" | "good" {
 }
 
 export function locationLabel(row: OpportunitySummary): string | null {
-  if (row.locations.length === 0) return null;
+  if (row.locations.length === 0) return row.location_text?.trim() || null;
   const primary = row.locations.find((l) => l.is_primary) ?? row.locations[0]!;
   return row.locations.length > 1 ? `${primary.name} +${row.locations.length - 1}` : primary.name;
 }

@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
 import { Button, Checkbox, Select, TextInput, Textarea } from "@/components/ui";
 import type { Location } from "@/lib/catalog-types";
 import { apiFetch, describeFailure } from "@/lib/client-api";
-import { humanise } from "@/lib/format";
 import {
   buildContent,
   canCreate,
@@ -23,14 +21,7 @@ import {
 import type { ListingDetail, StaffCategory } from "@/lib/staff-types";
 import { ActionPanel } from "./action-panel";
 import { DetailInput } from "./detail-input";
-import {
-  ApplyFields,
-  BulletTextarea,
-  LocationPicker,
-  OrganisationPicker,
-  Row,
-  SalaryField,
-} from "./job-editor-parts";
+import { ApplyFields, BulletTextarea, OrganisationPicker, Row } from "./job-editor-parts";
 
 type Option = { id: string; name: string };
 type Errors = Record<string, string>;
@@ -40,13 +31,6 @@ const WORK_MODES = [
   ["on_site", "On site"],
   ["hybrid", "Hybrid"],
   ["remote", "Remote"],
-] as const;
-const EXPERIENCE = [
-  ["none", "No experience needed"],
-  ["entry", "Entry level"],
-  ["mid", "Mid level"],
-  ["senior", "Senior"],
-  ["executive", "Executive"],
 ] as const;
 
 /** The first message of each error path, so the form can show one inline message per field. */
@@ -140,6 +124,7 @@ export function JobEditor({
           pending.content,
           categories.find((c) => c.code === listing.category.code) ?? categories[0]!,
           pending.organisation,
+          locations,
         )
       : emptyState(firstCategory),
   );
@@ -210,7 +195,11 @@ export function JobEditor({
           latest.current.detail?.pending && !latest.current.detail.pending.hidden
             ? latest.current.detail.pending.content
             : null;
-        const built = buildContent(cur.state, category, existing, { today, addressLocked });
+        const built = buildContent(cur.state, category, existing, {
+          today,
+          addressLocked,
+          places: locations,
+        });
         if (Object.keys(built.errors).length) {
           setSave("failed");
           if (loud) {
@@ -266,7 +255,7 @@ export function JobEditor({
         }
       }
     },
-    [category, today, addressLocked],
+    [category, today, addressLocked, locations],
   );
 
   // Autosave: a few seconds after the last change, once a draft exists or can be created.
@@ -353,7 +342,7 @@ export function JobEditor({
             <Select
               id="category"
               value={state.category}
-              onChange={(ev) => set({ category: ev.target.value, employmentType: "", salaryMode: "none" })}
+              onChange={(ev) => set({ category: ev.target.value, employmentType: "" })}
             >
               {categories.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -435,23 +424,39 @@ export function JobEditor({
           </Row>
         </div>
 
-        <fieldset className="grid gap-1 border-0 p-0">
-          <legend className="mb-1 text-ctl font-medium text-check-text">Location</legend>
-          <LocationPicker
-            options={locations}
-            value={state.locationIds}
-            onChange={(locationIds) => set({ locationIds })}
-            error={e("locations")}
+        <Row
+          id="location_text"
+          title="Location"
+          error={e("locations", "location_text")}
+          hint="As written in the source, for example “Harare”, “Bulawayo and Gweru” or “Remote”."
+        >
+          <TextInput
+            id="location_text"
+            maxLength={200}
+            value={state.locationText}
+            invalid={Boolean(e("locations", "location_text"))}
+            aria-describedby={e("locations", "location_text") ? "location_text-error" : "location_text-hint"}
+            onChange={(ev) => set({ locationText: ev.target.value })}
           />
-        </fieldset>
+        </Row>
 
         {pays ? (
-          <fieldset className="grid gap-1 border-0 p-0">
-            <legend className="mb-1 text-ctl font-medium text-check-text">
-              Salary <span className="font-light text-muted">(optional, only what the source states)</span>
-            </legend>
-            <SalaryField state={state} set={set} error={e("salary", "salary_text")} />
-          </fieldset>
+          <Row
+            id="salary"
+            title="Pay"
+            optional
+            error={e("salary", "salary_text")}
+            hint="Type it as the source gives it, for example “US$500 per month” or “Competitive”. Left empty, the page shows TBA."
+          >
+            <TextInput
+              id="salary"
+              maxLength={120}
+              value={state.salaryText}
+              invalid={Boolean(e("salary", "salary_text"))}
+              aria-describedby={e("salary", "salary_text") ? "salary-error" : "salary-hint"}
+              onChange={(ev) => set({ salaryText: ev.target.value })}
+            />
+          </Row>
         ) : null}
 
         <Row
@@ -563,7 +568,7 @@ export function JobEditor({
           <Section
             id="more"
             title="More details"
-            summary="Work arrangement, experience, funding, sectors and category details"
+            summary="Work arrangement, reference, contact, funding, sectors and category details"
             open={Boolean(open.more)}
             onToggle={(v) => setOpen((o) => ({ ...o, more: v }))}
           >
@@ -582,36 +587,12 @@ export function JobEditor({
                   ))}
                 </Select>
               </Row>
-              {pays ? (
-                <Row id="experience_level" title="Experience level" error={e("experience_level")}>
-                  <Select
-                    id="experience_level"
-                    value={state.experienceLevel}
-                    onChange={(ev) => set({ experienceLevel: ev.target.value })}
-                  >
-                    <option value="">Not stated</option>
-                    {EXPERIENCE.map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                  </Select>
-                </Row>
-              ) : null}
               <Row id="reference_number" title="Reference number" optional error={e("reference_number")}>
                 <TextInput
                   id="reference_number"
                   maxLength={100}
                   value={state.referenceNumber}
                   onChange={(ev) => set({ referenceNumber: ev.target.value })}
-                />
-              </Row>
-              <Row id="location_text" title="Location, as written" optional error={e("location_text")}>
-                <TextInput
-                  id="location_text"
-                  maxLength={200}
-                  value={state.locationText}
-                  onChange={(ev) => set({ locationText: ev.target.value })}
                 />
               </Row>
               <Row
@@ -817,171 +798,6 @@ export function JobEditor({
                 Featured and sharing images cannot be uploaded yet: links are shared with the standard UPNEXT
                 image.
               </p>
-            </div>
-          </Section>
-
-          <Section
-            id="source"
-            title="Source & verification"
-            summary={detail ? detail.verification_label : "Recorded separately, by someone else"}
-            open={Boolean(open.source)}
-            onToggle={(v) => setOpen((o) => ({ ...o, source: v }))}
-          >
-            <Row
-              id="source_observed_on"
-              title="Primary source checked on"
-              hint="The day you looked at the source. A new or changed link is dated today."
-            >
-              <TextInput
-                id="source_observed_on"
-                type="date"
-                max={today}
-                value={state.sourceObservedOn}
-                onChange={(ev) => set({ sourceObservedOn: ev.target.value })}
-              />
-            </Row>
-            {state.otherSources.map((src, index) => (
-              <div key={index} className="grid gap-2 rounded-card border border-line p-3">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Row id={`os-${index}-kind`} title="Kind">
-                    <Select
-                      id={`os-${index}-kind`}
-                      value={src.kind}
-                      onChange={(ev) =>
-                        set({
-                          otherSources: state.otherSources.map((x, i) =>
-                            i === index ? { ...x, kind: ev.target.value } : x,
-                          ),
-                        })
-                      }
-                    >
-                      {SOURCE_KINDS.map((k) => (
-                        <option key={k.value} value={k.value}>
-                          {k.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </Row>
-                  <Row id={`os-${index}-name`} title="Name" error={e(`sources.${index + 1}.name`)}>
-                    <TextInput
-                      id={`os-${index}-name`}
-                      maxLength={200}
-                      value={src.name}
-                      onChange={(ev) =>
-                        set({
-                          otherSources: state.otherSources.map((x, i) =>
-                            i === index ? { ...x, name: ev.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </Row>
-                  <Row
-                    id={`os-${index}-url`}
-                    title="Web address"
-                    optional
-                    error={e(`sources.${index + 1}.url`)}
-                  >
-                    <TextInput
-                      id={`os-${index}-url`}
-                      value={src.url ?? ""}
-                      onChange={(ev) =>
-                        set({
-                          otherSources: state.otherSources.map((x, i) =>
-                            i === index ? { ...x, url: ev.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </Row>
-                  <Row id={`os-${index}-date`} title="Checked on">
-                    <TextInput
-                      id={`os-${index}-date`}
-                      type="date"
-                      value={src.observed_on}
-                      onChange={(ev) =>
-                        set({
-                          otherSources: state.otherSources.map((x, i) =>
-                            i === index ? { ...x, observed_on: ev.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </Row>
-                  <Row id={`os-${index}-cite`} title="Reference" optional className="sm:col-span-2">
-                    <TextInput
-                      id={`os-${index}-cite`}
-                      maxLength={500}
-                      value={src.citation ?? ""}
-                      onChange={(ev) =>
-                        set({
-                          otherSources: state.otherSources.map((x, i) =>
-                            i === index ? { ...x, citation: ev.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </Row>
-                </div>
-                <div>
-                  <Button
-                    variant="secondary"
-                    onClick={() => set({ otherSources: state.otherSources.filter((_, i) => i !== index) })}
-                  >
-                    Remove this source
-                  </Button>
-                </div>
-              </div>
-            ))}
-            <div>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  set({
-                    otherSources: [
-                      ...state.otherSources,
-                      {
-                        kind: "other",
-                        name: "",
-                        url: null,
-                        citation: null,
-                        observed_on: today,
-                        is_primary: false,
-                      },
-                    ],
-                  })
-                }
-              >
-                Add another source
-              </Button>
-            </div>
-            <div className="grid gap-1 rounded-card bg-surface-pale p-3 text-small">
-              <p className="m-0 font-medium">Verification</p>
-              <p className="m-0 text-muted">
-                A source link or document is where the information came from, not proof that it is genuine.
-                Verification is checked and recorded separately, by someone other than the author.
-              </p>
-              {detail ? (
-                <>
-                  <p className="m-0">Current status: {detail.verification_label}</p>
-                  {detail.verifications.length ? (
-                    <ul className="m-0 list-disc pl-5">
-                      {detail.verifications.slice(-3).map((v) => (
-                        <li key={`${v.version_no}-${v.checked_at}`}>
-                          {humanise(v.outcome)} ({humanise(v.method)}) by {v.checked_by}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="m-0 text-muted">No verification has been recorded yet.</p>
-                  )}
-                  <Link href={`/workspace/opportunities/${detail.id}`} className="text-accent underline">
-                    Open the full audit history
-                  </Link>
-                </>
-              ) : (
-                <p className="m-0 text-muted">The history appears once the draft exists.</p>
-              )}
             </div>
           </Section>
         </div>

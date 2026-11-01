@@ -5,11 +5,11 @@
  * back unchanged unless the editor opened "More details" and changed it. Nothing is invented: an empty input is
  * an absent value, and a field the source does not give is simply left empty.
  */
+import { salaryLine } from "./format";
 import type { DetailField, DraftContent, SourceRow, StaffCategory } from "./staff-types";
 
 export type Option = { value: string; label: string };
 export type ApplyMethod = "external_url" | "email" | "both" | "instructions";
-export type SalaryMode = "none" | "amount" | "range" | "text";
 
 /** Categories where pay is a thing (the others carry funding instead), as the publish rules say. */
 export const PAY_CATEGORIES = ["jobs", "internships", "graduate-programmes"];
@@ -49,13 +49,8 @@ export type EditorState = {
   category: string;
   organisation: { id: string; name: string } | null;
   title: string;
-  locationIds: string[]; // the first one is the primary location
   employmentType: string;
-  salaryMode: SalaryMode;
-  salaryMin: string;
-  salaryMax: string;
-  salaryCurrency: string;
-  salaryPeriod: string;
+  /** Pay as written; empty is shown to the public as "TBA". */
   salaryText: string;
   deadlineDay: string;
   summary: string;
@@ -118,13 +113,57 @@ export function sourceName(url: string, kind: string, reference: string): string
   return reference.trim().slice(0, 60) || SOURCE_KINDS.find((k) => k.value === kind)?.label || "Source";
 }
 
+export type PlaceOption = { id: string; name: string; kind?: string };
+
+/**
+ * The structured places a written location names, in the order they are written (the first is the primary one),
+ * so search and filters keep working without a second location control. Words only; nothing is guessed.
+ */
+export function matchPlaces(text: string, places: PlaceOption[]): string[] {
+  const lower = text.toLowerCase();
+  if (!lower.trim()) return [];
+  const hits: { id: string; at: number }[] = [];
+  const find = (pattern: RegExp, place: PlaceOption | undefined) => {
+    const m = place ? pattern.exec(lower) : null;
+    if (place && m) hits.push({ id: place.id, at: m.index });
+  };
+  for (const p of places) {
+    if (p.kind === "country" || p.kind === "remote") continue;
+    const name = p.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    find(new RegExp(`(?<![a-z])${name}(?![a-z])`), p);
+  }
+  find(
+    /(?<![a-z])(nationwide|countrywide|zimbabwe-wide|all of zimbabwe)(?![a-z])/,
+    places.find((p) => p.kind === "country"),
+  );
+  find(
+    /(?<![a-z])(remote|work from home|home-based)(?![a-z])/,
+    places.find((p) => p.kind === "remote"),
+  );
+  return hits
+    .sort((a, b) => a.at - b.at)
+    .map((h) => h.id)
+    .filter((id, i, all) => all.indexOf(id) === i)
+    .slice(0, 5);
+}
+
+/** Category details the owner retired from the editor (D-57). Stored values are kept and still sent back unchanged. */
+export const RETIRED_DETAIL = [
+  "minimum_qualification",
+  "minimum_experience_years",
+  "professional_registration",
+  "languages_required",
+  "driving_licence_required",
+  "benefits",
+];
+
 /** Whether the category's schema has a field, so the editor shows only what its category can hold. */
 export const hasDetail = (category: StaffCategory | undefined, name: string): boolean =>
   Boolean(category?.detail_fields.some((f) => f.name === name));
 
 /** Detail fields shown under "More details": everything except the one promoted to the main form. */
 export const moreDetailFields = (category: StaffCategory | undefined): DetailField[] =>
-  (category?.detail_fields ?? []).filter((f) => f.name !== "vacancies");
+  (category?.detail_fields ?? []).filter((f) => f.name !== "vacancies" && !RETIRED_DETAIL.includes(f.name));
 
 function detailToText(
   fields: DetailField[],
@@ -149,13 +188,7 @@ export function emptyState(category: string): EditorState {
     category,
     organisation: null,
     title: "",
-    locationIds: [],
     employmentType: "",
-    salaryMode: "none",
-    salaryMin: "",
-    salaryMax: "",
-    salaryCurrency: "USD",
-    salaryPeriod: "month",
     salaryText: "",
     deadlineDay: "",
     summary: "",
@@ -196,25 +229,18 @@ export function stateFromDraft(
   content: DraftContent,
   category: StaffCategory,
   organisation: { id: string; name: string },
+  places: PlaceOption[] = [],
 ): EditorState {
   const s = emptyState(category.code);
   s.organisation = organisation;
   s.title = content.title;
-  s.locationIds = [...content.locations]
-    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
-    .map((l) => l.location_id);
   s.employmentType = content.employment_type ?? "";
-  const pay = content.salary;
-  if (content.salary_text) {
-    s.salaryMode = "text";
-    s.salaryText = content.salary_text;
-  } else if (pay && (pay.min || pay.max)) {
-    s.salaryMode = pay.min && pay.max && pay.min !== pay.max ? "range" : "amount";
-    s.salaryMin = pay.min ?? pay.max ?? "";
-    s.salaryMax = pay.min && pay.max && pay.min !== pay.max ? pay.max : "";
-    s.salaryCurrency = pay.currency ?? "USD";
-    s.salaryPeriod = pay.period ?? "month";
-  }
+  // Pay is one line. An older structured amount is shown as the line a reader saw, so nothing is lost silently.
+  s.salaryText =
+    salaryLine({
+      salary: content.salary ? { ...content.salary, currency: content.salary.currency ?? "USD" } : null,
+      salary_text: content.salary_text,
+    }) ?? "";
   s.deadlineDay = dayOf(content.deadline_at);
   s.summary = content.summary;
   s.responsibilities = content.description_md;
@@ -237,7 +263,14 @@ export function stateFromDraft(
   s.referenceNumber = content.reference_number ?? "";
   s.contactDetails = content.contact_details ?? "";
   s.geographicEligibility = content.geographic_eligibility ?? "";
-  s.locationText = content.location_text ?? "";
+  // Location is one line as written. A place that was only attached as a structured row is written out.
+  s.locationText =
+    content.location_text?.trim() ||
+    [...content.locations]
+      .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+      .map((l) => places.find((p) => p.id === l.location_id)?.name)
+      .filter(Boolean)
+      .join(", ");
   s.fundingMin = content.funding?.min ?? "";
   s.fundingMax = content.funding?.max ?? "";
   s.fundingCurrency = content.funding?.currency ?? "USD";
@@ -302,7 +335,7 @@ export function buildContent(
   state: EditorState,
   category: StaffCategory,
   existing: DraftContent | null,
-  options: { today: string; addressLocked: boolean },
+  options: { today: string; addressLocked: boolean; places?: PlaceOption[] },
 ): { content: Record<string, unknown>; errors: Record<string, string[]> } {
   const pays = PAY_CATEGORIES.includes(category.code);
   const { detail, errors } = detailFromText(category.detail_fields, state.detail);
@@ -311,15 +344,6 @@ export function buildContent(
     min.trim() === "" && max.trim() === ""
       ? null
       : { min: orNull(min), max: orNull(max), currency: orNull(currency), period: orNull(period) };
-  let salary: ReturnType<typeof money> = null;
-  let salaryText: string | null = null;
-  if (pays) {
-    if (state.salaryMode === "amount")
-      salary = money(state.salaryMin, state.salaryMin, state.salaryCurrency, state.salaryPeriod);
-    else if (state.salaryMode === "range")
-      salary = money(state.salaryMin, state.salaryMax, state.salaryCurrency, state.salaryPeriod);
-    else if (state.salaryMode === "text") salaryText = orNull(state.salaryText);
-  }
 
   const method = state.applyMethod;
   const wantsUrl = method === "external_url" || method === "both";
@@ -358,7 +382,10 @@ export function buildContent(
     description_md: state.responsibilities.trim(),
     requirements_md: orNull(state.qualifications),
     organisation_id: state.organisation?.id,
-    locations: state.locationIds.map((id, index) => ({ location_id: id, is_primary: index === 0 })),
+    locations: matchPlaces(state.locationText, options.places ?? []).map((id, index) => ({
+      location_id: id,
+      is_primary: index === 0,
+    })),
     employment_type: orNull(state.employmentType),
     work_mode: orNull(state.workMode),
     experience_level: orNull(state.experienceLevel),
@@ -380,8 +407,8 @@ export function buildContent(
     og_description: orNull(state.ogDescription),
   };
   if (pays) {
-    content.salary = salary;
-    content.salary_text = salaryText;
+    content.salary = null;
+    content.salary_text = orNull(state.salaryText);
   } else {
     content.funding = money(state.fundingMin, state.fundingMax, state.fundingCurrency, state.fundingPeriod);
   }

@@ -66,8 +66,7 @@ async function fillDraft(page: Page, tag: string) {
   const day = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
   await page.locator("#deadline_day").fill(day);
   await page.locator("#apply-url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
-  await page.getByLabel("Search locations").fill("Harare");
-  await page.getByRole("option", { name: "Harare", exact: true }).click();
+  await page.locator("#location_text").fill("Harare");
   await page.locator("#source_kind").selectOption("issuer_website");
   await page.locator("#source_url").fill(`https://water.example.org/vacancies/${tag}`);
 }

@@ -27,6 +27,8 @@ export type OpportunitySummary = {
   salary: Money | null;
   /** The source's own wording when it gives no amount ("Competitive"); never an amount. */
   salary_text?: string | null;
+  /** The location as written; shown when no structured place is attached. */
+  location_text?: string | null;
   verification: { level: VerificationLevel; checked_at: string | null };
   primary_source_name: string | null;
   status: ListingStatus;

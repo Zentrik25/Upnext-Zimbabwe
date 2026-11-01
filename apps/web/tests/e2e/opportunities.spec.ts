@@ -106,7 +106,10 @@ test.describe("detail page", () => {
     await openFirst(page, "Graduate Electrical Engineer");
     await expect(page.getByText("Example Power Services").first()).toBeVisible();
     await expect(page.getByText("USD 700 – 900 per month").first()).toBeVisible();
-    await expect(page.getByTestId("category-details")).toContainText("Minimum qualification");
+    await expect(page.getByTestId("category-details")).toContainText("Application documents");
+    // Retired details (D-57) are stored on this demo listing but are no longer shown.
+    await expect(page.getByTestId("category-details")).not.toContainText("Minimum qualification");
+    await expect(page.getByTestId("category-details")).not.toContainText("Benefits");
     // Demo data: this listing has a recorded source check, which is not issuer verification.
     await expect(page.getByText("Source checked").first()).toBeVisible();
     await expect(page.getByLabel("Sources").locator("xpath=..")).toContainText(

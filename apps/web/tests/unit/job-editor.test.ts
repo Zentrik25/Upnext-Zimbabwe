@@ -6,6 +6,7 @@ import {
   detailFromText,
   emptyState,
   hostOf,
+  matchPlaces,
   moreDetailFields,
   sourceName,
   stateFromDraft,
@@ -109,13 +110,18 @@ const stored = {
   og_description: null,
 } as unknown as DraftContent;
 
-const opts = { today, addressLocked: false };
+const places = [
+  { id: "h", name: "Harare", kind: "city" },
+  { id: "b", name: "Bulawayo", kind: "city" },
+  { id: "z", name: "Zimbabwe", kind: "country" },
+  { id: "r", name: "Remote", kind: "remote" },
+];
+const opts = { today, addressLocked: false, places };
 
 describe("state from a stored draft", () => {
-  it("shows what is stored: primary location first, wording salary, primary source, other sources kept", () => {
-    const s = stateFromDraft(stored, jobs, org);
-    expect(s.locationIds).toEqual(["h", "b"]);
-    expect(s.salaryMode).toBe("text");
+  it("shows what is stored: location written out primary first, pay wording, primary source, other sources kept", () => {
+    const s = stateFromDraft(stored, jobs, org, places);
+    expect(s.locationText).toBe("Harare, Bulawayo");
     expect(s.salaryText).toBe("Competitive");
     expect(s.applyMethod).toBe("both");
     expect(s.sourceUrl).toBe("https://acme.example/jobs");
@@ -124,7 +130,7 @@ describe("state from a stored draft", () => {
     expect(s.detail).toMatchObject({ vacancies: "2", benefits: "Medical aid" });
   });
 
-  it("reads an exact amount and a range from the stored salary", () => {
+  it("shows an older structured amount or range as one pay line, so nothing is lost silently", () => {
     const exact = stateFromDraft(
       {
         ...stored,
@@ -134,7 +140,7 @@ describe("state from a stored draft", () => {
       jobs,
       org,
     );
-    expect([exact.salaryMode, exact.salaryMin, exact.salaryMax]).toEqual(["amount", "500.00", ""]);
+    expect(exact.salaryText).toContain("500");
     const range = stateFromDraft(
       {
         ...stored,
@@ -144,12 +150,13 @@ describe("state from a stored draft", () => {
       jobs,
       org,
     );
-    expect([range.salaryMode, range.salaryMax, range.salaryCurrency, range.salaryPeriod]).toEqual([
-      "range",
-      "700.00",
-      "ZWG",
-      "year",
-    ]);
+    expect(range.salaryText).toContain("700");
+  });
+
+  it("keeps the location the editor wrote, and writes out a place that was only attached", () => {
+    const written = stateFromDraft({ ...stored, location_text: "Harare CBD" }, jobs, org, places);
+    expect(written.locationText).toBe("Harare CBD");
+    expect(stateFromDraft(stored, jobs, org).locationText).toBe(""); // no names known, nothing invented
   });
 });
 
@@ -172,11 +179,11 @@ describe("drafts saved before the simplified editor", () => {
     const draft = legacy as unknown as DraftContent;
     const s = stateFromDraft(draft, jobs, org);
     expect(s.employmentType).toBe("permanent");
-    expect([s.salaryMode, s.salaryMin, s.salaryMax]).toEqual(["range", "500.00", "700.00"]);
-    expect([s.slug, s.seoTitle, s.ogTitle, s.applySubject, s.salaryText]).toEqual(["", "", "", "", ""]);
+    expect(s.salaryText).toContain("500");
+    expect([s.slug, s.seoTitle, s.ogTitle, s.applySubject]).toEqual(["", "", "", ""]);
     const { content } = buildContent(s, jobs, draft, opts);
-    expect(content.salary).toMatchObject({ min: "500.00", max: "700.00" });
-    expect(content.salary_text).toBeNull();
+    expect(content.salary).toBeNull(); // pay is one line now
+    expect(content.salary_text).toContain("700");
     expect(content.employment_type).toBe("permanent");
     expect(content.seo_title).toBeNull();
   });
@@ -199,7 +206,7 @@ describe("drafts saved before the simplified editor", () => {
 
 describe("the request body", () => {
   it("round-trips a stored draft without inventing or losing anything", () => {
-    const s = stateFromDraft(stored, jobs, org);
+    const s = stateFromDraft(stored, jobs, org, places);
     const { content, errors } = buildContent(s, jobs, stored, opts);
     expect(errors).toEqual({});
     expect(content.locations).toEqual([
@@ -250,36 +257,30 @@ describe("the request body", () => {
     expect([none.application_url, none.application_email]).toEqual([null, null]); // no fake destination
   });
 
-  it("maps salary modes: exact, range, wording and nothing; never both an amount and wording", () => {
-    const s = emptyState("jobs");
-    const base = { ...s, organisation: org, title: "T" };
-    expect(buildContent({ ...base, salaryMode: "none" }, jobs, null, opts).content).toMatchObject({
+  it("sends pay as the one line typed, trimmed, and nothing when it is empty (the page shows TBA)", () => {
+    const base = { ...emptyState("jobs"), organisation: org, title: "T" };
+    expect(buildContent({ ...base, salaryText: "" }, jobs, null, opts).content).toMatchObject({
       salary: null,
       salary_text: null,
     });
     expect(
-      buildContent({ ...base, salaryMode: "amount", salaryMin: "500" }, jobs, null, opts).content,
-    ).toMatchObject({
-      salary: { min: "500", max: "500", currency: "USD", period: "month" },
-      salary_text: null,
-    });
-    expect(
-      buildContent({ ...base, salaryMode: "range", salaryMin: "500", salaryMax: "700" }, jobs, null, opts)
-        .content,
-    ).toMatchObject({
-      salary: { min: "500", max: "700" },
-    });
-    expect(
-      buildContent(
-        { ...base, salaryMode: "text", salaryText: " Negotiable ", salaryMin: "9" },
-        jobs,
-        null,
-        opts,
-      ).content,
+      buildContent({ ...base, salaryText: " US$500 per month " }, jobs, null, opts).content,
     ).toMatchObject({
       salary: null,
-      salary_text: "Negotiable",
+      salary_text: "US$500 per month",
     });
+  });
+
+  it("derives the structured places from the written location, in written order", () => {
+    const base = { ...emptyState("jobs"), organisation: org, title: "T" };
+    const at = (locationText: string) =>
+      buildContent({ ...base, locationText }, jobs, null, opts).content.locations;
+    expect(at("Bulawayo and Harare")).toEqual([
+      { location_id: "b", is_primary: true },
+      { location_id: "h", is_primary: false },
+    ]);
+    expect(at("Somewhere unlisted")).toEqual([]);
+    expect(at("")).toEqual([]);
   });
 
   it("carries funding, not pay, for a category that has no pay", () => {
@@ -387,9 +388,21 @@ describe("helpers", () => {
     expect(errors["detail.fee"]).toBeTruthy();
   });
 
-  it("promotes vacancies to the main form and keeps the other details under More details", () => {
-    expect(moreDetailFields(jobs).map((f) => f.name)).toEqual(["benefits", "driving_licence_required"]);
+  it("promotes vacancies to the main form and hides the details the owner retired", () => {
+    expect(moreDetailFields(jobs).map((f) => f.name)).toEqual([]);
     expect(moreDetailFields(tenders)).toEqual([]);
+  });
+
+  it("still sends a retired detail that is already stored, so older listings lose nothing", () => {
+    const { content } = buildContent(stateFromDraft(stored, jobs, org, places), jobs, stored, opts);
+    expect(content.detail).toMatchObject({ benefits: ["Medical aid"] });
+  });
+
+  it("matches places by whole word, and nationwide or remote wording to the country and remote entries", () => {
+    expect(matchPlaces("Harare", places)).toEqual(["h"]);
+    expect(matchPlaces("Hararexyz", places)).toEqual([]);
+    expect(matchPlaces("Nationwide, or remote", places)).toEqual(["z", "r"]);
+    expect(matchPlaces("Remote, then Harare", places)).toEqual(["r", "h"]);
   });
 
   it("toggles bullets on the selected lines only, and back", () => {
