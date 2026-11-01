@@ -454,3 +454,13 @@ def test_trust_is_offered_on_enrolment_too_and_the_secret_is_not_in_the_session(
     assert StaffMfaDevice.objects.filter(user=staff, confirmed_at__isnull=False).exists()
     token = client.cookies[COOKIE].value
     assert token not in str(dict(client.session.items()))
+
+
+def test_deleting_an_account_removes_its_trusted_devices(make_user: Callable[..., User]) -> None:
+    from accounts import deletion
+
+    user = seeker_with_mfa(make_user)
+    trust_via_login(user)
+    assert TrustedDevice.objects.filter(user=user).count() == 1
+    assert deletion.execute(user.pk, now=timezone.now() + timedelta(days=60), restored=True)
+    assert not TrustedDevice.objects.filter(user=user).exists()
