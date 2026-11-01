@@ -142,8 +142,8 @@ describe("SafeHtml", () => {
 
 describe("verification wording", () => {
   it("keeps source-checked visually distinct from verified with the issuer", () => {
-    expect(verificationTone("issuer_verified")).toBe("good");
-    expect(verificationTone("source_checked")).toBe("default");
+    expect(verificationTone("issuer_verified")).toBe("accent");
+    expect(verificationTone("source_checked")).toBe("good");
     expect(verificationTone("not_verified")).toBe("default");
   });
 });

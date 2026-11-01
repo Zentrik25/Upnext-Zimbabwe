@@ -78,16 +78,17 @@ const links = () => screen.queryAllByRole("link");
 const text = () => document.body.textContent ?? "";
 
 describe("the order of the page", () => {
-  it("runs title, organisation and status, facts, apply, overview, responsibilities, qualifications, how to apply, source", () => {
+  it("runs title, organisation and status, facts, apply, overview, responsibilities, qualifications, how to apply, report link", () => {
     render(<JobView listing={listing()} />);
     const order = [
       screen.getByRole("heading", { level: 1, name: "Senior Accountant" }),
       screen.getByRole("link", { name: /Apply Now/ }),
+      screen.getByRole("heading", { name: "Overview" }),
       screen.getByText("Lead the finance team of a water authority."),
       screen.getByRole("heading", { name: "Key responsibilities" }),
       screen.getByRole("heading", { name: "Qualifications & experience" }),
       screen.getByRole("heading", { name: "How to apply" }),
-      screen.getByRole("heading", { name: "Where this came from" }),
+      screen.getByRole("link", { name: "Report this opportunity" }),
     ];
     for (let i = 1; i < order.length; i++)
       expect(
@@ -95,6 +96,15 @@ describe("the order of the page", () => {
       ).toBeTruthy();
     expect(screen.getByText("Source checked")).toBeInTheDocument(); // the genuine status, next to the organisation
     expect(screen.queryByRole("img")).toBeNull(); // no logo, no featured image, none made up
+  });
+
+  it("states the verification level only as its label, with no sources block", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.getAllByText("Source checked")).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "Where this came from" })).toBeNull();
+    expect(screen.queryByLabelText("Sources")).toBeNull();
+    expect(text()).not.toMatch(/Last checked|not confirmation from the issuing organisation|\(primary\)/i);
+    expect(text()).not.toContain("herald.co.zw");
   });
 
   it("shows each fact once and only the facts it has", () => {
@@ -269,7 +279,7 @@ describe("the apply actions", () => {
     expect(
       links().filter(
         (l) =>
-          /^(https?:|mailto:)/.test(l.getAttribute("href") ?? "") && !l.closest("[aria-label='Sources']"),
+          /^(https?:|mailto:)/.test(l.getAttribute("href") ?? ""),
       ),
     ).toHaveLength(0);
     expect(screen.getByText("Hand deliver your CV to reception before 4pm.")).toBeInTheDocument();
@@ -284,7 +294,7 @@ describe("the apply actions", () => {
       />,
     );
     expect(screen.queryByRole("link", { name: /Apply Now/ })).toBeNull();
-    expect(screen.queryByTestId("apply")).toBeNull(); // no destination: no apply block, the source stays under Sources
+    expect(screen.queryByTestId("apply")).toBeNull(); // no destination: no apply block, and no source is shown
   });
 
   it("refuses a non-https application address", () => {
