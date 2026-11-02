@@ -94,11 +94,11 @@ export function SaveToggle({
           onClick={toggle}
           disabled={busy}
           aria-pressed={saved}
+          aria-label={`Save ${title}`}
           className={cn(blockClass, "disabled:cursor-not-allowed disabled:opacity-60")}
         >
           <Icon name="bookmark" className={cn("h-5 w-5", saved && "fill-current text-accent")} />
-          {saved ? "Saved" : "Save"}
-          <span className="sr-only"> {title}</span>
+          <span aria-hidden="true">{saved ? "Saved" : "Save"}</span>
         </button>
         <span
           role="status"
