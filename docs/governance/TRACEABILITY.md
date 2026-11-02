@@ -186,6 +186,9 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
 | `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
 | `uploadListingImage` | POST `/staff/images` | staff | R-57 |
+| `listStaffMedia` | GET `/staff/media` | staff | R-62 |
+| `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
+| `setStaffVerification` | PUT `/staff/opportunities/{id}/verification` | staff | R-62 |
 | `listStaffTeam` | GET `/staff/team` | staff | R-56 |
 | `inviteStaff` | POST `/staff/team` | staff | R-56 |
 | `getStaffMember` | GET `/staff/team/{targetId}` | staff | R-56 |
