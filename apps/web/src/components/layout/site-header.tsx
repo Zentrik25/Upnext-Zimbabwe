@@ -39,18 +39,18 @@ export async function SiteHeader() {
           <Logo />
         </Link>
         {/* Phone icons: shown only on a listing page (see .job-header-icons in globals.css) */}
-        <div className="job-header-icons ml-auto mr-1 hidden items-center sm:!hidden">
+        <div className="job-header-icons ml-auto hidden items-center sm:!hidden">
           <Link
             href="/opportunities"
             aria-label="Search opportunities"
-            className="inline-flex h-[44px] w-[44px] items-center justify-center"
+            className="inline-flex h-[44px] w-9 items-center justify-center"
           >
             <Icon name="search" className="h-6 w-6" />
           </Link>
           <Link
             href={user ? "/alerts" : "/sign-in?next=%2Falerts"}
             aria-label="Job alerts"
-            className="inline-flex h-[44px] w-[44px] items-center justify-center"
+            className="inline-flex h-[44px] w-9 items-center justify-center"
           >
             <Icon name="bell" className="h-6 w-6" />
           </Link>
