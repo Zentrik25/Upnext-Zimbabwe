@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache, Suspense } from "react";
 import { Container } from "@/components/layout";
@@ -6,8 +7,9 @@ import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { JobView } from "@/components/opportunities/job-view";
 import { ListingEvents } from "@/components/opportunities/listing-events";
-import { OpportunityRow } from "@/components/opportunities/parts";
+import { RelatedCard } from "@/components/opportunities/job-parts";
 import { EmptyState } from "@/components/ui";
+import { Icon } from "@/components/ui/icons";
 import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { shareImage, socialFor } from "@/lib/brand";
@@ -134,7 +136,7 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
       initialSaved={isSaved}
       signedIn={Boolean(user)}
       returnTo={`/opportunities/${listing.slug}`}
-      showLabel
+      block
     />
   );
 }
@@ -142,33 +144,41 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
 /** Holds the save control's place (44px) and announces nothing: it is one small control, not a region. */
 function SaveSkeleton() {
   return (
-    <div aria-hidden="true" className="flex min-h-[44px] items-center">
-      <SkeletonLine className="w-[120px] skeleton-pulse" />
-    </div>
+    <div
+      aria-hidden="true"
+      className="min-h-[48px] rounded-control border border-line bg-surface-pale skeleton-pulse"
+    />
   );
 }
 
-/** Up to three other open listings in the category that have been checked against a source or the issuer. */
+/** Up to three other published listings in the category, as compact cards. Real listings only. */
 async function Related({ listing }: { listing: OpportunityDetail }) {
   const params = new URLSearchParams({ category: listing.category.code, limit: "8" });
   const result = await listOpportunities(params);
   if (!result.ok) return null;
   const rows = result.data.data
-    .filter(
-      (r) => r.slug !== listing.slug && r.status === "published" && r.verification.level !== "not_verified",
-    )
+    .filter((r) => r.slug !== listing.slug && r.status === "published")
     .slice(0, 3);
   if (!rows.length) return null;
   return (
-    <section aria-labelledby="related-title" className="mt-8">
-      <h2 id="related-title" className="border-b border-line pb-1 text-title font-strong">
-        Related verified opportunities
-      </h2>
-      <div className="mt-1">
-        {rows.map((row) => (
-          <OpportunityRow key={row.id} row={row} />
-        ))}
+    <section aria-labelledby="related-title" className="mt-6">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 id="related-title" className="m-0 text-title font-strong text-ink">
+          Related opportunities
+        </h2>
+        <Link
+          href={`/opportunities?category=${listing.category.code}`}
+          className="inline-flex items-center gap-1 text-ctl font-medium text-accent"
+        >
+          View all
+          <Icon name="arrowRight" className="h-4 w-4" />
+        </Link>
       </div>
+      <ul className="m-0 grid list-none gap-2 p-0">
+        {rows.map((row) => (
+          <RelatedCard key={row.id} row={row} />
+        ))}
+      </ul>
     </section>
   );
 }
