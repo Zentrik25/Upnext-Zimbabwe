@@ -35,7 +35,8 @@ THUMB_QUALITY: Final = 76
 NAME_RE: Final = re.compile(r"^listings/[0-9a-f]{32}\.jpg$")
 ALLOWED_FORMATS: Final = {"JPEG", "PNG", "WEBP"}
 MAX_BYTES: Final = 5 * 1024 * 1024
-MIN_WIDTH, MIN_HEIGHT = 400, 225
+# Very small pictures are welcome (a logo or a small photo); this only refuses a few-pixel icon or tracking dot.
+MIN_WIDTH, MIN_HEIGHT = 64, 36
 MAX_SIDE: Final = 8000
 MAX_PIXELS: Final = 40_000_000
 OUTPUT_MAX: Final = 1600  # the longer side after scaling down
