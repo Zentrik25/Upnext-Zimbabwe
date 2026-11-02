@@ -116,15 +116,7 @@ class Command(BaseCommand):
                 second if index % 2 == 0 else editor, opp.pk, expected_row_version=opp.row_version
             )
             if index % 3 == 0:
-                workflow.record_verification(
-                    admin_user,
-                    opp.pk,
-                    version_no=1,
-                    level="source_checked",
-                    method="source_page_review",
-                    outcome="confirmed",
-                    evidence_note="Compared the listing with the issuer notice at the cited address.",
-                )
+                workflow.set_verification(admin_user, opp.pk, verified=True)
         self._pipeline_examples(contributor, editor, org_ids, loc, sec, skills, today)
 
     def _pipeline_examples(

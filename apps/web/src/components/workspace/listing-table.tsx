@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ListingRow } from "@/lib/staff-types";
 import { dateText, dateTimeText, StatusBadge } from "./badges";
 import { RowMenu } from "./row-menu";
+import { VerifyToggle } from "./verify-toggle";
 
 export type TableKind = "default" | "queue";
 
@@ -87,14 +88,18 @@ export function ListingTable({
                   <>
                     <td className={td}>{r.submitted_by ?? "-"}</td>
                     <td className={`${td} whitespace-nowrap`}>{dateTimeText(r.submitted_at)}</td>
-                    <td className={td}>{r.verification_label}</td>
+                    <td className={td}>
+                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                    </td>
                   </>
                 ) : (
                   <>
                     <td className={td}>{r.location}</td>
                     <td className={td}>{r.category.name}</td>
                     <td className={`${td} whitespace-nowrap tabular-nums`}>{dateText(r.closing)}</td>
-                    <td className={td}>{r.verification_label}</td>
+                    <td className={td}>
+                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                    </td>
                   </>
                 )}
                 <td className={td}>
@@ -126,7 +131,9 @@ export function ListingTable({
             <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
               <StatusBadge tone={r.status_tone}>{r.status_label}</StatusBadge>
               <span>Closing: {dateText(r.closing)}</span>
-              <span>{r.verification_label}</span>
+            </p>
+            <p className="m-0 mt-2">
+              <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
             </p>
           </li>
         ))}

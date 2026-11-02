@@ -110,8 +110,8 @@ test.describe("detail page", () => {
     // Retired details (D-57) are stored on this demo listing but are no longer shown.
     await expect(page.getByTestId("category-details")).not.toContainText("Minimum qualification");
     await expect(page.getByTestId("category-details")).not.toContainText("Benefits");
-    // Demo data: this listing has a recorded source check, which is not issuer verification.
-    await expect(page.getByText("Source checked").first()).toBeVisible();
+    // Verification is one switch (D-62): the page says Verified or Not verified, whichever the demo data has.
+    await expect(page.getByText(/^(Verified|Not verified)$/).first()).toBeVisible();
     // No sources block: the verification level is shown only as its label.
     await expect(page.getByRole("heading", { name: "Where this came from" })).toHaveCount(0);
     await expect(page.getByLabel("Sources")).toHaveCount(0);

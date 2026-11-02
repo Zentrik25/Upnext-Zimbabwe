@@ -10,7 +10,6 @@ from access.policy import (
     can_publish,
     can_reject,
     can_return,
-    can_verify,
 )
 
 ALICE, BOB, CAROL = "alice", "bob", "carol"
@@ -30,14 +29,13 @@ def facts(
     return RevisionFacts(state, frozenset({ALICE}), content, approved_by, approved_hash)
 
 
-def test_sod_01_author_cannot_approve_reject_return_or_verify_even_with_authority() -> None:
+def test_sod_01_author_cannot_approve_reject_or_return_even_with_authority() -> None:
     author_editor = Actor(ALICE, EDITOR | CONTRIB)
     author_admin = Actor(ALICE, ADMIN | CONTRIB)
     for actor in (author_editor, author_admin):
         assert can_approve(actor, facts("in_review")).reason is Reason.SEPARATION_OF_DUTIES
         assert can_reject(actor, facts("in_review")).reason is Reason.SEPARATION_OF_DUTIES
         assert can_return(actor, facts("approved")).reason is Reason.SEPARATION_OF_DUTIES
-        assert can_verify(actor, facts("in_review")).reason is Reason.SEPARATION_OF_DUTIES
 
 
 def test_sod_02_another_editor_or_administrator_can_approve() -> None:
@@ -91,8 +89,6 @@ def test_review_actions_enforce_state() -> None:
     assert can_approve(editor, facts("approved")).reason is Reason.INVALID_TRANSITION
     assert can_return(editor, facts("in_review")).reason is Reason.INVALID_TRANSITION
     assert can_return(editor, facts("approved"))
-    assert can_verify(editor, facts("published"))
-    assert can_verify(editor, facts("draft")).reason is Reason.INVALID_TRANSITION
 
 
 def test_decision_is_truthy_only_when_allowed() -> None:

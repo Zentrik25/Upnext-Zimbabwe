@@ -67,8 +67,8 @@ async function fillDraft(page: Page, tag: string) {
   await page.locator("#deadline_day").fill(day);
   await page.locator("#apply-url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
   await page.locator("#location_text").fill("Harare");
-  await page.locator("#source_kind").selectOption("issuer_website");
-  await page.locator("#source_url").fill(`https://water.example.org/vacancies/${tag}`);
+  // No source fields (D-62): the form no longer asks where the vacancy was published.
+  await expect(page.locator("#source_url")).toHaveCount(0);
 }
 
 /** Opens the new-opportunity form and sets the three things a draft needs: category, title, organisation. */

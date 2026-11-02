@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { Button } from "@/components/ui";
 import { csrfToken } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
+import { MediaDialog } from "./media-dialog";
 
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -11,7 +12,15 @@ export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 /** Where a stored picture is served from (same origin: the proxy serves `/media/`). */
 export const mediaUrl = (name: string): string => `/media/${name}`;
 
-export type UploadResult = { name: string; url: string; width: number; height: number; bytes: number };
+export type UploadResult = {
+  name: string;
+  url: string;
+  width: number;
+  height: number;
+  bytes: number;
+  /** True when the same picture was already in the library and nothing new was stored. */
+  reused?: boolean;
+};
 
 /** The mistakes that can be caught before anything is sent. The server checks the real content again. */
 export function precheck(file: { type: string; size: number }): string | null {
@@ -32,7 +41,7 @@ export async function uploadImage(
     const xhr = new XMLHttpRequest();
     const body = new FormData();
     body.append("file", file);
-    xhr.open("POST", "/api/v1/staff/images");
+    xhr.open("POST", "/api/v1/staff/media");
     xhr.setRequestHeader("X-CSRFToken", token);
     xhr.setRequestHeader("Accept", "application/json");
     xhr.withCredentials = true;
@@ -49,7 +58,8 @@ export async function uploadImage(
       } catch {
         /* a non-JSON answer from a proxy */
       }
-      if (xhr.status === 201 && parsed.name) return resolve({ ok: true, image: parsed as UploadResult });
+      if ((xhr.status === 201 || xhr.status === 200) && parsed.name)
+        return resolve({ ok: true, image: parsed as UploadResult });
       if (xhr.status === 413)
         return resolve({ ok: false, message: "The image is larger than 5 MB. Choose a smaller one." });
       if (xhr.status === 429)
@@ -65,8 +75,10 @@ export async function uploadImage(
 
 /**
  * One picture slot: choose a file (the phone's gallery or camera roll too), drop one on desktop, see the preview
- * at once, replace or remove it. The file is uploaded as soon as it is chosen; the editor then saves the stored
- * name with the draft like any other field, so an upload that is never saved leaves nothing attached.
+ * at once, replace or remove it. The file is uploaded to the Media Library as soon as it is chosen; the editor
+ * then saves the stored name with the draft like any other field, so an upload that is never saved leaves
+ * nothing attached. With `library`, the slot offers "Choose from Library | Upload New": a picture already in the
+ * library is reused by name, and removing it from this listing never deletes it from the library.
  */
 export function ImageUpload({
   id,
@@ -78,6 +90,8 @@ export function ImageUpload({
   buttonLabel = "Upload image",
   describedBy,
   error,
+  library = false,
+  libraryLabel = "Choose from Library",
 }: {
   id: string;
   /** The stored name ("" for none). */
@@ -90,6 +104,9 @@ export function ImageUpload({
   buttonLabel?: string;
   describedBy?: string;
   error?: string;
+  /** Offer the Media Library beside the upload. */
+  library?: boolean;
+  libraryLabel?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -99,6 +116,8 @@ export function ImageUpload({
   const [problem, setProblem] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const busy = progress !== null;
   const shown = local ?? (value ? mediaUrl(value) : null);
 
@@ -111,6 +130,7 @@ export function ImageUpload({
     const early = precheck(file);
     if (early) return setProblem(early);
     setProblem(null);
+    setNotice(null);
     setConfirming(false);
     setLocal(URL.createObjectURL(file));
     setProgress(0);
@@ -118,6 +138,8 @@ export function ImageUpload({
     const result = await uploadImage(file, setProgress, abort.current.signal);
     setProgress(null);
     if (result.ok) {
+      if (result.image.reused)
+        setNotice("That picture was already in the library, so the existing one is used.");
       onChange(result.image.name);
     } else {
       setProblem(result.message);
@@ -158,7 +180,9 @@ export function ImageUpload({
           />
         ) : (
           <p className="m-0 max-w-[30ch] px-3 text-center text-ctl text-muted">
-            Drop an image here, or use the button.
+            {library
+              ? "Choose a picture from the library, or upload a new one."
+              : "Drop an image here, or use the button."}
             <span className="mt-1 block text-small">JPEG, PNG or WebP, up to 5 MB</span>
           </p>
         )}
@@ -189,14 +213,26 @@ export function ImageUpload({
           aria-hidden="true"
           onChange={(ev) => void take(ev.target.files?.[0])}
         />
+        {library ? (
+          <Button
+            id={id}
+            variant="secondary"
+            disabled={busy}
+            aria-haspopup="dialog"
+            aria-describedby={[describedBy, status].filter(Boolean).join(" ") || undefined}
+            onClick={() => setBrowsing(true)}
+          >
+            {libraryLabel}
+          </Button>
+        ) : null}
         <Button
-          id={id}
+          id={library ? undefined : id}
           variant="secondary"
           disabled={busy}
           aria-describedby={[describedBy, status].filter(Boolean).join(" ") || undefined}
           onClick={() => input.current?.click()}
         >
-          {value || local ? "Replace image" : buttonLabel}
+          {library ? "Upload New" : value || local ? "Replace image" : buttonLabel}
         </Button>
         {busy ? (
           <Button variant="secondary" onClick={() => abort.current?.abort()}>
@@ -206,7 +242,9 @@ export function ImageUpload({
         {value && !busy ? (
           confirming ? (
             <>
-              <span className="text-ctl text-muted">Remove this image?</span>
+              <span className="text-ctl text-muted">
+                Remove this image?{library ? " It stays in the library." : ""}
+              </span>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -240,6 +278,8 @@ export function ImageUpload({
           </>
         ) : busy ? (
           "Uploading the image."
+        ) : notice ? (
+          notice
         ) : value ? (
           "The image is saved with the draft."
         ) : (
@@ -264,6 +304,18 @@ export function ImageUpload({
             does not say.
           </span>
         </label>
+      ) : null}
+      {library ? (
+        <MediaDialog
+          open={browsing}
+          onClose={() => setBrowsing(false)}
+          currentName={value || undefined}
+          onUse={(item) => {
+            setProblem(null);
+            setNotice(null);
+            onChange(item.name);
+          }}
+        />
       ) : null}
     </div>
   );

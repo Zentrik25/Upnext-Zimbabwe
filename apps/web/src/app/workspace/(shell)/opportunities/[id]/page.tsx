@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionPanel } from "@/components/workspace/action-panel";
+import { VerifyToggle } from "@/components/workspace/verify-toggle";
 import { dateText, dateTimeText, StatusBadge } from "@/components/workspace/badges";
 import { requireStaff, staffJson } from "@/lib/staff";
 import { humanise } from "@/lib/format";
@@ -122,7 +123,6 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
     throw new Error("The opportunity could not be loaded.");
   }
   const o = result.data;
-  const open = o.pending && !o.pending.hidden ? o.pending : o.live && !o.live.hidden ? o.live : null;
   return (
     <>
       <p className="m-0 text-ctl">
@@ -140,7 +140,14 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
             <span>{o.category.name}</span>
             <span>{o.organisation ?? "-"}</span>
             <span>Closing: {dateText(o.closing)}</span>
-            <span>{o.verification_label}</span>
+          </p>
+          <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-ctl text-muted">
+            <VerifyToggle id={o.id} verified={o.verified} canVerify={o.can_verify} />
+            {o.verified && o.verified_by ? (
+              <span className="text-small">
+                {o.verified_by}, {dateTimeText(o.verified_at)}
+              </span>
+            ) : null}
           </p>
         </div>
         {o.public_path ? (
@@ -170,7 +177,12 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
           rowVersion={o.row_version}
           actions={o.actions}
           initial={initial}
-          defaults={{ version_no: open && !open.hidden ? open.version_no : "" }}
+          reveal={[
+            ...(o.duplicates.some((d) => d.level === "hard") ? ["confirm_duplicate"] : []),
+            ...(o.warnings.some((w) => w.includes("payments by applicants"))
+              ? ["applicant_payment_reviewed"]
+              : []),
+          ]}
         />
       </section>
 
@@ -178,11 +190,15 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
         <Revision title="Revision being worked on" version={o.pending} />
         <Revision title="Live revision" version={o.live} />
 
-        <section className={card} aria-labelledby="verif-title">
-          <h2 id="verif-title" className={h2}>
-            Verification records
-          </h2>
-          {o.verifications.length ? (
+        {o.verifications.length ? (
+          <section className={card} aria-labelledby="verif-title">
+            <h2 id="verif-title" className={h2}>
+              Earlier verification records
+            </h2>
+            <p className="m-0 mb-3 text-ctl text-muted">
+              Kept from before verification became a single Verify / Unverify switch. They no longer decide
+              the status.
+            </p>
             <ul className="m-0 grid list-none gap-3 p-0">
               {o.verifications.map((v, i) => (
                 <li key={i} className="border-t border-line pt-3 text-ctl">
@@ -197,13 +213,8 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="m-0 text-ctl text-muted">
-              No verification has been recorded. Source and verification are separate: a listing can have
-              sources and still be unverified.
-            </p>
-          )}
-        </section>
+          </section>
+        ) : null}
 
         <section className={card} aria-labelledby="history-title">
           <h2 id="history-title" className={h2}>

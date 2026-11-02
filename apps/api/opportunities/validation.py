@@ -7,7 +7,7 @@ failures are returned together as `{path: [(code, message)]}`.
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from catalog import markdown
@@ -175,25 +175,8 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
     elif method == ApplicationMethod.INSTRUCTIONS:
         _length(errors, "application_instructions", version.application_instructions, 20, 2000)
 
-    sources = list(version.sources.all())
-    if not sources:
-        _add(errors, "sources", "source_required", "Add at least one source.")
-    elif sum(1 for s in sources if s.is_primary) != 1:
-        _add(errors, "sources", "primary_source_required", "Exactly one source must be primary.")
-    for i, source in enumerate(sources):
-        if not source.url and not source.citation:
-            _add(errors, f"sources.{i}", "required", "A source needs a URL or a citation.")
-        if source.url:
-            _recheck_url(errors, f"sources.{i}.url", source.url)
-        if source.observed_on > now.date():
-            _add(errors, f"sources.{i}.observed_on", "in_past", "The check date cannot be in the future.")
-        elif source.observed_on < (now - timedelta(days=366)).date():
-            _add(
-                errors,
-                f"sources.{i}.observed_on",
-                "out_of_range",
-                "The source was checked more than a year ago.",
-            )
+    # Staff no longer enter sources (D-62), so none is required to publish. Any that exist are history: their
+    # address and date were checked when they were saved, and an old one must not block an amendment.
 
     active = DetailSchema.objects.filter(
         category=version.opportunity.category, status=DetailSchemaStatus.ACTIVE

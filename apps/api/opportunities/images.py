@@ -6,8 +6,9 @@ orientation is applied, transparency is flattened onto white, large pictures are
 metadata (EXIF location, camera, comments, embedded profiles) is dropped. What is stored is a new JPEG under a
 random generated name, so nothing the client chose (name, extension, path) reaches the file system.
 
-Storage is Django's default storage on a persistent location (`MEDIA_ROOT`, a volume in production). The database
-holds only the generated names. A name is released (the file deleted) only when no revision refers to it any more.
+Storage is Django's default storage on a persistent location (`MEDIA_ROOT`, a volume in production). Every stored
+picture belongs to the Media Library (`opportunities.media`, D-62): a listing refers to it by name, and taking it off a
+listing never deletes the file. Only a file with no library row at all (an interrupted upload) is ever swept.
 """
 
 from __future__ import annotations
@@ -16,7 +17,6 @@ import io
 import logging
 import re
 import uuid
-from collections.abc import Iterable
 from datetime import timedelta
 from typing import Final
 
@@ -29,6 +29,9 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 logger = logging.getLogger("upnext.images")
 
 PREFIX: Final = "listings/"
+THUMB_PREFIX: Final = "listings/thumbs/"
+THUMB_SIDE: Final = 480
+THUMB_QUALITY: Final = 76
 NAME_RE: Final = re.compile(r"^listings/[0-9a-f]{32}\.jpg$")
 ALLOWED_FORMATS: Final = {"JPEG", "PNG", "WEBP"}
 MAX_BYTES: Final = 5 * 1024 * 1024
@@ -54,13 +57,25 @@ def is_stored_name(value: str) -> bool:
 
 
 def exists(name: str) -> bool:
-    return is_stored_name(name) and default_storage.exists(name)
+    """A library picture whose file is really there; the only kind a listing may refer to."""
+    from .models import MediaAsset
+
+    return (
+        is_stored_name(name)
+        and MediaAsset.objects.filter(name=name).exists()
+        and default_storage.exists(name)
+    )
 
 
 def url_of(name: str | None) -> str | None:
     """The absolute https address of a stored image (social cards need absolute addresses)."""
     if not name or not is_stored_name(name):
         return None
+    return url_of_any(name)
+
+
+def url_of_any(name: str) -> str:
+    """The absolute address of any file this module stored (a picture or its thumbnail)."""
     path = default_storage.url(name)
     if path.startswith(("http://", "https://")):
         return path
@@ -117,6 +132,38 @@ def store(data: bytes) -> str:
     return default_storage.save(name, ContentFile(data))
 
 
+def thumb_name_for(name: str) -> str:
+    return f"{THUMB_PREFIX}{name.removeprefix(PREFIX)}"
+
+
+def make_thumbnail(jpeg: bytes) -> bytes:
+    """A small JPEG for browsing the library (the stored picture is already clean, so this only scales it)."""
+    with Image.open(io.BytesIO(jpeg)) as opened:
+        small = opened.convert("RGB")
+        small.thumbnail((THUMB_SIDE, THUMB_SIDE), Image.Resampling.LANCZOS)
+        out = io.BytesIO()
+        small.save(out, format="JPEG", quality=THUMB_QUALITY, optimize=True, progressive=True)
+    return out.getvalue()
+
+
+def store_thumbnail(name: str, jpeg: bytes) -> str:
+    """Write the thumbnail beside the picture; returns its name, or "" when it could not be made."""
+    try:
+        target = thumb_name_for(name)
+        if default_storage.exists(target):
+            default_storage.delete(target)
+        return default_storage.save(target, ContentFile(make_thumbnail(jpeg)))
+    except OSError, ValueError, SyntaxError:
+        logger.warning("image.thumbnail_failed")
+        return ""
+
+
+def in_library(name: str) -> bool:
+    from .models import MediaAsset
+
+    return MediaAsset.objects.filter(name=name).exists()
+
+
 def referenced(name: str) -> bool:
     from .models import OpportunityVersion
 
@@ -126,23 +173,9 @@ def referenced(name: str) -> bool:
     )
 
 
-def release(names: Iterable[str | None]) -> int:
-    """Delete stored files that no revision refers to any more. Safe to call with names still in use."""
-    removed = 0
-    for name in {n for n in names if n and is_stored_name(n)}:
-        if referenced(name):
-            continue
-        try:
-            if default_storage.exists(name):
-                default_storage.delete(name)
-                removed += 1
-        except OSError:  # a failed clean-up must never fail the request that triggered it
-            logger.warning("image.release_failed")
-    return removed
-
-
 def purge_unreferenced(*, older_than: timedelta = timedelta(hours=24)) -> int:
-    """Delete uploads that were never attached to a draft (or were detached long ago)."""
+    """Delete stored files that are in neither the library nor any revision (an upload that was interrupted
+    before its library row was written). A library picture is never swept, used or not."""
     cutoff = timezone.now() - older_than
     removed = 0
     try:
@@ -151,7 +184,7 @@ def purge_unreferenced(*, older_than: timedelta = timedelta(hours=24)) -> int:
         return 0
     for file in files:
         name = f"{PREFIX}{file}"
-        if not is_stored_name(name) or referenced(name):
+        if not is_stored_name(name) or in_library(name) or referenced(name):
             continue
         try:
             if default_storage.get_modified_time(name) < cutoff:

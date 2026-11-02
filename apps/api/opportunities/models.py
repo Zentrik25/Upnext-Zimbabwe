@@ -143,6 +143,15 @@ class Opportunity(models.Model):
         max_length=16, choices=VerificationLevel.choices, default=VerificationLevel.NOT_VERIFIED
     )
     verification_checked_at = models.DateTimeField(null=True, blank=True)
+    # The single verification switch (D-62): Verified or Not Verified, independent of publication. It
+    # belongs to the listing, not to a revision, so it survives an amendment. `verification_level` above
+    # is kept in step with it (issuer_verified / not_verified) so the public queries and
+    # `VerificationRecord` history stay valid.
+    is_verified = models.BooleanField(default=False)
+    verification_changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    verification_changed_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_at = models.DateTimeField(null=True, blank=True)
@@ -403,6 +412,33 @@ class VersionSector(models.Model):
 
     def __str__(self) -> str:
         return f"{self.version_id}/{self.sector_id}"
+
+
+class MediaAsset(models.Model):
+    """One stored picture in the central Media Library (D-62). Listings refer to it by its storage `name`
+    (`featured_image` / `social_image` on a revision), so one file serves any number of listings and unlinking
+    it from a listing never touches the file. Rows are created only by `opportunities.media`."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=80, unique=True)  # `listings/<hex>.jpg`
+    thumb_name = models.CharField(max_length=100, blank=True, default="")
+    title = models.CharField(max_length=200, blank=True, default="")
+    original_filename = models.CharField(max_length=255, blank=True, default="")
+    content_hash = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    byte_size = models.PositiveIntegerField(null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["-created_at", "-id"], name="media_recent_idx")]
+
+    def __str__(self) -> str:
+        return self.title or self.name
 
 
 class OpportunitySource(models.Model):

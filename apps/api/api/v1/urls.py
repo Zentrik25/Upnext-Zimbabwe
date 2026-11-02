@@ -157,7 +157,13 @@ urlpatterns = [
         staff_views.ActionView.as_view(),
         name="staff-opportunity-action",
     ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/verification",
+        staff_views.VerificationView.as_view(),
+        name="staff-opportunity-verification",
+    ),
     path("staff/images", staff_images.ImageUploadView.as_view(), name="staff-image-upload"),
+    path("staff/media", staff_images.MediaView.as_view(), name="staff-media"),
     path("staff/team", staff_team.TeamListView.as_view(), name="staff-team"),
     path("staff/team/<uuid:target_id>", staff_team.TeamDetailView.as_view(), name="staff-team-member"),
     path(
