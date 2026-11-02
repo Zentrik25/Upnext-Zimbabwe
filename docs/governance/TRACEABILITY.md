@@ -65,8 +65,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-55 | Staff workspace (Next.js, /workspace) on a staff API (/api/v1/staff/*) in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, records and catalogue management (claims, profiles, verifications, reports, outbox, delivery, users, roles, audit, organisations, taxonomies, content health), two-step proof shared with the session, themes, mobile drawer; no new write path and no bypass of the workflow; Django Admin retired; Administrators and Editors publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, never for employer-owned listings, verification still independent | D-46; D-49; ADR-0024; ADR-0025 | SC-12, SC-13 | getStaffSession, getStaffTwoStep, verifyStaffTwoStep, getStaffDashboard, listStaffOpportunities, createStaffDraft, getStaffOpportunity, saveStaffDraft, previewStaffOpportunity, runStaffAction, listStaffActivity, searchStaff, listStaffCategories, listStaffOrganisations, listStaffRecordKinds, listStaffRecords, getStaffRecord, runStaffRecordAction, getStaffContentHealth, listStaffCatalogKinds, listStaffCatalog, createStaffCatalogRecord, getStaffCatalogRecord, updateStaffCatalogRecord, lookupStaffReference | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-08 | OQ-13 |
 | R-56 | Staff management for Administrators (D-58): list, search, filter, sort and page staff; summary counts; profile with role, permissions, listing work, sessions and audit activity; invite by name, e-mail and an existing role with a single-use 72-hour link and no password sent; accept the invitation; resend; change role; suspend and reactivate; revoke sessions; send a recovery link; remove (deactivate, never delete) and reinstate; nobody changes their own access and the last active Administrator is protected; every change audited and the person told by branded e-mail; no Publisher role and no change to separation of duties | D-58; D-23; D-18; D-22; D-49 | SC-12, SC-13 | listStaffTeam, inviteStaff, getStaffMember, updateStaffMember, listStaffMemberActivity, runStaffMemberAction, acceptStaffInvitation | STAFFTEAM-01…STAFFTEAM-08 | OQ-13 |
 | R-57 | Listing images (D-58): featured and optional sharing image uploaded in the job editor (preview, replace, remove, progress, drag and drop, mobile); content-based validation (JPEG, PNG, WebP, size and dimension limits), orientation applied, metadata removed, re-encoded under generated names on persistent storage; staff-only, rate limited, no orphans; absolute https addresses on public pages, cards, structured previews and Open Graph/Twitter cards; standard UPNEXT image when none; a picture never implies employer verification | D-58; D-56; D-14 | SC-01, SC-12 | uploadListingImage | IMG-01…IMG-08 | B-07 |
-| R-62 | Simpler publishing (D-62): duplicate rules by organisation and title, no source fields, Media Library (choose or upload, reuse, no deletion on unlink), one-switch verification with public badge, six-part job form | `/workspace/opportunities/new`, `/workspace/media`, listing table and detail | `/staff/media`, `/staff/opportunities/{id}/verification`, `/staff/opportunities/{id}/actions/*` | `apps/api/tests/test_duplicate_detection.py`, `test_media_library.py`, `test_verification_switch.py`; `apps/web/tests/unit/media-and-verification.test.tsx`, `job-editor.test.ts` |
 | R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
+| R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
 
 ## 2. Screen register
 
@@ -188,7 +188,6 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `uploadListingImage` | POST `/staff/images` | staff | R-57 |
 | `listStaffMedia` | GET `/staff/media` | staff | R-62 |
 | `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
-| `setStaffVerification` | PUT `/staff/opportunities/{id}/verification` | staff | R-62 |
 | `listStaffTeam` | GET `/staff/team` | staff | R-56 |
 | `inviteStaff` | POST `/staff/team` | staff | R-56 |
 | `getStaffMember` | GET `/staff/team/{targetId}` | staff | R-56 |
@@ -199,6 +198,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
 | `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
 | `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
+| `setStaffVerification` | PUT `/staff/opportunities/{opportunityId}/verification` | staff | R-62 |
 | `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
 | `previewStaffOpportunity` | GET `/staff/opportunities/{opportunityId}/preview` | staff | R-55 |
 | `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
@@ -246,6 +246,12 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | IMG-06 | Unattached uploads are swept after a day; attached ones stay |
 | IMG-07 | Public API image block with absolute https addresses, sharing-image fallback, no invented picture, no verification claim; revision hash |
 | IMG-08 | Upload component, job-editor state and payload, job page image, card image and Open Graph/Twitter metadata (Vitest) |
+| MEDIA-01 | Media Library: upload registers one asset (identical uploads reused), thumbnails, search, paging, usage counts, permissions, migration of earlier uploads |
+| MEDIA-02 | Reuse across listings; removing or replacing a picture never deletes the file; library browser, picker and upload component (Vitest) |
+| DUP-01 | Duplicate rules: same organisation and title needs one confirmation; different titles, shared address, e-mail or source never flagged; similar and differing-detail cases only warn |
+| DUP-02 | Staff API reports duplicates and accepts the single confirmation; source fields are absent from the job form and payload |
+| VERIFY-01 | Verification switch: idempotent, records who and when, does not change row_version, survives amendment, public level follows it, migration of earlier levels |
+| VERIFY-02 | Verification permission enforced on the server (Contributor, seeker, anonymous, missing CSRF refused); table and detail toggle (Vitest) |
 | UT-01 | Unknown salary/deadline/requirements render as 'Not stated'; never defaulted |
 | UT-02 | Slug generation: format, collision retry, reserved words; immutability after assignment |
 | UT-03 | Profile validation limits and clear-on-null semantics |
@@ -530,7 +536,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | PERM-01 | `apps/api/tests/test_access_registry.py::test_perm_01_initial_roles_are_exactly_three_and_no_publisher` | executed |
 | PERM-02 | `apps/api/tests/test_access_registry.py::test_perm_02_future_role_needs_only_a_registry_entry` | executed |
 | PERM-03 | `apps/api/tests/test_access_registry.py::test_perm_03_registry_matches_the_permission_matrix_document` | executed |
-| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_return_or_verify_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
+| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_or_return_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
 | SOD-02 | `apps/api/tests/test_access_policy.py::test_sod_02_another_editor_or_administrator_can_approve` | executed (pure policy) |
 | SOD-04 | `apps/api/tests/test_access_policy.py::test_sod_04_the_approver_may_publish_the_exact_revision` | executed (pure policy) |
 | SOD-09 | `apps/api/tests/test_access_policy.py::test_sod_09_administrator_can_publish_someone_elses_approved_listing` | executed (pure policy) |
@@ -730,6 +736,12 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | IMG-06 | `apps/api/tests/test_listing_images.py::test_unattached_uploads_are_swept_after_a_day_but_attached_ones_stay` | executed |
 | IMG-07 | `apps/api/tests/test_listing_images.py (public output tests)` | executed |
 | IMG-08 | `apps/web/tests/unit/team-and-images.test.tsx` | executed |
+| MEDIA-01 | `apps/api/tests/test_media_library.py` | executed |
+| MEDIA-02 | `apps/api/tests/test_media_library.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| DUP-01 | `apps/api/tests/test_duplicate_detection.py` | executed |
+| DUP-02 | `apps/api/tests/test_duplicate_detection.py; apps/web/tests/unit/job-editor.test.ts` | executed |
+| VERIFY-01 | `apps/api/tests/test_verification_switch.py; apps/api/tests/test_workflow.py` | executed |
+| VERIFY-02 | `apps/api/tests/test_verification_switch.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
 | TRUST-01 | `apps/api/tests/test_trusted_devices.py (trust, cookie, expiry, limit tests)` | executed |
 | TRUST-02 | `apps/api/tests/test_trusted_devices.py (recognition tests)` | executed |
 | TRUST-03 | `apps/api/tests/test_trusted_devices.py (staff 24-hour tests)` | executed |
