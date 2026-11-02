@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "./container";
 import { Logo } from "@/components/ui";
+import { Icon } from "@/components/ui/icons";
 import { BRAND } from "@/lib/brand";
 import { getCurrentUser } from "@/lib/session";
 import { MobileMenu, type MenuItem } from "./mobile-menu";
@@ -32,11 +33,28 @@ export async function SiteHeader() {
       : []),
   ];
   return (
-    <header className="sticky top-0 z-40 rounded-b-card border-b border-line bg-surface/90 backdrop-blur-md">
+    <header className="site-header sticky top-0 z-40 rounded-b-card border-b border-line bg-surface/90 backdrop-blur-md">
       <Container className="flex min-h-[64px] items-center justify-between gap-x-4 max-sm:min-h-[56px]">
         <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex min-h-[44px] items-center">
           <Logo />
         </Link>
+        {/* Phone icons: shown only on a listing page (see .job-header-icons in globals.css) */}
+        <div className="job-header-icons ml-auto mr-1 hidden items-center sm:!hidden">
+          <Link
+            href="/opportunities"
+            aria-label="Search opportunities"
+            className="inline-flex h-[44px] w-[44px] items-center justify-center"
+          >
+            <Icon name="search" className="h-6 w-6" />
+          </Link>
+          <Link
+            href={user ? "/alerts" : "/sign-in?next=%2Falerts"}
+            aria-label="Job alerts"
+            className="inline-flex h-[44px] w-[44px] items-center justify-center"
+          >
+            <Icon name="bell" className="h-6 w-6" />
+          </Link>
+        </div>
         <MobileMenu groups={menuGroups} signedIn={Boolean(user)} />
         <nav
           aria-label="Primary"

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SaveButton } from "@/components/ui";
+import { Icon } from "@/components/ui/icons";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 
@@ -18,6 +19,7 @@ export function SaveToggle({
   signedIn,
   returnTo,
   showLabel = false,
+  block = false,
   refreshOnChange = false,
   className,
 }: {
@@ -27,6 +29,8 @@ export function SaveToggle({
   signedIn: boolean;
   returnTo: string;
   showLabel?: boolean;
+  /** A full-width light-purple button (the phone layout), matching Share. */
+  block?: boolean;
   /** Re-render the server page after a change (the saved list drops what was removed). */
   refreshOnChange?: boolean;
   className?: string;
@@ -35,6 +39,18 @@ export function SaveToggle({
   const [saved, setSaved] = useState(initialSaved);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  const blockClass =
+    "inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-border-interest bg-match-bg text-base font-medium text-ink hover:bg-accent/10";
+
+  if (!signedIn && block) {
+    return (
+      <a href={`/sign-in?next=${encodeURIComponent(returnTo)}`} className={cn(blockClass, className)}>
+        <Icon name="bookmark" className="h-5 w-5" />
+        Save<span className="sr-only"> (Sign in to save {title})</span>
+      </a>
+    );
+  }
 
   if (!signedIn) {
     return (
@@ -69,6 +85,34 @@ export function SaveToggle({
     else if (outcome.status === 401) setMessage("Your session ended. Sign in again to save.");
     else setMessage(describeFailure(outcome));
   }
+
+  if (block)
+    return (
+      <span className={cn("grid", className)}>
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={busy}
+          aria-pressed={saved}
+          className={cn(blockClass, "disabled:cursor-not-allowed disabled:opacity-60")}
+        >
+          <Icon name="bookmark" className={cn("h-5 w-5", saved && "fill-current text-accent")} />
+          {saved ? "Saved" : "Save"}
+          <span className="sr-only"> {title}</span>
+        </button>
+        <span
+          role="status"
+          aria-live="polite"
+          className={
+            message.startsWith("Saved") || message.startsWith("Removed")
+              ? "sr-only"
+              : "mt-1 text-small text-danger empty:hidden"
+          }
+        >
+          {message}
+        </span>
+      </span>
+    );
 
   return (
     <span className={cn("inline-flex items-center gap-1", className)}>

@@ -163,3 +163,34 @@ dd a {
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
 }
+
+/* The listing page on a phone (owner reference, D-63): a navy header with a white logo and the search, alerts and
+   menu icons, and bold headings on this page only. The weight-300 heading rule above stays for every other page. */
+[data-job-page] :is(h1, h2) {
+  font-weight: 700;
+}
+[data-job-page] [data-bold] {
+  font-weight: 700;
+}
+@media (max-width: 650px) {
+  body:has([data-job-page]) .site-header {
+    background: #061b31; /* the reference's deep navy, in both themes (the ink token turns light in dark) */
+    border-color: #061b31;
+    color: var(--color-on-accent);
+    backdrop-filter: none;
+  }
+  body:has([data-job-page]) .site-header .text-logo {
+    color: var(--color-on-accent);
+  }
+  body:has([data-job-page]) .site-header .job-header-icons {
+    display: flex;
+  }
+  body:has([data-job-page]) .site-header button[aria-controls="mobile-menu"] {
+    background: transparent;
+    color: var(--color-on-accent);
+  }
+  body:has([data-job-page]) .site-header a:focus-visible,
+  body:has([data-job-page]) .site-header button:focus-visible {
+    outline-color: var(--color-on-accent);
+  }
+}
