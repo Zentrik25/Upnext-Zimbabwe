@@ -12,8 +12,10 @@ import {
   SkeletonInput,
   SkeletonLine,
   SkeletonListingRows,
+  SkeletonMediaGrid,
   SkeletonMetricGrid,
   SkeletonPageHeader,
+  SkeletonPanel,
   SkeletonTable,
   SkeletonTabs,
   SkeletonText,
@@ -195,7 +197,7 @@ export function AccountSectionLoading({ label, cards = 1 }: { label: string; car
 
 /**
  * The job editor: back link, title, then the eleven fields in a single column of the editor's own maximum width,
- * three collapsed section headers and the action bar. Sizes follow the real controls (label line, 40px field).
+ * the six parts of the form and the action bar. Sizes follow the real controls (label line, 40px field).
  */
 export function JobEditorLoading({ label = "the editor" }: { label?: string }) {
   const field = (
@@ -220,28 +222,65 @@ export function JobEditorLoading({ label = "the editor" }: { label?: string }) {
         <SkeletonLine className="w-[60%] max-sm:w-full" />
       </div>
       <div className="grid max-w-[760px] gap-4">
-        {field}
-        {field}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {field}
-          {field}
-        </div>
-        {field}
-        {field}
-        {area(2)}
-        {area(7)}
-        {area(5)}
-        {field}
-        {field}
-        <div className="grid gap-2">
-          {Array.from({ length: 3 }, (_, index) => (
-            <SkeletonBlock key={index} className="h-[44px] w-full rounded-card border border-border-panel" />
-          ))}
-        </div>
+        {/* the six parts of the form, each a bordered block with a heading line */}
+        {[
+          [
+            field,
+            field,
+            <div key="g" className="grid gap-4 sm:grid-cols-3">
+              {field}
+              {field}
+              {field}
+            </div>,
+            field,
+            field,
+          ],
+          [area(2), area(7), area(5)],
+          [field, field],
+          [
+            field,
+            <SkeletonBlock key="img" className="aspect-[16/9] max-w-[480px] rounded-card" />,
+            <SkeletonButton key="b" />,
+          ],
+          [field, field, area(2)],
+          [field],
+        ].map((children, index) => (
+          <div
+            key={index}
+            className="grid gap-4 rounded-card border border-border-panel bg-surface p-3 sm:p-4"
+          >
+            <SkeletonLine className="w-[150px]" />
+            {children.map((child, at) => (
+              <div key={at}>{child}</div>
+            ))}
+          </div>
+        ))}
         <div className="flex gap-2">
           <SkeletonButton />
           <SkeletonButton />
           <SkeletonButton />
+        </div>
+      </div>
+    </LoadingRegion>
+  );
+}
+
+/** The Media Library: title, the upload bar, the search box and a grid of picture tiles with the preview panel. */
+export function MediaLibraryLoading() {
+  return (
+    <LoadingRegion label="the media library">
+      <SkeletonPageHeader />
+      <div className="grid gap-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-card border border-border-panel p-3">
+          <SkeletonButton />
+          <SkeletonLine className="w-[260px] max-w-full" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="grid content-start gap-3">
+            <SkeletonInput />
+            <SkeletonMediaGrid />
+          </div>
+          <SkeletonPanel lines={5} />
         </div>
       </div>
     </LoadingRegion>

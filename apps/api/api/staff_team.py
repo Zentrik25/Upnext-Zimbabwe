@@ -217,7 +217,8 @@ def _stats(user: User) -> dict[str, int]:
         "edited": _count(events.filter(transition="T02")),
         "submitted": _count(events.filter(transition="T03")),
         "reviewed": _count(events.filter(transition__in=("T04", "T05", "T06"))),
-        "verified": VerificationRecord.objects.filter(checked_by=user).count(),
+        "verified": _count(events.filter(transition="V02"))
+        + VerificationRecord.objects.filter(checked_by=user).count(),
         "published": _count(events.filter(transition="T07")),
     }
 

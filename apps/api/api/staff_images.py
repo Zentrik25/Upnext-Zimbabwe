@@ -1,10 +1,11 @@
-"""Listing image upload (`POST /api/v1/staff/images`, D-58).
+"""The Media Library API (D-62): `GET /api/v1/staff/media` to browse and search, `POST` to upload.
 
-The upload only validates, normalises and stores the picture and answers with its generated name and address.
-Attaching it to a listing is the ordinary draft save (`featured_image` / `social_image` in the draft content), which
-already enforces who may edit, the row version, the audit and the approval rules; so replacing or removing an image
-is just saving the draft with a new name or `null`, and the server then deletes a file nothing refers to any more.
-An upload that is never attached is swept by `purge_listing_images`.
+An upload is validated, optimised and registered in the library (`opportunities.media`); uploading a picture that
+is already there answers with the existing asset and stores nothing new. Attaching a picture to a listing is the
+ordinary draft save (`featured_image` / `social_image` in the draft content, a library name), which already enforces
+who may edit, the row version, the audit and the approval rules. Replacing or removing it is just saving a different
+name or `null`: the library keeps the file for every other listing. `POST /staff/images` is the earlier address of
+the same upload and answers with the same fields.
 """
 
 from __future__ import annotations
@@ -18,7 +19,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from access.registry import Permission
-from opportunities import images
+from accounts.models import User
+from opportunities import images, media
 
 from .errors import error_response
 from .staff_views import StaffView
@@ -28,7 +30,14 @@ from .throttles import StaffUploadThrottle
 MAX_BODY = images.MAX_BYTES + 64 * 1024
 
 
-class ImageUploadView(StaffView):
+def _may_use_library(user: User) -> bool:
+    return bool(
+        user.has_permission_code(Permission.OPP_DRAFT_CREATE)
+        or user.has_permission_code(Permission.OPP_DRAFT_EDIT_OWN)
+    )
+
+
+class MediaView(StaffView):
     parser_classes = [
         MultiPartParser,
         JSONParser,
@@ -36,7 +45,37 @@ class ImageUploadView(StaffView):
     throttle_classes = [StaffUploadThrottle]
 
     @extend_schema(
-        operation_id="uploadListingImage",
+        operation_id="listStaffMedia",
+        tags=["staff"],
+        responses={
+            200: OpenApiResponse(description="Library pictures, newest first, with paging"),
+            403: None,
+        },
+    )
+    def get(self, request: Request) -> Response:
+        user = self.user_of(request)
+        if not _may_use_library(user):
+            return error_response(
+                "permission_denied", "You cannot use the media library.", status.HTTP_403_FORBIDDEN
+            )
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+            size = min(48, max(1, int(request.query_params.get("page_size", 24))))
+        except ValueError:
+            page, size = 1, 24
+        queryset = media.search(request.query_params.get("q", ""))
+        total = queryset.count()
+        assets = list(queryset[(page - 1) * size : page * size])
+        usage = media.usage_counts([a.name for a in assets])
+        return Response(
+            {
+                "data": [media.serialise(a, usage.get(a.name, 0)) for a in assets],
+                "page": {"page": page, "page_size": size, "total": total, "pages": max(1, -(-total // size))},
+            }
+        )
+
+    @extend_schema(
+        operation_id="uploadStaffMedia",
         tags=["staff"],
         request={
             "multipart/form-data": {
@@ -45,7 +84,10 @@ class ImageUploadView(StaffView):
             }
         },
         responses={
-            201: OpenApiResponse(description="The stored image: name and absolute address"),
+            200: OpenApiResponse(
+                description="The picture was already in the library; nothing new was stored"
+            ),
+            201: OpenApiResponse(description="The stored picture"),
             400: None,
             403: None,
             413: None,
@@ -54,10 +96,7 @@ class ImageUploadView(StaffView):
     )
     def post(self, request: Request) -> Response:
         user = self.user_of(request)
-        if not (
-            user.has_permission_code(Permission.OPP_DRAFT_CREATE)
-            or user.has_permission_code(Permission.OPP_DRAFT_EDIT_OWN)
-        ):
+        if not _may_use_library(user):
             return error_response(
                 "permission_denied", "You cannot upload listing images.", status.HTTP_403_FORBIDDEN
             )
@@ -79,11 +118,40 @@ class ImageUploadView(StaffView):
                 "file_too_large", "The image is larger than 5 MB.", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
             )
         try:
-            data, width, height = images.process(upload.read(images.MAX_BYTES + 1))
+            asset, reused = media.add(
+                upload.read(images.MAX_BYTES + 1), uploader=user, original_filename=str(upload.name or "")
+            )
         except images.ImageRejected as exc:
             return error_response(exc.code, exc.message, status.HTTP_400_BAD_REQUEST)
-        name = images.store(data)
+        used = media.usage_counts([asset.name])[asset.name]
         return Response(
-            {"name": name, "url": images.url_of(name), "width": width, "height": height, "bytes": len(data)},
-            status=status.HTTP_201_CREATED,
+            {**media.serialise(asset, used), "reused": reused},
+            status=status.HTTP_200_OK if reused else status.HTTP_201_CREATED,
         )
+
+
+class ImageUploadView(MediaView):
+    """The earlier address of the same upload (`POST /staff/images`); it answers with the same fields."""
+
+    http_method_names = ["post", "options"]
+
+    @extend_schema(
+        operation_id="uploadListingImage",
+        tags=["staff"],
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="Already in the library; nothing new stored"),
+            201: OpenApiResponse(description="The stored picture"),
+            400: None,
+            403: None,
+            413: None,
+            429: None,
+        },
+    )
+    def post(self, request: Request) -> Response:
+        return super().post(request)

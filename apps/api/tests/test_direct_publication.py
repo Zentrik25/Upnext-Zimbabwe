@@ -6,6 +6,8 @@ around the service.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -169,23 +171,22 @@ def test_the_listing_can_be_amended_by_another_editor_and_that_editor_publishes_
     assert opp.live_version.direct_publication and opp.live_version.author_id == other.pk
 
 
-def test_the_author_cannot_verify_their_own_direct_publication(world: World, people: dict[str, User]) -> None:
+def test_direct_publication_does_not_verify_the_listing(world: World, people: dict[str, User]) -> None:
+    """Publishing and verifying are separate switches (D-62): a directly published listing is live and Not Verified
+    until someone with the verification permission turns it on, and then it can be turned off again."""
     actor = people["editor"]
     opp = new_draft(world, actor)
     go(actor, opp)
     opp.refresh_from_db()
-    args = {
-        "version_no": 1,
-        "level": "source_checked",
-        "method": "source_page_review",
-        "outcome": "confirmed",
-        "evidence_note": "Looked at the source page and it matches.",
-    }  # fmt: skip
-    with pytest.raises(SeparationOfDuties):
-        workflow.record_verification(actor, opp.pk, **args)  # type: ignore[arg-type]
-    workflow.record_verification(people["editor2"], opp.pk, **args)  # type: ignore[arg-type]
+    assert opp.status == "published" and opp.is_verified is False
+    with pytest.raises(PermissionDeniedError):
+        workflow.set_verification(
+            people["author"], opp.pk, verified=True
+        )  # a Contributor has no such permission
+    workflow.set_verification(actor, opp.pk, verified=True)
     opp.refresh_from_db()
-    assert opp.verification_level == VerificationLevel.SOURCE_CHECKED
+    assert opp.is_verified and opp.verification_level == VerificationLevel.ISSUER_VERIFIED
+    assert opp.verification_changed_by_id == actor.pk and opp.verification_changed_at is not None
 
 
 def test_actions_offered_include_direct_publication_for_the_author_only(
@@ -279,3 +280,31 @@ def test_database_refuses_a_flagged_self_rejection_or_return_decision(
 
 def test_the_api_client_import_is_available() -> None:
     assert APIClient is not None
+
+
+def test_a_listing_with_no_source_publishes_and_an_old_source_does_not_block_an_amendment(
+    world: World, people: dict[str, User]
+) -> None:
+    """Staff no longer enter sources (D-62): none is needed, and an existing one is kept as history."""
+    actor = people["editor"]
+    bare = new_draft(world, actor, "jobs-1", sources=[])
+    go(actor, bare)
+    bare.refresh_from_db()
+    assert bare.status == ListingStatus.PUBLISHED and bare.live_version is not None
+    assert not bare.live_version.sources.exists()
+
+    _, example = world.content("jobs-2")
+    three_years_ago = (timezone.now().date() - timedelta(days=1100)).isoformat()
+    old_source = [{**example["sources"][0], "observed_on": three_years_ago}]
+    kept = new_draft(world, actor, "jobs-2", sources=old_source)
+    go(actor, kept)  # a source checked years ago no longer blocks publication
+    kept.refresh_from_db()
+    assert kept.live_version is not None and kept.live_version.sources.count() == 1
+    workflow.amend(
+        actor, kept.pk, expected_row_version=kept.row_version
+    )  # the source is copied forward unchanged
+    kept.refresh_from_db()
+    assert kept.pending_version is not None and kept.pending_version.sources.count() == 1
+    go(actor, kept)
+    kept.refresh_from_db()
+    assert kept.live_version is not None and kept.live_version.sources.count() == 1

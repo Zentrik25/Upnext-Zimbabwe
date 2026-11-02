@@ -12,6 +12,16 @@ import type { ActionField, StaffAction } from "@/lib/staff-types";
 
 type Values = Record<string, string | boolean>;
 
+/**
+ * Optional confirmations that appear only when they matter: the field name, and the error key whose arrival (or
+ * the page already knowing the situation, through `reveal`) shows it. A listing that looks like one already open
+ * asks for one tick; the mention of applicant payments asks for another. Nothing else asks for either.
+ */
+const CONDITIONAL: Record<string, string> = {
+  confirm_duplicate: "duplicate_acknowledgement",
+  applicant_payment_reviewed: "checklist.applicant_payment_reviewed",
+};
+
 function start(fields: ActionField[], defaults: Record<string, string | number>): Values {
   const out: Values = {};
   for (const f of fields) out[f.name] = f.kind === "boolean" ? false : String(defaults[f.name] ?? "");
@@ -30,6 +40,7 @@ export function ActionPanel({
   actions,
   initial,
   defaults = {},
+  reveal = [],
   noActionsText = "No actions are available to you here right now. Review and approval need a different person from whoever wrote or submitted it.",
 }: {
   /** The API path that actions post to, without the action name: `staff/opportunities/<id>/actions`. */
@@ -41,6 +52,8 @@ export function ActionPanel({
   actions: StaffAction[];
   initial?: string;
   defaults?: Record<string, string | number>;
+  /** Optional confirmations to show up front because the page already knows they apply. */
+  reveal?: string[];
   noActionsText?: string;
 }) {
   const router = useRouter();
@@ -54,6 +67,9 @@ export function ActionPanel({
   const [done, setDone] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const action = doable.find((a) => a.name === current) ?? null;
+  const fields = (action?.fields ?? []).filter(
+    (f) => !(f.name in CONDITIONAL) || reveal.includes(f.name) || Boolean(errors[CONDITIONAL[f.name]!]),
+  );
 
   function choose(a: StaffAction) {
     setCurrent(a.name);
@@ -129,7 +145,7 @@ export function ActionPanel({
           <h3 className="m-0 text-base font-medium">{action.label}</h3>
           {action.description ? <p className="m-0 text-ctl text-muted">{action.description}</p> : null}
           {failure ? <FormError>{failure}</FormError> : null}
-          {(action.fields ?? []).map((f) => {
+          {fields.map((f) => {
             const fid = `act-${action.name}-${f.name}`;
             const err = errors[f.name]?.[0];
             if (f.kind === "boolean")

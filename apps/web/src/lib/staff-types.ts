@@ -54,8 +54,13 @@ export type ListingRow = {
   status_label: string;
   status_tone: StatusTone;
   version_state: string | null;
-  verification: string;
+  /** The single verification switch (D-62): Verified or Not Verified, apart from publication. */
+  verified: boolean;
   verification_label: string;
+  verified_at: string | null;
+  verified_by: string | null;
+  /** Whether this person holds the verification permission; the server checks it again on every change. */
+  can_verify: boolean;
   submitted_by: string | null;
   submitted_at: string | null;
   updated_at: string;
@@ -175,7 +180,25 @@ export type ListingDetail = ListingRow & {
   }[];
   actions: StaffAction[];
   warnings: string[];
+  /** Open listings that look like this draft (a warning, never a block). */
+  duplicates: { id: string; title: string; level: "hard" | "soft"; reason: string; status: string }[];
   can_edit: boolean;
+};
+
+/** One picture in the Media Library. `name` is what a listing stores; it is served at `/media/<name>`. */
+export type MediaItem = {
+  id: string;
+  name: string;
+  thumb: string;
+  title: string;
+  original_filename: string;
+  width: number | null;
+  height: number | null;
+  bytes: number | null;
+  uploaded_by: string | null;
+  created_at: string;
+  /** How many listings use it now. */
+  used_in: number | null;
 };
 
 export type DetailField = {
