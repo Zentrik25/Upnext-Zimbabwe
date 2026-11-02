@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, TextInput } from "@/components/ui";
-import { SkeletonMediaGrid } from "@/components/ui/skeleton";
+import { SkeletonMediaGrid } from "./skeleton-media";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 import type { MediaItem } from "@/lib/staff-types";

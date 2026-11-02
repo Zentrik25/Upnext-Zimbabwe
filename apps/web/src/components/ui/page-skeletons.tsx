@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SkeletonMediaGrid } from "@/components/workspace/skeleton-media";
 import { SeekerNav, type SeekerSection } from "@/components/seeker/seeker-nav";
 import { Container } from "@/components/layout";
 import {
@@ -12,7 +13,6 @@ import {
   SkeletonInput,
   SkeletonLine,
   SkeletonListingRows,
-  SkeletonMediaGrid,
   SkeletonMetricGrid,
   SkeletonPageHeader,
   SkeletonPanel,
