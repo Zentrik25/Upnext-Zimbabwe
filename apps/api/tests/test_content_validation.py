@@ -96,14 +96,18 @@ def test_source_rules(world: World, people: dict[str, User]) -> None:
         "citation": None,
         "is_primary": True,
     }
+    # An old source is history, not a reason to refuse publication (D-62: staff no longer enter sources).
     old = errors_for(
         world, people["author"], sources=[{**base, "observed_on": (today - timedelta(days=400)).isoformat()}]
     )
-    assert "out_of_range" in codes(old, "sources.0.observed_on")
-    future = errors_for(
-        world, people["author"], sources=[{**base, "observed_on": (today + timedelta(days=2)).isoformat()}]
-    )
-    assert "in_past" in codes(future, "sources.0.observed_on")
+    assert not any(path.startswith("sources") for path in old)
+    with pytest.raises(ValidationFailed) as future:  # a date in the future is refused when saved
+        errors_for(
+            world,
+            people["author"],
+            sources=[{**base, "observed_on": (today + timedelta(days=2)).isoformat()}],
+        )
+    assert "in_past" in codes(future.value.fields, "sources.0.observed_on")
     with pytest.raises(ValidationFailed) as excinfo:  # refused when saved, never a database error
         errors_for(
             world,

@@ -32,11 +32,7 @@ STATUS_TONES: dict[str, tuple[str, str]] = {
     ListingStatus.WITHDRAWN: ("Withdrawn", "muted"),
     ListingStatus.ARCHIVED: ("Archived", "muted"),
 }
-VERIFICATION_LABELS = {
-    "not_verified": "Not verified",
-    "source_checked": "Source checked (not confirmed with the issuer)",
-    "issuer_verified": "Verified with the issuer",
-}
+VERIFICATION_LABELS = {True: "Verified", False: "Not verified"}
 
 
 def describe(error: WorkflowError) -> str:
@@ -66,6 +62,7 @@ def listings_visible_to(user: User) -> QuerySet[Opportunity]:
         "pending_version__submitted_by",
         "live_version__organisation",
         "live_version__author",
+        "verification_changed_by",
     )
     if user.has_permission_code(
         Permission.AUDIT_READ_ALL
@@ -172,6 +169,8 @@ TRANSITION_LABELS = {
     "T13": "Draft discarded",
     "T14": "Reopened for editing",
     "T15": "Amendment started",
+    "V02": "Verified",
+    "V03": "Verification removed",
 }
 
 
@@ -185,10 +184,13 @@ def _reason(data: dict[str, Any]) -> str:
     return str(data.get("reason", ""))
 
 
+def _duplicate_ack(data: dict[str, Any]) -> dict[str, Any] | None:
+    """One confirmation, no id and no reason (D-62)."""
+    return {"confirmed": True} if data.get("confirm_duplicate") else None
+
+
 def _submit(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
-    ack = None
-    if data.get("duplicate_of"):
-        ack = {"duplicate_of": data["duplicate_of"], "reason": data.get("duplicate_reason", "")}
+    ack = _duplicate_ack(data)
     workflow.submit(user, opp.pk, expected_row_version=opp.row_version, duplicate_acknowledgement=ack)
 
 
@@ -203,16 +205,15 @@ def _approve(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
 
 
 def _publish_direct(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
-    """D-46: an Editor or Administrator publishes their own staff-created draft in one audited step."""
+    """D-46: an Editor or Administrator publishes their own staff-created draft in one audited step. Pressing
+    Publish is the author's attestation; the stored checklist keeps the shape the review record has always had."""
     checklist = {
         "source_reviewed": True,
         "duplicates_reviewed": True,
         "content_matches_source": True,
         **({"applicant_payment_reviewed": True} if data.get("applicant_payment_reviewed") else {}),
     }
-    ack = None
-    if data.get("duplicate_of"):
-        ack = {"duplicate_of": data["duplicate_of"], "reason": data.get("duplicate_reason", "")}
+    ack = _duplicate_ack(data)
     workflow.publish_direct(
         user,
         opp.pk,
@@ -230,19 +231,12 @@ def _simple(fn_name: str, **extra: str) -> Any:
     return run
 
 
-def _verify(user: User, opp: Opportunity, data: dict[str, Any]) -> None:
-    workflow.record_verification(
-        user, opp.pk, version_no=data["version_no"], level=data["level"], method=data["method"],
-        outcome=data["outcome"], evidence_note=data["evidence_note"],
-    )  # fmt: skip
-
-
 ACTIONS: dict[str, Action] = {
     "submit": Action("Submit for review", "Freezes this revision and sends it to the review queue. After this it cannot be edited.", staff_forms.SubmitForm, _submit),
     "approve": Action("Approve", "Approve this exact revision. Anyone who wrote or submitted it cannot do this.", staff_forms.ApproveForm, _approve),
     "reject": Action("Reject", "Return the revision to its author with reasons.", staff_forms.ReasonCodeForm, _simple("reject", reason_code="reason_code", reason="reason")),
     "return": Action("Return (withdraw approval)", "Void the approval and send the revision back with reasons.", staff_forms.ReasonCodeForm, _simple("return_approved", reason_code="reason_code", reason="reason")),
-    "publish_direct": Action("Publish directly", "Publish your own draft in one step. The same checks run and the decision is audited as direct and self-approved. Verification stays independent.", staff_forms.PublishDirectForm, _publish_direct),
+    "publish_direct": Action("Publish directly", "Publish your own draft in one step. The same checks run and the decision is audited as direct and self-approved. Verification is a separate switch.", staff_forms.PublishDirectForm, _publish_direct),
     "publish": Action("Publish", "Publish this revision. It must have been approved, unchanged, by another person.", staff_forms.ConfirmForm, _simple("publish")),
     "withdraw": Action("Withdraw", "The issuer withdrew the opportunity. It stays readable, marked withdrawn.", staff_forms.ReasonForm, _simple("withdraw", reason="reason")),
     "expire": Action("Mark as expired", "Close the listing ahead of, or without, its deadline.", staff_forms.ReasonForm, _simple("expire", reason="reason")),
@@ -251,7 +245,6 @@ ACTIONS: dict[str, Action] = {
     "discard": Action("Discard", "Abandon this draft or rejected revision.", staff_forms.ConfirmForm, _simple("discard")),
     "reopen": Action("Reopen as a new draft", "Start a new draft from the rejected revision.", staff_forms.ConfirmForm, _simple("reopen")),
     "amend": Action("Start an amendment", "Create a new draft from the live revision. The public keeps seeing the live one until the amendment is approved and published.", staff_forms.ConfirmForm, _simple("amend")),
-    "verify": Action("Record verification", "Record a check of the content. Verification is separate from the source and from publication.", staff_forms.VerificationForm, _verify),
 }  # fmt: skip
 
 
@@ -260,8 +253,6 @@ def listing_actions(user: User, obj: Opportunity) -> list[tuple[str, str]]:
     workflow actions. Advisory only: every action view and every service call re-checks permission and
     separation of duties."""
     names = workflow.allowed_actions(user, obj)
-    if user.has_permission_code(Permission.OPP_VERIFY_RECORD) and (obj.pending_version or obj.live_version):
-        names.append("verify")
     version = obj.pending_version
     out: list[tuple[str, str]] = []
     if version and version.state == VersionState.DRAFT and version.author_id == user.pk:

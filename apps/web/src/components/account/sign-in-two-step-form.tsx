@@ -8,6 +8,7 @@ import { apiFetch, describeFailure } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
 import { AuthField } from "./auth-parts";
 import { FormError } from "./parts";
+import { TrustDeviceCheckbox } from "./trusted-devices-panel";
 
 /** The second step of sign-in (D-54): a code from the authenticator app, or an unused recovery code. */
 export function SignInTwoStepForm({ next }: { next?: string }) {
@@ -15,6 +16,7 @@ export function SignInTwoStepForm({ next }: { next?: string }) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
+  const [trust, setTrust] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +25,7 @@ export function SignInTwoStepForm({ next }: { next?: string }) {
     setFailure(null);
     const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login/two-step", {
       code: String(form.get("code") ?? "").trim(),
+      trust_device: trust,
     });
     if (outcome.ok) {
       const staff = (outcome.data?.roles?.length ?? 0) > 0;
@@ -66,6 +69,7 @@ export function SignInTwoStepForm({ next }: { next?: string }) {
             required
             maxLength={32}
           />
+          <TrustDeviceCheckbox checked={trust} onChange={setTrust} />
           <Button type="submit" disabled={busy} className="sm:min-h-field">
             {busy ? "Checking…" : "Verify and sign in"}
           </Button>

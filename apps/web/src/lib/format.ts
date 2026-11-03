@@ -88,23 +88,23 @@ export function deadlineView(deadline: Deadline, status: ListingStatus = "publis
 export const VERIFICATION: Record<VerificationLevel, { label: string; explanation: string }> = {
   not_verified: {
     label: "Not verified",
-    explanation:
-      "UPNEXT has recorded where this information came from but has not checked it against the source or the issuer.",
+    explanation: "UPNEXT has not marked this listing as verified. Publishing a listing does not verify it.",
   },
+  // No longer set by staff (D-62: verification is one switch); kept so an older record still has a label.
   source_checked: {
     label: "Source checked",
     explanation:
       "UPNEXT compared this listing with its cited source. This is not confirmation from the issuing organisation.",
   },
   issuer_verified: {
-    label: "Verified with the issuer",
-    explanation: "UPNEXT confirmed this listing directly with the issuing organisation.",
+    label: "Verified",
+    explanation: "UPNEXT staff have checked this listing and marked it as verified.",
   },
 };
 
-/** Only a direct confirmation by the issuer is green; "source checked" is a weaker claim and stays neutral. */
-export function verificationTone(level: VerificationLevel): "default" | "good" {
-  return level === "issuer_verified" ? "good" : "default";
+/** Verified is purple (the accent) and Not verified is grey; the label text always carries the meaning. */
+export function verificationTone(level: VerificationLevel): "default" | "good" | "accent" {
+  return level === "issuer_verified" ? "accent" : level === "source_checked" ? "good" : "default";
 }
 
 export function locationLabel(row: OpportunitySummary): string | null {

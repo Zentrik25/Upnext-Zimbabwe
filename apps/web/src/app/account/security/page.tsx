@@ -4,7 +4,8 @@ import { PasswordPanel } from "@/components/account/account-panels";
 import { AccountSection } from "@/components/account/settings-parts";
 import { TwoStepPanel } from "@/components/account/two-step-panel";
 import { EmptyState } from "@/components/ui";
-import { getCurrentUser, getTwoStep } from "@/lib/session";
+import { TrustedDevicesPanel } from "@/components/account/trusted-devices-panel";
+import { getCurrentUser, getTrustedDevices, getTwoStep } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Password & security", robots: { index: false } };
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Password & security", robots: { inde
 export default async function SecurityPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in?next=%2Faccount%2Fsecurity");
-  const twoStep = await getTwoStep();
+  const [twoStep, trusted] = await Promise.all([getTwoStep(), getTrustedDevices()]);
   return (
     <AccountSection
       title="Password & security"
@@ -32,6 +33,9 @@ export default async function SecurityPage() {
           </EmptyState>
         </div>
       )}
+      {twoStep?.enabled && trusted ? (
+        <TrustedDevicesPanel devices={trusted.data} codeEveryHours={trusted.code_every_hours} />
+      ) : null}
     </AccountSection>
   );
 }

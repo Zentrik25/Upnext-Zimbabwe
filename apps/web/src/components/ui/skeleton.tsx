@@ -317,18 +317,18 @@ export function SkeletonListingRows({ count = 6 }: { count?: number }) {
 export function SkeletonHomeRow() {
   return (
     <div
-      className="flex items-start gap-3 border-b border-line px-4 py-4 last:border-b-0 max-sm:px-3"
+      className="flex items-start gap-3 rounded-card border border-l-[3px] border-border-panel border-l-line bg-surface p-3"
       data-testid="skeleton-row"
     >
-      <SkeletonAvatar className="h-12 w-12" />
+      <SkeletonAvatar className="h-11 w-11" />
       <div className="grid min-w-0 flex-1 gap-[7px]">
         <SkeletonLine className="h-[18px] w-2/3 max-sm:w-5/6" />
         <SkeletonLine className="w-1/4 max-sm:w-1/3" />
-        <div className="mt-[2px] flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="mt-[2px] flex flex-wrap items-center gap-x-3 gap-y-1">
           <SkeletonLine className="w-[84px]" />
           <SkeletonLine className="w-[72px]" />
-          <SkeletonBadge />
         </div>
+        <SkeletonBadge className="w-[96px]" />
       </div>
     </div>
   );

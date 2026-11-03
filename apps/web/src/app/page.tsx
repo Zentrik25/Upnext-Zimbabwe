@@ -56,15 +56,15 @@ export default function HomePage() {
       <Suspense fallback={<CategoryGridSkeleton />}>
         <HomeCategories />
       </Suspense>
-      <section aria-labelledby="latest-title" className="border-b border-line pt-5 pb-6">
+      <section aria-labelledby="latest-title" className="pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="latest-title" className="text-title tracking-title">
+            <h2 id="latest-title" className="font-headline text-title tracking-title">
               Latest opportunities
             </h2>
             <Link
               href="/opportunities"
-              className="inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent underline"
+              className="font-headline inline-flex min-h-[24px] items-center gap-1 text-ctl text-accent"
             >
               View all
               <Icon name="arrowRight" className="h-4 w-4" />

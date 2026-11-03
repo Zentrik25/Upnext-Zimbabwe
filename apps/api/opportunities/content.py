@@ -15,6 +15,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from catalog.models import Location, Organisation, Sector, Skill
@@ -461,6 +462,8 @@ def _clean_sources(raw: Any, errors: FieldErrors) -> list[dict[str, Any]]:
                 _err(errors, f"{path}.url", exc.code, str(exc))
         try:
             row["observed_on"] = date.fromisoformat(str(item.get("observed_on")))
+            if row["observed_on"] > timezone.now().date():
+                _err(errors, f"{path}.observed_on", "in_past", "The check date cannot be in the future.")
         except ValueError:
             _err(errors, f"{path}.observed_on", "invalid_date", "Use YYYY-MM-DD.")
         if not row["url"] and not row["citation"] and not any(e.startswith(path) for e in errors):

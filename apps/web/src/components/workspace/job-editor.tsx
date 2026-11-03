@@ -14,15 +14,17 @@ import {
   JOB_TYPES,
   moreDetailFields,
   PAY_CATEGORIES,
-  SOURCE_KINDS,
+  seoDefaults,
   stateFromDraft,
   type EditorState,
 } from "@/lib/job-editor";
 import type { ListingDetail, StaffCategory } from "@/lib/staff-types";
 import { ActionPanel } from "./action-panel";
+import { StatusBadge } from "./badges";
 import { DetailInput } from "./detail-input";
 import { ImageUpload, mediaUrl } from "./image-upload";
 import { ApplyFields, BulletTextarea, OrganisationPicker, Row } from "./job-editor-parts";
+import { VerifyToggle } from "./verify-toggle";
 
 type Option = { id: string; name: string };
 type Errors = Record<string, string>;
@@ -52,7 +54,36 @@ const clock = () =>
     new Date(),
   );
 
-/** A collapsed section. Native `details` keeps its inputs mounted while closed, so nothing typed is lost. */
+/** One of the six parts of the form: a plain bordered block with a short heading. */
+function FormSection({
+  id,
+  title,
+  hint,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="grid gap-4 rounded-card border border-border-panel bg-surface p-3 sm:p-4"
+    >
+      <div>
+        <h2 id={`${id}-title`} className="m-0 text-base font-medium">
+          {title}
+        </h2>
+        {hint ? <p className="m-0 mt-0.5 text-small text-muted">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** A collapsed part inside a section. Native `details` keeps its inputs mounted while closed, so nothing typed is lost. */
 function Section({
   id,
   title,
@@ -91,9 +122,9 @@ const counter = (value: string, max: number) => (
 );
 
 /**
- * The staff job editor (D-56): the eleven things a verified listing needs, in order, then three collapsed sections.
- * Drafts autosave (the API refuses a stale `row_version`, so two tabs cannot overwrite each other); publishing and
- * submitting go through the audited actions, never around them.
+ * The staff job editor (D-56, D-62): six plain parts in order (basic information, job details, how to apply, media,
+ * SEO, publishing). Drafts autosave (the API refuses a stale `row_version`, so two tabs cannot overwrite each other);
+ * publishing and submitting go through the audited actions, never around them.
  */
 export function JobEditor({
   mode,
@@ -102,7 +133,6 @@ export function JobEditor({
   locations,
   sectors,
   canCreateOrganisation,
-  today,
 }: {
   mode: "new" | "edit";
   categories: StaffCategory[];
@@ -110,7 +140,6 @@ export function JobEditor({
   locations: Location[];
   sectors: Option[];
   canCreateOrganisation: boolean;
-  today: string;
 }) {
   const router = useRouter();
   const pending = listing?.pending && !listing.pending.hidden ? listing.pending : null;
@@ -197,7 +226,6 @@ export function JobEditor({
             ? latest.current.detail.pending.content
             : null;
         const built = buildContent(cur.state, category, existing, {
-          today,
           addressLocked,
           places: locations,
         });
@@ -229,10 +257,8 @@ export function JobEditor({
                       k,
                     ),
                   ),
-                media: o.media || Object.keys(flat).some((k) => /^(slug|seo_|og_|social_)/.test(k)),
-                source:
-                  o.source ||
-                  Object.keys(flat).some((k) => k.startsWith("sources.") && !k.startsWith("sources.0")),
+                media: o.media || Object.keys(flat).some((k) => /^social_/.test(k)),
+                seo: o.seo || Object.keys(flat).some((k) => /^(slug|seo_|og_)/.test(k)),
               }));
             }
           } else if (loud || result.code === "state_conflict")
@@ -256,7 +282,7 @@ export function JobEditor({
         }
       }
     },
-    [category, today, addressLocked, locations],
+    [category, addressLocked, locations],
   );
 
   // Autosave: a few seconds after the last change, once a draft exists or can be created.
@@ -287,21 +313,14 @@ export function JobEditor({
   const jobTypes = JOB_TYPES[category.code] ?? [];
   const vacanciesHere = hasDetail(category, "vacancies");
   const more = moreDetailFields(category);
-  const sourceErrors = e("sources");
   const shareName = state.socialImage || state.featuredImage;
+  const generated = seoDefaults(state);
   const seoText = {
-    title:
-      state.ogTitle || state.seoTitle || [state.title, state.organisation?.name].filter(Boolean).join(" at "),
-    description:
-      state.ogDescription ||
-      state.seoDescription ||
-      state.summary ||
-      state.responsibilities
-        .replace(/^\s*[-*]\s+/gm, "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 160),
+    title: state.ogTitle || state.seoTitle || generated.title,
+    description: state.ogDescription || state.seoDescription || generated.description,
   };
+  const mustConfirmDuplicate = Boolean(detail?.duplicates.some((d) => d.level === "hard"));
+  const mentionsPayments = Boolean(detail?.warnings.some((w) => w.includes("payments by applicants")));
 
   async function previewClick() {
     // Whatever is typed is saved first, so the preview is exactly the draft.
@@ -310,7 +329,9 @@ export function JobEditor({
 
   async function publishClick() {
     const ok = await persist(true);
-    if (ok) setPublishing(true);
+    if (!ok) return;
+    setPublishing(true);
+    window.setTimeout(() => document.getElementById("publish")?.scrollIntoView?.({ block: "center" }), 50);
   }
 
   const status =
@@ -339,254 +360,131 @@ export function JobEditor({
       >
         {failure ? <FormError>{failure}</FormError> : null}
 
-        {mode === "new" && !id ? (
-          <Row id="category" title="Category" hint="It cannot be changed after the draft is created.">
-            <Select
-              id="category"
-              value={state.category}
-              onChange={(ev) => set({ category: ev.target.value, employmentType: "" })}
-            >
-              {categories.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </Row>
-        ) : (
-          <p className="m-0 text-small text-muted">{category.name}</p>
-        )}
-
-        <Row id="title" title="Job title" error={e("title")}>
-          <TextInput
-            id="title"
-            value={state.title}
-            maxLength={200}
-            required
-            invalid={Boolean(e("title"))}
-            aria-describedby={e("title") ? "title-error" : undefined}
-            onChange={(ev) => set({ title: ev.target.value })}
-          />
-        </Row>
-
-        <Row id="organisation" title="Organisation" error={e("organisation_id")}>
-          <OrganisationPicker
-            value={state.organisation}
-            onChange={(organisation) => set({ organisation })}
-            canCreate={canCreateOrganisation}
-            error={e("organisation_id")}
-          />
-        </Row>
-
-        <Row
-          id="featured_image"
-          title="Featured image"
-          optional
-          error={e("featured_image")}
-          hint="Recommended aspect ratio: 16:9 (for example 1280 × 720). Shown on the job page and used when the link is shared. Use a real picture; it does not make the employer verified."
-        >
-          <ImageUpload
-            id="featured_image"
-            value={state.featuredImage}
-            onChange={(featuredImage) =>
-              set({ featuredImage, ...(featuredImage ? {} : { featuredAlt: "" }) })
-            }
-            alt={state.featuredAlt}
-            onAltChange={(featuredAlt) => set({ featuredAlt })}
-            describedBy="featured_image-hint"
-            error={e("featured_image")}
-          />
-        </Row>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {vacanciesHere ? (
-            <Row id="vacancies" title="Vacancies" optional error={e("detail.vacancies")}>
-              <TextInput
-                id="vacancies"
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={typeof state.detail.vacancies === "string" ? state.detail.vacancies : ""}
-                invalid={Boolean(e("detail.vacancies"))}
-                onChange={(ev) => set({ detail: { ...state.detail, vacancies: ev.target.value } })}
-              />
-            </Row>
-          ) : null}
-          {jobTypes.length ? (
-            <Row id="employment_type" title="Job type" error={e("employment_type")}>
+        <FormSection id="basic" title="Basic information">
+          {mode === "new" && !id ? (
+            <Row id="category" title="Category" hint="It cannot be changed after the draft is created.">
               <Select
-                id="employment_type"
-                value={state.employmentType}
-                invalid={Boolean(e("employment_type"))}
-                onChange={(ev) => set({ employmentType: ev.target.value })}
+                id="category"
+                value={state.category}
+                onChange={(ev) => set({ category: ev.target.value, employmentType: "" })}
               >
-                <option value="">Not stated</option>
-                {jobTypes.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {categories.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
                   </option>
                 ))}
               </Select>
             </Row>
-          ) : null}
-          <Row
-            id="deadline_day"
-            title="Closing date"
-            optional
-            error={e("deadline_at")}
-            hint="Ends at the close of that day, Harare time."
-          >
+          ) : (
+            <p className="m-0 text-small text-muted">{category.name}</p>
+          )}
+
+          <Row id="title" title="Job title" error={e("title")}>
             <TextInput
-              id="deadline_day"
-              type="date"
-              value={state.deadlineDay}
-              invalid={Boolean(e("deadline_at"))}
-              onChange={(ev) => set({ deadlineDay: ev.target.value })}
+              id="title"
+              value={state.title}
+              maxLength={200}
+              required
+              invalid={Boolean(e("title"))}
+              aria-describedby={e("title") ? "title-error" : undefined}
+              onChange={(ev) => set({ title: ev.target.value })}
             />
           </Row>
-        </div>
 
-        <Row
-          id="location_text"
-          title="Location"
-          error={e("locations", "location_text")}
-          hint="As written in the source, for example “Harare”, “Bulawayo and Gweru” or “Remote”."
-        >
-          <TextInput
-            id="location_text"
-            maxLength={200}
-            value={state.locationText}
-            invalid={Boolean(e("locations", "location_text"))}
-            aria-describedby={e("locations", "location_text") ? "location_text-error" : "location_text-hint"}
-            onChange={(ev) => set({ locationText: ev.target.value })}
-          />
-        </Row>
-
-        {pays ? (
-          <Row
-            id="salary"
-            title="Pay"
-            optional
-            error={e("salary", "salary_text")}
-            hint="Type it as the source gives it, for example “US$500 per month” or “Competitive”. Left empty, the page shows TBA."
-          >
-            <TextInput
-              id="salary"
-              maxLength={120}
-              value={state.salaryText}
-              invalid={Boolean(e("salary", "salary_text"))}
-              aria-describedby={e("salary", "salary_text") ? "salary-error" : "salary-hint"}
-              onChange={(ev) => set({ salaryText: ev.target.value })}
+          <Row id="organisation" title="Organisation" error={e("organisation_id")}>
+            <OrganisationPicker
+              value={state.organisation}
+              onChange={(organisation) => set({ organisation })}
+              canCreate={canCreateOrganisation}
+              error={e("organisation_id")}
             />
           </Row>
-        ) : null}
 
-        <Row
-          id="summary"
-          title="Job overview"
-          optional
-          hint="One or two sentences, only if the source gives them."
-          error={e("summary")}
-        >
-          <Textarea
-            id="summary"
-            rows={2}
-            maxLength={300}
-            value={state.summary}
-            invalid={Boolean(e("summary"))}
-            aria-describedby={e("summary") ? "summary-error" : "summary-hint"}
-            onChange={(ev) => set({ summary: ev.target.value })}
-          />
-        </Row>
-
-        <BulletTextarea
-          id="responsibilities"
-          title={pays ? "Key responsibilities" : "Description"}
-          hint="Use • List to turn lines into bullets. Copy only what the source says."
-          value={state.responsibilities}
-          onChange={(responsibilities) => set({ responsibilities })}
-          error={e("description_md")}
-          rows={7}
-        />
-        <BulletTextarea
-          id="qualifications"
-          title={pays ? "Qualifications & experience" : "Eligibility & requirements"}
-          value={state.qualifications}
-          onChange={(qualifications) => set({ qualifications })}
-          error={e("requirements_md")}
-          optional
-          rows={5}
-        />
-
-        <fieldset className="grid gap-1 border-0 p-0">
-          <legend className="mb-1 text-ctl font-medium text-check-text">How to apply</legend>
-          <ApplyFields
-            state={state}
-            set={set}
-            errors={{
-              application_url: e("application_url"),
-              application_email: e("application_email"),
-              application_email_subject: e("application_email_subject"),
-              application_instructions: e("application_instructions"),
-            }}
-          />
-        </fieldset>
-
-        <fieldset className="grid gap-2 border-0 p-0">
-          <legend className="mb-1 text-ctl font-medium text-check-text">Original source</legend>
-          <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+          <div className="grid gap-4 sm:grid-cols-3">
+            {vacanciesHere ? (
+              <Row id="vacancies" title="Vacancies" optional error={e("detail.vacancies")}>
+                <TextInput
+                  id="vacancies"
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={typeof state.detail.vacancies === "string" ? state.detail.vacancies : ""}
+                  invalid={Boolean(e("detail.vacancies"))}
+                  onChange={(ev) => set({ detail: { ...state.detail, vacancies: ev.target.value } })}
+                />
+              </Row>
+            ) : null}
+            {jobTypes.length ? (
+              <Row id="employment_type" title="Job type" error={e("employment_type")}>
+                <Select
+                  id="employment_type"
+                  value={state.employmentType}
+                  invalid={Boolean(e("employment_type"))}
+                  onChange={(ev) => set({ employmentType: ev.target.value })}
+                >
+                  <option value="">Not stated</option>
+                  {jobTypes.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </Select>
+              </Row>
+            ) : null}
             <Row
-              id="source_url"
-              title="Source link"
+              id="deadline_day"
+              title="Closing date"
               optional
-              error={e("sources.0.url")}
-              hint="Where the vacancy was published, not where people apply."
+              error={e("deadline_at")}
+              hint="Ends at the close of that day, Harare time."
             >
               <TextInput
-                id="source_url"
-                type="url"
-                inputMode="url"
-                placeholder="https://"
-                value={state.sourceUrl}
-                invalid={Boolean(e("sources.0.url"))}
-                onChange={(ev) => set({ sourceUrl: ev.target.value })}
+                id="deadline_day"
+                type="date"
+                value={state.deadlineDay}
+                invalid={Boolean(e("deadline_at"))}
+                onChange={(ev) => set({ deadlineDay: ev.target.value })}
               />
-            </Row>
-            <Row id="source_kind" title="Source type">
-              <Select
-                id="source_kind"
-                value={state.sourceKind}
-                onChange={(ev) => set({ sourceKind: ev.target.value })}
-              >
-                {SOURCE_KINDS.map((k) => (
-                  <option key={k.value} value={k.value}>
-                    {k.label}
-                  </option>
-                ))}
-              </Select>
             </Row>
           </div>
+
           <Row
-            id="source_reference"
-            title="Or a reference"
-            optional
-            hint="A notice, page or gazette number when there is no link."
+            id="location_text"
+            title="Location"
+            error={e("locations", "location_text")}
+            hint="For example “Harare”, “Bulawayo and Gweru” or “Remote”."
           >
             <TextInput
-              id="source_reference"
-              maxLength={500}
-              value={state.sourceReference}
-              onChange={(ev) => set({ sourceReference: ev.target.value })}
+              id="location_text"
+              maxLength={200}
+              value={state.locationText}
+              invalid={Boolean(e("locations", "location_text"))}
+              aria-describedby={
+                e("locations", "location_text") ? "location_text-error" : "location_text-hint"
+              }
+              onChange={(ev) => set({ locationText: ev.target.value })}
             />
           </Row>
-          {sourceErrors ? (
-            <p role="alert" className="m-0 text-small text-danger">
-              <span className="font-strong">Error:</span> {sourceErrors}
-            </p>
-          ) : null}
-        </fieldset>
 
-        <div className="grid gap-2">
+          {pays ? (
+            <Row
+              id="salary"
+              title="Salary"
+              optional
+              error={e("salary", "salary_text")}
+              hint="Type it as advertised, for example “US$500 per month” or “Competitive”. Left empty, the page shows TBA."
+            >
+              <TextInput
+                id="salary"
+                maxLength={120}
+                value={state.salaryText}
+                invalid={Boolean(e("salary", "salary_text"))}
+                aria-describedby={e("salary", "salary_text") ? "salary-error" : "salary-hint"}
+                onChange={(ev) => set({ salaryText: ev.target.value })}
+              />
+            </Row>
+          ) : null}
+
           <Section
             id="more"
             title="More details"
@@ -720,11 +618,82 @@ export function JobEditor({
               </fieldset>
             ) : null}
           </Section>
+        </FormSection>
 
+        <FormSection id="details" title="Job details">
+          <Row id="summary" title="Overview" optional hint="One or two sentences." error={e("summary")}>
+            <Textarea
+              id="summary"
+              rows={2}
+              maxLength={300}
+              value={state.summary}
+              invalid={Boolean(e("summary"))}
+              aria-describedby={e("summary") ? "summary-error" : "summary-hint"}
+              onChange={(ev) => set({ summary: ev.target.value })}
+            />
+          </Row>
+          <BulletTextarea
+            id="responsibilities"
+            title={pays ? "Responsibilities" : "Description"}
+            hint="Use • List to turn lines into bullets."
+            value={state.responsibilities}
+            onChange={(responsibilities) => set({ responsibilities })}
+            error={e("description_md")}
+            rows={7}
+          />
+          <BulletTextarea
+            id="qualifications"
+            title={pays ? "Qualifications & experience" : "Eligibility & requirements"}
+            value={state.qualifications}
+            onChange={(qualifications) => set({ qualifications })}
+            error={e("requirements_md")}
+            optional
+            rows={5}
+          />
+        </FormSection>
+
+        <FormSection id="apply-section" title="How to apply">
+          <ApplyFields
+            state={state}
+            set={set}
+            errors={{
+              application_url: e("application_url"),
+              application_email: e("application_email"),
+              application_email_subject: e("application_email_subject"),
+              application_instructions: e("application_instructions"),
+            }}
+          />
+        </FormSection>
+
+        <FormSection
+          id="media-section"
+          title="Media"
+          hint="Pick a picture that is already in the library, or upload a new one. The same picture can be used on any number of listings."
+        >
+          <Row
+            id="featured_image"
+            title="Featured image"
+            optional
+            error={e("featured_image")}
+            hint="Recommended aspect ratio 16:9 (for example 1280 × 720). Shown on the job page and used when the link is shared. A picture does not make the employer verified."
+          >
+            <ImageUpload
+              id="featured_image"
+              library
+              value={state.featuredImage}
+              onChange={(featuredImage) =>
+                set({ featuredImage, ...(featuredImage ? {} : { featuredAlt: "" }) })
+              }
+              alt={state.featuredAlt}
+              onAltChange={(featuredAlt) => set({ featuredAlt })}
+              describedBy="featured_image-hint"
+              error={e("featured_image")}
+            />
+          </Row>
           <Section
             id="media"
-            title="Media & SEO"
-            summary={addressLocked ? "Address is permanent" : "Address, search and sharing text"}
+            title="Sharing image"
+            summary={state.socialImage ? "Set" : "Optional; the featured image is used when empty"}
             open={Boolean(open.media)}
             onToggle={(v) => setOpen((o) => ({ ...o, media: v }))}
           >
@@ -733,74 +702,88 @@ export function JobEditor({
               title="Sharing image"
               optional
               error={e("social_image")}
-              hint="Optional. Shown when the link is shared on WhatsApp, Facebook, LinkedIn or X. Recommended 1200 × 630. Empty: the featured image is used, so there is no need to upload it twice."
+              hint="Shown when the link is shared on WhatsApp, Facebook, LinkedIn or X. Recommended 1200 × 630. Empty: the featured image is used, so there is no need to choose it twice."
             >
               <ImageUpload
                 id="social_image"
+                library
+                libraryLabel="Choose from Library"
                 value={state.socialImage}
                 onChange={(socialImage) => set({ socialImage })}
                 ratio="1200 / 630"
-                buttonLabel="Upload sharing image"
                 describedBy="social_image-hint"
                 error={e("social_image")}
               />
             </Row>
-            <Row
-              id="slug"
-              title="Web address"
-              error={e("slug")}
-              hint={
-                addressLocked
-                  ? "A published address never changes, so shared links keep working."
-                  : "Optional. Lower-case letters, digits and hyphens. Chosen when the listing is first published; otherwise made from the title."
-              }
-            >
-              <div className="flex items-center gap-1">
-                <span className="text-small text-muted">upnext.co.zw/opportunities/</span>
-                <TextInput
-                  id="slug"
-                  value={addressLocked ? (detail?.slug ?? "") : state.slug}
-                  readOnly={addressLocked}
-                  maxLength={80}
-                  invalid={Boolean(e("slug"))}
-                  aria-describedby={e("slug") ? "slug-error" : "slug-hint"}
-                  onChange={(ev) => set({ slug: ev.target.value.toLowerCase() })}
-                />
-              </div>
-            </Row>
-            <Row
-              id="seo_title"
-              title="Search title"
-              optional
-              error={e("seo_title")}
-              hint="Empty: the job title and organisation are used."
-            >
+          </Section>
+        </FormSection>
+
+        <FormSection
+          id="seo-section"
+          title="SEO"
+          hint="Made from the job automatically. Change a field only when you need to; leave it empty to keep the generated text."
+        >
+          <Row
+            id="slug"
+            title="Web address"
+            error={e("slug")}
+            hint={
+              addressLocked
+                ? "A published address never changes, so shared links keep working."
+                : "Generated from the job title when first published, with a short code added. Lower-case letters, digits and hyphens."
+            }
+          >
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-small text-muted">upnext.co.zw/opportunities/</span>
               <TextInput
-                id="seo_title"
-                maxLength={70}
-                value={state.seoTitle}
-                invalid={Boolean(e("seo_title"))}
-                onChange={(ev) => set({ seoTitle: ev.target.value })}
+                id="slug"
+                className="min-w-0 flex-1"
+                value={addressLocked ? (detail?.slug ?? "") : state.slug}
+                placeholder={generated.slug}
+                readOnly={addressLocked}
+                maxLength={80}
+                invalid={Boolean(e("slug"))}
+                aria-describedby={e("slug") ? "slug-error" : "slug-hint"}
+                onChange={(ev) => set({ slug: ev.target.value.toLowerCase() })}
               />
-              {counter(state.seoTitle, 70)}
-            </Row>
-            <Row id="seo_description" title="Search description" optional error={e("seo_description")}>
-              <Textarea
-                id="seo_description"
-                rows={2}
-                maxLength={200}
-                value={state.seoDescription}
-                invalid={Boolean(e("seo_description"))}
-                onChange={(ev) => set({ seoDescription: ev.target.value })}
-              />
-              {counter(state.seoDescription, 200)}
-            </Row>
+            </div>
+          </Row>
+          <Row id="seo_title" title="Search title" optional error={e("seo_title")}>
+            <TextInput
+              id="seo_title"
+              maxLength={70}
+              value={state.seoTitle}
+              placeholder={generated.title}
+              invalid={Boolean(e("seo_title"))}
+              onChange={(ev) => set({ seoTitle: ev.target.value })}
+            />
+            {counter(state.seoTitle, 70)}
+          </Row>
+          <Row id="seo_description" title="Search description" optional error={e("seo_description")}>
+            <Textarea
+              id="seo_description"
+              rows={2}
+              maxLength={200}
+              value={state.seoDescription}
+              placeholder={generated.description}
+              invalid={Boolean(e("seo_description"))}
+              onChange={(ev) => set({ seoDescription: ev.target.value })}
+            />
+            {counter(state.seoDescription, 200)}
+          </Row>
+          <Section
+            id="seo"
+            title="Sharing text and preview"
+            summary="How a shared link looks"
+            open={Boolean(open.seo)}
+            onToggle={(v) => setOpen((o) => ({ ...o, seo: v }))}
+          >
             <Row
               id="og_title"
               title="Sharing title"
               optional
               error={e("og_title")}
-              hint="Shown when the link is shared. Empty: the search title is used."
+              hint="Empty: the search title is used."
             >
               <TextInput
                 id="og_title"
@@ -861,15 +844,45 @@ export function JobEditor({
               </p>
             </div>
           </Section>
-        </div>
+        </FormSection>
 
-        {detail?.warnings.length ? (
-          <ul className="m-0 grid list-none gap-1 rounded-card border border-border-notice bg-surface-notice p-3 text-ctl">
-            {detail.warnings.map((w) => (
-              <li key={w}>{w}</li>
-            ))}
-          </ul>
-        ) : null}
+        <FormSection id="publishing" title="Publishing">
+          <dl className="m-0 grid gap-3 text-ctl sm:grid-cols-2">
+            <div className="grid gap-1">
+              <dt className="text-small text-muted">Status</dt>
+              <dd className="m-0">
+                <StatusBadge tone={detail?.status_tone ?? "neutral"}>
+                  {detail?.status_label ?? "Draft"}
+                </StatusBadge>
+              </dd>
+            </div>
+            {id && detail?.can_verify ? (
+              <div className="grid gap-1">
+                <dt className="text-small text-muted">Verification</dt>
+                <dd className="m-0">
+                  <VerifyToggle id={id} verified={detail.verified} canVerify />
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          {detail?.warnings.length ? (
+            <ul
+              aria-label="Things to check before publishing"
+              className="m-0 grid list-none gap-1 rounded-card border border-border-notice bg-surface-notice p-3 text-ctl"
+            >
+              {detail.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="m-0 text-small text-muted">
+            {verb
+              ? verb.name === "publish_direct"
+                ? "Publish makes the listing live now. Verification is separate: a listing can be live without it."
+                : "Submit for review sends the listing to another person, who approves it before it goes live."
+              : "Save the draft; it stays private to you until it is published or reviewed."}
+          </p>
+        </FormSection>
 
         <div
           className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-line bg-surface/95 px-4 py-2 pb-[calc(8px+env(safe-area-inset-bottom))] backdrop-blur-[8px] sm:mx-0 sm:rounded-card sm:border"
@@ -903,6 +916,10 @@ export function JobEditor({
             rowVersion={rowVersion}
             actions={detail.actions.filter((a) => a.name === verb.name)}
             initial={verb.name}
+            reveal={[
+              ...(mustConfirmDuplicate ? ["confirm_duplicate"] : []),
+              ...(mentionsPayments ? ["applicant_payment_reviewed"] : []),
+            ]}
           />
         </div>
       ) : null}

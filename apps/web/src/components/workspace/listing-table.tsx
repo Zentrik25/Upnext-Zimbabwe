@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { ListingRow } from "@/lib/staff-types";
 import { dateText, dateTimeText, StatusBadge } from "./badges";
+import { count } from "@/lib/staff-format";
 import { RowMenu } from "./row-menu";
+import { VerifyToggle } from "./verify-toggle";
 
 export type TableKind = "default" | "queue";
 
@@ -22,6 +24,8 @@ export function ListingTable({
   kind?: TableKind;
   caption: string;
 }) {
+  // The Views column is drawn only when the server sent the figure (it does not for people without analytics).
+  const showViews = kind === "default" && rows.some((r) => r.views !== undefined && r.views !== null);
   return (
     <>
       <div className="max-md:hidden">
@@ -58,6 +62,11 @@ export function ListingTable({
                   <th scope="col" className={th}>
                     Closing date
                   </th>
+                  {showViews ? (
+                    <th scope="col" className={`${th} text-right`}>
+                      Views
+                    </th>
+                  ) : null}
                   <th scope="col" className={th}>
                     Verification
                   </th>
@@ -87,14 +96,23 @@ export function ListingTable({
                   <>
                     <td className={td}>{r.submitted_by ?? "-"}</td>
                     <td className={`${td} whitespace-nowrap`}>{dateTimeText(r.submitted_at)}</td>
-                    <td className={td}>{r.verification_label}</td>
+                    <td className={td}>
+                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                    </td>
                   </>
                 ) : (
                   <>
                     <td className={td}>{r.location}</td>
                     <td className={td}>{r.category.name}</td>
                     <td className={`${td} whitespace-nowrap tabular-nums`}>{dateText(r.closing)}</td>
-                    <td className={td}>{r.verification_label}</td>
+                    {showViews ? (
+                      <td className={`${td} text-right tabular-nums`} data-testid="views-cell">
+                        {count(r.views)}
+                      </td>
+                    ) : null}
+                    <td className={td}>
+                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                    </td>
                   </>
                 )}
                 <td className={td}>
@@ -126,7 +144,10 @@ export function ListingTable({
             <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
               <StatusBadge tone={r.status_tone}>{r.status_label}</StatusBadge>
               <span>Closing: {dateText(r.closing)}</span>
-              <span>{r.verification_label}</span>
+              {showViews ? <span>Views: {count(r.views)}</span> : null}
+            </p>
+            <p className="m-0 mt-2">
+              <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
             </p>
           </li>
         ))}

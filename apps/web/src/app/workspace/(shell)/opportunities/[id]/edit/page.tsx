@@ -3,13 +3,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { JobEditor } from "@/components/workspace/job-editor";
 import { listLocations, listSectors } from "@/lib/catalog";
-import { can, currentTime, requireStaff, staffJson } from "@/lib/staff";
+import { can, requireStaff, staffJson } from "@/lib/staff";
 import type { ListingDetail, StaffCategory } from "@/lib/staff-types";
 
 export const metadata: Metadata = { title: "Edit draft" };
 type Props = { params: Promise<{ id: string }> };
-
-const harareToday = () => new Date(currentTime() + 2 * 3600 * 1000).toISOString().slice(0, 10);
 
 export default async function EditPage({ params }: Props) {
   const { id } = await params;
@@ -48,7 +46,6 @@ export default async function EditPage({ params }: Props) {
         locations={locations}
         sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}
         canCreateOrganisation={can(session, "org.create")}
-        today={harareToday()}
       />
     </>
   );

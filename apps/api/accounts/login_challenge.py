@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from django.contrib.auth import login
 from django.http import HttpRequest
 
-from core.staff_mfa import SESSION_FLAG
+from core.staff_mfa import PROVED_AT, SESSION_FLAG
 
 from . import mfa
 from .models import AccountStatus, User
@@ -69,5 +69,6 @@ def complete(request: HttpRequest, held: Pending) -> None:
     cancel(request)
     login(request, held.user, backend="django.contrib.auth.backends.ModelBackend")
     request.session[SESSION_FLAG] = True  # the second step was just passed in this session
+    request.session[PROVED_AT] = time.time()
     if not held.remember:
         request.session.set_expiry(0)
