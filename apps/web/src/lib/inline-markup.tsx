@@ -18,7 +18,15 @@ export function renderInline(text: string): ReactNode[] {
     const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
     if (link) {
       const href = link[2]!;
-      return href.startsWith("/") ? (
+      if (href.startsWith("https://")) {
+        // External links (for example Google's advertising settings): https only, opened in the same tab.
+        return (
+          <a key={index} href={href} className={LINK_CLASS} rel="noopener noreferrer">
+            {link[1]}
+          </a>
+        );
+      }
+      return href.startsWith("/") || href.startsWith("#") ? (
         <Link key={index} href={href} className={LINK_CLASS}>
           {link[1]}
         </Link>

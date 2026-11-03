@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Children, type ReactNode } from "react";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { ProsePage, Section } from "@/components/content/prose";
 import { JsonLd } from "@/components/seo/json-ld";
 import { GUIDES, guideAt } from "@/lib/guides";
@@ -13,6 +14,14 @@ const dateLong = (iso: string) =>
     year: "numeric",
     timeZone: "UTC",
   });
+
+/** The advertising slot goes in the middle of the article, between two sections: never at the top, and never next to
+ *  the "More guides" links. It renders nothing unless advertising is live and allowed on this page. */
+function withAd(children: ReactNode): ReactNode[] {
+  const parts = Children.toArray(children);
+  parts.splice(Math.ceil(parts.length / 2), 0, <AdSlot key="ad" placement="guide" />);
+  return parts;
+}
 
 /** One editorial guide: heading, intro, visible publication and update dates (the same dates the Article data
  *  carries), the body, and links to the other guides. */
@@ -56,7 +65,7 @@ export function GuidePage({
           ) : null}
           . Written by the UPNEXT Careers team.
         </p>
-        {children}
+        {withAd(children)}
         <Section title="More guides">
           <ul className="m-0 list-disc pl-5">
             {others.map((g) => (

@@ -147,11 +147,14 @@ export function JobView({
   preview = false,
   personal,
   related,
+  ad,
 }: {
   listing: OpportunityDetail;
   preview?: boolean;
   personal?: ReactNode;
   related?: ReactNode;
+  /** A labelled advertising slot, placed between content blocks (never beside the apply, save or share controls). */
+  ad?: ReactNode;
 }) {
   const open = isOpen(listing);
   const deadline = deadlineView(listing.deadline, listing.status);
@@ -324,6 +327,7 @@ export function JobView({
               <SafeHtml html={withoutRepeatedHeadings(listing.description_html)} />
             </Block>
           ) : null}
+          {!preview ? ad : null}
           {listing.requirements_html ? (
             <Block icon="cap" title={pays ? "Qualifications & experience" : "Requirements"}>
               <SafeHtml html={withoutRepeatedHeadings(listing.requirements_html)} />

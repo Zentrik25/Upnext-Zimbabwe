@@ -5,6 +5,7 @@ import { cache, Suspense } from "react";
 import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { JobView } from "@/components/opportunities/job-view";
 import { ListingEvents } from "@/components/opportunities/listing-events";
 import { RelatedCard } from "@/components/opportunities/job-parts";
@@ -105,6 +106,7 @@ export default async function OpportunityPage({ params }: Props) {
       <ListingEvents slug={listing.slug} open={listing.status === "published"} />
       <JobView
         listing={listing}
+        ad={listing.status === "published" ? <AdSlot placement="job-detail" /> : null}
         personal={
           <Suspense fallback={listing.status === "published" ? <SaveSkeleton /> : null}>
             <ListingSave listing={listing} />
