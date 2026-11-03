@@ -555,9 +555,9 @@ paths:
       security: [{ csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 } } } } }
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 }, trust_device: { type: boolean, default: false, description: 'Trust this browser for 30 days (D-59): sets an HttpOnly, SameSite=Lax cookie whose hash is stored server side' } } } } }
       responses:
-        '200': { description: 'Session cookie set (rotated); returns the user', content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '200': { description: 'Session cookie set (rotated); returns the user. With trust_device, also the trusted-device cookie', headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
         '400': { description: '`invalid_code`, or `two_step_expired` when sign-in must start again', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /auth/logout:
@@ -844,6 +844,33 @@ paths:
         - { name: session_id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         '204': { description: 'Revoked' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /me/trusted-devices:
+    get:
+      tags: [me]
+      operationId: listTrustedDevices
+      description: 'Browsers the person trusted (D-59), newest use first; `current` marks this browser. `code_every_hours` is the staff limit (24), null for other accounts.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Devices', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [me]
+      operationId: revokeAllTrustedDevices
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Every trusted device forgotten' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/trusted-devices/{device_id}:
+    delete:
+      tags: [me]
+      operationId: revokeTrustedDevice
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { name: device_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: 'Forgotten' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
   /me/saved:
@@ -1205,6 +1232,29 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/analytics:
+    get:
+      tags: [staff]
+      operationId: getStaffAnalytics
+      summary: 'Traffic figures, chart series, listing counts and the most and recently viewed listings (staff with analytics.read)'
+      description: 'Query: period = 24h, 7d, 30d (default), 90d or all. Views are page views (one per browser tab session); unique visitors are not measured (`unique_visitors` is null). Cached for 60 seconds per person and period. Definitions: docs/engineering/ANALYTICS.md. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/analytics/opportunities:
+    get:
+      tags: [staff]
+      operationId: listStaffAnalyticsOpportunities
+      summary: 'Listings ranked by views, apply clicks and click-through rate for a period or a Harare date range (staff with analytics.read)'
+      description: 'Query: period, or from and to (YYYY-MM-DD, both days included, at most 400 days), q, sort = views, all_views, clicks, ctr, published or title, dir = asc or desc, page, page_size (up to 50). Click-through rate is apply clicks divided by views of the same window and is null when the window has no views. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /staff/images:
     post:
       tags: [staff]
@@ -1216,6 +1266,35 @@ paths:
         required: true
         content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
       responses:
+        '200': { description: 'The same picture was already in the library; nothing new was stored', content: { application/json: { schema: { type: object } } } }
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/media:
+    get:
+      tags: [staff]
+      operationId: listStaffMedia
+      summary: 'Browse and search the Media Library (newest first, paged); each picture says how many listings use it'
+      description: 'Query: q (title or file name), page, page_size (up to 48). Added in D-62.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: uploadStaffMedia
+      summary: 'Upload a picture to the Media Library (JPEG, PNG or WebP, up to 5 MB)'
+      description: 'Same validation and optimisation as /staff/images. A picture that is already in the library is returned (200, reused true) instead of being stored again. Added in D-62.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
+      responses:
+        '200': { description: 'Already in the library', content: { application/json: { schema: { type: object } } } }
         '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
         '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
@@ -1279,7 +1358,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
   /staff/team/{targetId}/actions/{action}:
-    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-sessions] } }]
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-trusted-devices, revoke-sessions] } }]
     post:
       tags: [staff]
       operationId: runStaffMemberAction
@@ -1334,6 +1413,23 @@ paths:
       security: [{ cookieAuth: [] }]
       responses:
         '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/opportunities/{opportunityId}/verification:
+    parameters: [{ name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      tags: [staff]
+      operationId: setStaffVerification
+      summary: 'Verify or unverify a listing with {"verified": true|false}'
+      description: 'One switch, independent of publication; no note or second person. Needs opp.verify.record (Editors and Administrators), enforced by the publishing service. Idempotent; the change is recorded with who and when. Added in D-62.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [verified], properties: { verified: { type: boolean } } } } }
+      responses:
+        '200': { description: 'The listing row after the change', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }

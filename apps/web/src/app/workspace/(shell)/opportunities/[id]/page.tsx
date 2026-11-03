@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionPanel } from "@/components/workspace/action-panel";
+import { Metric } from "@/components/workspace/analytics/metric";
+import { VerifyToggle } from "@/components/workspace/verify-toggle";
 import { dateText, dateTimeText, StatusBadge } from "@/components/workspace/badges";
 import { requireStaff, staffJson } from "@/lib/staff";
 import { humanise } from "@/lib/format";
@@ -122,7 +124,6 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
     throw new Error("The opportunity could not be loaded.");
   }
   const o = result.data;
-  const open = o.pending && !o.pending.hidden ? o.pending : o.live && !o.live.hidden ? o.live : null;
   return (
     <>
       <p className="m-0 text-ctl">
@@ -140,7 +141,14 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
             <span>{o.category.name}</span>
             <span>{o.organisation ?? "-"}</span>
             <span>Closing: {dateText(o.closing)}</span>
-            <span>{o.verification_label}</span>
+          </p>
+          <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-ctl text-muted">
+            <VerifyToggle id={o.id} verified={o.verified} canVerify={o.can_verify} />
+            {o.verified && o.verified_by ? (
+              <span className="text-small">
+                {o.verified_by}, {dateTimeText(o.verified_at)}
+              </span>
+            ) : null}
           </p>
         </div>
         {o.public_path ? (
@@ -160,6 +168,32 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
         </p>
       ))}
 
+      {o.analytics ? (
+        <section aria-labelledby="stats-title" className="mb-4">
+          <h2 id="stats-title" className="m-0 mb-2 text-title font-normal tracking-title">
+            Views and engagement
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <Metric label="All-time views" value={o.analytics.all_time.views} />
+            <Metric label="Last 24 hours" value={o.analytics.last_24_hours.views} />
+            <Metric label="Last 7 days" value={o.analytics.last_7_days.views} />
+            <Metric label="Last 30 days" value={o.analytics.last_30_days.views} />
+            <Metric
+              label="Apply clicks"
+              value={o.analytics.all_time.apply_clicks}
+              note="All time, not applications"
+            />
+            <Metric label="Saves" value={o.analytics.saves} note="Currently saved" />
+          </div>
+          <p className="m-0 mt-1 text-small text-muted">
+            Page views, one per browser tab session; unique visitors are not measured.
+            {o.analytics.tracking.daily_since
+              ? ` Counting began on ${dateText(o.analytics.tracking.daily_since)}; nothing earlier is estimated.`
+              : " No views have been recorded yet."}
+          </p>
+        </section>
+      ) : null}
+
       <section aria-labelledby="actions-title" className={`${card} mb-4`}>
         <h2 id="actions-title" className={h2}>
           What you can do now
@@ -170,7 +204,12 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
           rowVersion={o.row_version}
           actions={o.actions}
           initial={initial}
-          defaults={{ version_no: open && !open.hidden ? open.version_no : "" }}
+          reveal={[
+            ...(o.duplicates.some((d) => d.level === "hard") ? ["confirm_duplicate"] : []),
+            ...(o.warnings.some((w) => w.includes("payments by applicants"))
+              ? ["applicant_payment_reviewed"]
+              : []),
+          ]}
         />
       </section>
 
@@ -178,11 +217,15 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
         <Revision title="Revision being worked on" version={o.pending} />
         <Revision title="Live revision" version={o.live} />
 
-        <section className={card} aria-labelledby="verif-title">
-          <h2 id="verif-title" className={h2}>
-            Verification records
-          </h2>
-          {o.verifications.length ? (
+        {o.verifications.length ? (
+          <section className={card} aria-labelledby="verif-title">
+            <h2 id="verif-title" className={h2}>
+              Earlier verification records
+            </h2>
+            <p className="m-0 mb-3 text-ctl text-muted">
+              Kept from before verification became a single Verify / Unverify switch. They no longer decide
+              the status.
+            </p>
             <ul className="m-0 grid list-none gap-3 p-0">
               {o.verifications.map((v, i) => (
                 <li key={i} className="border-t border-line pt-3 text-ctl">
@@ -197,13 +240,8 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="m-0 text-ctl text-muted">
-              No verification has been recorded. Source and verification are separate: a listing can have
-              sources and still be unverified.
-            </p>
-          )}
-        </section>
+          </section>
+        ) : null}
 
         <section className={card} aria-labelledby="history-title">
           <h2 id="history-title" className={h2}>

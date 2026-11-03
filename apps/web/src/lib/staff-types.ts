@@ -54,8 +54,15 @@ export type ListingRow = {
   status_label: string;
   status_tone: StatusTone;
   version_state: string | null;
-  verification: string;
+  /** The single verification switch (D-62): Verified or Not Verified, apart from publication. */
+  verified: boolean;
   verification_label: string;
+  verified_at: string | null;
+  verified_by: string | null;
+  /** Whether this person holds the verification permission; the server checks it again on every change. */
+  can_verify: boolean;
+  /** All-time page views (D-65); only on the opportunities list, null without the analytics permission. */
+  views?: number | null;
   submitted_by: string | null;
   submitted_at: string | null;
   updated_at: string;
@@ -175,7 +182,27 @@ export type ListingDetail = ListingRow & {
   }[];
   actions: StaffAction[];
   warnings: string[];
+  /** This listing's own statistics; null when the person may not see analytics. */
+  analytics: JobStats | null;
+  /** Open listings that look like this draft (a warning, never a block). */
+  duplicates: { id: string; title: string; level: "hard" | "soft"; reason: string; status: string }[];
   can_edit: boolean;
+};
+
+/** One picture in the Media Library. `name` is what a listing stores; it is served at `/media/<name>`. */
+export type MediaItem = {
+  id: string;
+  name: string;
+  thumb: string;
+  title: string;
+  original_filename: string;
+  width: number | null;
+  height: number | null;
+  bytes: number | null;
+  uploaded_by: string | null;
+  created_at: string;
+  /** How many listings use it now. */
+  used_in: number | null;
 };
 
 export type DetailField = {
@@ -264,4 +291,59 @@ export type ContentHealth = {
   unknown_deadline_over_30_days: number;
   live_not_verified: number;
   sod_violations: { rule: string; version_id: string }[];
+};
+
+/** Analytics (D-65). Views are page views (one per browser tab session); unique visitors are not measured. */
+export type Counts = { views: number; apply_clicks: number };
+export type TrafficFigures = {
+  all_time: Counts;
+  last_24_hours: Counts;
+  last_7_days: Counts;
+  last_30_days: Counts;
+};
+export type TrackingInfo = { hourly_since: string | null; daily_since: string | null };
+export type JobStats = TrafficFigures & { saves: number; tracking: TrackingInfo };
+export type AnalyticsPeriod = "24h" | "7d" | "30d" | "90d" | "all";
+export type ChartPoint = { t: string; views: number; apply_clicks: number };
+export type AnalyticsOverview = {
+  period: AnalyticsPeriod;
+  generated_at: string;
+  traffic: TrafficFigures;
+  tracking: TrackingInfo;
+  operations: {
+    published: number;
+    active: number;
+    expired: number;
+    draft: number;
+    awaiting_verification: number;
+  };
+  saves: number;
+  chart: {
+    bucket: "hour" | "day" | "week" | "month";
+    points: ChartPoint[];
+    views: number;
+    apply_clicks: number;
+  };
+  most_viewed: AnalyticsRow[];
+  recently_viewed: { id: string; title: string; organisation: string; last_viewed_hour: string }[];
+  scope: "platform" | "yours";
+  unique_visitors: null;
+};
+export type AnalyticsRow = {
+  id: string;
+  slug: string | null;
+  title: string;
+  organisation: string;
+  published_at: string | null;
+  status: string;
+  views: number;
+  all_time_views: number;
+  apply_clicks: number;
+  click_through_rate: number | null;
+};
+export type AnalyticsTable = {
+  data: AnalyticsRow[];
+  page: PageInfo;
+  window: string;
+  tracking: TrackingInfo;
 };

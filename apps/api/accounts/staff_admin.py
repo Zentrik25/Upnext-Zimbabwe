@@ -35,7 +35,7 @@ from audit.models import Severity
 from notifications import services as outbox
 from notifications.models import EmailKind
 
-from . import services, tokens
+from . import services, tokens, trusted_devices
 from .models import AccountStatus, AuthToken, StaffRoleAssignment, TokenPurpose, User, UserSession
 
 ROLE_ORDER: tuple[str, ...] = (Role.ADMINISTRATOR, Role.EDITOR, Role.CONTRIBUTOR)
@@ -439,6 +439,9 @@ def change_role(actor: User, target_id: uuid.UUID | str, *, role: str, reason: s
         target.row_version += 1
         target.save(update_fields=["row_version", "updated_at"])
         target.refresh_roles()
+        trusted_devices.revoke_all(
+            target, "role_changed", actor_id=actor.pk
+        )  # new authority: prove a code again
         _audit(actor, target, "role_changed", previous=before, to=role, reason=reason)
         _notify(target, "role", role)
     return target
@@ -461,6 +464,7 @@ def suspend(actor: User, target_id: uuid.UUID | str, *, reason: str) -> User:
         target.row_version += 1
         target.save(update_fields=["status", "row_version", "updated_at"])
         revoked = services.revoke_sessions(target)
+        trusted_devices.revoke_all(target, "suspended", actor_id=actor.pk)
         _audit(
             actor, target, "suspended", reason=reason, sessions_revoked=revoked, severity=Severity.SECURITY
         )
@@ -514,6 +518,7 @@ def remove(actor: User, target_id: uuid.UUID | str, *, reason: str, confirmed: b
             invalidated_at=timezone.now()
         )
         revoked = services.revoke_sessions(target)
+        trusted_devices.revoke_all(target, "removed", actor_id=actor.pk)
         _audit(
             actor, target, "removed", reason=reason, roles=roles, sessions_revoked=revoked,
             was_pending_invitation=was_pending, severity=Severity.SECURITY,
@@ -553,6 +558,19 @@ def revoke_sessions(actor: User, target_id: uuid.UUID | str, *, reason: str) -> 
         _not_self(actor, target, "sign out everywhere with this tool for")
         count = services.revoke_sessions(target)
         _audit(actor, target, "sessions_revoked", reason=reason, sessions=count, severity=Severity.SECURITY)
+    return count
+
+
+def revoke_trusted_devices(actor: User, target_id: uuid.UUID | str, *, reason: str) -> int:
+    """Forget every trusted device of a person: their next sign-in on any browser asks for a code."""
+    _need(actor, Permission.USER_STATUS_CHANGE)
+    reason = clean_reason(reason)
+    with transaction.atomic():
+        target, _ = _lock(target_id)
+        count = trusted_devices.revoke_all(target, "admin_revoked", actor_id=actor.pk)
+        _audit(
+            actor, target, "trusted_devices_revoked", reason=reason, devices=count, severity=Severity.SECURITY
+        )
     return count
 
 

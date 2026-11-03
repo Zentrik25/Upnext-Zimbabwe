@@ -181,12 +181,12 @@ test.describe("home and static pages (SC-01, SC-14)", () => {
     await expect(page).toHaveURL(/category=grants/);
   });
 
-  test("about explains the three verification labels from the same wording as the listings", async ({
+  test("about explains the two verification labels from the same wording as the listings", async ({
     page,
   }) => {
     await page.goto("/about");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("About UPNEXT Careers");
-    for (const label of ["Not verified", "Source checked", "Verified with the issuer"])
+    for (const label of ["Not verified", "Verified"])
       await expect(page.getByText(label, { exact: false }).first()).toBeVisible();
     expect(await robotsMeta(page)).toBeNull();
   });

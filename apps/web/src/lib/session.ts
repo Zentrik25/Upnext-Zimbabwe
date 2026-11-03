@@ -102,6 +102,23 @@ export async function getTwoStep(): Promise<TwoStepState | null> {
   return result.ok ? result.data : null;
 }
 
+export type TrustedDeviceInfo = {
+  id: string;
+  label: string;
+  created_at: string;
+  last_used_at: string;
+  last_mfa_at: string;
+  expires_at: string;
+  current: boolean;
+};
+export type TrustedDevices = { data: TrustedDeviceInfo[]; code_every_hours: number | null };
+
+/** The browsers the caller trusts for two-step verification (D-59); null when the service could not be reached. */
+export async function getTrustedDevices(): Promise<TrustedDevices | null> {
+  const result = await authedJson<TrustedDevices>("me/trusted-devices");
+  return result.ok ? result.data : null;
+}
+
 export async function getSessions(): Promise<SessionInfo[]> {
   const response = await authedGet("me/sessions");
   if (!response || !response.ok) return [];

@@ -6,7 +6,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: 
 
 import { JobView } from "@/components/opportunities/job-view";
 import { ShareButton } from "@/components/opportunities/share-button";
-import { StickyApply } from "@/components/opportunities/sticky-apply";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import { mailtoHref, salaryLine } from "@/lib/format";
 
@@ -78,16 +77,17 @@ const links = () => screen.queryAllByRole("link");
 const text = () => document.body.textContent ?? "";
 
 describe("the order of the page", () => {
-  it("runs title, organisation and status, facts, apply, overview, responsibilities, qualifications, how to apply, source", () => {
+  it("runs title, organisation and status, facts, apply, overview, responsibilities, qualifications, how to apply, report link", () => {
     render(<JobView listing={listing()} />);
     const order = [
       screen.getByRole("heading", { level: 1, name: "Senior Accountant" }),
       screen.getByRole("link", { name: /Apply Now/ }),
+      screen.getByRole("heading", { name: "Overview" }),
       screen.getByText("Lead the finance team of a water authority."),
       screen.getByRole("heading", { name: "Key responsibilities" }),
       screen.getByRole("heading", { name: "Qualifications & experience" }),
       screen.getByRole("heading", { name: "How to apply" }),
-      screen.getByRole("heading", { name: "Where this came from" }),
+      screen.getByRole("link", { name: "Report this opportunity" }),
     ];
     for (let i = 1; i < order.length; i++)
       expect(
@@ -95,6 +95,15 @@ describe("the order of the page", () => {
       ).toBeTruthy();
     expect(screen.getByText("Source checked")).toBeInTheDocument(); // the genuine status, next to the organisation
     expect(screen.queryByRole("img")).toBeNull(); // no logo, no featured image, none made up
+  });
+
+  it("states the verification level only as its label, with no sources block", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.getAllByText("Source checked")).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "Where this came from" })).toBeNull();
+    expect(screen.queryByLabelText("Sources")).toBeNull();
+    expect(text()).not.toMatch(/Last checked|not confirmation from the issuing organisation|\(primary\)/i);
+    expect(text()).not.toContain("herald.co.zw");
   });
 
   it("shows each fact once and only the facts it has", () => {
@@ -266,12 +275,7 @@ describe("the apply actions", () => {
     );
     const view = screen.getByRole("link", { name: "View Application Instructions" });
     expect(view).toHaveAttribute("href", "#how-to-apply");
-    expect(
-      links().filter(
-        (l) =>
-          /^(https?:|mailto:)/.test(l.getAttribute("href") ?? "") && !l.closest("[aria-label='Sources']"),
-      ),
-    ).toHaveLength(0);
+    expect(links().filter((l) => /^(https?:|mailto:)/.test(l.getAttribute("href") ?? ""))).toHaveLength(0);
     expect(screen.getByText("Hand deliver your CV to reception before 4pm.")).toBeInTheDocument();
   });
 
@@ -284,7 +288,7 @@ describe("the apply actions", () => {
       />,
     );
     expect(screen.queryByRole("link", { name: /Apply Now/ })).toBeNull();
-    expect(screen.queryByTestId("apply")).toBeNull(); // no destination: no apply block, the source stays under Sources
+    expect(screen.queryByTestId("apply")).toBeNull(); // no destination: no apply block, and no source is shown
   });
 
   it("refuses a non-https application address", () => {
@@ -334,7 +338,7 @@ describe("closed opportunities", () => {
   });
 });
 
-describe("share and the sticky bar", () => {
+describe("share", () => {
   it("uses the device's share sheet when there is one", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { share });
@@ -366,16 +370,144 @@ describe("share and the sticky bar", () => {
     await waitFor(() => expect(share).toHaveBeenCalled());
     expect(screen.getByRole("status").textContent).toBe("");
   });
+});
 
-  it("keeps the bottom Apply bar hidden until the main button has scrolled away, above the tab bar", () => {
+describe("the mobile layout (owner reference, D-63)", () => {
+  const instructionsOnly = (over: Partial<OpportunityDetail> = {}) =>
+    listing({
+      application: {
+        method: "instructions",
+        url: null,
+        email: null,
+        email_subject: null,
+        instructions: "Applications should be addressed to:\nDirector Transmission/A\nBox 1760, Harare",
+      },
+      reference_number: "115/1/TM/nm",
+      ...over,
+    });
+
+  it("shows facts as two rows of chips: place, type, arrangement, then pay and the closing date", () => {
     const { container } = render(
-      <StickyApply targetId="nope">
-        <a href="#x">Apply Now</a>
-      </StickyApply>,
+      <JobView listing={listing({ employment_type: "contract", work_mode: "on_site" })} />,
     );
-    const bar = container.firstElementChild as HTMLElement;
-    expect(bar.className).toContain("bottom-[58px]");
-    expect(bar.className).toContain("invisible");
-    expect(bar.getAttribute("aria-hidden")).toBe("true");
+    const rows = container.querySelectorAll("article > ul");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.textContent).toMatch(/Harare, Bulawayo.*Contract.*On site/);
+    expect(rows[1]!.textContent).toMatch(/Competitive.*Closes/);
+  });
+
+  it("draws no chip for a fact the listing does not have", () => {
+    const { container } = render(
+      <JobView
+        listing={listing({ employment_type: null, work_mode: null, locations: [], location_text: null })}
+      />,
+    );
+    expect(container.querySelectorAll("article > ul")).toHaveLength(1); // only the pay and deadline row
+    expect(text()).not.toMatch(/Contract|Permanent|On site|Hybrid|Remote/);
+  });
+
+  it("shows the verified badge only for a verified listing, and a plain label otherwise", () => {
+    const { unmount } = render(
+      <JobView listing={listing({ verification: { level: "issuer_verified", checked_at: null } })} />,
+    );
+    expect(screen.getByTestId("verified-badge")).toHaveTextContent("Verified");
+    unmount();
+    render(<JobView listing={listing({ verification: { level: "not_verified", checked_at: null } })} />);
+    expect(screen.queryByTestId("verified-badge")).toBeNull();
+    expect(screen.getByText("Not verified")).toBeInTheDocument();
+  });
+
+  it("an instructions-only listing gets one button that jumps to How to apply, and the instructions appear once", () => {
+    render(<JobView listing={instructionsOnly()} />);
+    const button = screen.getByRole("link", { name: /View Application Instructions/ });
+    expect(button).toHaveAttribute("href", "#how-to-apply");
+    expect(document.getElementById("how-to-apply")).not.toBeNull();
+    expect(screen.getAllByText(/Director Transmission\/A/)).toHaveLength(1);
+    expect(screen.getByText(/Reference: 115\/1\/TM\/nm/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Apply Now|Apply via Email/ })).toBeNull();
+  });
+
+  it("does not repeat an address, e-mail or reference the instructions already state", () => {
+    render(
+      <JobView
+        listing={listing({
+          application: {
+            method: "both",
+            url: "https://careers.example.org/apply",
+            email: "hr@example.org",
+            email_subject: null,
+            instructions: "Apply at careers.example.org or write to hr@example.org quoting REF-9.",
+          },
+          reference_number: "REF-9",
+          contact_details: null,
+        })}
+      />,
+    );
+    const how = document.getElementById("how-to-apply")!;
+    expect(how.textContent).not.toMatch(/Send your application to/);
+    expect(how.textContent).not.toMatch(/Apply on careers/);
+    expect(how.textContent).not.toMatch(/Reference: REF-9/);
+    expect(how.textContent).toContain("hr@example.org"); // once, in the instructions
+  });
+
+  it("shows the safety notice once, and no sticky second Apply bar", () => {
+    const { container } = render(<JobView listing={listing()} />);
+    expect(screen.getAllByText(/Never pay to apply/)).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "how to apply safely" })).toHaveAttribute(
+      "href",
+      "/guides/apply-safely-and-avoid-scams",
+    );
+    expect(container.querySelector(".fixed")).toBeNull();
+    expect(screen.getAllByRole("link", { name: /Apply Now/ })).toHaveLength(1);
+  });
+
+  it("drops a heading the section already carries, so Responsibilities is not printed twice", () => {
+    render(
+      <JobView
+        listing={listing({
+          description_html: "<h3>Responsibilities</h3><ul><li>Run the ledger</li></ul>",
+          requirements_html: "<h3>Qualifications &amp; experience</h3><ul><li>CA(Z)</li></ul>",
+        })}
+      />,
+    );
+    expect(screen.getAllByRole("heading", { name: "Key responsibilities" })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "Responsibilities" })).toBeNull();
+    expect(screen.getAllByRole("heading", { name: "Qualifications & experience" })).toHaveLength(1);
+    expect(screen.getByText("Run the ledger")).toBeInTheDocument();
+  });
+
+  it("puts Save and Share side by side as one pair, and Share is a block button", () => {
+    render(<JobView listing={listing()} personal={<button>Save</button>} />);
+    const share = screen.getByRole("button", { name: /Share/ });
+    expect(share.className).toContain("w-full");
+    expect(share.parentElement!.parentElement!.className).toContain("grid-cols-2");
+  });
+
+  it("marks the page so the phone header can turn navy, and keeps the report link", () => {
+    const { container } = render(<JobView listing={listing()} />);
+    expect(container.querySelector("[data-job-page]")).not.toBeNull();
+    expect(screen.getByTestId("report-link")).toBeInTheDocument();
+  });
+});
+
+describe("related opportunity cards", () => {
+  it("show the mark, title, organisation, place, type and closing date, and link to the listing", async () => {
+    const { RelatedCard } = await import("@/components/opportunities/job-parts");
+    const row = {
+      ...listing(),
+      title: "Stock Controllers (3 Posts) - Grade G",
+      organisation: { id: "o2", name: "Delta Beverages" },
+      locations: [{ slug: "harare", name: "Harare", is_primary: true }],
+      employment_type: "permanent",
+    };
+    render(
+      <ul>
+        <RelatedCard row={row} />
+      </ul>,
+    );
+    const link = screen.getByRole("link", { name: /Stock Controllers/ });
+    expect(link).toHaveAttribute("href", `/opportunities/${row.slug}`);
+    for (const t of ["Delta Beverages", "Harare", "Permanent", "DB"]) expect(link.textContent).toContain(t);
+    expect(link.textContent).toMatch(/Closes/);
   });
 });

@@ -24,7 +24,7 @@ const QUEUES: Record<string, string> = {
   mine: "My drafts and rejected items",
   amendments: "Open amendments",
 };
-const KEYS = ["status", "queue", "deadline", "category", "verification", "q", "sort", "page"];
+const KEYS = ["status", "queue", "deadline", "category", "verified", "q", "sort", "page"];
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
@@ -127,14 +127,13 @@ export default async function OpportunitiesPage({ searchParams }: Props) {
           </Select>
         </div>
         <div>
-          <label htmlFor="f-verification" className="sr-only">
+          <label htmlFor="f-verified" className="sr-only">
             Verification
           </label>
-          <Select id="f-verification" name="verification" defaultValue={first(raw.verification)}>
+          <Select id="f-verified" name="verified" defaultValue={first(raw.verified)}>
             <option value="">Any verification</option>
-            <option value="not_verified">Not verified</option>
-            <option value="source_checked">Source checked</option>
-            <option value="issuer_verified">Verified with the issuer</option>
+            <option value="yes">Verified</option>
+            <option value="no">Not verified</option>
           </Select>
         </div>
         <div>

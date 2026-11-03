@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from access.drf import HasRequiredPermission
 from access.registry import Permission
-from accounts import mfa, services
+from accounts import mfa, services, trusted_devices
 from accounts.models import User, UserSession
 from catalog.models import Category
 from notifications import resend_webhook
@@ -724,3 +724,67 @@ class SavedDetailView(MeBaseView):
     def delete(self, request: Request, opportunity_id: uuid.UUID) -> Response:
         saved.unsave(self.user_of(request), opportunity_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TrustedDeviceListView(MeBaseView):
+    """Account → Security: the browsers this person chose to trust (D-59), and a way to forget them."""
+
+    required_permission = Permission.ME_SESSIONS
+
+    @extend_schema(
+        operation_id="listTrustedDevices", tags=["me"], responses=OpenApiResponse(description="Devices")
+    )
+    def get(self, request: Request) -> Response:
+        user = self.user_of(request)
+        here = trusted_devices.current_device(request._request, user)
+        limit = trusted_devices.max_mfa_age(user)
+        return Response(
+            {
+                "data": [
+                    {
+                        "id": str(d.pk),
+                        "label": d.label or "Browser",
+                        "created_at": _iso(d.created_at),
+                        "last_used_at": _iso(d.last_used_at),
+                        "last_mfa_at": _iso(d.last_mfa_at),
+                        "expires_at": _iso(d.expires_at),
+                        "current": here is not None and d.pk == here.pk,
+                    }
+                    for d in trusted_devices.live_devices(user)
+                ],
+                "code_every_hours": int(limit.total_seconds() // 3600) if user.active_roles() else None,
+            }
+        )
+
+    @extend_schema(
+        operation_id="revokeAllTrustedDevices",
+        tags=["me"],
+        request=None,
+        responses={204: OpenApiResponse(description="Every trusted device forgotten")},
+    )
+    def delete(self, request: Request) -> Response:
+        trusted_devices.revoke_all(self.user_of(request), "user_revoked_all")
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        trusted_devices.clear_cookie(response)
+        return response
+
+
+class TrustedDeviceDetailView(MeBaseView):
+    required_permission = Permission.ME_SESSIONS
+
+    @extend_schema(
+        operation_id="revokeTrustedDevice",
+        tags=["me"],
+        request=None,
+        responses={204: OpenApiResponse(description="Forgotten"), 404: None},
+    )
+    def delete(self, request: Request, device_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        here = trusted_devices.current_device(request._request, user)
+        revoked = trusted_devices.revoke_by_id(user, device_id)
+        if revoked is None:
+            return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        if here is not None and here.pk == revoked.pk:
+            trusted_devices.clear_cookie(response)
+        return response

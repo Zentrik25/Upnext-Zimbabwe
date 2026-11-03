@@ -22,7 +22,7 @@ from accounts.models import User
 from audit.models import AuditEvent
 from employers.capability import check_content
 from opportunities import content as content_mod
-from opportunities import images, workflow
+from opportunities import images, media, workflow
 from opportunities.errors import PermissionDeniedError, ValidationFailed
 from opportunities.models import Opportunity
 from tests.factories import CHECKLIST, World, new_draft, varied
@@ -35,8 +35,14 @@ pytestmark = pytest.mark.django_db
 UPLOAD = f"{S}/images"
 
 
-def picture(fmt: str = "JPEG", size: tuple[int, int] = (1200, 675), mode: str = "RGB", **save: Any) -> bytes:
-    img = Image.new(mode, size, (200, 80, 60) if mode == "RGB" else (200, 80, 60, 0))
+def picture(
+    fmt: str = "JPEG",
+    size: tuple[int, int] = (1200, 675),
+    mode: str = "RGB",
+    shade: int = 60,
+    **save: Any,
+) -> bytes:
+    img = Image.new(mode, size, (200, 80, shade) if mode == "RGB" else (200, 80, shade, 0))
     out = io.BytesIO()
     img.save(out, format=fmt, **save)
     return out.getvalue()
@@ -48,8 +54,9 @@ def upload(client: APIClient, data: bytes, name: str = "photo.jpg", content_type
 
 
 def stored(data: bytes) -> str:
-    processed, _, _ = images.process(data)
-    return images.store(processed)
+    """A picture registered in the Media Library, the only kind a listing may use."""
+    asset, _ = media.add(data, uploader=None, original_filename="photo.jpg")
+    return asset.name
 
 
 def save(actor: User, opp: Opportunity, **content: Any) -> Opportunity:
@@ -151,7 +158,8 @@ def test_files_get_generated_names_and_survive_a_restart() -> None:
     # a "restart": a brand-new storage object on the same persistent location still serves the same bytes
     fresh = FileSystemStorage(location=settings.MEDIA_ROOT)
     assert fresh.exists(name) and fresh.open(name).read(3) == b"\xff\xd8\xff"
-    assert stored(picture()) != name
+    assert stored(picture(shade=200)) != name  # a different picture gets its own file
+    assert stored(picture()) == name  # the same picture is found, not stored twice (D-62)
     assert oct(os.stat(Path(settings.MEDIA_ROOT, name)).st_mode & 0o777) == "0o644"
 
 
@@ -185,9 +193,12 @@ def test_media_is_served_in_development_and_tests(client: APIClient) -> None:
 def test_an_authorised_member_uploads_and_gets_a_generated_name_and_absolute_address(
     people: dict[str, User],
 ) -> None:
-    for who in ("author", "editor", "admin"):
+    for shade, who in enumerate(("author", "editor", "admin")):
         response = upload(
-            signed_in(people[who]), picture("PNG"), name="../../evil name.php", content_type="text/html"
+            signed_in(people[who]),
+            picture("PNG", shade=shade),
+            name="../../evil name.php",
+            content_type="text/html",
         )
         assert response.status_code == 201, (who, response.content)
         body = response.json()
@@ -269,32 +280,25 @@ def test_a_draft_refuses_names_that_were_not_uploaded(
     assert "featured_image" in exc.value.fields
 
 
-def test_replacing_and_removing_delete_the_old_file_when_nothing_uses_it(
-    world: World, people: dict[str, User]
-) -> None:
+def test_replacing_and_removing_never_delete_the_library_file(world: World, people: dict[str, User]) -> None:
     opp = new_draft(world, people["editor"])
-    first, second = stored(picture()), stored(picture("PNG"))
-    from django.db import transaction  # on_commit hooks run at the end of each test transaction scope
-
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(transaction, "on_commit", lambda fn, **kw: fn())
-        save(people["editor"], opp, featured_image=first)
-        assert default_storage.exists(first)
-        save(people["editor"], opp, featured_image=second)
-        assert not default_storage.exists(first) and default_storage.exists(second)  # replaced: no orphan
-        assert AuditEvent.objects.filter(
-            action="opportunity.image_changed", changes={"featured": "replaced"}
-        ).exists()
-        save(people["editor"], opp, featured_image=None, featured_image_alt=None)
-        assert not default_storage.exists(second)  # removed: no orphan
-        assert AuditEvent.objects.filter(
-            action="opportunity.image_changed", changes={"featured": "removed"}
-        ).exists()
+    first, second = stored(picture()), stored(picture("PNG", shade=90))
+    save(people["editor"], opp, featured_image=first)
+    save(people["editor"], opp, featured_image=second)
+    assert default_storage.exists(first) and default_storage.exists(second)  # replaced: the old one stays
+    assert AuditEvent.objects.filter(
+        action="opportunity.image_changed", changes={"featured": "replaced"}
+    ).exists()
+    save(people["editor"], opp, featured_image=None, featured_image_alt=None)
+    assert default_storage.exists(second) and images.exists(second)  # removed: still in the library
+    assert AuditEvent.objects.filter(
+        action="opportunity.image_changed", changes={"featured": "removed"}
+    ).exists()
     opp.refresh_from_db()
     assert opp.pending_version is not None and opp.pending_version.featured_image is None
 
 
-def test_a_file_a_published_revision_still_uses_is_never_deleted(
+def test_a_file_a_published_revision_uses_is_referenced_and_stays(
     world: World, people: dict[str, User]
 ) -> None:
     opp = new_draft(world, people["author"])
@@ -307,22 +311,25 @@ def test_a_file_a_published_revision_still_uses_is_never_deleted(
     workflow.publish(people["editor"], opp.pk, expected_row_version=opp.row_version)
     opp.refresh_from_db()
     assert opp.live_version is not None and opp.live_version.featured_image == name
-    assert images.release([name]) == 0 and default_storage.exists(name)  # referenced: kept
-    assert images.referenced(name)
+    assert images.referenced(name) and images.in_library(name)
+    images.purge_unreferenced(older_than=timedelta(0))
+    assert default_storage.exists(name)
 
 
-def test_unattached_uploads_are_swept_after_a_day_but_attached_ones_stay(
-    world: World, people: dict[str, User]
-) -> None:
+def test_only_files_with_no_library_row_are_swept_after_a_day(world: World, people: dict[str, User]) -> None:
     opp = new_draft(world, people["editor"])
-    kept, lost, fresh = stored(picture()), stored(picture()), stored(picture())
-    save(people["editor"], opp, featured_image=kept)
+    attached, unattached = stored(picture()), stored(picture(shade=120))
+    orphan_old = images.store(images.process(picture(shade=150))[0])  # an upload that never got a library row
+    orphan_new = images.store(images.process(picture(shade=170))[0])
+    save(people["editor"], opp, featured_image=attached)
     old = (timezone.now() - timedelta(days=3)).timestamp()
-    for name in (kept, lost):
+    for name in (attached, unattached, orphan_old):
         os.utime(Path(settings.MEDIA_ROOT, name), (old, old))
     call_command("purge_listing_images")
-    assert default_storage.exists(kept) and default_storage.exists(fresh) and not default_storage.exists(lost)
-    assert images.purge_unreferenced(older_than=timedelta(0)) >= 1 and not default_storage.exists(fresh)
+    assert default_storage.exists(attached) and default_storage.exists(unattached)  # the library keeps both
+    assert default_storage.exists(orphan_new) and not default_storage.exists(orphan_old)
+    assert images.purge_unreferenced(older_than=timedelta(0)) >= 1 and not default_storage.exists(orphan_new)
+    assert default_storage.exists(unattached)
 
 
 def test_employers_cannot_set_images(world: World, people: dict[str, User]) -> None:

@@ -64,6 +64,10 @@ class EmailFailureLimiter:
         return int(cache.get(cls._key(email), 0)) >= settings.UPNEXT_LOGIN_FAILURES_PER_EMAIL
 
     @classmethod
+    def count(cls, email: str) -> int:
+        return int(cache.get(cls._key(email), 0))
+
+    @classmethod
     def record_failure(cls, email: str) -> None:
         key = cls._key(email)
         window = settings.UPNEXT_LOGIN_FAILURE_WINDOW_SECONDS

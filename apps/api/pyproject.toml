@@ -21,6 +21,7 @@ ignore = ["S101", "RUF012", "DJ001"]
 "api/staff_records.py" = ["E501"]  # declarative resource table
 "api/staff_catalog.py" = ["E501"]
 "accounts/staff_admin.py" = ["E501"]  # prose docstrings (D-58)
+"accounts/trusted_devices.py" = ["E501"]  # prose docstrings (D-59)
 "api/staff_team.py" = ["E501"]
 "api/staff_images.py" = ["E501"]
 "opportunities/images.py" = ["E501"]
