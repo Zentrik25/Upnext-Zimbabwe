@@ -79,3 +79,19 @@ Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official ma
 ## Addendum (launch preparation): production Compose project
 
 `infrastructure/compose/compose.production.yaml` is the production stack definition (see `PRODUCTION_DEPLOYMENT_PLAN.md` §1). It sets the identity (`https://upnext.co.zw`, `info@upnext.co.zw` only) in the file itself, reads secrets from the environment with no defaults, runs the API and worker as the unprivileged database role, keeps migrations in a `release` profile that holds the owner credentials, and keeps e-mail at backend `none`. Validate without a server: `docker compose --env-file <file> -f compose.production.yaml config` and `pytest tests/test_production_compose.py`. **Not run on the VPS; not deployed.**
+
+## Addendum (ADR-0027, PROPOSED): search visibility variables
+
+All optional and **off by default**. Nothing is sent to Google until the owner approves it in writing (OQ-35) and sets `UPNEXT_INDEXING_ENABLED=true`. Setup steps: `SEARCH_CONSOLE_GUIDE.md` section 7.
+
+| Variable | Purpose | Default / notes |
+|---|---|---|
+| `UPNEXT_INDEXING_ENABLED` | worker sends Indexing API notifications | `false`. Without it the queue still records what would be sent |
+| `UPNEXT_GOOGLE_SERVICE_ACCOUNT_JSON` / `UPNEXT_GOOGLE_SERVICE_ACCOUNT_FILE` | the service-account key (a **secret**; one-line JSON, or a mounted file, which wins) | empty. Never commit it; rotate if exposed. `compose.production.yaml` passes the JSON value only |
+| `UPNEXT_SEARCH_CONSOLE_SITE` | the verified property, e.g. `sc-domain:upnext.co.zw` | empty: the SEO page shows "Setup required" |
+| `UPNEXT_INDEXING_DAILY_LIMIT` | our own cap on accepted notifications per rolling 24 hours | 150; keep below the quota shown in the Cloud console |
+| `UPNEXT_INDEXING_BATCH`, `UPNEXT_INDEXING_MAX_ATTEMPTS`, `UPNEXT_INDEXING_MAX_AGE_DAYS` | notifications per worker cycle, tries before a row is marked failed, days before a waiting row is dropped as stale | 20, 6, 7 (API only; not in the Compose file) |
+| `UPNEXT_SITEMAP_CHUNK` (web) | addresses per listing sitemap file | 10000; at most 45000 |
+| `UPNEXT_AI_TRAINING_CRAWLERS` (web) | `allow` lets training-only crawlers in; anything else keeps them out in robots.txt | `disallow` (OQ-36) |
+
+New worker job: `indexing` (visible in `core_jobrun`). New commands: `indexing_status [--check]`, `indexing_check [--search-console]`, `indexing_backfill [--dry-run] [--limit N]`.
