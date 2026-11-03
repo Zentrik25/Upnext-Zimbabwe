@@ -39,12 +39,12 @@ function advertisingSection(ads: AdMode): LegalDocument["sections"][number] {
       },
       {
         t: "p",
-        text: "**People in the European Economic Area, the United Kingdom and Switzerland.** Under the laws that apply there, advertising cookies and similar technologies generally need your prior consent. We do not locate visitors, so we apply the same rule to everyone: when advertising is on, Google’s advertising technologies load only after you choose “Allow advertisements”, and if you choose “No advertisements” (or do nothing) none is loaded and no advertisement is shown. You can change your mind at any time using the “Advertising” control in the page footer.",
+        text: "**People in the European Economic Area, the United Kingdom and Switzerland.** Under the laws that apply there, advertising cookies and similar technologies generally need your prior consent. We do not locate visitors, so we apply the same rule to everyone: when advertising is on, Google’s advertising technologies load only after you choose “Allow advertisements”, and if you choose “No advertisements” (or do nothing) none is loaded and no advertisement is shown. You can change your mind at any time using the control in the advertisement box on any page that can show advertisements (an opportunity page or a guide).",
       },
       {
         t: "ul",
         items: [
-          "**Your choice on UPNEXT.** Use the Advertising control in the footer to allow or stop advertisements. It is remembered in this browser only, in local storage under the name **upnext-ad-consent**; it is not a cookie and it is never sent to us. Clearing your browser data resets it.",
+          "**Your choice on UPNEXT.** Use the control in the advertisement box (“Allow advertisements” or “Stop advertisements”) on any opportunity page or guide. It is remembered in this browser only, in local storage under the name **upnext-ad-consent**; it is not a cookie and it is never sent to us. Clearing your browser data resets it.",
           `**Personalised advertising.** You can manage or switch off personalised advertising from Google at [Google Ad Settings](${GOOGLE_AD_SETTINGS}).`,
           "**Industry opt-out tools.** You can also use [Your Online Choices](https://www.youronlinechoices.com) (Europe), the [Digital Advertising Alliance](https://optout.aboutads.info) (United States) or the [Network Advertising Initiative](https://optout.networkadvertising.org), and your browser’s settings to block or delete cookies. Blocking cookies in your browser can stop advertisements from working and does not affect the rest of UPNEXT.",
           "**Your other rights** over information that we hold are in section 12. Information that Google holds is governed by Google’s own policy, linked above.",
@@ -296,7 +296,7 @@ export function privacyFor(ads: AdMode = "off"): LegalDocument {
                     [
                       "upnext-ad-consent",
                       "Local storage (not a cookie)",
-                      "Remembers whether you allowed or declined advertisements, chosen in the page footer or in an advertisement box.",
+                      "Remembers whether you allowed or declined advertisements, chosen in an advertisement box.",
                       "Until you change it or clear your browser data. It is never sent to us.",
                     ],
                   ]

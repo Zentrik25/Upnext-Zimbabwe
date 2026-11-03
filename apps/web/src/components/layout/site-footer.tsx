@@ -2,8 +2,6 @@ import Link from "next/link";
 import { Lockup } from "@/components/brand/logo";
 import { BRAND } from "@/lib/brand";
 import { GUIDES } from "@/lib/guides";
-import { AdChoices } from "@/components/ads/ad-choices";
-import { adsenseMode } from "@/lib/adsense";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -80,10 +78,7 @@ export function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
           </p>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-            {adsenseMode() === "live" ? <AdChoices /> : null}
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
       </Container>
     </footer>

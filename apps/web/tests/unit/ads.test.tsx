@@ -5,7 +5,6 @@ vi.mock("server-only", () => ({}));
 const headerValues: Record<string, string> = {};
 vi.mock("next/headers", () => ({ headers: async () => ({ get: (k: string) => headerValues[k] ?? null }) }));
 
-import { AdChoices } from "@/components/ads/ad-choices";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { AdUnit } from "@/components/ads/ad-unit";
 import { AD_CONSENT_KEY, readAdConsent, setAdConsent } from "@/lib/ad-consent";
@@ -49,19 +48,34 @@ describe("AdUnit respects the visitor's advertising choice", () => {
     expect(window.adsbygoogle?.length).toBe(1);
   });
 
-  it("after the visitor declines: the block disappears and Google is never contacted", () => {
+  it("after the visitor declines: Google is never contacted and only a one-line way back remains", () => {
     const { container } = render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
     act(() => screen.getByRole("button", { name: "No advertisements" }).click());
     expect(readAdConsent()).toBe("denied");
-    expect(container.innerHTML).toBe("");
+    expect(container.querySelector("ins")).toBeNull();
+    expect(container.innerHTML).not.toMatch(/min-h-\[/); // the reserved space is released
+    expect(screen.getByText(/Advertisements are off/)).toBeTruthy();
     expect(googleScripts().length).toBe(0);
   });
 
   it("a remembered refusal loads nothing on the next page", () => {
     window.localStorage.setItem(AD_CONSENT_KEY, "denied");
-    const { container } = render(<AdUnit client={CLIENT} slot={SLOT} placement="job-detail" />);
-    expect(container.innerHTML).toBe("");
+    render(<AdUnit client={CLIENT} slot={SLOT} placement="job-detail" />);
+    expect(screen.getByText(/Advertisements are off/)).toBeTruthy();
     expect(googleScripts().length).toBe(0);
+    expect(window.adsbygoogle).toBeUndefined();
+  });
+
+  it("the choice can be changed at any time from the block itself", () => {
+    window.localStorage.setItem(AD_CONSENT_KEY, "denied");
+    const { container } = render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
+    act(() => screen.getByRole("button", { name: "Allow advertisements" }).click());
+    expect(readAdConsent()).toBe("granted");
+    expect(container.querySelector("ins.adsbygoogle")).not.toBeNull();
+    expect(googleScripts().length).toBe(1);
+    act(() => screen.getByRole("button", { name: "Stop advertisements" }).click());
+    expect(readAdConsent()).toBe("denied");
+    expect(container.querySelector("ins")).toBeNull();
   });
 
   it("blocked storage counts as no consent", () => {
@@ -82,17 +96,6 @@ describe("AdUnit respects the visitor's advertising choice", () => {
     expect(container.querySelector("a, button")?.closest("aside")).not.toBeNull(); // its own controls only
     expect(container.firstElementChild?.tagName).toBe("ASIDE");
     expect(container.firstElementChild?.className).toMatch(/border-y/);
-  });
-});
-
-describe("AdChoices (footer) can change the choice at any time", () => {
-  it("allows and withdraws", () => {
-    render(<AdChoices />);
-    act(() => screen.getByRole("button", { name: "Allow" }).click());
-    expect(readAdConsent()).toBe("granted");
-    expect(screen.getByRole("button", { name: "Allow" }).getAttribute("aria-pressed")).toBe("true");
-    act(() => screen.getByRole("button", { name: "Don't allow" }).click());
-    expect(readAdConsent()).toBe("denied");
   });
 });
 

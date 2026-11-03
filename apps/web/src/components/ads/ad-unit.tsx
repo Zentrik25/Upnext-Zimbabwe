@@ -54,7 +54,25 @@ export function AdUnit({
     }
   }, [consent, client]);
 
-  if (consent === "denied") return null;
+  if (consent === "denied")
+    return (
+      <aside
+        aria-label="Advertisement"
+        data-ad-placement={placement}
+        className="my-6 border-y border-line py-2"
+      >
+        <p className="m-0 text-small text-muted">
+          Advertisements are off.{" "}
+          <button
+            type="button"
+            onClick={() => setAdConsent("granted")}
+            className="cursor-pointer text-accent underline"
+          >
+            Allow advertisements
+          </button>
+        </p>
+      </aside>
+    );
 
   return (
     <aside
@@ -77,7 +95,7 @@ export function AdUnit({
           <div role="group" aria-label="Advertising choice" className="grid gap-3 p-4 text-base">
             <p className="m-0">
               UPNEXT can show advertisements provided by Google. They use cookies and similar technologies.
-              Allow them? You can change this at any time in the page footer. See{" "}
+              Allow them? You can change this at any time on any page that shows advertisements. See{" "}
               <Link href="/privacy#advertising" className="text-accent underline">
                 how advertising works
               </Link>
@@ -94,6 +112,18 @@ export function AdUnit({
           </div>
         )}
       </div>
+      {consent === "granted" ? (
+        <p className="m-0 mt-2 text-small text-muted">
+          <button
+            type="button"
+            onClick={() => setAdConsent("denied")}
+            className="cursor-pointer text-accent underline"
+          >
+            Stop advertisements
+          </button>{" "}
+          on this site.
+        </p>
+      ) : null}
     </aside>
   );
 }

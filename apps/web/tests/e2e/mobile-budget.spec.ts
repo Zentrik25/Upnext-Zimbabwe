@@ -24,7 +24,10 @@ const TRANSFER_KIB: Record<string, number> = { "/": 300, "/sign-in": 270 };
 const SCRIPT_KIB: Record<string, number> = { "/": 151, "/opportunities": 151, "/sign-in": 153 };
 // The listing page carries the Share control and the phone-only Apply bar (D-56), two small client components on top
 // of the save control, so a listing has the same 152 KiB script allowance (the CI runner measured 150.6 KiB).
-SCRIPT_KIB.DETAIL = 152;
+// The listing page also carries the advertising block (consent prompt and Google loader, off by default but shipped with
+// the page because Next sends every client component a page can reach). Home, search and sign-in carry none of it: the
+// choice control lives in the block, not the site footer. The CI runner measured 152.6 KiB with the block, so 153 KiB.
+SCRIPT_KIB.DETAIL = 153;
 
 for (const path of [...PAGES, "DETAIL"]) {
   test(`budget on ${path}`, async ({ page, request }, info) => {

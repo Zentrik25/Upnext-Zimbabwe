@@ -68,7 +68,9 @@ describe("where advertisements may appear (allow-list)", () => {
   it("no layout, header, footer, bottom navigation or form page uses an ad slot", () => {
     for (const f of files(src).filter((f) => /(layout|header|footer|nav|form|workspace|account)/i.test(f))) {
       if (!/\.tsx$/.test(f)) continue;
-      expect(readFileSync(f, "utf8"), f).not.toMatch(/<AdSlot\b|<AdUnit\b/);
+      // Also no import of the ad components: Next ships every client component a page can reach, so an import from
+      // shared layout code would weigh on every page, ads on or off (mobile script budget, P5-08).
+      expect(readFileSync(f, "utf8"), f).not.toMatch(/<AdSlot\b|<AdUnit\b|from ["'][^"']*components\/ads/);
     }
   });
 
