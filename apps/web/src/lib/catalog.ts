@@ -73,16 +73,22 @@ async function json<T>(path: string, params?: URLSearchParams, revalidate?: numb
   }
 }
 
-export function getSitemapEntries() {
+/** The SEO feed (ADR-0027): open listings with their category, public employer profiles, and the number of open
+ *  listings per category, per city or province and for remote work. */
+export type SitemapFeed = {
+  data: { slug: string; updated_at: string; category: string }[];
+  organisations: { slug: string; updated_at: string | null }[];
+  categories: { code: string; count: number; updated_at: string | null }[];
+  locations: { slug: string; name: string; count: number; updated_at: string | null }[];
+  remote: { count: number; updated_at: string | null };
+};
+
+export function getSitemapFeed() {
   // Large and slow-changing: crawlers may ask often, so the web tier keeps it for a few minutes (0 turns the cache
   // off, as in the test stacks). A withdrawn listing can therefore stay in the file for that long; its page already
   // says it is withdrawn and is not indexed.
   const seconds = Number(process.env.UPNEXT_SITEMAP_CACHE_SECONDS ?? 300);
-  return json<{ data: { slug: string; updated_at: string }[] }>(
-    "sitemap",
-    undefined,
-    seconds > 0 ? seconds : undefined,
-  );
+  return json<SitemapFeed>("sitemap", undefined, seconds > 0 ? seconds : undefined);
 }
 
 export function listOpportunities(params: URLSearchParams) {

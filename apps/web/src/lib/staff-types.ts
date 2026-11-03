@@ -293,6 +293,69 @@ export type ContentHealth = {
   sod_violations: { rule: string; version_id: string }[];
 };
 
+/** The Administrator's SEO page (ADR-0027): UPNEXT's own Indexing API record, and Search Console data when connected. */
+export type SeoSubmission = {
+  id: string;
+  url: string;
+  kind: "URL_UPDATED" | "URL_DELETED";
+  trigger: string;
+  status: "pending" | "retry" | "sent" | "dead" | "skipped";
+  attempts: number;
+  http_status: number | null;
+  detail: string;
+  created_at: string | null;
+  sent_at: string | null;
+  google_notify_time: string | null;
+  next_attempt_at: string | null;
+};
+export type SeoMetrics = { clicks: number; impressions: number; ctr: number; position: number };
+export type SeoInspection = {
+  url: string;
+  verdict?: string | null;
+  coverage?: string | null;
+  last_crawl?: string | null;
+  google_canonical?: string | null;
+  rich_results_verdict?: string | null;
+  rich_results_issues?: string[];
+  error?: string;
+};
+export type SearchConsoleState =
+  | { state: "setup_required"; reason: string; steps: string[] }
+  | { state: "error"; reason: string; steps: string[]; service_account?: string | null; site?: string }
+  | {
+      state: "ready";
+      site: string;
+      service_account: string | null;
+      period: { start: string; end: string };
+      note: string;
+      totals: SeoMetrics;
+      queries: ({ key: string } & SeoMetrics)[];
+      pages: ({ key: string } & SeoMetrics)[];
+      sitemaps: {
+        path: string | null;
+        last_submitted: string | null;
+        last_downloaded: string | null;
+        pending: boolean;
+        errors: number;
+        warnings: number;
+        submitted: Record<string, number>;
+      }[];
+      inspections: SeoInspection[];
+    };
+export type SeoReport = {
+  submissions: {
+    enabled: boolean;
+    credentials: "ok" | "missing" | "invalid";
+    service_account: string | null;
+    daily_limit: number;
+    sent_last_24h: number;
+    counts: Record<string, number>;
+    oldest_open_at: string | null;
+    recent: SeoSubmission[];
+  };
+  search_console: SearchConsoleState;
+  definitions: Record<"queued" | "accepted" | "indexed" | "impressions" | "clicks", string>;
+};
 /** Analytics (D-65). Views are page views (one per browser tab session); unique visitors are not measured. */
 export type Counts = { views: number; apply_clicks: number };
 export type TrafficFigures = {

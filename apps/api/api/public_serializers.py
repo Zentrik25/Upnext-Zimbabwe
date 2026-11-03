@@ -164,10 +164,38 @@ class OpportunityListSerializer(serializers.Serializer[None]):
 class SitemapEntrySerializer(serializers.Serializer[None]):
     slug = serializers.CharField()
     updated_at = serializers.DateTimeField()
+    category = serializers.CharField()
+
+
+class SitemapOrganisationSerializer(serializers.Serializer[None]):
+    slug = serializers.CharField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+
+
+class SitemapCategoryFacetSerializer(serializers.Serializer[None]):
+    code = serializers.CharField()
+    count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+
+
+class SitemapLocationFacetSerializer(serializers.Serializer[None]):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+
+
+class SitemapRemoteFacetSerializer(serializers.Serializer[None]):
+    count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
 
 
 class SitemapSerializer(serializers.Serializer[None]):
     data = SitemapEntrySerializer(many=True)  # type: ignore[assignment]
+    organisations = SitemapOrganisationSerializer(many=True)
+    categories = SitemapCategoryFacetSerializer(many=True)
+    locations = SitemapLocationFacetSerializer(many=True)
+    remote = SitemapRemoteFacetSerializer()
 
 
 class CategoryListSerializer(serializers.Serializer[None]):

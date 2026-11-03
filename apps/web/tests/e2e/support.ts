@@ -1,3 +1,4 @@
+import type { APIRequestContext } from "@playwright/test";
 import { expect, type Locator } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -63,4 +64,17 @@ export async function expectMatchesReference(
     if (want === undefined) continue;
     expect(actual[key], `${key}`).toBe(want);
   }
+}
+
+/** Every address in the sitemap index and in each file it lists (ADR-0027: /sitemap.xml is an index). */
+export async function allSitemapUrls(request: APIRequestContext): Promise<string[]> {
+  const index = await request.get("/sitemap.xml");
+  const files = [...(await index.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
+  const urls: string[] = [];
+  for (const file of files) {
+    const path = new URL(file).pathname;
+    const body = await (await request.get(path)).text();
+    urls.push(...[...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!.replace(/&amp;/g, "&")));
+  }
+  return urls;
 }

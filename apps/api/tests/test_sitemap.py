@@ -15,9 +15,9 @@ pytestmark = pytest.mark.django_db
 URL = "/api/v1/sitemap"
 
 
-def live(world: World, people: dict[str, User], example: str, tag: str):  # type: ignore[no-untyped-def]
+def live(world: World, people: dict[str, User], example: str, tag: str, **extra: Any):  # type: ignore[no-untyped-def]
     return published(
-        world, people["author"], people["editor"], example=example, **varied(world, example, tag)
+        world, people["author"], people["editor"], example=example, **varied(world, example, tag, **extra)
     )
 
 
@@ -27,6 +27,7 @@ def test_sitemap_lists_open_published_listings_in_slug_order(world: World, peopl
     body = APIClient().get(URL).json()["data"]
     assert [e["slug"] for e in body] == sorted([a.slug, b.slug])
     assert all(e["updated_at"].endswith("Z") for e in body)
+    assert {e["slug"]: e["category"] for e in body} == {a.slug: "jobs", b.slug: "grants"}
 
 
 def test_closed_withdrawn_and_archived_listings_are_left_out(world: World, people: dict[str, User]) -> None:
@@ -52,7 +53,14 @@ def test_closed_withdrawn_and_archived_listings_are_left_out(world: World, peopl
 
 def test_sitemap_needs_no_session_and_is_not_cached_by_the_api() -> None:
     response = APIClient().get(URL)
-    assert response.status_code == 200 and response.json() == {"data": []}
+    assert response.status_code == 200
+    assert response.json() == {
+        "data": [],
+        "organisations": [],
+        "categories": [],
+        "locations": [],
+        "remote": {"count": 0, "updated_at": None},
+    }
     assert "no-store" in response["Cache-Control"] or "no-cache" in response["Cache-Control"]
 
 
@@ -83,3 +91,63 @@ def test_public_read_counters_are_kept_in_process_memory() -> None:
     from api.throttles import PublicReadThrottle
 
     assert PublicReadThrottle.cache is caches["local"]
+
+
+def test_facets_count_open_listings_per_category_city_and_remote(
+    world: World, people: dict[str, User]
+) -> None:
+    from tests.test_indexing import _loc
+
+    live(world, people, "jobs-1", "h1")  # Harare
+    live(world, people, "jobs-1", "h2", **_loc(world, "harare"))
+    live(world, people, "internships-1", "b1")  # Bulawayo
+    live(world, people, "jobs-2", "r1", work_mode="remote", **_loc(world, "remote", "zimbabwe"))
+    closed = live(world, people, "jobs-1", "h3", **_loc(world, "harare"))
+    closed.refresh_from_db()
+    workflow.withdraw(
+        people["editor"], closed.pk, expected_row_version=closed.row_version, reason="issuer withdrew"
+    )
+    body = APIClient().get(URL).json()
+    by_place = {row["slug"]: row["count"] for row in body["locations"]}
+    assert by_place["harare"] == 2 and by_place["bulawayo"] == 1  # the withdrawn listing is not counted
+    assert "zimbabwe" not in by_place and "remote" not in by_place  # not city or province landing pages
+    assert {row["code"]: row["count"] for row in body["categories"]} == {"jobs": 3, "internships": 1}
+    assert body["remote"]["count"] == 1 and body["remote"]["updated_at"].endswith("Z")
+    assert all(row["updated_at"] for row in body["locations"])
+
+
+def test_organisations_are_listed_only_with_an_approved_profile_and_a_live_verification(
+    world: World, people: dict[str, User]
+) -> None:
+    from django.utils import timezone
+
+    from catalog.models import Organisation
+    from employers.models import (
+        EmployerProfile,
+        OrganisationVerification,
+        ProfileRevision,
+        ProfileState,
+    )
+
+    org = Organisation.objects.get(pk=next(iter(world.organisations.values())))
+    profile = EmployerProfile.objects.create(organisation=org, slug="acme-zw")
+    assert APIClient().get(URL).json()["organisations"] == []  # no approved text yet
+    revision = ProfileRevision.objects.create(
+        profile=profile, version_no=1, state=ProfileState.APPROVED, tagline="We build things.",
+        content_hash=b"x" * 32, submitted_by=people["editor"], decided_by=people["editor2"], decided_at=timezone.now(),
+    )  # fmt: skip
+    profile.live_revision = revision
+    profile.save()
+    assert (
+        APIClient().get(URL).json()["organisations"] == []
+    )  # approved text but the organisation is not verified
+    fields = {f.name for f in OrganisationVerification._meta.get_fields()}
+    verification = OrganisationVerification(organisation=org)
+    for name in ("verified_by", "granted_by", "created_by"):
+        if name in fields:
+            setattr(verification, name, people["editor"])
+    if "verified_at" in fields:
+        verification.verified_at = timezone.now()
+    verification.save()
+    (entry,) = APIClient().get(URL).json()["organisations"]
+    assert entry["slug"] == "acme-zw" and entry["updated_at"].endswith("Z")

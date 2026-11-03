@@ -268,6 +268,20 @@ class OpportunityDetailView(PublicView):
         return Response(detail_of(version, timezone.now()))
 
 
+def _sitemap_organisations() -> list[dict[str, Any]]:
+    """Public employer profiles (approved text, organisation still verified): the `/employers/<slug>` pages.
+    Their date is when the live text was approved, the last meaningful change to the page."""
+    from employers.models import EmployerProfile, OrganisationVerification
+
+    verified = OrganisationVerification.objects.filter(revoked_at__isnull=True).values("organisation_id")
+    rows = (
+        EmployerProfile.objects.filter(live_revision__isnull=False, organisation_id__in=verified)
+        .select_related("live_revision")
+        .order_by("slug")
+    )
+    return [{"slug": p.slug, "updated_at": _iso(p.live_revision.decided_at)} for p in rows]  # type: ignore[union-attr]
+
+
 class SitemapView(PublicView):
     """Slugs of the listings that belong in the XML sitemap (the web app renders the file)."""
 
@@ -280,8 +294,18 @@ class SitemapView(PublicView):
         ttl = settings.UPNEXT_SITEMAP_API_CACHE_SECONDS
         payload = caches["local"].get("sitemap-feed") if ttl else None
         if payload is None:
-            entries = public.sitemap_entries(timezone.now())
-            payload = {"data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries]}
+            now = timezone.now()
+            facets = public.sitemap_facets(now)
+            payload = {
+                "data": [
+                    {"slug": slug, "updated_at": _iso(stamp), "category": code}
+                    for slug, stamp, code in public.sitemap_entries(now)
+                ],
+                "organisations": _sitemap_organisations(),
+                "categories": [{**c, "updated_at": _iso(c["updated_at"])} for c in facets["categories"]],
+                "locations": [{**loc, "updated_at": _iso(loc["updated_at"])} for loc in facets["locations"]],
+                "remote": {**facets["remote"], "updated_at": _iso(facets["remote"]["updated_at"])},
+            }
             if ttl:
                 caches["local"].set(
                     "sitemap-feed", payload, ttl

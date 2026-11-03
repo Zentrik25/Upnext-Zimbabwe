@@ -165,7 +165,8 @@ describe("workspace plumbing", () => {
   });
 
   it("keeps the workspace out of search indexes", () => {
-    expect(readRepoFile("apps/web/src/app/robots.ts")).toContain('"/workspace"');
+    expect(readRepoFile("apps/web/src/lib/crawler-policy.ts")).toContain('"/workspace"');
+    expect(readRepoFile("apps/web/src/app/robots.ts")).toContain("PRIVATE_PATHS");
     expect(readRepoFile("apps/web/src/app/workspace/layout.tsx")).toContain("index: false");
   });
 });

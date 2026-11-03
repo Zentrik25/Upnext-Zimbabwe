@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "profiles",
     "alerts",
     "reports",
+    "seo",
 ]
 
 MIDDLEWARE = [
@@ -255,6 +256,29 @@ UPNEXT_EMAIL_WEBHOOK_SECRET = get_str("UPNEXT_EMAIL_WEBHOOK_SECRET", "")  # off 
 # Resend signs webhooks with a Svix secret ("whsec_..."). Off until set; never commit it (D-34).
 UPNEXT_RESEND_WEBHOOK_SECRET = get_str("UPNEXT_RESEND_WEBHOOK_SECRET", "")
 UPNEXT_PUBLIC_BASE_URL = get_str("UPNEXT_PUBLIC_BASE_URL", "http://localhost:8080")
+
+# Google Indexing API and Search Console (ADR-0027). Submissions are OFF until the owner approves them in
+# writing
+# and sets UPNEXT_INDEXING_ENABLED=true; the queue still records what would be sent. The service-account
+# key is a
+# secret: supply it as a mounted file (UPNEXT_GOOGLE_SERVICE_ACCOUNT_FILE) or the secret store's value
+# (UPNEXT_GOOGLE_SERVICE_ACCOUNT_JSON), never in the repository. UPNEXT_SEARCH_CONSOLE_SITE is the
+# verified property
+# exactly as Search Console names it ("sc-domain:upnext.co.zw" or "https://upnext.co.zw/").
+UPNEXT_INDEXING_ENABLED = get_bool("UPNEXT_INDEXING_ENABLED", False)
+UPNEXT_GOOGLE_SERVICE_ACCOUNT_JSON = get_str("UPNEXT_GOOGLE_SERVICE_ACCOUNT_JSON", "")
+UPNEXT_GOOGLE_SERVICE_ACCOUNT_FILE = get_str("UPNEXT_GOOGLE_SERVICE_ACCOUNT_FILE", "")
+UPNEXT_SEARCH_CONSOLE_SITE = get_str("UPNEXT_SEARCH_CONSOLE_SITE", "")
+# Google's default publish quota is a per-project daily allowance (check the Cloud console for the real
+# figure);
+# the daily limit here stays below it. A batch is what one worker cycle may send.
+UPNEXT_INDEXING_DAILY_LIMIT = get_int("UPNEXT_INDEXING_DAILY_LIMIT", 150)
+UPNEXT_INDEXING_BATCH = get_int("UPNEXT_INDEXING_BATCH", 20)
+UPNEXT_INDEXING_MAX_ATTEMPTS = get_int("UPNEXT_INDEXING_MAX_ATTEMPTS", 6)
+# A notification that waited longer than this (indexing was off, or Google refused for days) is dropped as
+# stale:
+# the sitemap already carries the current state, and `indexing_backfill` re-queues deliberately.
+UPNEXT_INDEXING_MAX_AGE_DAYS = get_int("UPNEXT_INDEXING_MAX_AGE_DAYS", 7)
 # Version of the Terms and Privacy Policy a new account agrees to (matches the legal content files).
 UPNEXT_TERMS_VERSION = get_str("UPNEXT_TERMS_VERSION", "1.1")
 # Sign in with Google (OpenID Connect, authorisation-code flow with PKCE). Off until both values are set; the

@@ -68,6 +68,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
 | R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
 | R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
+| R-64 | Search visibility (ADR-0027, PROPOSED): Google Indexing API outbox for job pages (off until approved), sitemap index with typed files and real lastmod, city/province/remote landing pages from three open listings, explicit crawler policy and llms.txt, Q&A guide, posted/updated dates, Administrator SEO page (queued, accepted, indexed and search performance kept apart) | ADR-0027; D-51; D-60; D-62; D-63 | SC-01, SC-12 | getSitemapEntries, getStaffSeo | SEO-10…SEO-14 | OQ-35, OQ-36, OQ-37, OQ-38, OQ-39 |
 
 ## 2. Screen register
 
@@ -118,7 +119,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |
 | `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `createListingReport` | POST `/opportunities/{slug}/reports` | public | R-50 |
-| `getSitemapEntries` | GET `/sitemap` | public | R-29 |
+| `getSitemapEntries` | GET `/sitemap` | public | R-29, R-64 |
 | `listCategories` | GET `/categories` | public | R-01 |
 | `listLocations` | GET `/locations` | public | R-01 |
 | `listSectors` | GET `/sectors` | public | R-01 |
@@ -214,6 +215,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffRecord` | GET `/staff/records/{kind}/{recordId}` | staff | R-55 |
 | `runStaffRecordAction` | POST `/staff/records/{kind}/{recordId}/actions/{action}` | staff | R-55 |
 | `getStaffContentHealth` | GET `/staff/content-health` | staff | R-55 |
+| `getStaffSeo` | GET `/staff/seo` | staff | R-64 |
 | `listStaffCatalogKinds` | GET `/staff/catalog` | staff | R-55 |
 | `listStaffCatalog` | GET `/staff/catalog/{kind}` | staff | R-55 |
 | `createStaffCatalogRecord` | POST `/staff/catalog/{kind}` | staff | R-55 |
@@ -406,6 +408,11 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-07 | JobPosting: none after the deadline, a place is required, remote needs an applicant country, pay needs a period and an ISO currency, identifier as PropertyValue; Article only for the guides |
 | SEO-08 | Sitemap, robots.txt, canonical and noindex agree: sitemap addresses are crawlable, indexable and self-canonical; no rule hides a linked noindex page; every non-public page is noindex or disallowed; one canonical domain |
 | SEO-09 | Editorial guides: one H1, no skipped heading level, visible dates equal the Article dates, every internal link resolves to a route |
+| SEO-10 | Indexing API outbox (ADR-0027): publish and republish queue URL_UPDATED; take-down, withdraw, expire and archive queue URL_DELETED; non-job categories, drafts and listings without a place are never submitted; one open row per address; the decision is re-taken at send time; stale rows dropped |
+| SEO-11 | Indexing API sending (ADR-0027): off by default; service-account JWT signed RS256 and never logged; exponential backoff, quota (429) stops the batch and keeps rows, 401/403 are configuration problems, 400 permanent, daily allowance, removals first; commands print no secret |
+| SEO-12 | Sitemap index and feed v2 (ADR-0027): index plus pages, employers, jobs-N and opportunities-N files; real lastmod only; chunking; landing pages listed from three open listings; the API feed counts open listings per category, place and remote work and lists verified employer profiles |
+| SEO-13 | Landing pages and crawler policy (ADR-0027): city, province and remote pages indexable from three listings, honest empty state, canonical for single-place lists; robots.txt crawler groups; llms.txt; new Q&A guide; listing dates |
+| SEO-14 | Administrator SEO page (ADR-0027): administrators only; setup-required and error states show no figures; queued, accepted by Google, indexed and search performance kept apart |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -673,6 +680,11 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-07 | `apps/web/tests/unit/seo.test.tsx (JobPosting, pay, places, deadline, Article)` | executed |
 | SEO-08 | `apps/web/tests/unit/seo-readiness.test.tsx (robots, sitemap, consistency, private-route guard, one domain); apps/web/tests/e2e/seo.spec.ts` | unit executed; browser test run by CI |
 | SEO-09 | `apps/web/tests/unit/seo-readiness.test.tsx (guides, internal link integrity)` | executed |
+| SEO-10 | `apps/api/tests/test_indexing.py (queue and eligibility tests)` | executed |
+| SEO-11 | `apps/api/tests/test_indexing.py (credentials, retries, quota, send-time checks, commands)` | executed against a fake Google transport; no real Google call was made |
+| SEO-12 | `apps/web/tests/unit/seo-readiness.test.tsx (sitemap files); apps/api/tests/test_sitemap.py; apps/web/tests/e2e/seo.spec.ts` | unit and API executed; browser test run by CI |
+| SEO-13 | `apps/web/tests/unit/seo-landing.test.tsx; apps/web/tests/unit/job-view.test.tsx (dates); apps/web/tests/e2e/a11y.spec.ts` | unit executed; axe checked once by hand on the built app against a mock API; browser suite run by CI |
+| SEO-14 | `apps/api/tests/test_staff_seo.py; apps/web/tests/unit/seo-workspace.test.tsx` | executed |
 | PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
 | PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |
 | PRIV-05 | `apps/api/tests/test_deletion.py (retention tests)` | executed against the provisional windows P4-06 |

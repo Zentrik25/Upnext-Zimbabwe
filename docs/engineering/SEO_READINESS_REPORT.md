@@ -4,6 +4,8 @@ Status: DRAFT. D-51 approved conditionally by the owner on 2026-10-30 (see the d
 Nothing here promises rankings, indexing or appearance in AI-generated answers. It records technical correctness and
 what is still unproven.
 
+> **Update 2026-11-03:** section 7's deferrals (Indexing API, employer profiles in the sitemap SEO-A13, place pages) are addressed, as PROPOSED and off by default, by ADR-0027; see `SEO_AUDIT_2026-11.md`. The sitemap is now an index (sections 4 and 5 describe the earlier single file).
+
 ## 0. Evidence classes
 
 | Class | Meaning |

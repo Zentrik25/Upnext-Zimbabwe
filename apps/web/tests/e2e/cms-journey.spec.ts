@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { demoCode } from "./exec";
+import { allSitemapUrls } from "./support";
 
 /**
  * Browser-level review of the editorial workspace (/workspace, D-46) with the fictional demo staff accounts.
@@ -219,8 +220,9 @@ test("5. an author cannot publish before approval; the approver publishes; it be
     .map((t) => JSON.parse(t) as { "@type": string })
     .find((b) => b["@type"] === "JobPosting");
   expect(posting).toBeTruthy();
-  const sitemap = await publicPage.request.get("/sitemap.xml");
-  expect(await sitemap.text()).toContain(`/opportunities/${state.slug}`);
+  expect(
+    (await allSitemapUrls(publicPage.request)).some((u) => u.endsWith(`/opportunities/${state.slug}`)),
+  ).toBe(true);
 });
 
 test("6. amend, re-approve and publish: the public sees the live revision until then", async ({
@@ -282,9 +284,9 @@ test("7. withdraw: gone from active lists, direct link shows a clear notice", as
     (t) => (JSON.parse(t) as { "@type": string })["@type"],
   );
   expect(types).not.toContain("JobPosting");
-  expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(
-    `/opportunities/${state.slug}`,
-  );
+  expect(
+    (await allSitemapUrls(visitor.request)).some((u) => u.endsWith(`/opportunities/${state.slug}`)),
+  ).toBe(false);
 });
 
 test("8. administrators see the audit trail; mobile layout of the staff pages", async ({ browser }) => {
