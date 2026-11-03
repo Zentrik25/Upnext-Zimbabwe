@@ -1232,6 +1232,29 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/analytics:
+    get:
+      tags: [staff]
+      operationId: getStaffAnalytics
+      summary: 'Traffic figures, chart series, listing counts and the most and recently viewed listings (staff with analytics.read)'
+      description: 'Query: period = 24h, 7d, 30d (default), 90d or all. Views are page views (one per browser tab session); unique visitors are not measured (`unique_visitors` is null). Cached for 60 seconds per person and period. Definitions: docs/engineering/ANALYTICS.md. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/analytics/opportunities:
+    get:
+      tags: [staff]
+      operationId: listStaffAnalyticsOpportunities
+      summary: 'Listings ranked by views, apply clicks and click-through rate for a period or a Harare date range (staff with analytics.read)'
+      description: 'Query: period, or from and to (YYYY-MM-DD, both days included, at most 400 days), q, sort = views, all_views, clicks, ctr, published or title, dir = asc or desc, page, page_size (up to 50). Click-through rate is apply clicks divided by views of the same window and is null when the window has no views. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /staff/images:
     post:
       tags: [staff]

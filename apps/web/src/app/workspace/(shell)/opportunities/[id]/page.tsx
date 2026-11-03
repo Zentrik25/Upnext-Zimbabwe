@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionPanel } from "@/components/workspace/action-panel";
+import { Metric } from "@/components/workspace/analytics/metric";
 import { VerifyToggle } from "@/components/workspace/verify-toggle";
 import { dateText, dateTimeText, StatusBadge } from "@/components/workspace/badges";
 import { requireStaff, staffJson } from "@/lib/staff";
@@ -166,6 +167,32 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
           {w}
         </p>
       ))}
+
+      {o.analytics ? (
+        <section aria-labelledby="stats-title" className="mb-4">
+          <h2 id="stats-title" className="m-0 mb-2 text-title font-normal tracking-title">
+            Views and engagement
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <Metric label="All-time views" value={o.analytics.all_time.views} />
+            <Metric label="Last 24 hours" value={o.analytics.last_24_hours.views} />
+            <Metric label="Last 7 days" value={o.analytics.last_7_days.views} />
+            <Metric label="Last 30 days" value={o.analytics.last_30_days.views} />
+            <Metric
+              label="Apply clicks"
+              value={o.analytics.all_time.apply_clicks}
+              note="All time, not applications"
+            />
+            <Metric label="Saves" value={o.analytics.saves} note="Currently saved" />
+          </div>
+          <p className="m-0 mt-1 text-small text-muted">
+            Page views, one per browser tab session; unique visitors are not measured.
+            {o.analytics.tracking.daily_since
+              ? ` Counting began on ${dateText(o.analytics.tracking.daily_since)}; nothing earlier is estimated.`
+              : " No views have been recorded yet."}
+          </p>
+        </section>
+      ) : null}
 
       <section aria-labelledby="actions-title" className={`${card} mb-4`}>
         <h2 id="actions-title" className={h2}>

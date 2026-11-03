@@ -67,6 +67,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-57 | Listing images (D-58): featured and optional sharing image uploaded in the job editor (preview, replace, remove, progress, drag and drop, mobile); content-based validation (JPEG, PNG, WebP, size and dimension limits), orientation applied, metadata removed, re-encoded under generated names on persistent storage; staff-only, rate limited, no orphans; absolute https addresses on public pages, cards, structured previews and Open Graph/Twitter cards; standard UPNEXT image when none; a picture never implies employer verification | D-58; D-56; D-14 | SC-01, SC-12 | uploadListingImage | IMG-01…IMG-08 | B-07 |
 | R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
 | R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
+| R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
 
 ## 2. Screen register
 
@@ -185,6 +186,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffSession` | GET `/staff/session` | staff | R-55 |
 | `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
 | `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `getStaffAnalytics` | GET `/staff/analytics` | staff | R-63 |
+| `listStaffAnalyticsOpportunities` | GET `/staff/analytics/opportunities` | staff | R-63 |
 | `uploadListingImage` | POST `/staff/images` | staff | R-57 |
 | `listStaffMedia` | GET `/staff/media` | staff | R-62 |
 | `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
@@ -248,6 +251,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | IMG-08 | Upload component, job-editor state and payload, job page image, card image and Open Graph/Twitter metadata (Vitest) |
 | MEDIA-01 | Media Library: upload registers one asset (identical uploads reused), thumbnails, search, paging, usage counts, permissions, migration of earlier uploads |
 | MEDIA-02 | Reuse across listings; removing or replacing a picture never deletes the file; library browser, picker and upload component (Vitest) |
+| ANLY-01 | Counting: hourly and daily counters agree, a real browser view and an apply click are counted, crawlers, scripts, previews, prefetches and requests without a User-Agent are not, closed listings are not, nothing identifying a visitor is stored |
+| ANLY-02 | Windows and buckets: rolling 24-hour, 7-day and 30-day edges, all-time from the daily counters, no invented history, Harare day boundaries, hourly, daily, weekly and monthly series zero-filled and equal to the cards |
+| ANLY-03 | Ranking: per-listing views, apply clicks and click-through rate of the same window (blank without views), sort, search, paging, Harare date ranges and their validation, the Views column and per-listing statistics |
+| ANLY-04 | Access and cost: analytics.read for Editors and Administrators only, scope enforced on the server, cache, query counts that do not grow with listings, retention, and the staff interface (Vitest: chart, panel, view, table, skeleton, empty and error states, view-beacon behaviour, hero image removed from staff pages only) |
 | DUP-01 | Duplicate rules: same organisation and title needs one confirmation; different titles, shared address, e-mail or source never flagged; similar and differing-detail cases only warn |
 | DUP-02 | Staff API reports duplicates and accepts the single confirmation; source fields are absent from the job form and payload |
 | VERIFY-01 | Verification switch: idempotent, records who and when, does not change row_version, survives amendment, public level follows it, migration of earlier levels |
@@ -738,6 +745,10 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | IMG-08 | `apps/web/tests/unit/team-and-images.test.tsx` | executed |
 | MEDIA-01 | `apps/api/tests/test_media_library.py` | executed |
 | MEDIA-02 | `apps/api/tests/test_media_library.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| ANLY-01 | `apps/api/tests/test_staff_analytics.py (counting and bot tests)` | executed |
+| ANLY-02 | `apps/api/tests/test_staff_analytics.py (window, bucket and time-zone tests)` | executed |
+| ANLY-03 | `apps/api/tests/test_staff_analytics.py (table and per-listing tests)` | executed |
+| ANLY-04 | `apps/api/tests/test_staff_analytics.py (permission, cache, query and retention tests); apps/web/tests/unit/analytics.test.tsx` | executed |
 | DUP-01 | `apps/api/tests/test_duplicate_detection.py` | executed |
 | DUP-02 | `apps/api/tests/test_duplicate_detection.py; apps/web/tests/unit/job-editor.test.ts` | executed |
 | VERIFY-01 | `apps/api/tests/test_verification_switch.py; apps/api/tests/test_workflow.py` | executed |
