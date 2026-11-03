@@ -266,3 +266,26 @@ class ListingDailyStat(models.Model):
 
     def __str__(self) -> str:
         return f"{self.opportunity_id}@{self.day}"
+
+
+class ListingHourlyStat(models.Model):
+    """Aggregate counters per listing and UTC hour (D-65). Same rule as the daily table: counts only, no
+    visitor identifier, address or user agent. It feeds the rolling 24-hour, 7-day and 30-day figures and the
+    hourly chart of the staff Analytics page; `ListingDailyStat` keeps the all-time totals, so an earlier day
+    that has no hourly row is still counted there and never invented here."""
+
+    id = models.BigAutoField(primary_key=True)
+    opportunity = models.ForeignKey("opportunities.Opportunity", on_delete=models.PROTECT, related_name="+")
+    hour = models.DateTimeField()  # the start of the UTC hour
+    views = models.PositiveIntegerField(default=0)
+    apply_clicks = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["opportunity", "hour"], name="hourlystat_unique")]
+        indexes = [
+            models.Index(fields=["opportunity", "-hour"], name="hourlystat_recent_idx"),
+            models.Index(fields=["-hour"], name="hourlystat_hour_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.opportunity_id}@{self.hour:%Y-%m-%d %H}h"

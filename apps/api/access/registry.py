@@ -30,6 +30,7 @@ class Permission(StrEnum):
     OPP_REVIEW_REJECT = "opp.review.reject"
     OPP_REVIEW_RETURN = "opp.review.return"
     OPP_VERIFY_RECORD = "opp.verify.record"
+    ANALYTICS_READ = "analytics.read"
     OPP_PUBLISH = "opp.publish"
     OPP_PUBLISH_DIRECT = "opp.publish_direct"
     OPP_SCHEDULE = "opp.schedule"
@@ -80,6 +81,7 @@ _EDITOR_CODES = frozenset(
         P.OPP_REVIEW_REJECT,
         P.OPP_REVIEW_RETURN,
         P.OPP_VERIFY_RECORD,
+        P.ANALYTICS_READ,
         P.OPP_PUBLISH,
         P.OPP_SCHEDULE,
         P.OPP_TAKEDOWN,

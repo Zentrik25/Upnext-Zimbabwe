@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import { AnalyticsView } from "@/components/workspace/analytics/analytics-view";
 import { Icon } from "@/components/workspace/icons";
 import { ListingTable } from "@/components/workspace/listing-table";
 import { ago } from "@/components/workspace/badges";
@@ -22,72 +22,69 @@ export default async function DashboardPage() {
   const now = currentTime();
   const first = session.user.name.split(" ")[0] ?? session.user.name;
   const canCreate = can(session, "opp.draft.create");
+  const canAnalytics = can(session, "analytics.read");
+  const createLink = canCreate ? (
+    <Link
+      href="/workspace/opportunities/new"
+      className="inline-flex min-h-[40px] items-center gap-2 rounded-control bg-accent-solid px-4 py-2 text-ctl text-on-accent hover:bg-accent-solid-hover"
+    >
+      <Icon name="plus-sm" />
+      Create opportunity
+    </Link>
+  ) : null;
 
   return (
     <>
-      <section
-        aria-labelledby="welcome"
-        className="mb-5 grid min-h-[180px] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 overflow-hidden rounded-feature border border-border-interest bg-match-bg pt-6 pr-5 pl-6 sm:min-h-[200px] sm:pt-7 sm:pr-8 sm:pl-9"
-      >
-        <div className="pb-6">
-          <h1
-            id="welcome"
-            className="m-0 mb-2 text-[clamp(26px,6vw,40px)] font-light leading-[1.1] tracking-display"
-          >
-            Welcome back, {first}
-          </h1>
-          <p className="m-0 mb-[18px] max-w-[46ch] text-base font-light text-muted">
-            Manage opportunities, review submissions and keep the platform up to date.
-          </p>
-          {canCreate ? (
-            <Link
-              href="/workspace/opportunities/new"
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-control bg-accent-solid px-4 py-2 text-ctl text-on-accent hover:bg-accent-solid-hover"
-            >
-              <Icon name="plus-sm" />
-              Create opportunity
-            </Link>
-          ) : null}
+      {canAnalytics ? (
+        <div className="mb-4">
+          <AnalyticsView
+            title="Dashboard"
+            description={`Welcome back, ${first}. Views, listings and what needs attention.`}
+            actions={createLink}
+          />
         </div>
-        <Image
-          src="/brand/staff-welcome.webp"
-          alt=""
-          width={560}
-          height={410}
-          priority
-          className="-mb-px block h-auto w-[clamp(104px,30vw,270px)] self-end"
-        />
-      </section>
-
-      <section aria-labelledby="kpi-title" className="@container">
-        <h2 id="kpi-title" className="sr-only">
-          Opportunity totals
-        </h2>
-        <ul className="m-0 mb-5 grid list-none grid-cols-2 gap-[10px] p-0 @min-[560px]:grid-cols-3 @min-[940px]:grid-cols-5 [&>li:last-child:nth-child(odd)]:col-span-2 @min-[560px]:[&>li:last-child:nth-child(odd)]:col-span-1">
-          {kpis.map((k) => (
-            <li key={k.key}>
-              <Link
-                href={k.href}
-                className="flex h-full items-center gap-3 rounded-card border border-line bg-surface p-[14px] text-ink shadow-subtle hover:border-border-interest hover:shadow-ambient"
-              >
-                <span
-                  aria-hidden="true"
-                  className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-card bg-match-bg text-accent"
-                >
-                  <Icon name={k.icon} />
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="text-ctl">{k.label}</span>
-                  <span className="text-[30px] leading-[1.15] font-light tracking-title tabular-nums">
-                    {k.value}
-                  </span>
-                  <span className="text-small text-muted">{k.note}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      ) : (
+        <>
+          <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="m-0 text-title font-light tracking-title">Dashboard</h1>
+              <p className="m-0 mt-0.5 max-w-[60ch] text-ctl text-muted">
+                Welcome back, {first}. Manage opportunities and see what needs attention.
+              </p>
+            </div>
+            {createLink}
+          </header>
+          <section aria-labelledby="kpi-title" className="@container">
+            <h2 id="kpi-title" className="sr-only">
+              Opportunity totals
+            </h2>
+            <ul className="m-0 mb-5 grid list-none grid-cols-2 gap-[10px] p-0 @min-[560px]:grid-cols-3 @min-[940px]:grid-cols-5 [&>li:last-child:nth-child(odd)]:col-span-2 @min-[560px]:[&>li:last-child:nth-child(odd)]:col-span-1">
+              {kpis.map((k) => (
+                <li key={k.key}>
+                  <Link
+                    href={k.href}
+                    className="flex h-full items-center gap-3 rounded-card border border-line bg-surface p-[14px] text-ink shadow-subtle hover:border-border-interest hover:shadow-ambient"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-card bg-match-bg text-accent"
+                    >
+                      <Icon name={k.icon} />
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-ctl">{k.label}</span>
+                      <span className="text-[30px] leading-[1.15] font-light tracking-title tabular-nums">
+                        {k.value}
+                      </span>
+                      <span className="text-small text-muted">{k.note}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
 
       <div className="@container mb-4">
         <div className="grid gap-4 @min-[820px]:grid-cols-[5fr_7fr]">
