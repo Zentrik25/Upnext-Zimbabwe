@@ -1,5 +1,5 @@
 /**
- * The three editorial guides (DRAFT until the owner approves the wording, D-51). One list feeds the pages, the
+ * The editorial guides (DRAFT until the owner approves the wording, D-51). One list feeds the pages, the
  * sitemap, the footer and the related-links block, so an address cannot be linked without being listed. Dates are the
  * dates the text was written and last changed; change `dateModified` only when the text meaningfully changes.
  */
@@ -27,6 +27,14 @@ export const GUIDES = [
       "Where listings come from, how they are reviewed before they are public, what each verification label means, and how to report or correct a listing.",
     datePublished: "2026-10-30",
     dateModified: "2026-10-30",
+  },
+  {
+    path: "/guides/common-job-seeker-questions",
+    title: "Common questions from job seekers in Zimbabwe, answered",
+    description:
+      "Short answers on UPNEXT Careers: finding jobs in a city, how to apply, graduate and trainee opportunities, spotting fake adverts, qualifications and closing dates.",
+    datePublished: "2026-11-03",
+    dateModified: "2026-11-03",
   },
 ] as const;
 

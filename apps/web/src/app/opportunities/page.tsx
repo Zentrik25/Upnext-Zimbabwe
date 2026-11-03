@@ -10,7 +10,8 @@ import { fetchList, listHref, ResultsLoader } from "@/components/opportunities/r
 import { Button, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
 import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
 import { SkeletonTabs } from "@/components/ui/skeleton";
-import { listCategories, listLocations } from "@/lib/catalog";
+import { getSitemapFeed, listCategories, listLocations } from "@/lib/catalog";
+import { isIndexableLanding, placePath, REMOTE_PATH } from "@/lib/landing";
 
 export const dynamic = "force-dynamic";
 const BASE_DESCRIPTION =
@@ -27,7 +28,14 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<Search>;
 }): Promise<Metadata> {
-  const view = classifyList(await searchParams);
+  const raw = await searchParams;
+  // A list narrowed to one city or province canonicalises to that place's landing page, so the place must be known.
+  const location = first(raw.location);
+  const places = new Set<string>();
+  if (location) {
+    for (const l of await listLocations()) if (l.kind === "city" || l.kind === "province") places.add(l.slug);
+  }
+  const view = classifyList(raw, places);
   const copy = view.kind === "category" ? CATEGORY_SEO[view.category] : undefined;
   // An address that would be indexed must hold genuine opportunities: an empty list, or one that could not be
   // loaded, is not offered to search engines (the page itself says so to visitors).
@@ -74,6 +82,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   }
   const active = params.get("category");
   const headingCategory = classifyList(raw).kind === "category" ? active : null;
+  const plain = classifyList(raw).kind === "plain";
 
   return (
     <>
@@ -108,6 +117,11 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <Suspense fallback={<ResultsSkeleton />}>
             <ResultsLoader params={params} />
           </Suspense>
+          {plain ? (
+            <Suspense fallback={null}>
+              <BrowseByPlace />
+            </Suspense>
+          ) : null}
         </section>
       </Container>
     </>
@@ -246,5 +260,34 @@ function FilterSelect(props: {
         ))}
       </Select>
     </div>
+  );
+}
+
+/** Crawlable links to the landing pages that hold enough real listings (the same rule the sitemap applies). */
+async function BrowseByPlace() {
+  const feed = await getSitemapFeed();
+  if (!feed.ok) return null;
+  const links = [
+    ...feed.data.locations
+      .filter((l) => isIndexableLanding(l.count))
+      .map((l) => ({ href: placePath(l.slug), label: `Jobs in ${l.name}` })),
+    ...(isIndexableLanding(feed.data.remote.count) ? [{ href: REMOTE_PATH, label: "Remote jobs" }] : []),
+  ];
+  if (links.length === 0) return null;
+  return (
+    <nav aria-labelledby="by-place-title" className="mt-8 border-t border-line pt-4">
+      <h2 id="by-place-title" className="m-0 mb-2 text-title font-strong">
+        Browse by place
+      </h2>
+      <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-base">
+        {links.map((l) => (
+          <li key={l.href}>
+            <Link href={l.href} className="text-accent underline">
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

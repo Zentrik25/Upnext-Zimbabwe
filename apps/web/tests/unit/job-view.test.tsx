@@ -511,3 +511,22 @@ describe("related opportunity cards", () => {
     expect(link.textContent).toMatch(/Closes/);
   });
 });
+
+describe("publication and update dates", () => {
+  it("shows when the listing was posted and, if different, when it was last updated, as machine-readable times", () => {
+    render(<JobView listing={listing({ updated_at: "2026-11-02T08:00:00Z" })} />);
+    const dates = screen.getByTestId("listing-dates");
+    expect(dates.textContent).toBe("Posted 30 Oct 2026 · Updated 2 Nov 2026.");
+    const times = dates.querySelectorAll("time");
+    expect(times[0]!.getAttribute("datetime")).toBe("2026-10-30T08:00:00Z");
+    expect(times[1]!.getAttribute("datetime")).toBe("2026-11-02T08:00:00Z");
+  });
+  it("shows one date when the listing has not changed since it was posted", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.getByTestId("listing-dates").textContent).toBe("Posted 30 Oct 2026.");
+  });
+  it("is left out of a staff preview", () => {
+    render(<JobView listing={listing()} preview />);
+    expect(screen.queryByTestId("listing-dates")).toBeNull();
+  });
+});

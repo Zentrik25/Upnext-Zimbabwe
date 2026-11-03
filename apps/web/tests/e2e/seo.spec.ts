@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { allSitemapUrls } from "./support";
 
 /** Public website foundations: robots, sitemap, canonical and indexing rules, structured data, static pages. */
 test.skip(process.env.E2E_DEMO_DATA !== "1", "needs seeded demo data (E2E_DEMO_DATA=1)");
@@ -39,12 +40,14 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(text).toMatch(/Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
   });
 
-  test("sitemap.xml lists the static pages and exactly the open public listings", async ({ request }) => {
+  test("sitemap.xml is an index; its files list the static pages and exactly the open public listings", async ({
+    request,
+  }) => {
     const response = await request.get("/sitemap.xml");
     expect(response.status()).toBe(200);
     expect(response.headers()["content-type"]).toContain("xml");
-    const xml = await response.text();
-    const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
+    expect(await response.text()).toContain("<sitemapindex");
+    const urls = await allSitemapUrls(request);
     for (const path of ["", "/opportunities", "/about", "/contact"])
       expect(urls.some((u) => u.replace(/\/$/, "").endsWith(path))).toBe(true);
     // The legal pages are listed only after the owner records approval (UPNEXT_LEGAL_APPROVED); CI never sets it.
@@ -62,6 +65,7 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
       "how-to-find-jobs-in-zimbabwe",
       "apply-safely-and-avoid-scams",
       "how-listings-are-verified",
+      "common-job-seeker-questions",
     ])
       expect(urls.some((u) => u.endsWith(`/guides/${guide}`))).toBe(true);
   });
@@ -147,6 +151,7 @@ test.describe("structured data (SEO-01)", () => {
       "how-to-find-jobs-in-zimbabwe",
       "apply-safely-and-avoid-scams",
       "how-listings-are-verified",
+      "common-job-seeker-questions",
     ]) {
       const response = await page.goto(`/guides/${slug}`);
       expect(response?.status(), slug).toBe(200);

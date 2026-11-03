@@ -379,6 +379,7 @@ describe("route wiring", () => {
       "workspace/(shell)/opportunities/[id]",
       "workspace/(shell)/activity",
       "workspace/(shell)/content-health",
+      "workspace/(shell)/seo",
       "workspace/(shell)/manage/[kind]",
       "workspace/(shell)/manage/[kind]/[id]",
       "workspace/(shell)/records/[kind]",
@@ -400,7 +401,7 @@ describe("route wiring", () => {
     expect(home.match(/<Suspense/g)).toHaveLength(3);
     expect(home).toContain("fallback={<HomeLatestSkeleton />}");
     const list = readFileSync(join(app, "opportunities/page.tsx"), "utf8");
-    expect(list.match(/<Suspense/g)).toHaveLength(4);
+    expect(list.match(/<Suspense/g)).toHaveLength(5); // search, tabs, filters, results, browse-by-place
     expect(list).toContain("fallback={<ResultsSkeleton />}");
     const detail = readFileSync(join(app, "opportunities/[slug]/page.tsx"), "utf8");
     // the status code is decided before anything is streamed: notFound() comes before the first boundary

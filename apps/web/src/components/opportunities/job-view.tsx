@@ -142,6 +142,9 @@ function humaniseValue(text: string): string {
  * to apply, then the substance. Each fact appears once. Nothing is drawn for a value the listing does not have.
  * `personal` (save) and `related` arrive as slots because they need the visitor's session or a second request.
  */
+/** Posted and updated on the same Zimbabwe calendar day: the page then shows one date. */
+const sameDay = (a: string, b: string) => formatDate(a, "Africa/Harare") === formatDate(b, "Africa/Harare");
+
 export function JobView({
   listing,
   preview = false,
@@ -392,7 +395,22 @@ export function JobView({
           ) : null}
 
           {!preview ? (
-            <p className="m-0 mt-4 flex items-center gap-2 border-t border-line pt-3 text-small text-muted">
+            <p className="m-0 mt-4 text-small text-muted" data-testid="listing-dates">
+              Posted{" "}
+              <time dateTime={listing.published_at}>{formatDate(listing.published_at, "Africa/Harare")}</time>
+              {sameDay(listing.published_at, listing.updated_at) ? null : (
+                <>
+                  {" "}
+                  · Updated{" "}
+                  <time dateTime={listing.updated_at}>{formatDate(listing.updated_at, "Africa/Harare")}</time>
+                </>
+              )}
+              .
+            </p>
+          ) : null}
+
+          {!preview ? (
+            <p className="m-0 mt-2 flex items-center gap-2 border-t border-line pt-3 text-small text-muted">
               <Icon name="flag" className="h-4 w-4 shrink-0" />
               <span>
                 Something wrong?{" "}

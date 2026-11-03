@@ -1,4 +1,5 @@
 import { CATEGORY_SEO } from "./category-seo";
+import { landingFor } from "./landing";
 
 /** The query keys the list page reads. Anything else (utm_*, fbclid, …) does not change the page and is ignored. */
 export const LIST_KEYS = [
@@ -27,9 +28,11 @@ const first = (value: string | string[] | undefined) => (Array.isArray(value) ? 
  *  - a page after the first (`cursor`) is its own page: noindex, follow, canonical to itself, never to page one;
  *  - any other combination (search words, filters, sorting, page size) is a view of the same listings: noindex,
  *    follow, canonical to the nearest indexable list (the category's, or the plain list);
+ *  - a list narrowed to one city or province, or to remote work alone, is a view of that landing page: noindex, follow,
+ *    canonical to `/locations/<slug>` or `/remote-jobs` (`places` are the slugs that have a landing page);
  *  - parameters the page does not read are dropped from the canonical address.
  */
-export function classifyList(raw: Raw): ListView {
+export function classifyList(raw: Raw, places: ReadonlySet<string> = new Set()): ListView {
   const used = new Map<string, string>();
   for (const key of [...LIST_KEYS, "cursor"]) {
     const value = first(raw[key]);
@@ -45,5 +48,6 @@ export function classifyList(raw: Raw): ListView {
     const query = new URLSearchParams([...used.entries()].sort(([a], [b]) => a.localeCompare(b)));
     return { kind: "paged", index: false, canonical: `/opportunities?${query.toString()}`, category: known };
   }
-  return { kind: "refined", index: false, canonical: categoryAddress, category: known };
+  const landing = landingFor(used, places);
+  return { kind: "refined", index: false, canonical: landing ?? categoryAddress, category: known };
 }

@@ -8,7 +8,7 @@ export function plainText(html: string, max = 5000): string {
   return text.replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-const JOB_CATEGORIES = new Set(["jobs", "internships", "graduate-programmes"]);
+export const JOB_CATEGORIES = new Set(["jobs", "internships", "graduate-programmes"]);
 const EMPLOYMENT: Record<string, string> = {
   full_time: "FULL_TIME",
   contract: "CONTRACTOR",

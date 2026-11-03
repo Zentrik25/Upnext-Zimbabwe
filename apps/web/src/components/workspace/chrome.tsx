@@ -182,6 +182,13 @@ function groups(session: StaffSession): Group[] {
       icon: "chart",
       active: startsWith("/workspace/content-health"),
     });
+  if (has("settings.manage"))
+    reports.push({
+      label: "SEO and indexing",
+      href: "/workspace/seo",
+      icon: "chart",
+      active: startsWith("/workspace/seo"),
+    });
   reports.push({
     label: "Activity log",
     href: "/workspace/activity",

@@ -8,7 +8,8 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(), usePathname: () => "/" }));
 
 const catalog = vi.hoisted(() => ({
-  getSitemapEntries: vi.fn(),
+  getSitemapFeed: vi.fn(),
+  listLocations: vi.fn(),
   listCategories: vi.fn(),
   getOpportunity: vi.fn(),
   listOpportunities: vi.fn(),
@@ -18,13 +19,31 @@ vi.mock("@/lib/session", () => ({ getCurrentUser: vi.fn(), getSavedIds: vi.fn() 
 vi.mock("@/content/legal/operator", () => ({ legalPublished: () => false }));
 
 import robots from "@/app/robots";
-import sitemap from "@/app/sitemap";
+import { buildIndex, buildSitemaps } from "@/lib/sitemap";
 import { BRAND } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { GUIDES } from "@/lib/guides";
 import { classifyList } from "@/lib/list-seo";
 import { STATIC_PATHS } from "@/lib/site";
 import { readRepoFile } from "./helpers";
+
+/** Every address of every sitemap file, as the old single file listed them. */
+async function sitemap(): Promise<{ url: string; lastModified?: Date }[]> {
+  return [...(await buildSitemaps()).values()]
+    .flat()
+    .map((e) => ({ url: e.loc, ...(e.lastmod ? { lastModified: new Date(e.lastmod) } : {}) }));
+}
+const feed = (over: Record<string, unknown> = {}) => ({
+  ok: true,
+  data: {
+    data: [],
+    organisations: [],
+    categories: [],
+    locations: [],
+    remote: { count: 0, updated_at: null },
+    ...over,
+  },
+});
 
 process.env.UPNEXT_PUBLIC_BASE_URL = "https://upnext.co.zw";
 const ORIGIN = "https://upnext.co.zw";
@@ -104,23 +123,21 @@ describe("robots.txt", () => {
   });
 });
 
-describe("sitemap.xml source", () => {
+describe("sitemap files", () => {
   beforeEach(() => {
-    catalog.getSitemapEntries.mockReset();
-    catalog.listCategories.mockReset();
-    catalog.listOpportunities.mockReset();
-    catalog.listOpportunities.mockResolvedValue({ ok: true, data: { data: [{ id: "1" }], page: {} } });
-    catalog.listCategories.mockResolvedValue([
-      { code: "jobs", name: "Jobs" },
-      { code: "tenders", name: "Tenders" },
-      { code: "not-a-launch-category", name: "Other" },
-    ]);
+    catalog.getSitemapFeed.mockReset();
   });
-  it("lists canonical absolute addresses once each, with real dates only on listings", async () => {
-    catalog.getSitemapEntries.mockResolvedValue({
-      ok: true,
-      data: { data: [{ slug: "graduate-engineer-abc123", updated_at: "2026-10-20T08:00:00Z" }] },
-    });
+  it("lists canonical absolute addresses once each, with real dates only where a real date exists", async () => {
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({
+        data: [{ slug: "graduate-engineer-abc123", updated_at: "2026-10-20T08:00:00Z", category: "jobs" }],
+        categories: [
+          { code: "jobs", count: 2, updated_at: "2026-10-21T08:00:00Z" },
+          { code: "tenders", count: 1, updated_at: null },
+          { code: "not-a-launch-category", count: 4, updated_at: null },
+        ],
+      }),
+    );
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
     expect(new Set(urls).size).toBe(urls.length);
@@ -131,10 +148,14 @@ describe("sitemap.xml source", () => {
     for (const guide of GUIDES) expect(urls).toContain(`${ORIGIN}${guide.path}`);
     const listing = entries.find((e) => e.url.endsWith("/graduate-engineer-abc123"))!;
     expect(listing.lastModified).toEqual(new Date("2026-10-20T08:00:00Z"));
-    expect(entries.filter((e) => e.lastModified).length).toBe(1);
+    // Static pages carry no invented date; guides carry their real last-edit date.
+    expect(entries.find((e) => e.url === `${ORIGIN}/about`)!.lastModified).toBeUndefined();
+    expect(entries.find((e) => e.url === `${ORIGIN}${GUIDES[0].path}`)!.lastModified).toEqual(
+      new Date(`${GUIDES[0].dateModified}T00:00:00Z`),
+    );
   });
   it("leaves out private and unapproved pages, and any search or filter address", async () => {
-    catalog.getSitemapEntries.mockResolvedValue({ ok: true, data: { data: [] } });
+    catalog.getSitemapFeed.mockResolvedValue(feed());
     const urls = (await sitemap()).map((e) => e.url);
     for (const path of [
       "/workspace",
@@ -154,25 +175,97 @@ describe("sitemap.xml source", () => {
     expect(urls.some((u) => /[?&](q|sort|cursor|limit|location)=/.test(u))).toBe(false);
   });
   it("lists a category only while it holds an open listing, so the sitemap never offers a noindex address", async () => {
-    catalog.getSitemapEntries.mockResolvedValue({ ok: true, data: { data: [] } });
-    catalog.listOpportunities.mockImplementation(async (q: URLSearchParams) =>
-      q.get("category") === "tenders"
-        ? { ok: true, data: { data: [], page: {} } }
-        : { ok: true, data: { data: [{ id: "1" }], page: {} } },
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({
+        categories: [
+          { code: "jobs", count: 1, updated_at: null },
+          { code: "tenders", count: 0, updated_at: null },
+        ],
+      }),
     );
     const urls = (await sitemap()).map((e) => e.url);
     expect(urls).toContain(`${ORIGIN}/opportunities?category=jobs`);
     expect(urls).not.toContain(`${ORIGIN}/opportunities?category=tenders`);
-    catalog.listOpportunities.mockResolvedValue({ ok: false, reason: "unreachable" });
-    expect((await sitemap()).some((e) => e.url.includes("?category="))).toBe(false);
+  });
+  it("lists a place or remote work only from three open listings (no thin landing pages)", async () => {
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({
+        locations: [
+          { slug: "harare", name: "Harare", count: 3, updated_at: "2026-10-22T00:00:00Z" },
+          { slug: "gweru", name: "Gweru", count: 2, updated_at: "2026-10-22T00:00:00Z" },
+        ],
+        remote: { count: 1, updated_at: null },
+      }),
+    );
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain(`${ORIGIN}/locations/harare`);
+    expect(urls).not.toContain(`${ORIGIN}/locations/gweru`);
+    expect(urls).not.toContain(`${ORIGIN}/remote-jobs`);
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({ remote: { count: 3, updated_at: "2026-10-23T00:00:00Z" } }),
+    );
+    expect((await sitemap()).map((e) => e.url)).toContain(`${ORIGIN}/remote-jobs`);
+  });
+  it("splits listings by type: JobPosting categories apart from scholarships, tenders and grants", async () => {
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({
+        data: [
+          { slug: "job-aaaaaaaa", updated_at: "2026-10-20T08:00:00Z", category: "internships" },
+          { slug: "tender-bbbbbb", updated_at: "2026-10-21T08:00:00Z", category: "tenders" },
+        ],
+        organisations: [{ slug: "acme", updated_at: "2026-10-19T00:00:00Z" }],
+      }),
+    );
+    const files = await buildSitemaps();
+    expect([...files.keys()]).toEqual(["pages.xml", "employers.xml", "jobs-1.xml", "opportunities-1.xml"]);
+    expect(files.get("jobs-1.xml")!.map((e) => e.loc)).toEqual([`${ORIGIN}/opportunities/job-aaaaaaaa`]);
+    expect(files.get("opportunities-1.xml")!.map((e) => e.loc)).toEqual([
+      `${ORIGIN}/opportunities/tender-bbbbbb`,
+    ]);
+    expect(files.get("employers.xml")!.map((e) => e.loc)).toEqual([`${ORIGIN}/employers/acme`]);
+  });
+  it("cuts a large listing set into files under the protocol limit and indexes them with real lastmod values", async () => {
+    process.env.UPNEXT_SITEMAP_CHUNK = "2";
+    try {
+      catalog.getSitemapFeed.mockResolvedValue(
+        feed({
+          data: ["a", "b", "c", "d", "e"].map((c, i) => ({
+            slug: `job-${c}-xxxxxx`,
+            updated_at: `2026-10-0${i + 1}T00:00:00Z`,
+            category: "jobs",
+          })),
+        }),
+      );
+      const files = await buildSitemaps();
+      expect([...files.keys()].filter((k) => k.startsWith("jobs-"))).toEqual([
+        "jobs-1.xml",
+        "jobs-2.xml",
+        "jobs-3.xml",
+      ]);
+      expect(files.get("jobs-3.xml")).toHaveLength(1);
+      const index = await buildIndex();
+      expect(index.map((i) => i.loc)).toContain(`${ORIGIN}/sitemaps/jobs-3.xml`);
+      expect(index.find((i) => i.loc.endsWith("jobs-1.xml"))!.lastmod).toBe("2026-10-02T00:00:00.000Z");
+    } finally {
+      delete process.env.UPNEXT_SITEMAP_CHUNK;
+    }
   });
   it("still lists the static pages when the API is down", async () => {
-    catalog.getSitemapEntries.mockResolvedValue({ ok: false, reason: "unreachable" });
-    catalog.listCategories.mockResolvedValue([]);
+    catalog.getSitemapFeed.mockResolvedValue({ ok: false, reason: "unreachable" });
     const urls = (await sitemap()).map((e) => e.url);
     expect(urls).toContain(`${ORIGIN}/`);
     expect(urls).toContain(`${ORIGIN}/opportunities`);
     expect(urls.length).toBeGreaterThan(5);
+  });
+  it("renders well-formed, escaped XML for the index and a urlset", async () => {
+    const { renderIndex, renderUrlset, xmlEscape } = await import("@/lib/sitemap");
+    expect(xmlEscape(`a&b<c>"d'`)).toBe("a&amp;b&lt;c&gt;&quot;d&apos;");
+    const xml = renderUrlset([
+      { loc: `${ORIGIN}/opportunities?category=jobs&x=1`, lastmod: "2026-10-20T00:00:00.000Z" },
+    ]);
+    expect(xml).toContain("<loc>https://upnext.co.zw/opportunities?category=jobs&amp;x=1</loc>");
+    expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(renderIndex([{ loc: `${ORIGIN}/sitemaps/pages.xml` }])).toContain("<sitemapindex");
   });
 });
 
@@ -266,6 +359,7 @@ describe("editorial guides", () => {
     ["how-to-find-jobs-in-zimbabwe", () => import("@/app/guides/how-to-find-jobs-in-zimbabwe/page")],
     ["apply-safely-and-avoid-scams", () => import("@/app/guides/apply-safely-and-avoid-scams/page")],
     ["how-listings-are-verified", () => import("@/app/guides/how-listings-are-verified/page")],
+    ["common-job-seeker-questions", () => import("@/app/guides/common-job-seeker-questions/page")],
   ] as const;
   it("has one page per listed guide", () => {
     expect(GUIDES.map((g) => g.path.split("/").pop()).sort()).toEqual(pages.map(([n]) => n).sort());
@@ -322,6 +416,7 @@ describe("internal link integrity", () => {
       ["a", () => import("@/app/guides/how-to-find-jobs-in-zimbabwe/page")],
       ["b", () => import("@/app/guides/apply-safely-and-avoid-scams/page")],
       ["c", () => import("@/app/guides/how-listings-are-verified/page")],
+      ["d", () => import("@/app/guides/common-job-seeker-questions/page")],
     ] as const) {
       const { container } = render((await load()).default());
       container.querySelectorAll("a[href]").forEach((a) => {
@@ -351,6 +446,8 @@ describe("private routes cannot be indexed by accident", () => {
     /^\/privacy$/,
     /^\/terms$/,
     /^\/guides\/[a-z-]+$/,
+    /^\/locations\/\[slug\]$/,
+    /^\/remote-jobs$/,
   ];
   function pageFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {
@@ -396,12 +493,14 @@ function robotsAllows(path: string): boolean {
 
 describe("sitemap, robots.txt, canonical and noindex agree", () => {
   it("every sitemap address is crawlable, indexable and canonical to itself", async () => {
-    catalog.getSitemapEntries.mockResolvedValue({
-      ok: true,
-      data: { data: [{ slug: "graduate-engineer-abc123", updated_at: "2026-10-20T08:00:00Z" }] },
-    });
-    catalog.listCategories.mockResolvedValue(Object.keys(CATEGORY_SEO).map((code) => ({ code, name: code })));
-    catalog.listOpportunities.mockResolvedValue({ ok: true, data: { data: [{ id: "1" }], page: {} } });
+    catalog.getSitemapFeed.mockResolvedValue(
+      feed({
+        data: [{ slug: "graduate-engineer-abc123", updated_at: "2026-10-20T08:00:00Z", category: "jobs" }],
+        categories: Object.keys(CATEGORY_SEO).map((code) => ({ code, count: 1, updated_at: null })),
+        locations: [{ slug: "harare", name: "Harare", count: 5, updated_at: null }],
+        remote: { count: 4, updated_at: null },
+      }),
+    );
     const urls = (await sitemap()).map((e) => e.url);
     expect(urls.length).toBeGreaterThan(10);
     for (const url of urls) {
@@ -428,6 +527,7 @@ describe("sitemap, robots.txt, canonical and noindex agree", () => {
         () => import("@/app/guides/apply-safely-and-avoid-scams/page"),
       ],
       ["/guides/how-listings-are-verified", () => import("@/app/guides/how-listings-are-verified/page")],
+      ["/guides/common-job-seeker-questions", () => import("@/app/guides/common-job-seeker-questions/page")],
     ];
     expect(
       pages
