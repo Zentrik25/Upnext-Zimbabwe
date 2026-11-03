@@ -38,7 +38,7 @@ export default function ApplySafelyGuide() {
       <Section title="Checks to make before you apply">
         <Bullets
           items={[
-            "Look at the source named on the listing, and the verification label. A listing that is not verified still names its source, and you can check that source yourself.",
+            "Look at the verification label. A listing that is not verified has not been checked by UPNEXT, so check it yourself.",
             "Open the organisation's own website by typing its address yourself, not by following a link in a message, and look for the same vacancy there.",
             "Compare the contact details and the way to apply with the ones on the organisation's own website.",
             "Apply only through the channel the issuer states. UPNEXT does not receive applications.",
@@ -62,7 +62,7 @@ export default function ApplySafelyGuide() {
       </Section>
       <Section title="What UPNEXT does about it">
         <p>
-          Every listing names its source, and the label shows what was checked.{" "}
+          Every listing carries a label that shows what was checked.{" "}
           <Link href="/guides/how-listings-are-verified" className={a}>
             How listings are checked
           </Link>{" "}

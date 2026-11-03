@@ -87,7 +87,7 @@ describe("OpportunityRow", () => {
       screen.getByRole("link", { name: "View details for Graduate Electrical Engineer" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Not verified")).toBeInTheDocument();
-    expect(screen.getByText("Source: Example Power Services careers page")).toBeInTheDocument();
+    expect(screen.queryByText(/Source/)).toBeNull(); // the source is not shown on a result
     expect(screen.getByText("USD 700 – 900 per month")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /save/i })).toBeNull(); // no inert control before accounts exist
   });

@@ -83,7 +83,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             {headingCategory ? CATEGORY_SEO[headingCategory]!.heading : "Opportunities"}
           </h1>
           <p className="mt-1 mb-[14px] text-base text-muted">
-            Every listing names its source. Applications happen on the issuer&apos;s own channel.
+            Applications happen on the issuer&apos;s own channel.
           </p>
           <Suspense fallback={<SearchSkeleton />}>
             <SearchControls params={params} />

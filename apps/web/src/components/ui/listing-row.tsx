@@ -9,7 +9,6 @@ export type ListingRowProps = {
   href: string;
   facts: string[];
   tags?: { label: string; tone?: TagTone }[];
-  sourceNote?: ReactNode;
   /** Static save control for presentational use. Omit it when there is nothing to save. */
   saved?: boolean;
   /** Optional block under the facts (for example why a recommendation is shown). */
@@ -30,7 +29,7 @@ function initials(name: string): string {
 
 /**
  * Presentational listing row (no data fetching): divider-separated, no card border, hover tint.
- * As in the reference, plain facts are unboxed text; only `tags` (deadline, source status) are boxed chips.
+ * As in the reference, plain facts are unboxed text; only `tags` (deadline, verification) are boxed chips.
  */
 export function ListingRow({
   organisation,
@@ -38,7 +37,6 @@ export function ListingRow({
   href,
   facts,
   tags = [],
-  sourceNote,
   saved,
   action,
   extra,
@@ -87,8 +85,7 @@ export function ListingRow({
         ))}
       </ul>
       {extra}
-      <div className="mt-[13px] flex items-center justify-between gap-2">
-        <span className="text-small text-muted">{sourceNote}</span>
+      <div className="mt-[13px] flex items-center justify-end gap-2">
         <ButtonLink
           variant="secondary"
           href={href}

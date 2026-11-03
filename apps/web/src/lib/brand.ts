@@ -27,7 +27,7 @@ export const BRAND = {
   homeDescription:
     "Discover jobs and career opportunities in Zimbabwe with UPNEXT Careers. Explore vacancies, internships and other opportunities from trusted sources.",
   description:
-    "Jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe, each with its source named.",
+    "Jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe, each with a clear verification label.",
   /** Static brand files (public/brand). */
   assets: {
     ogImage: "/brand/og-image.png",

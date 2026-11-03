@@ -22,15 +22,8 @@ export default function VerificationGuide() {
   return (
     <GuidePage
       path={PATH}
-      intro="UPNEXT Careers lists opportunities published by other organisations. It says plainly where each one came from and what has, and has not, been checked."
+      intro="UPNEXT Careers lists opportunities published by other organisations. It says plainly what has, and has not, been checked."
     >
-      <Section title="Where listings come from">
-        <p>
-          A listing cannot be published without at least one source: the issuer&apos;s own website or notice,
-          a newspaper, a gazette, a message from the issuer, or similar. The listing page shows the source,
-          the date it was looked at and, where there is one, a link to it.
-        </p>
-      </Section>
       <Section title="Review before a listing is public">
         <Bullets
           items={[

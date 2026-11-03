@@ -276,8 +276,8 @@ export function SkeletonPageHeading() {
 }
 
 /**
- * A listing row with the structure of the real one (`ListingRow`): mark, title, organisation, facts and tags, source
- * line and the details button.
+ * A listing row with the structure of the real one (`ListingRow`): mark, title, organisation, facts and tags, and the
+ * details button.
  */
 export function SkeletonListingRow() {
   return (
@@ -295,8 +295,7 @@ export function SkeletonListingRow() {
         <SkeletonBadge />
         <SkeletonBadge className="w-[96px]" />
       </div>
-      <div className="mt-[13px] flex items-center justify-between gap-2">
-        <SkeletonLine className="w-[140px] max-w-[45%]" />
+      <div className="mt-[13px] flex items-center justify-end gap-2">
         <SkeletonButton />
       </div>
     </div>

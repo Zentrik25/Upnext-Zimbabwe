@@ -146,7 +146,6 @@ export default function DesignSystemPage() {
             href="#"
             facts={["Harare", "Full-time", "Jobs"]}
             tags={[{ label: "Closes 29 Oct 2026", tone: "urgent" }]}
-            sourceNote="✓ Example source checked · Sample listing"
             saved={false}
           />
         </div>

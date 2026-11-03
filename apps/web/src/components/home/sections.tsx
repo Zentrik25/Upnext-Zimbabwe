@@ -275,11 +275,7 @@ export function TrustSection() {
           <p className="mt-1 max-w-[640px] text-ctl text-muted">
             We review each opportunity to keep the platform trustworthy and useful.
           </p>
-          <div className="mt-3 grid gap-2.5 md:grid-cols-3 md:gap-3">
-            <TrustCard icon="layers" title="Every listing has a source">
-              A listing is only published with a recorded source, such as the organisation, website or
-              official notice.
-            </TrustCard>
+          <div className="mt-3 grid gap-2.5 md:grid-cols-2 md:gap-3">
             <TrustCard icon="users" title="An editor reviews it first">
               Our editorial team reviews each listing before it goes live, and any major change is reviewed
               again.

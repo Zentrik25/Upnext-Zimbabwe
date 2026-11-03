@@ -157,8 +157,8 @@ export function AlertForm({
         ) : null}
       </div>
       <p className="max-w-[640px] text-small text-muted">
-        Every alert e-mail has a link to stop them without signing in. We list only opportunities, check each
-        listing&apos;s source, and you apply on the official site.
+        Every alert e-mail has a link to stop them without signing in. We list only opportunities, label what
+        we checked, and you apply on the official site.
       </p>
     </form>
   );

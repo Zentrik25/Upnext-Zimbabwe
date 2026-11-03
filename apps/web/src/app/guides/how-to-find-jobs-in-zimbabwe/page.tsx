@@ -63,7 +63,7 @@ export default function FindJobsGuide() {
         <p>Each listing page tells you:</p>
         <Bullets
           items={[
-            "who the issuing organisation is and where the information came from (the source, and the date we last looked at it);",
+            "who the issuing organisation is;",
             "the deadline, if the issuer stated one, and whether the listing is still open;",
             "a verification label that says what UPNEXT did and did not check;",
             "how to apply, which is always on the issuer's own channel.",
