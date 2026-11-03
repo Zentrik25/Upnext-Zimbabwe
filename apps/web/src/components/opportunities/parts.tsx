@@ -10,9 +10,16 @@ import {
 } from "@/lib/format";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { ListingRow, Tag } from "@/components/ui";
+import { Icon } from "@/components/ui/icons";
 
+/** The verification label; a checked listing carries a small tick so the state reads at a glance. */
 export function VerificationTag({ level }: { level: VerificationLevel }) {
-  return <Tag tone={verificationTone(level)}>{VERIFICATION[level].label}</Tag>;
+  return (
+    <Tag tone={verificationTone(level)} className="inline-flex items-center gap-1 text-small">
+      {level === "not_verified" ? null : <Icon name="checkCircle" className="h-3.5 w-3.5 shrink-0" />}
+      {VERIFICATION[level].label}
+    </Tag>
+  );
 }
 
 /** One search result: plain facts are unboxed text, deadline and verification are labelled chips. */
@@ -50,6 +57,7 @@ export function OpportunityRow({
         },
       ]}
       extra={extra}
+      image={row.image?.featured ?? null}
       sourceNote={row.primary_source_name ? `Source: ${row.primary_source_name}` : "Source not named"}
       action={
         save ? (

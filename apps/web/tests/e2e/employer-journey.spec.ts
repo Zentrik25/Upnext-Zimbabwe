@@ -166,6 +166,9 @@ test("4. a company profile is public only after an editor approves it", async ({
   }
 });
 
+const READER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+
 test("5. a listing goes through editors before the public sees it, and counters appear", async ({
   page,
   browser,
@@ -182,8 +185,10 @@ test("5. a listing goes through editors before the public sees it, and counters 
   await expect(page.getByTestId("listing-form")).toHaveCount(0); // frozen while in review
   const listingUrl = page.url();
 
-  // not public yet
-  const visitor = await browser.newContext();
+  // not public yet. Views from automated browsers are deliberately not counted (D-65), so the readers in this
+  // test present an ordinary browser User-Agent and hide the automation flag, as a person's browser would.
+  const visitor = await browser.newContext({ userAgent: READER_AGENT });
+  await visitor.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
   const anon = await visitor.newPage();
   await anon.goto(`/opportunities?q=${encodeURIComponent(TITLE)}`);
   await expect(anon.getByText(TITLE)).toHaveCount(0);

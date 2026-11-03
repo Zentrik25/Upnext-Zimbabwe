@@ -11,7 +11,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-01 | Public discovery needs no account: search, filter, browse categories | PR-01; spec §6; D-03 | SC-01, SC-02 | listOpportunities, listCategories, listLocations, listSectors | E2E-01, API-01, API-02, A11Y-01 | OQ-18, OQ-24 |
 | R-02 | Opportunity detail shows title, organisation, category, location, source, verification, deadline state, external action; unknown fields are labelled unknown, never invented | PR-02; spec §10; PRODUCT content safety | SC-03 | getOpportunity | API-03, UT-01, E2E-02, VIS-02 | OQ-06, OQ-22 |
 | R-03 | Stable, shareable canonical URLs by immutable slug; internal ids immutable | PR-02; D-13; ADR-0006 | SC-03 | getOpportunity | DB-01, DB-02, UT-02, E2E-03 | OQ-28 |
-| R-04 | Account lifecycle: register, verify email, sign in/out, reset and change password, change email | PR-03; spec §7 | SC-04, SC-05, SC-06, SC-07, SC-11 | getCsrfToken, register, verifyEmail, resendVerification, login, logout, requestPasswordReset, confirmPasswordReset, changePassword, requestEmailChange, getMe, updateMe, listAuthProviders, startGoogleSignIn, googleSignInCallback | AUTH-01…AUTH-09, E2E-04, REG-01…REG-27 | OQ-03, OQ-04, OQ-17 |
+| R-04 | Account lifecycle: register, verify email, sign in/out, reset and change password, change email | PR-03; spec §7 | SC-04, SC-05, SC-06, SC-07, SC-11 | getCsrfToken, register, verifyEmail, resendVerification, login, logout, requestPasswordReset, confirmPasswordReset, changePassword, requestEmailChange, getMe, updateMe, listAuthProviders, startGoogleSignIn, googleSignInCallback, loginTwoStep, getTwoStep, startTwoStepSetup, confirmTwoStepSetup, disableTwoStep, replaceTwoStepRecoveryCodes | AUTH-01…AUTH-09, E2E-04, REG-01…REG-27 | OQ-03, OQ-04, OQ-17 |
 | R-05 | Session management and account deletion/export request | PR-03; spec §7, §25 | SC-11 | listSessions, revokeSession, requestAccountDeletion, cancelAccountDeletion | AUTH-10, AUTH-11, IT-05, E2E-05 | OQ-09 |
 | R-06 | Account status (pending, active, restricted, suspended, deactivated) enforced on the backend | spec §7 | SC-05, SC-11, SC-13 | login, getMe, changeUserStatus | AUTH-12, ADM-03 | OQ-15 |
 | R-07 | Optional, private seeker profile (home city or province, highest qualification, experience, skills, industries, categories, employment types, preferred places, work arrangements): the owner can review, edit, reset preferences and delete it; never public, never visible to employers or staff (D-38) | PR-04; spec §8; D-38; ADR-0023 | SC-08, SC-11 | getProfile, updateProfile, deleteProfile, resetProfilePreferences, searchSkills | PRF-01…PRF-06, UT-03, API-04, E2E-06, SKR-01 | OQ-21 |
@@ -62,7 +62,12 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-52 | Route-level loading states on private routes, in-page Suspense boundaries on public routes, a reusable skeleton system (one reduced-motion-aware pulse, layout-matched, light and dark), distinct loading, empty, error (with retry) and unauthorised states, global error handling with an accessible retry, responsive from 320px | M2 (owner instruction 2026-10-28); owner instruction 2026-10-30 (skeleton system); D-19 | — | — | STATE-01, STATE-02, STATE-03, STATE-04, STATE-05, STATE-06 | — |
 | R-53 | Category specifications are reviewed against the loaded schemas and stay a proposal: no schema, migration or published-listing meaning changes before the owner approves OQ-06 | M2 (owner instruction 2026-10-28); D-21; P2-07 | — | — | CAT-01 | OQ-06 |
 | R-54 | Public identity is UPNEXT Careers: flat black-and-white UN monogram and wordmark, monochrome Stripe-inspired design with Inter, the one official mailbox info@upnext.co.zw, canonical domain upnext.co.zw, branded e-mail and metadata, homepage and staff site, without changing architecture, security or the editorial workflow | D-42 (owner instruction 2026-10-28); D-39; D-40; D-33 (superseded naming) | SC-01 | — | BRAND-01, BRAND-02, BRAND-03, BRAND-04 | B-01; B-02 |
-| R-55 | Staff workspace (Next.js, /workspace) on a staff API (/api/v1/staff/*) in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, records and catalogue management (claims, profiles, verifications, reports, outbox, delivery, users, roles, audit, organisations, taxonomies, content health), two-step proof shared with the session, themes, mobile drawer; no new write path and no bypass of the workflow; Django Admin retired; Administrators and Editors publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, never for employer-owned listings, verification still independent | D-46; D-49; ADR-0024; ADR-0025 | SC-12, SC-13 | getStaffSession, getStaffTwoStep, verifyStaffTwoStep, getStaffDashboard, listStaffOpportunities, createStaffDraft, getStaffOpportunity, saveStaffDraft, runStaffAction, listStaffActivity, searchStaff, listStaffCategories, listStaffOrganisations, listStaffRecordKinds, listStaffRecords, getStaffRecord, runStaffRecordAction, getStaffContentHealth, listStaffCatalogKinds, listStaffCatalog, createStaffCatalogRecord, getStaffCatalogRecord, updateStaffCatalogRecord, lookupStaffReference | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-08 | OQ-13 |
+| R-55 | Staff workspace (Next.js, /workspace) on a staff API (/api/v1/staff/*) in the Stripe design system: permission-scoped dashboard, list, detail with actions, draft editor, activity, search, records and catalogue management (claims, profiles, verifications, reports, outbox, delivery, users, roles, audit, organisations, taxonomies, content health), two-step proof shared with the session, themes, mobile drawer; no new write path and no bypass of the workflow; Django Admin retired; Administrators and Editors publish staff-created listings directly (opp.publish_direct), audited as direct and self-approved, never for employer-owned listings, verification still independent | D-46; D-49; ADR-0024; ADR-0025 | SC-12, SC-13 | getStaffSession, getStaffTwoStep, verifyStaffTwoStep, getStaffDashboard, listStaffOpportunities, createStaffDraft, getStaffOpportunity, saveStaffDraft, previewStaffOpportunity, runStaffAction, listStaffActivity, searchStaff, listStaffCategories, listStaffOrganisations, listStaffRecordKinds, listStaffRecords, getStaffRecord, runStaffRecordAction, getStaffContentHealth, listStaffCatalogKinds, listStaffCatalog, createStaffCatalogRecord, getStaffCatalogRecord, updateStaffCatalogRecord, lookupStaffReference | DIRECT-01…DIRECT-12, STAFFAPI-01…STAFFAPI-23, E2E-CMS-01…E2E-CMS-08 | OQ-13 |
+| R-56 | Staff management for Administrators (D-58): list, search, filter, sort and page staff; summary counts; profile with role, permissions, listing work, sessions and audit activity; invite by name, e-mail and an existing role with a single-use 72-hour link and no password sent; accept the invitation; resend; change role; suspend and reactivate; revoke sessions; send a recovery link; remove (deactivate, never delete) and reinstate; nobody changes their own access and the last active Administrator is protected; every change audited and the person told by branded e-mail; no Publisher role and no change to separation of duties | D-58; D-23; D-18; D-22; D-49 | SC-12, SC-13 | listStaffTeam, inviteStaff, getStaffMember, updateStaffMember, listStaffMemberActivity, runStaffMemberAction, acceptStaffInvitation | STAFFTEAM-01…STAFFTEAM-08 | OQ-13 |
+| R-57 | Listing images (D-58): featured and optional sharing image uploaded in the job editor (preview, replace, remove, progress, drag and drop, mobile); content-based validation (JPEG, PNG, WebP, size and dimension limits), orientation applied, metadata removed, re-encoded under generated names on persistent storage; staff-only, rate limited, no orphans; absolute https addresses on public pages, cards, structured previews and Open Graph/Twitter cards; standard UPNEXT image when none; a picture never implies employer verification | D-58; D-56; D-14 | SC-01, SC-12 | uploadListingImage | IMG-01…IMG-08 | B-07 |
+| R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
+| R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
+| R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
 
 ## 2. Screen register
 
@@ -128,13 +133,20 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `startGoogleSignIn` | GET `/auth/google/start` | auth | R-04 |
 | `googleSignInCallback` | GET `/auth/google/callback` | auth | R-04 |
 | `login` | POST `/auth/login` | auth | R-04, R-06, R-17, R-33 |
+| `loginTwoStep` | POST `/auth/login/two-step` | auth | R-04 |
 | `logout` | POST `/auth/logout` | auth | R-04 |
 | `requestPasswordReset` | POST `/auth/password-reset/request` | auth | R-04, R-17, R-18 |
 | `confirmPasswordReset` | POST `/auth/password-reset/confirm` | auth | R-04 |
+| `acceptStaffInvitation` | POST `/auth/staff-invitation/accept` | auth | R-56 |
 | `changePassword` | POST `/auth/password/change` | auth | R-04 |
 | `getMe` | GET `/me` | me | R-04, R-06, R-33 |
 | `updateMe` | PATCH `/me` | me | R-04 |
 | `requestEmailChange` | POST `/me/email-change` | me | R-04, R-38 |
+| `getTwoStep` | GET `/me/two-step` | me | R-04 |
+| `startTwoStepSetup` | POST `/me/two-step/setup` | me | R-04 |
+| `confirmTwoStepSetup` | POST `/me/two-step/confirm` | me | R-04 |
+| `disableTwoStep` | POST `/me/two-step/disable` | me | R-04 |
+| `replaceTwoStepRecoveryCodes` | POST `/me/two-step/recovery-codes` | me | R-04 |
 | `requestAccountDeletion` | POST `/me/deletion-request` | me | R-05, R-23 |
 | `cancelAccountDeletion` | DELETE `/me/deletion-request` | me | R-05 |
 | `getProfile` | GET `/me/profile` | me | R-07, R-23 |
@@ -146,6 +158,9 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `unsubscribeJobAlert` | POST `/alerts/unsubscribe` | alerts | R-47 |
 | `listSessions` | GET `/me/sessions` | me | R-05 |
 | `revokeSession` | DELETE `/me/sessions/{session_id}` | me | R-05 |
+| `listTrustedDevices` | GET `/me/trusted-devices` | me | R-58 |
+| `revokeAllTrustedDevices` | DELETE `/me/trusted-devices` | me | R-58 |
+| `revokeTrustedDevice` | DELETE `/me/trusted-devices/{device_id}` | me | R-58 |
 | `listSaved` | GET `/me/saved` | me | R-09, R-21, R-48 |
 | `saveOpportunity` | PUT `/me/saved/{opportunity_id}` | me | R-09, R-48 |
 | `unsaveOpportunity` | DELETE `/me/saved/{opportunity_id}` | me | R-09, R-48 |
@@ -171,11 +186,24 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffSession` | GET `/staff/session` | staff | R-55 |
 | `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
 | `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `getStaffAnalytics` | GET `/staff/analytics` | staff | R-63 |
+| `listStaffAnalyticsOpportunities` | GET `/staff/analytics/opportunities` | staff | R-63 |
+| `uploadListingImage` | POST `/staff/images` | staff | R-57 |
+| `listStaffMedia` | GET `/staff/media` | staff | R-62 |
+| `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
+| `listStaffTeam` | GET `/staff/team` | staff | R-56 |
+| `inviteStaff` | POST `/staff/team` | staff | R-56 |
+| `getStaffMember` | GET `/staff/team/{targetId}` | staff | R-56 |
+| `updateStaffMember` | PATCH `/staff/team/{targetId}` | staff | R-56 |
+| `listStaffMemberActivity` | GET `/staff/team/{targetId}/activity` | staff | R-56 |
+| `runStaffMemberAction` | POST `/staff/team/{targetId}/actions/{action}` | staff | R-56 |
 | `getStaffDashboard` | GET `/staff/dashboard` | staff | R-55 |
 | `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
 | `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
 | `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
+| `setStaffVerification` | PUT `/staff/opportunities/{opportunityId}/verification` | staff | R-62 |
 | `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
+| `previewStaffOpportunity` | GET `/staff/opportunities/{opportunityId}/preview` | staff | R-55 |
 | `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
 | `listStaffActivity` | GET `/staff/activity` | staff | R-55 |
 | `searchStaff` | GET `/staff/search` | staff | R-55 |
@@ -199,6 +227,38 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 
 | Test id | Intent |
 |---|---|
+| TRUST-01 | Trusting a device after a verified code: unticked by default, HttpOnly/SameSite cookie, only a hash stored, 30-day expiry, replaces the earlier device, bounded per person |
+| TRUST-02 | Recognition: the same browser skips the code but never the password; new browsers, forged or another person's cookies, expired, revoked, a different kind of browser and runs of failed attempts are challenged |
+| TRUST-03 | Staff: a trusted device skips the code only within 24 hours of the last proved code, skipping never refreshes the proof, a code refreshes it, a live session and an old session flag are held to the same limit |
+| TRUST-04 | Revocation: password change and reset, enrolling, disabling, recovery codes and reset of two-step verification, an Administrator's action, suspension, removal and role change each revoke every device, audited |
+| TRUST-05 | Account → Security: list, forget one, forget all, own devices only, CSRF, no IDOR; logout and session expiry leave no second-step flag behind |
+| TRUST-06 | Trust option, devices panel and requests in the browser (Vitest); nothing in browser storage |
+| STAFFTEAM-01 | Administrator invites staff: account pending with an unusable password, role recorded without authority, single-use 72-hour link, no password in the e-mail, audit without secrets, duplicate e-mail refused |
+| STAFFTEAM-02 | Invitation acceptance chooses the password, activates the account once, refuses weak passwords, reused or expired links with one answer, and cannot be replaced by e-mail verification |
+| STAFFTEAM-03 | Only Administrators reach any staff-management endpoint; Editors, Contributors, seekers and anonymous callers are refused; a seeker id is a 404; CSRF required; unknown fields are refused |
+| STAFFTEAM-04 | Role change replaces the role (revoked, never deleted), is audited, e-mailed and effective at once; no self-service; separation of duties is untouched |
+| STAFFTEAM-05 | Suspension blocks sign-in and ends sessions; reactivation restores access; revoking sessions signs the person out; recovery links are single-use resets |
+| STAFFTEAM-06 | The last active Administrator and one's own account are protected from role change, suspension and removal |
+| STAFFTEAM-07 | Removal deactivates without deleting listings, reviews, verifications or audit history; confirmation required; cancelled invitations are void; reinstatement works |
+| STAFFTEAM-08 | List, search, filters, sort, paging, summary counts, profile statistics and activity; Staff management pages, accept-invitation page and navigation (Vitest) |
+| IMG-01 | Validation by decoded content: JPEG, PNG and WebP accepted; scripts, GIF, BMP, PDF, truncated and fake-extension files refused; size and dimension limits |
+| IMG-02 | Normalisation: orientation applied, metadata removed, transparency flattened, first frame only, large pictures scaled down and optimised |
+| IMG-03 | Storage under generated names, persistence across a fresh storage object, only generated names accepted, media served in development and tests |
+| IMG-04 | Upload endpoint: authorised staff only, CSRF, rate limit, oversized body 413, meaningful error codes |
+| IMG-05 | Attach, replace and remove through the draft save: audited, old files removed when unreferenced, files used by a published revision kept, names re-validated, author only, employers refused |
+| IMG-06 | Unattached uploads are swept after a day; attached ones stay |
+| IMG-07 | Public API image block with absolute https addresses, sharing-image fallback, no invented picture, no verification claim; revision hash |
+| IMG-08 | Upload component, job-editor state and payload, job page image, card image and Open Graph/Twitter metadata (Vitest) |
+| MEDIA-01 | Media Library: upload registers one asset (identical uploads reused), thumbnails, search, paging, usage counts, permissions, migration of earlier uploads |
+| MEDIA-02 | Reuse across listings; removing or replacing a picture never deletes the file; library browser, picker and upload component (Vitest) |
+| ANLY-01 | Counting: hourly and daily counters agree, a real browser view and an apply click are counted, crawlers, scripts, previews, prefetches and requests without a User-Agent are not, closed listings are not, nothing identifying a visitor is stored |
+| ANLY-02 | Windows and buckets: rolling 24-hour, 7-day and 30-day edges, all-time from the daily counters, no invented history, Harare day boundaries, hourly, daily, weekly and monthly series zero-filled and equal to the cards |
+| ANLY-03 | Ranking: per-listing views, apply clicks and click-through rate of the same window (blank without views), sort, search, paging, Harare date ranges and their validation, the Views column and per-listing statistics |
+| ANLY-04 | Access and cost: analytics.read for Editors and Administrators only, scope enforced on the server, cache, query counts that do not grow with listings, retention, and the staff interface (Vitest: chart, panel, view, table, skeleton, empty and error states, view-beacon behaviour, hero image removed from staff pages only) |
+| DUP-01 | Duplicate rules: same organisation and title needs one confirmation; different titles, shared address, e-mail or source never flagged; similar and differing-detail cases only warn |
+| DUP-02 | Staff API reports duplicates and accepts the single confirmation; source fields are absent from the job form and payload |
+| VERIFY-01 | Verification switch: idempotent, records who and when, does not change row_version, survives amendment, public level follows it, migration of earlier levels |
+| VERIFY-02 | Verification permission enforced on the server (Contributor, seeker, anonymous, missing CSRF refused); table and detail toggle (Vitest) |
 | UT-01 | Unknown salary/deadline/requirements render as 'Not stated'; never defaulted |
 | UT-02 | Slug generation: format, collision retry, reserved words; immutability after assignment |
 | UT-03 | Profile validation limits and clear-on-null semantics |
@@ -433,7 +493,11 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | EMP-12 | Public company profile and the listing-page link appear only for verified organisations with an approved profile |
 | EMP-13 | Browser: employer journey over HTTP and TLS with axe at four widths, no horizontal scroll |
 | EMP-14 | Web units: listing request body, claim, profile and listing forms, view and apply beacon |
-| MAIL-11 | Transactional messages are UPNEXT Careers branded, multipart, escaped, free of images and scripts; cancelling a deletion request sends a notice |
+| MAIL-11 | Transactional messages are UPNEXT Careers branded, multipart, escaped, free of scripts and of any image except the own-origin logo and verification illustration (D-55); cancelling a deletion request sends a notice |
+| EML-01 | Every e-mail kind renders from the shared kit in every variant; HTML and plain text carry the same links; markup is e-mail safe (D-55) |
+| EML-02 | Verification and password-reset messages: subjects, expiry from the token policy, token only inside URLs, WCAG contrast of every colour pair |
+| EML-03 | No new trigger: the welcome template exists but nothing queues it; employer messages never claim verification; no promised response time; job alerts respect consent |
+| EML-04 | Development preview writes every message on synthetic data and refuses production |
 | PRF-01 | Profile: private by construction, own account only, no id in any route, not in Django Admin, audit records the change and never its content |
 | PRF-02 | Profile validation: limits, unknown and inactive taxonomy values, home place must be a city or province, duplicates folded, clear-on-null |
 | PRF-03 | Reset clears the preference fields and keeps the about-you fields; delete removes the row and is idempotent |
@@ -479,7 +543,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | PERM-01 | `apps/api/tests/test_access_registry.py::test_perm_01_initial_roles_are_exactly_three_and_no_publisher` | executed |
 | PERM-02 | `apps/api/tests/test_access_registry.py::test_perm_02_future_role_needs_only_a_registry_entry` | executed |
 | PERM-03 | `apps/api/tests/test_access_registry.py::test_perm_03_registry_matches_the_permission_matrix_document` | executed |
-| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_return_or_verify_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
+| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_or_return_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
 | SOD-02 | `apps/api/tests/test_access_policy.py::test_sod_02_another_editor_or_administrator_can_approve` | executed (pure policy) |
 | SOD-04 | `apps/api/tests/test_access_policy.py::test_sod_04_the_approver_may_publish_the_exact_revision` | executed (pure policy) |
 | SOD-09 | `apps/api/tests/test_access_policy.py::test_sod_09_administrator_can_publish_someone_elses_approved_listing` | executed (pure policy) |
@@ -663,6 +727,38 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | STATE-02 | `apps/web/tests/unit/reports-and-states.test.tsx (loading placeholders); apps/web/tests/unit/skeleton-system.test.tsx (route wiring)` | executed |
 | STATE-04 | `apps/web/tests/unit/skeleton-system.test.tsx (motion, primitives)` | executed |
 | STATE-05 | `apps/web/tests/unit/skeleton-system.test.tsx (home page states, listing page results)` | executed |
+| STAFFTEAM-01 | `apps/api/tests/test_staff_team.py (invitation tests; audit and outbox hygiene)` | executed |
+| STAFFTEAM-02 | `apps/api/tests/test_staff_team.py (acceptance and expiry tests)` | executed |
+| STAFFTEAM-03 | `apps/api/tests/test_staff_team.py::test_only_administrators_reach_staff_management; ::test_unsafe_requests_need_csrf_and_a_seeker_id_is_not_a_profile` | executed |
+| STAFFTEAM-04 | `apps/api/tests/test_staff_team.py (role change tests)` | executed |
+| STAFFTEAM-05 | `apps/api/tests/test_staff_team.py (suspension, sessions, recovery tests)` | executed |
+| STAFFTEAM-06 | `apps/api/tests/test_staff_team.py::test_nobody_removes_their_own_access_and_the_last_administrator_is_protected; ::test_two_administrators_cannot_both_demote_each_other_away` | executed |
+| STAFFTEAM-07 | `apps/api/tests/test_staff_team.py::test_removal_deactivates_without_deleting_listings_or_audit_history; ::test_cancelling_an_invitation_voids_the_link_and_a_removed_person_can_be_reinstated` | executed |
+| STAFFTEAM-08 | `apps/api/tests/test_staff_team.py (list and profile tests); apps/web/tests/unit/team-and-images.test.tsx` | executed |
+| IMG-01 | `apps/api/tests/test_listing_images.py (validation tests)` | executed |
+| IMG-02 | `apps/api/tests/test_listing_images.py (normalisation tests)` | executed |
+| IMG-03 | `apps/api/tests/test_listing_images.py (storage tests)` | executed |
+| IMG-04 | `apps/api/tests/test_listing_images.py (upload API tests)` | executed |
+| IMG-05 | `apps/api/tests/test_listing_images.py (attach, replace, remove tests)` | executed |
+| IMG-06 | `apps/api/tests/test_listing_images.py::test_unattached_uploads_are_swept_after_a_day_but_attached_ones_stay` | executed |
+| IMG-07 | `apps/api/tests/test_listing_images.py (public output tests)` | executed |
+| IMG-08 | `apps/web/tests/unit/team-and-images.test.tsx` | executed |
+| MEDIA-01 | `apps/api/tests/test_media_library.py` | executed |
+| MEDIA-02 | `apps/api/tests/test_media_library.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| ANLY-01 | `apps/api/tests/test_staff_analytics.py (counting and bot tests)` | executed |
+| ANLY-02 | `apps/api/tests/test_staff_analytics.py (window, bucket and time-zone tests)` | executed |
+| ANLY-03 | `apps/api/tests/test_staff_analytics.py (table and per-listing tests)` | executed |
+| ANLY-04 | `apps/api/tests/test_staff_analytics.py (permission, cache, query and retention tests); apps/web/tests/unit/analytics.test.tsx` | executed |
+| DUP-01 | `apps/api/tests/test_duplicate_detection.py` | executed |
+| DUP-02 | `apps/api/tests/test_duplicate_detection.py; apps/web/tests/unit/job-editor.test.ts` | executed |
+| VERIFY-01 | `apps/api/tests/test_verification_switch.py; apps/api/tests/test_workflow.py` | executed |
+| VERIFY-02 | `apps/api/tests/test_verification_switch.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| TRUST-01 | `apps/api/tests/test_trusted_devices.py (trust, cookie, expiry, limit tests)` | executed |
+| TRUST-02 | `apps/api/tests/test_trusted_devices.py (recognition tests)` | executed |
+| TRUST-03 | `apps/api/tests/test_trusted_devices.py (staff 24-hour tests)` | executed |
+| TRUST-04 | `apps/api/tests/test_trusted_devices.py (revocation tests)` | executed |
+| TRUST-05 | `apps/api/tests/test_trusted_devices.py (Account → Security, logout and expiry tests)` | executed |
+| TRUST-06 | `apps/web/tests/unit/trusted-devices.test.tsx` | executed |
 | STATE-06 | `apps/web/tests/unit/skeleton-system.test.tsx (private and staff skeletons, route wiring); apps/web/tests/unit/seo-readiness.test.tsx` | executed |
 | STATE-03 | `apps/web/tests/unit/reports-and-states.test.tsx (error views); apps/web/tests/e2e/report-journey.spec.ts (320, 390, 1440)` | unit executed; e2e runs in CI |
 | CAT-01 | `apps/api/tests/test_category_specifications.py` | executed |
@@ -677,6 +773,10 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | EMP-14 | `apps/web/tests/unit/employer.test.tsx` | executed |
 | MAIL-10 | `apps/api/tests/test_resend_webhook.py (Resend/Svix signature, replay, duplicates, bounce semantics, config checks)` | executed with locally computed signatures only; no real Resend request |
 | MAIL-11 | `apps/api/tests/test_brand_email.py (branded multipart messages, deletion-cancelled notice)` | executed |
+| EML-01 | `apps/api/tests/test_email_design.py::test_every_kind_renders_in_every_variant; ::test_html_and_text_carry_the_same_links; ::test_markup_is_email_safe; ::test_only_verification_has_an_illustration` | executed; real Gmail, Outlook and Apple Mail rendering is not verified |
+| EML-02 | `apps/api/tests/test_email_design.py::test_verification_message; ::test_password_reset_message; ::test_text_colours_meet_wcag_aa` | executed |
+| EML-03 | `apps/api/tests/test_email_design.py::test_welcome_message_exists_but_nothing_queues_it; ::test_employer_messages_never_claim_verification; ::test_nothing_promises_a_response_time; ::test_job_alert_respects_consent_and_unsubscribes` | executed |
+| EML-04 | `apps/api/tests/test_email_design.py::test_preview_command_writes_every_message_and_refuses_production; tools/email_preview_screenshots.mjs` | executed; 360 captures, no overflow at 760, 375 and 320 px |
 | MAIL-09 | `apps/api/tests/test_email_provider.py (signed feed)` | executed against the neutral format; no provider's own format exists |
 | PRF-01 | `apps/api/tests/test_profiles.py (own account only, no route by id, not in the admin, audit without content)` | executed |
 | PRF-02 | `apps/api/tests/test_profiles.py (validation, taxonomy, home place, duplicates, null)` | executed |

@@ -7,9 +7,8 @@ import { LoadingRegion, SkeletonInput, SkeletonLine } from "@/components/ui/skel
 import { SearchForm } from "@/components/ui/search-form";
 import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
-import { BRAND } from "@/lib/brand";
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
-import { VERIFICATION } from "@/lib/format";
+import { VerificationTag } from "@/components/opportunities/parts";
 
 /** Every search control is one outlined box: 40px tall, 14px text, icon on the left (Stripe form scale, D-53). */
 const FIELD =
@@ -98,9 +97,44 @@ export function HeroFrame({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {children}
+        {/* One lavender panel holds the search (or its skeleton) and the quick links under it. */}
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 rounded-feature bg-match-bg p-3 max-sm:p-2.5 md:max-w-[640px] md:p-4">
+          {children}
+          <QuickLinks />
+        </div>
       </Container>
     </section>
+  );
+}
+
+/** The four shortcuts under the search: white chips with an icon. Static, so they are sent with the headline. */
+const QUICK_LINKS: readonly { label: string; href: string; icon: IconName }[] = [
+  { label: "Jobs", href: "/opportunities?category=jobs", icon: "briefcase" },
+  { label: "Tenders", href: "/opportunities?category=tenders", icon: "doc" },
+  { label: "Scholarships", href: "/opportunities?category=scholarships", icon: "cap" },
+  { label: "More", href: "#categories", icon: "grid" },
+];
+
+function QuickLinks() {
+  return (
+    <nav aria-label="Quick links">
+      <ul className="m-0 flex list-none justify-between gap-1.5 p-0 max-sm:gap-1">
+        {QUICK_LINKS.map((link) => (
+          <li key={link.label} className="min-w-0">
+            <Link
+              href={link.href}
+              className="inline-flex min-h-control items-center gap-1.5 rounded-pill bg-surface px-3.5 text-ctl text-ink shadow-subtle hover:shadow-ambient max-sm:gap-1 max-sm:px-2 max-sm:text-[13px] max-[380px]:text-small"
+            >
+              <Icon
+                name={link.icon}
+                className="h-[18px] w-[18px] shrink-0 text-ink max-sm:h-3.5 max-sm:w-3.5 max-[340px]:hidden"
+              />
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -117,7 +151,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
       action="/opportunities"
       method="get"
       aria-label="Search opportunities"
-      className="mt-4 grid gap-2.5 md:max-w-[640px]"
+      className="grid gap-2.5"
     >
       <label htmlFor="home-q" className="sr-only">
         Search by title, organisation or keyword
@@ -196,7 +230,7 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
 /** What the search form looks like while its lists load: same boxes, same gaps, same button. */
 export function HeroSearchSkeleton() {
   return (
-    <LoadingRegion label="search" heading={false} className="mt-4 grid gap-2.5 md:max-w-[640px]">
+    <LoadingRegion label="search" heading={false} className="grid gap-2.5">
       <SkeletonInput label={false} field="h-field" />
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
         <SkeletonInput label={false} field="h-field" />
@@ -217,7 +251,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
     <section id="categories" aria-labelledby="categories-title" className="pt-5">
       <Container>
         <div className="border-b border-line pb-5">
-          <h2 id="categories-title" className="text-title tracking-title">
+          <h2 id="categories-title" className="font-headline text-title tracking-title">
             Explore by category
           </h2>
           <nav aria-label="Browse by category" className="mt-3">
@@ -268,57 +302,72 @@ export function CategoryGridSkeleton() {
   );
 }
 
+/** One reassurance card: a lavender icon tile, a bold heading, one short line (or the labels themselves). */
+function TrustCard({ icon, title, children }: { icon: IconName; title: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-card bg-surface p-3">
+      <span
+        aria-hidden="true"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-avatar-bg text-accent"
+      >
+        <Icon name={icon} className="h-6 w-6" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="font-headline text-base leading-title">{title}</h3>
+        <div className="mt-1 text-ctl text-muted">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 /** What the editorial process really guarantees today (see About and the verification labels). */
 export function TrustSection() {
-  const levels = Object.values(VERIFICATION);
+  const levels = ["not_verified", "issuer_verified"] as const;
   return (
-    <section aria-labelledby="trust-title" className="border-b border-line bg-surface-pale py-8">
+    <section aria-labelledby="trust-title" className="pb-8">
       <Container>
-        <h2 id="trust-title" className="text-display font-strong tracking-display">
-          How listings are checked
-        </h2>
-        <p className="mt-2 max-w-[640px] text-base text-muted">
-          {BRAND.name} lists opportunities published by other organisations. It does not take applications,
-          and it says plainly what has and has not been checked.
-        </p>
-        <div className="mt-6 grid grid-cols-3 gap-4 max-md:grid-cols-1">
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">Every listing names its source</h3>
-            <p className="mt-2 text-base text-muted">
-              A listing cannot be published without at least one source. You see where the information came
-              from and when it was last looked at.
-            </p>
-          </div>
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">An editor reviews it first</h3>
-            <p className="mt-2 text-base text-muted">
-              Nobody approves their own work. A second person reviews the exact version that goes live, and
-              any later change needs a new review.
-            </p>
-          </div>
-          <div className="rounded-card border border-border-panel bg-surface p-5">
-            <h3 className="text-title font-strong">Verification is labelled, not assumed</h3>
-            <ul className="m-0 mt-2 grid list-none gap-1 p-0 text-base text-muted">
-              {levels.map((level) => (
-                <li key={level.label}>
-                  <strong className="text-ink">{level.label}.</strong>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-base text-muted">
-              A listing that is not verified still names its source.{" "}
-              <Link href="/about" className="text-accent underline">
-                What the labels mean
-              </Link>
-              .
-            </p>
+        <div className="rounded-feature bg-surface-pale p-4 md:p-6">
+          <h2 id="trust-title" className="font-headline text-title tracking-title">
+            How listings are checked
+          </h2>
+          <p className="mt-1 max-w-[640px] text-ctl text-muted">
+            We review each opportunity to keep the platform trustworthy and useful.
+          </p>
+          <div className="mt-3 grid gap-2.5 md:grid-cols-3 md:gap-3">
+            <TrustCard icon="layers" title="Every listing has a source">
+              A listing is only published with a recorded source, such as the organisation, website or
+              official notice.
+            </TrustCard>
+            <TrustCard icon="users" title="An editor reviews it first">
+              Our editorial team reviews each listing before it goes live, and any major change is reviewed
+              again.
+            </TrustCard>
+            <TrustCard icon="shield" title="Verification is labelled, not assumed">
+              <p className="m-0 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                <span>Listings are clearly labelled as</span>
+                {levels.map((level, index) => (
+                  <span key={level} className="inline-flex items-center gap-1.5">
+                    {index === levels.length - 1 ? <span>or</span> : null}
+                    <VerificationTag level={level} />
+                  </span>
+                ))}
+              </p>
+            </TrustCard>
           </div>
         </div>
-        <p className="mt-5 text-base text-muted">
-          Seen something wrong? Every listing has a{" "}
-          <strong className="text-ink">Report this opportunity</strong> link. A report is read by staff; it
-          does not remove a listing by itself.
-        </p>
+        <Link
+          href="/opportunities"
+          className="mt-3 flex items-center gap-3 rounded-card bg-surface-pale p-3 hover:shadow-ambient"
+        >
+          <Icon name="flag" className="h-6 w-6 shrink-0 text-accent" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-base leading-title">Seen something wrong?</span>
+            <span className="block text-ctl text-muted">
+              Open the listing and choose Report this opportunity. Our team will review it.
+            </span>
+          </span>
+          <Icon name="chevronRight" className="h-5 w-5 shrink-0 text-accent" />
+        </Link>
       </Container>
     </section>
   );

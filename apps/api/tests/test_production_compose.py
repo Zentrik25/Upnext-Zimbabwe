@@ -82,8 +82,30 @@ def test_project_networks_and_volumes_are_isolated_and_named(cfg: dict[str, Any]
     }
     assert all(not n.get("external") for n in cfg["networks"].values())
     assert cfg["networks"]["data"]["internal"] is True
-    assert sorted(v["name"] for v in cfg["volumes"].values()) == ["upnext-prod-backups", "upnext-prod-pgdata"]
+    assert sorted(v["name"] for v in cfg["volumes"].values()) == [
+        "upnext-prod-backups",
+        "upnext-prod-media",
+        "upnext-prod-pgdata",
+    ]
     assert all("container_name" not in s for s in cfg["services"].values())
+
+
+def test_uploaded_images_live_on_a_persistent_volume_the_proxy_reads_but_cannot_write(
+    cfg: dict[str, Any],
+) -> None:
+    """D-58: listing images are never kept in a container's own layer, which a deployment would discard."""
+
+    def mount(service: str) -> dict[str, Any]:
+        (found,) = [v for v in cfg["services"][service]["volumes"] if v["target"] == "/srv/media"]
+        result: dict[str, Any] = found
+        return result
+
+    for name in ("api", "worker"):
+        assert mount(name)["type"] == "volume" and mount(name)["source"] == "media"
+        assert not mount(name).get("read_only")
+    assert mount("proxy")["read_only"] is True
+    assert cfg["services"]["api"]["environment"]["UPNEXT_MEDIA_ROOT"] == "/srv/media"
+    assert cfg["volumes"]["media"]["name"] == "upnext-prod-media"
 
 
 def test_only_the_proxy_publishes_a_port_and_only_on_loopback(cfg: dict[str, Any]) -> None:

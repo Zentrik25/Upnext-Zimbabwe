@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
+import { SkeletonMediaGrid } from "@/components/workspace/skeleton-media";
 import { SeekerNav, type SeekerSection } from "@/components/seeker/seeker-nav";
 import { Container } from "@/components/layout";
 import {
   LoadingRegion,
+  SkeletonAvatar,
+  SkeletonBlock,
   SkeletonButton,
   SkeletonCard,
   SkeletonChoiceGroup,
@@ -12,6 +15,7 @@ import {
   SkeletonListingRows,
   SkeletonMetricGrid,
   SkeletonPageHeader,
+  SkeletonPanel,
   SkeletonTable,
   SkeletonTabs,
   SkeletonText,
@@ -133,36 +137,179 @@ export function AlertsLoading() {
   );
 }
 
-/**
- * The account page: title with the sign-out button, then the profile, e-mail, password, sessions and deletion panels
- * at the height each has for a person with one session (the sessions panel grows by a row per session).
- */
+/** The account hub: title, profile summary, five settings rows and the sign-out button. */
 export function AccountLoading() {
-  const panels = [
-    "min-h-[237px] sm:min-h-[239px]",
-    "min-h-[258px] sm:min-h-[260px]",
-    "min-h-[280px] sm:min-h-[282px]",
-    "min-h-[171px] sm:min-h-[203px]",
-    "min-h-[181px] sm:min-h-[161px]",
-  ];
   return (
     <Container className="pt-6 pb-[65px]">
       <LoadingRegion label="your account">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SkeletonHeading size="page" className="w-1/3 max-sm:w-2/3" />
-          <SkeletonButton className="h-[38px]" />
+        <SkeletonPageHeader />
+        <div className="mt-1 grid max-w-[640px] gap-3">
+          <div className="flex items-center gap-3 rounded-card border border-border-panel p-3">
+            <SkeletonAvatar className="h-14 w-14 rounded-feature" />
+            <div className="grid min-w-0 flex-1 gap-2">
+              <SkeletonLine className="h-[18px] w-1/2" />
+              <SkeletonLine className="w-2/3" />
+            </div>
+            <SkeletonButton className="w-[56px]" />
+          </div>
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              key={index}
+              className="flex min-h-[56px] items-center gap-3 rounded-card border border-border-panel px-3 py-3"
+            >
+              <SkeletonAvatar className="h-9 w-9" />
+              <div className="grid min-w-0 flex-1 gap-2">
+                <SkeletonLine className="h-[16px] w-1/3" />
+                <SkeletonLine className="w-3/4" />
+              </div>
+            </div>
+          ))}
+          <SkeletonButton />
         </div>
-        <div className="mt-4 grid max-w-[640px] gap-4">
-          {panels.map((size, index) => (
-            <SkeletonCard key={index} className={`content-start ${size}`}>
+      </LoadingRegion>
+    </Container>
+  );
+}
+
+/** An account settings sub-page: back link, title and description, then one or two cards of fields. */
+export function AccountSectionLoading({ label, cards = 1 }: { label: string; cards?: number }) {
+  return (
+    <Container className="pt-4 pb-[65px]">
+      <LoadingRegion label={label}>
+        <SkeletonLine className="h-[24px] w-[140px]" />
+        <div className="mt-2">
+          <SkeletonPageHeader />
+        </div>
+        <div className="grid max-w-[640px] gap-4">
+          {Array.from({ length: cards }, (_, index) => (
+            <SkeletonCard key={index}>
               <SkeletonHeading size="title" />
               <SkeletonInput />
-              {index === 0 || index === 2 ? <SkeletonInput /> : <SkeletonText lines={2} />}
+              <SkeletonInput />
+              <SkeletonButton />
             </SkeletonCard>
           ))}
         </div>
       </LoadingRegion>
     </Container>
+  );
+}
+
+/**
+ * The job editor: back link, title, then the eleven fields in a single column of the editor's own maximum width,
+ * the six parts of the form and the action bar. Sizes follow the real controls (label line, 40px field).
+ */
+export function JobEditorLoading({ label = "the editor" }: { label?: string }) {
+  const field = (
+    <div className="grid gap-1">
+      <SkeletonLine className="w-[110px]" />
+      <SkeletonBlock className="h-[40px] w-full rounded-control border border-border-panel" />
+    </div>
+  );
+  const area = (rows: number) => (
+    <div className="grid gap-1">
+      <SkeletonLine className="w-[150px]" />
+      <SkeletonBlock
+        className={`${rows > 4 ? "h-[170px]" : "h-[92px]"} w-full rounded-control border border-border-panel`}
+      />
+    </div>
+  );
+  return (
+    <LoadingRegion label={label}>
+      <SkeletonLine className="w-[140px]" />
+      <div className="mt-3 mb-4 grid gap-2">
+        <SkeletonHeading size="title" className="w-[200px]" />
+        <SkeletonLine className="w-[60%] max-sm:w-full" />
+      </div>
+      <div className="grid max-w-[760px] gap-4">
+        {/* the six parts of the form, each a bordered block with a heading line */}
+        {[
+          [
+            field,
+            field,
+            <div key="g" className="grid gap-4 sm:grid-cols-3">
+              {field}
+              {field}
+              {field}
+            </div>,
+            field,
+            field,
+          ],
+          [area(2), area(7), area(5)],
+          [field, field],
+          [
+            field,
+            <SkeletonBlock key="img" className="aspect-[16/9] max-w-[480px] rounded-card" />,
+            <SkeletonButton key="b" />,
+          ],
+          [field, field, area(2)],
+          [field],
+        ].map((children, index) => (
+          <div
+            key={index}
+            className="grid gap-4 rounded-card border border-border-panel bg-surface p-3 sm:p-4"
+          >
+            <SkeletonLine className="w-[150px]" />
+            {children.map((child, at) => (
+              <div key={at}>{child}</div>
+            ))}
+          </div>
+        ))}
+        <div className="flex gap-2">
+          <SkeletonButton />
+          <SkeletonButton />
+          <SkeletonButton />
+        </div>
+      </div>
+    </LoadingRegion>
+  );
+}
+
+/** The staff Analytics page: compact header with the period selector, figure cards, the chart and the table. */
+export function AnalyticsLoading() {
+  return (
+    <LoadingRegion label="the analytics">
+      <SkeletonPageHeader action />
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="grid gap-2 rounded-card border border-line p-3">
+              <SkeletonLine className="w-1/2" />
+              <SkeletonBlock className="h-[26px] w-2/3" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-card border border-border-panel p-4">
+          <SkeletonLine className="mb-3 w-[180px]" />
+          <SkeletonBlock className="h-[200px]" />
+        </div>
+        <div className="rounded-card border border-border-panel bg-surface">
+          <SkeletonTable rows={8} columns={6} />
+        </div>
+      </div>
+    </LoadingRegion>
+  );
+}
+
+/** The Media Library: title, the upload bar, the search box and a grid of picture tiles with the preview panel. */
+export function MediaLibraryLoading() {
+  return (
+    <LoadingRegion label="the media library">
+      <SkeletonPageHeader />
+      <div className="grid gap-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-card border border-border-panel p-3">
+          <SkeletonButton />
+          <SkeletonLine className="w-[260px] max-w-full" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="grid content-start gap-3">
+            <SkeletonInput />
+            <SkeletonMediaGrid />
+          </div>
+          <SkeletonPanel lines={5} />
+        </div>
+      </div>
+    </LoadingRegion>
   );
 }
 

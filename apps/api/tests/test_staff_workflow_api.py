@@ -261,20 +261,9 @@ def test_reject_verify_and_takedown(world: World, people: dict[str, User]) -> No
     opp.refresh_from_db()
     assert opp.status == ListingStatus.REJECTED
     live = published(world, people["author"], people["editor"], example="jobs-2")
-    check = {
-        "version_no": 1,
-        "level": "issuer_verified",
-        "method": "source_page_review",
-        "outcome": "confirmed",
-        "evidence_note": "Compared the page with the issuer notice.",
-    }
-    refused = act(editor, live, "verify", **check)
-    assert refused.status_code in (400, 409)  # a page review is not issuer verification
+    assert act(editor, live, "verify").status_code == 404  # the old multi-field action no longer exists
     live.refresh_from_db()
-    assert live.verification_level == "not_verified"
-    assert act(editor, live, "verify", **{**check, "level": "source_checked"}).status_code == 200
-    live.refresh_from_db()
-    assert live.verification_level == "source_checked"
+    assert live.is_verified is False
     assert (
         act(
             editor, live, "takedown", reason_code="error", reason="Published in error by mistake."

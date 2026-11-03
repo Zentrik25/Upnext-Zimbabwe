@@ -34,3 +34,6 @@ next-env.d.ts
 .vscode/
 *.log
 infrastructure/tls/.certs/
+
+# Uploaded listing images in local development (D-58)
+apps/api/media/

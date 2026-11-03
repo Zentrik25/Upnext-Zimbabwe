@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
-import { AuthFooter, AuthHeader, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
+import { AuthFooter, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
@@ -93,7 +93,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         ) : auth ? (
           <>
             <SkipLink />
-            <AuthHeader />
+            <SiteHeader />
             <main id="main">{children}</main>
             <AuthFooter />
           </>

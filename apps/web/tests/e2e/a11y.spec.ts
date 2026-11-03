@@ -37,7 +37,16 @@ const PUBLIC = [
   "/verify-email?token=x",
   "/no-such-page",
 ];
-const SIGNED_IN = ["/account", "/saved", "/employer", "/employer/claim"];
+const SIGNED_IN = [
+  "/account",
+  "/account/personal",
+  "/account/security",
+  "/account/sessions",
+  "/account/delete",
+  "/saved",
+  "/employer",
+  "/employer/claim",
+];
 
 async function checkPage(page: Page, path: string, width: number) {
   await page.setViewportSize({ width, height: 900 });
@@ -170,7 +179,8 @@ test.describe("keyboard", () => {
   });
 
   test("the home search is usable by keyboard alone", async ({ page }) => {
-    await page.goto("/");
+    // Wait for the page to hydrate: typing before that is lost when React takes over the field.
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.getByLabel("Search by title, organisation or keyword").focus();
     await page.keyboard.type("engineer");
     await page.keyboard.press("Enter");

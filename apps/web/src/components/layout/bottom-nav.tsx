@@ -27,7 +27,7 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Quick navigation"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="m-0 grid list-none grid-cols-5 p-0">
           {TABS.map((tab) => {
@@ -52,7 +52,7 @@ export function BottomNav() {
         </ul>
       </nav>
       {/* keeps the footer clear of the fixed bar */}
-      <div aria-hidden="true" className="h-[58px] sm:hidden" />
+      <div aria-hidden="true" className="h-[calc(58px+env(safe-area-inset-bottom))] sm:hidden" />
     </>
   );
 }
