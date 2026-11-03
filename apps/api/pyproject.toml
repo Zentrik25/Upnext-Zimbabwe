@@ -24,6 +24,8 @@ ignore = ["S101", "RUF012", "DJ001"]
 "accounts/trusted_devices.py" = ["E501"]  # prose docstrings (D-59)
 "api/staff_team.py" = ["E501"]
 "api/staff_images.py" = ["E501"]
+"api/staff_seo.py" = ["E501"]  # prose docstrings (ADR-0027)
+"seo/*" = ["E501"]  # prose docstrings (ADR-0027)
 "opportunities/images.py" = ["E501"]
 
 [tool.mypy]

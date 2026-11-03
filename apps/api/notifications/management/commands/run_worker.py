@@ -1,5 +1,5 @@
-"""The background worker: the e-mail outbox every cycle; account deletions, retention, job alerts and listing
-expiry every few minutes."""
+"""The background worker: the e-mail outbox every cycle; account deletions, retention, job alerts, listing
+expiry and Google Indexing API notifications every few minutes."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from core.models import JobRun
 from employers import reminders
 from notifications.services import process_batch, status_summary
 from opportunities import expiry, images
+from seo import indexing
 
 logger = logging.getLogger("upnext.worker")
 HEARTBEAT = Path(os.environ.get("UPNEXT_WORKER_HEARTBEAT", "/tmp/upnext-worker-heartbeat"))  # noqa: S108
@@ -57,6 +58,10 @@ class Command(BaseCommand):
                     expiry.run()
                 except Exception:  # an expiry problem must never stop the outbox or deletions
                     logger.exception("listing expiry failed", extra={"event": "expiry.failed"})
+                try:  # Google Indexing API notifications: off until the owner enables them (ADR-0027)
+                    indexing.run()
+                except Exception:  # an indexing problem must never stop the outbox or deletions
+                    logger.exception("indexing run failed", extra={"event": "indexing.failed"})
                 try:  # seven-day employer reminders: off while e-mail delivery is unverified (B-01)
                     reminders.run()
                 except Exception:  # a reminder problem must never stop the outbox or deletions
