@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button, Field, Panel, TextInput } from "@/components/ui";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
+import { AuthField } from "./auth-parts";
 import { FormError, FormSuccess } from "./parts";
 
 function formatWhen(iso: string): string {
@@ -47,7 +48,7 @@ export function ProfilePanel({ displayName, email }: { displayName: string; emai
       <form onSubmit={submit} className="mt-3 grid gap-3">
         {failure ? <FormError>{failure}</FormError> : null}
         {saved ? <FormSuccess>Name saved.</FormSuccess> : null}
-        <p className="text-base">
+        <p className="text-base break-all">
           <span className="text-small text-muted">E-mail address</span>
           <br />
           {email}
@@ -106,7 +107,7 @@ export function EmailChangePanel({ currentEmail }: { currentEmail: string }) {
         <div className="mt-3">
           <FormSuccess>
             <p className="font-strong">Check your new inbox</p>
-            <p className="mt-1">
+            <p className="mt-1 break-all">
               If that address can be used, we have sent it a link. Your account keeps {currentEmail} until you
               open the link. We also told your current address about this request.
             </p>
@@ -158,13 +159,17 @@ export function PasswordPanel() {
     event.preventDefault();
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    setBusy(true);
+    const next = String(form.get("new_password") ?? "");
     setErrors({});
     setFailure(null);
     setDone(false);
+    if (next !== String(form.get("confirm_password") ?? "")) {
+      return setErrors({ confirm_password: ["The two new passwords are not the same."] });
+    }
+    setBusy(true);
     const outcome = await apiFetch("POST", "auth/password/change", {
       current_password: String(form.get("current_password") ?? ""),
-      new_password: String(form.get("new_password") ?? ""),
+      new_password: next,
     });
     setBusy(false);
     if (outcome.ok) {
@@ -172,6 +177,8 @@ export function PasswordPanel() {
       return setDone(true);
     }
     if (outcome.code === "validation_failed") setErrors(outcome.fields);
+    else if (outcome.code === "reauth_required")
+      setErrors({ current_password: ["That password is not correct."] });
     else setFailure(describeFailure(outcome));
   }
 
@@ -180,39 +187,47 @@ export function PasswordPanel() {
       <h2 id="password-title" className="text-title font-strong">
         Change password
       </h2>
-      <form onSubmit={submit} className="mt-3 grid gap-3">
+      <form onSubmit={submit} className="mt-3 grid gap-3" noValidate>
         {failure ? <FormError>{failure}</FormError> : null}
         {done ? <FormSuccess>Password changed. Your other sessions were signed out.</FormSuccess> : null}
-        <Field id="current_password" label="Current password">
-          <TextInput
-            id="current_password"
-            name="current_password"
-            type="password"
-            autoComplete="current-password"
-            required
-            maxLength={128}
-          />
-        </Field>
-        <Field
+        <AuthField
+          id="current_password"
+          name="current_password"
+          label="Current password"
+          type="password"
+          reveal
+          autoComplete="current-password"
+          required
+          maxLength={128}
+          error={errors.current_password?.[0]}
+        />
+        <AuthField
           id="new_password"
+          name="new_password"
           label="New password"
+          type="password"
+          reveal
           hint="At least 10 characters."
+          autoComplete="new-password"
+          required
+          minLength={10}
+          maxLength={128}
           error={errors.new_password?.[0]}
-        >
-          <TextInput
-            id="new_password"
-            name="new_password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={10}
-            maxLength={128}
-            invalid={Boolean(errors.new_password)}
-          />
-        </Field>
+        />
+        <AuthField
+          id="confirm_password"
+          name="confirm_password"
+          label="Confirm new password"
+          type="password"
+          reveal
+          autoComplete="new-password"
+          required
+          maxLength={128}
+          error={errors.confirm_password?.[0]}
+        />
         <div>
           <Button type="submit" disabled={busy}>
-            Change password
+            {busy ? "Changing…" : "Change password"}
           </Button>
         </div>
       </form>
@@ -232,14 +247,19 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
   const router = useRouter();
   const [failure, setFailure] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // A signed-out session leaves the list at once; the refresh below then re-syncs it with the server.
+  const [gone, setGone] = useState<string[]>([]);
+  const visible = sessions.filter((session) => !gone.includes(session.id));
 
   async function revoke(id: string) {
     setBusyId(id);
     setFailure(null);
     const outcome = await apiFetch("DELETE", `me/sessions/${id}`);
     setBusyId(null);
-    if (outcome.ok) router.refresh();
-    else setFailure(describeFailure(outcome));
+    if (outcome.ok) {
+      setGone((ids) => [...ids, id]);
+      router.refresh();
+    } else setFailure(describeFailure(outcome));
   }
 
   return (
@@ -256,7 +276,7 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
         </div>
       ) : null}
       <ul className="m-0 mt-3 grid list-none gap-3 p-0" aria-label="Sessions">
-        {sessions.map((session) => (
+        {visible.map((session) => (
           <li
             key={session.id}
             className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3"
@@ -325,8 +345,8 @@ export function DeletionPanel({
   }
 
   return (
-    <Panel role="region" aria-labelledby="deletion-title">
-      <h2 id="deletion-title" className="text-title font-strong">
+    <Panel role="region" aria-labelledby="deletion-title" className="border-danger/40">
+      <h2 id="deletion-title" className="text-title font-strong text-danger">
         Delete your account
       </h2>
       {failure ? (
@@ -374,7 +394,7 @@ export function DeletionPanel({
             />
           </Field>
           <div className="flex gap-2">
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" variant="danger" disabled={busy}>
               Request deletion
             </Button>
             <Button variant="secondary" onClick={() => setOpen(false)}>
@@ -389,7 +409,7 @@ export function DeletionPanel({
             so you can change your mind.
           </p>
           <div>
-            <Button variant="secondary" onClick={() => setOpen(true)}>
+            <Button variant="danger" onClick={() => setOpen(true)}>
               Delete my account…
             </Button>
           </div>

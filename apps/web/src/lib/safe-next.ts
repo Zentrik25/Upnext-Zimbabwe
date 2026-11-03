@@ -8,7 +8,7 @@ const ALLOWED = [
   /^\/saved$/,
   // Jobseeker pages (Phase 6B). The unsubscribe page is public and is never a sign-in destination.
   /^\/(dashboard|for-you|profile|alerts)$/,
-  /^\/account$/,
+  /^\/account(\/(personal|security|sessions|delete))?$/,
   // Employer portal (Phase 6A): the dashboard, the claim form and the pages addressed by an id.
   /^\/employer(\/claim)?$/,
   /^\/employer\/listings\/[0-9a-f-]{36}$/,

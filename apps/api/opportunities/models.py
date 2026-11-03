@@ -55,6 +55,7 @@ class WorkMode(models.TextChoices):
 
 
 class EmploymentType(models.TextChoices):
+    FULL_TIME = "full_time"
     PERMANENT = "permanent"
     CONTRACT = "contract"
     TEMPORARY = "temporary"
@@ -82,6 +83,7 @@ class SalaryPeriod(models.TextChoices):
 class ApplicationMethod(models.TextChoices):
     EXTERNAL_URL = "external_url"
     EMAIL = "email"
+    BOTH = "both"  # a web address and an e-mail address, both genuine ways to apply (D-56)
     INSTRUCTIONS = "instructions"
 
 
@@ -141,6 +143,15 @@ class Opportunity(models.Model):
         max_length=16, choices=VerificationLevel.choices, default=VerificationLevel.NOT_VERIFIED
     )
     verification_checked_at = models.DateTimeField(null=True, blank=True)
+    # The single verification switch (D-62): Verified or Not Verified, independent of publication. It
+    # belongs to the listing, not to a revision, so it survives an amendment. `verification_level` above
+    # is kept in step with it (issuer_verified / not_verified) so the public queries and
+    # `VerificationRecord` history stay valid.
+    is_verified = models.BooleanField(default=False)
+    verification_changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    verification_changed_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_at = models.DateTimeField(null=True, blank=True)
@@ -221,6 +232,8 @@ class OpportunityVersion(models.Model):
     salary_max = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     salary_currency = models.CharField(max_length=3, null=True, blank=True)
     salary_period = models.CharField(max_length=8, choices=SalaryPeriod.choices, null=True, blank=True)
+    # The source's own wording when it gives no amount ("Competitive", "Negotiable"); never an amount (D-56).
+    salary_text = models.CharField(max_length=120, null=True, blank=True)
     funding_min = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
     funding_max = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
     funding_currency = models.CharField(max_length=3, null=True, blank=True)
@@ -238,8 +251,24 @@ class OpportunityVersion(models.Model):
     application_url = models.CharField(max_length=2048, null=True, blank=True)
     application_email = models.CharField(max_length=254, null=True, blank=True)
     application_instructions = models.TextField(null=True, blank=True)
+    # Optional subject line for "Apply via Email" (D-56); the e-mail address is application_email.
+    application_email_subject = models.CharField(max_length=150, null=True, blank=True)
     reference_number = models.CharField(max_length=100, null=True, blank=True)
     contact_details = models.CharField(max_length=500, null=True, blank=True)
+
+    # search-engine and sharing text; empty means "derive from the title and summary" (D-56)
+    seo_title = models.CharField(max_length=70, null=True, blank=True)
+    seo_description = models.CharField(max_length=200, null=True, blank=True)
+    og_title = models.CharField(max_length=90, null=True, blank=True)
+    og_description = models.CharField(max_length=200, null=True, blank=True)
+    # The address the editor wants for the first publication; ignored once the listing has its permanent
+    # slug (a slug never changes after it is assigned, D-56).
+    slug_hint = models.CharField(max_length=80, null=True, blank=True)
+    # Images (D-58). Storage names (`listings/<hex>.jpg`) from `opportunities.images`, never client paths.
+    # The social image falls back to the featured one, and neither is a claim about the employer.
+    featured_image = models.CharField(max_length=80, null=True, blank=True)
+    featured_image_alt = models.CharField(max_length=125, null=True, blank=True)
+    social_image = models.CharField(max_length=80, null=True, blank=True)
 
     # category detail (versioned JSONB, D-12)
     detail = models.JSONField(default=dict)
@@ -383,6 +412,33 @@ class VersionSector(models.Model):
 
     def __str__(self) -> str:
         return f"{self.version_id}/{self.sector_id}"
+
+
+class MediaAsset(models.Model):
+    """One stored picture in the central Media Library (D-62). Listings refer to it by its storage `name`
+    (`featured_image` / `social_image` on a revision), so one file serves any number of listings and unlinking
+    it from a listing never touches the file. Rows are created only by `opportunities.media`."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=80, unique=True)  # `listings/<hex>.jpg`
+    thumb_name = models.CharField(max_length=100, blank=True, default="")
+    title = models.CharField(max_length=200, blank=True, default="")
+    original_filename = models.CharField(max_length=255, blank=True, default="")
+    content_hash = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+    byte_size = models.PositiveIntegerField(null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["-created_at", "-id"], name="media_recent_idx")]
+
+    def __str__(self) -> str:
+        return self.title or self.name
 
 
 class OpportunitySource(models.Model):

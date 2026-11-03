@@ -40,9 +40,8 @@ def test_a_complete_example_has_no_publish_grade_errors(world: World, people: di
         ({"title": "Apply at www.example.org today"}, "title", "invalid_format"),
         ({"summary": "x" * 19}, "summary", "too_short"),
         ({"description_md": "<script>alert(1)</script> " + "text " * 20}, "description_md", "markdown_disallowed"),
-        ({"description_md": "short"}, "description_md", "too_short"),
-        ({"employment_type": None}, "employment_type", "required"),
-        ({"employment_type": "internship"}, "employment_type", "required"),
+        ({"description_md": "short", "requirements_md": None}, "description_md", "required"),
+        ({"employment_type": "internship"}, "employment_type", "invalid_choice"),
         ({"application_method": "external_url", "application_url": None}, "application_url", "required"),
         ({"application_method": "email", "application_email": None, "application_url": None}, "application_email", "required"),
         ({"application_method": "instructions", "application_instructions": "too short", "application_url": None}, "application_instructions", "too_short"),
@@ -97,14 +96,18 @@ def test_source_rules(world: World, people: dict[str, User]) -> None:
         "citation": None,
         "is_primary": True,
     }
+    # An old source is history, not a reason to refuse publication (D-62: staff no longer enter sources).
     old = errors_for(
         world, people["author"], sources=[{**base, "observed_on": (today - timedelta(days=400)).isoformat()}]
     )
-    assert "out_of_range" in codes(old, "sources.0.observed_on")
-    future = errors_for(
-        world, people["author"], sources=[{**base, "observed_on": (today + timedelta(days=2)).isoformat()}]
-    )
-    assert "in_past" in codes(future, "sources.0.observed_on")
+    assert not any(path.startswith("sources") for path in old)
+    with pytest.raises(ValidationFailed) as future:  # a date in the future is refused when saved
+        errors_for(
+            world,
+            people["author"],
+            sources=[{**base, "observed_on": (today + timedelta(days=2)).isoformat()}],
+        )
+    assert "in_past" in codes(future.value.fields, "sources.0.observed_on")
     with pytest.raises(ValidationFailed) as excinfo:  # refused when saved, never a database error
         errors_for(
             world,

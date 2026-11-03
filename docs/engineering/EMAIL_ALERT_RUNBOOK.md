@@ -9,7 +9,7 @@ Status: DRAFT (Phase 6B, D-38, ADR-0023). **Alerts are never sent while e-mail d
 | Listings already offered | `alerts_alertdelivery` (30 days) |
 | Scheduler and digest builder | `alerts/service.py` (`run_due`, `build_digest`) |
 | Worker pass | `run_worker`, inside the housekeeping cycle (every 5 minutes), recorded as job `alerts` |
-| Message | `notifications/templates/notifications/job_alert_v1.txt`, kind `job_alert`, branded HTML built from the text |
+| Message | `notifications/content.py` (`job_alert`), kind `job_alert`, branded HTML and plain text rendered from the same content (`notifications/emailkit.py`, D-55) |
 | Unsubscribe | `POST /api/v1/alerts/unsubscribe` (one-click, RFC 8058) and the page `/alerts/unsubscribe`; `List-Unsubscribe` and `List-Unsubscribe-Post` headers |
 | Manual pass | `python manage.py run_job_alerts [--dry-run]` |
 

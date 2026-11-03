@@ -43,7 +43,7 @@ export default function AboutPage() {
           Publishing a listing does not mean we have verified it. The label says what we actually checked.
         </p>
         <Bullets
-          items={(["not_verified", "source_checked", "issuer_verified"] as const).map((level) => (
+          items={(["not_verified", "issuer_verified"] as const).map((level) => (
             <span key={level}>
               <strong>{VERIFICATION[level].label}.</strong> {VERIFICATION[level].explanation}
             </span>

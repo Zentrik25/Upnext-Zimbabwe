@@ -49,6 +49,20 @@ class PasswordOnlySerializer(StrictSerializer):
     password = serializers.CharField(**PASSWORD)  # type: ignore[arg-type]
 
 
+class CodeSerializer(StrictSerializer):
+    code = serializers.CharField(max_length=32, trim_whitespace=True)
+
+
+class LoginCodeSerializer(StrictSerializer):
+    code = serializers.CharField(max_length=32, trim_whitespace=True)
+    trust_device = serializers.BooleanField(required=False, default=False)
+
+
+class PasswordCodeSerializer(StrictSerializer):
+    password = serializers.CharField(**PASSWORD)  # type: ignore[arg-type]
+    code = serializers.CharField(max_length=32, trim_whitespace=True)
+
+
 class AcceptedSerializer(serializers.Serializer[None]):
     status = serializers.ChoiceField(choices=["accepted"])
 

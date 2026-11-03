@@ -4,9 +4,10 @@ import { LoadingRegion } from "@/components/ui/skeleton";
 import { listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
-const BOX = "mt-3 overflow-hidden rounded-feature border border-border-panel bg-surface";
+/** The cards are separate and sit in one column with a small gap; there is no box around them. */
+const BOX = "mt-3 grid gap-3";
 
-/** The latest listings while they load: the same box and the same six rows, so the real rows replace them in place. */
+/** The latest listings while they load: the same column and the same six cards, so the real rows replace them in place. */
 export function HomeLatestSkeleton() {
   return (
     <LoadingRegion label="the latest opportunities" heading={false} className={BOX}>

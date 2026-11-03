@@ -64,6 +64,10 @@ class EmailFailureLimiter:
         return int(cache.get(cls._key(email), 0)) >= settings.UPNEXT_LOGIN_FAILURES_PER_EMAIL
 
     @classmethod
+    def count(cls, email: str) -> int:
+        return int(cache.get(cls._key(email), 0))
+
+    @classmethod
     def record_failure(cls, email: str) -> None:
         key = cls._key(email)
         window = settings.UPNEXT_LOGIN_FAILURE_WINDOW_SECONDS
@@ -106,6 +110,12 @@ class UserWriteThrottle(SimpleRateThrottle):
         if not user or not user.is_authenticated:
             return None
         return self.cache_format % {"scope": self.scope, "ident": str(user.pk)}
+
+
+class StaffUploadThrottle(UserWriteThrottle):
+    """Image uploads cost more than other writes (decode and re-encode), so they have their own budget."""
+
+    scope = "staff_upload"
 
 
 class UnsubscribeIpThrottle(IpRateThrottle):
