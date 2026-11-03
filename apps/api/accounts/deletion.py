@@ -27,7 +27,7 @@ from opportunities.models import SavedOpportunity
 from profiles import service as profile_service
 from reports import services as report_service
 
-from .models import AccountStatus, AuthToken, StaffMfaDevice, User, UserSession
+from .models import AccountStatus, AuthToken, StaffMfaDevice, TrustedDevice, User, UserSession
 from .services import revoke_sessions
 
 logger = logging.getLogger("upnext.deletion")
@@ -69,6 +69,7 @@ def execute(user_id: uuid.UUID, now: datetime | None = None, *, restored: bool =
         UserSession.objects.filter(user=user).delete()
         AuthToken.objects.filter(user=user).delete()
         StaffMfaDevice.objects.filter(user=user).delete()
+        TrustedDevice.objects.filter(user=user).delete()
         SavedOpportunity.objects.filter(user=user).delete()
         profile_service.delete(user, record=False)  # the deletion itself is audited below
         alert_service.delete_for(user)  # alert choices, consent proof and the delivery ledger

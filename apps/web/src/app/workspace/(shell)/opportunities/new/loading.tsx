@@ -1,5 +1,5 @@
-import { WorkspaceDetailLoading } from "@/components/ui/page-skeletons";
+import { JobEditorLoading } from "@/components/ui/page-skeletons";
 
 export default function Loading() {
-  return <WorkspaceDetailLoading label="the new opportunity form" />;
+  return <JobEditorLoading label="the new opportunity form" />;
 }

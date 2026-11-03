@@ -17,7 +17,7 @@ from core import alerts as alert_catalogue
 from core.models import JobRun
 from employers import reminders
 from notifications.services import process_batch, status_summary
-from opportunities import expiry
+from opportunities import expiry, images
 
 logger = logging.getLogger("upnext.worker")
 HEARTBEAT = Path(os.environ.get("UPNEXT_WORKER_HEARTBEAT", "/tmp/upnext-worker-heartbeat"))  # noqa: S108
@@ -44,6 +44,10 @@ class Command(BaseCommand):
                     raise
                 last_housekeeping = time.monotonic()
                 JobRun.record("housekeeping", detail=f"deleted={deleted} removed={sum(removed.values())}")
+                try:  # uploaded listing images nothing refers to any more (D-58)
+                    images.purge_unreferenced()
+                except Exception:  # a clean-up problem must never stop the outbox or deletions
+                    logger.exception("image sweep failed", extra={"event": "images.sweep_failed"})
                 try:  # job alerts: does nothing while e-mail delivery is unverified (B-01)
                     ran = alert_service.run_due()
                     JobRun.record("alerts", detail=f"{ran.status} checked={ran.checked} queued={ran.queued}")

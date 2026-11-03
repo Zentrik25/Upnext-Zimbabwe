@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any
 
 import pytest
 from django.db import connection
@@ -71,7 +70,7 @@ def test_administrator_may_approve_and_publish_someone_elses_listing(
 
 # --- nobody approves their own work (AC-EDIT-01) -----------------------------------------------------
 @pytest.mark.parametrize("who", ["author_editor", "author_admin"])
-def test_author_cannot_approve_reject_or_verify_their_own_submission(
+def test_author_cannot_approve_or_reject_their_own_submission(
     world: World, people: dict[str, User], who: str
 ) -> None:
     actor = people[who]
@@ -83,15 +82,10 @@ def test_author_cannot_approve_reject_or_verify_their_own_submission(
         workflow.reject(
             actor, opp.pk, expected_row_version=before, reason_code="x", reason="Not good enough yet."
         )
-    with pytest.raises(SeparationOfDuties):
-        workflow.record_verification(
-            actor, opp.pk, version_no=1, level="source_checked", method="source_page_review",
-            outcome="confirmed", evidence_note="Looked at the source page and it matches.",
-        )  # fmt: skip
     fresh(opp)
     assert opp.status == ListingStatus.IN_REVIEW and opp.row_version == before
     denied = AuditEvent.objects.filter(object_id=opp.pk, action__endswith=".denied", severity="security")
-    assert denied.count() == 3  # every refused attempt is evidence
+    assert denied.count() == 2  # every refused attempt is evidence
     assert {e.changes["code"] for e in denied if e.changes} == {"separation_of_duties"}
 
 
@@ -491,68 +485,79 @@ def test_publish_refuses_a_deadline_that_has_passed_since_approval(
     assert fresh(opp).status == ListingStatus.APPROVED
 
 
-# --- verification is separate from provenance and publication (D-14) -----------------------------------
-def test_verification_levels_and_methods(world: World, people: dict[str, User]) -> None:
+# --- verification is one switch, separate from publication (D-62) --------------------------------------
+def test_verification_is_a_switch_recorded_with_who_and_when(world: World, people: dict[str, User]) -> None:
     opp = published(world, people["author"], people["editor"])
-    common: dict[str, Any] = {
-        "version_no": 1,
-        "outcome": "confirmed",
-        "evidence_note": "Compared the listing with the issuer notice.",
-    }
-    with pytest.raises(ValidationFailed):  # a page review is never "verified with the issuer"
-        workflow.record_verification(
-            people["editor2"], opp.pk, level="issuer_verified", method="source_page_review", **common
-        )
-    workflow.record_verification(
-        people["editor2"], opp.pk, level="source_checked", method="source_page_review", **common
+    assert fresh(opp).is_verified is False and opp.verification_level == VerificationLevel.NOT_VERIFIED
+    version_before = fresh(opp).row_version
+    workflow.set_verification(people["editor2"], opp.pk, verified=True)
+    verified = fresh(opp)
+    assert verified.is_verified and verified.verification_level == VerificationLevel.ISSUER_VERIFIED
+    assert verified.verification_changed_by_id == people["editor2"].pk and verified.verification_changed_at
+    assert verified.row_version == version_before  # not a content change: an open draft can still be saved
+    workflow.set_verification(people["admin"], opp.pk, verified=False)
+    removed = fresh(opp)
+    assert removed.is_verified is False and removed.verification_level == VerificationLevel.NOT_VERIFIED
+    assert (
+        removed.verification_changed_by_id == people["admin"].pk and removed.verification_checked_at is None
     )
-    assert fresh(opp).verification_level == VerificationLevel.SOURCE_CHECKED
-    record = workflow.record_verification(
-        people["admin"], opp.pk, level="issuer_verified", method="issuer_contact", **common
-    )
-    assert fresh(opp).verification_level == VerificationLevel.ISSUER_VERIFIED
-    # A failed re-check supersedes the issuer record, so the level falls back to what remains.
-    workflow.record_verification(
-        people["admin"], opp.pk, version_no=1, level="issuer_verified", method="issuer_contact",
-        outcome="discrepancy_found", evidence_note="The issuer says the closing date has changed.", supersedes_id=record.pk,
-    )  # fmt: skip
-    assert fresh(opp).verification_level == VerificationLevel.SOURCE_CHECKED
+    assert [e.transition for e in removed.events.filter(transition__in=["V02", "V03"])] == ["V02", "V03"]
+    assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.verified").count() == 1
+    assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.unverified").count() == 1
 
 
-def test_verification_needs_an_evidence_note_and_a_staff_role(world: World, people: dict[str, User]) -> None:
+def test_asking_for_the_state_a_listing_already_has_changes_nothing(
+    world: World, people: dict[str, User]
+) -> None:
     opp = published(world, people["author"], people["editor"])
-    with pytest.raises(ValidationFailed):
-        workflow.record_verification(
-            people["editor2"],
-            opp.pk,
-            version_no=1,
-            level="source_checked",
-            method="source_page_review",
-            outcome="confirmed",
-            evidence_note="too short",
-        )
-    with pytest.raises(PermissionDeniedError):
-        workflow.record_verification(
-            people["seeker"],
-            opp.pk,
-            version_no=1,
-            level="source_checked",
-            method="source_page_review",
-            outcome="confirmed",
-            evidence_note="Compared the listing with the source.",
-        )
+    workflow.set_verification(people["editor"], opp.pk, verified=False)  # already Not Verified
+    assert not fresh(opp).events.filter(transition__in=["V02", "V03"]).exists()
+    workflow.set_verification(people["editor"], opp.pk, verified=True)
+    stamp = fresh(opp).verification_changed_at
+    workflow.set_verification(
+        people["admin"], opp.pk, verified=True
+    )  # already Verified: nobody is re-credited
+    again = fresh(opp)
+    assert again.verification_changed_at == stamp and again.verification_changed_by_id == people["editor"].pk
+
+
+def test_a_new_listing_is_not_verified_and_verification_survives_an_amendment(
+    world: World, people: dict[str, User]
+) -> None:
+    draft = new_draft(world, people["author"])
+    assert fresh(draft).is_verified is False
+    opp = published(world, people["author"], people["editor"], example="jobs-2")
+    workflow.set_verification(people["editor"], opp.pk, verified=True)
+    workflow.amend(people["author"], opp.pk, expected_row_version=fresh(opp).row_version)
+    assert fresh(opp).is_verified  # it belongs to the listing, not to a revision
+
+
+def test_only_staff_with_the_permission_can_verify(world: World, people: dict[str, User]) -> None:
+    opp = published(world, people["author"], people["editor"])
+    for who in ("author", "seeker"):  # a Contributor and a seeker
+        with pytest.raises(PermissionDeniedError):
+            workflow.set_verification(people[who], opp.pk, verified=True)
+    assert fresh(opp).is_verified is False
+    assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.verified.denied").count() == 2
 
 
 # --- validation at submit -------------------------------------------------------------------------------
 def test_submit_returns_every_publish_grade_failure_at_once(world: World, people: dict[str, User]) -> None:
     opp = new_draft(
-        world, people["author"], "jobs-1", sources=[], locations=[], title="Hi", summary="Too short"
+        world,
+        people["author"],
+        "jobs-1",
+        sources=[],
+        locations=[],
+        location_text=None,
+        title="Hi",
+        summary="Too short",
     )
     with pytest.raises(ValidationFailed) as excinfo:
         workflow.submit(people["author"], opp.pk, expected_row_version=opp.row_version)
     fields = excinfo.value.fields
-    assert {"title", "summary", "locations", "sources"} <= set(fields)
-    assert fields["sources"][0][0] == "source_required"
+    assert {"title", "summary", "locations"} <= set(fields)
+    assert "sources" not in fields  # staff no longer enter a source, so none is required (D-62)
     assert fresh(opp).status == ListingStatus.DRAFT
 
 

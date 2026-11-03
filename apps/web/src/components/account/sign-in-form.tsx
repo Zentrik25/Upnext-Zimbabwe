@@ -39,11 +39,16 @@ export function SignInForm({
     setBusy(true);
     setFailure(null);
     setUnverifiedEmail(null);
-    const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login", {
+    const outcome = await apiFetch<{ roles?: string[]; two_step_required?: boolean }>("POST", "auth/login", {
       email,
       password: String(form.get("password") ?? ""),
       remember: form.get("remember") === "on",
     });
+    if (outcome.ok && outcome.data?.two_step_required) {
+      // Correct password, no session yet: the code comes next (D-54).
+      router.replace(`/sign-in/two-step?next=${encodeURIComponent(safeNext(next, "/account"))}`);
+      return;
+    }
     if (outcome.ok) {
       // Staff go straight to the workspace (and its second step) unless they were sent here from somewhere.
       const staff = (outcome.data?.roles?.length ?? 0) > 0;
