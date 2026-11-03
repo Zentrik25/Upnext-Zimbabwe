@@ -40,14 +40,14 @@ const link = "inline-flex min-h-[24px] items-center py-[3px] text-brand-dark-tex
 
 export function SiteFooter() {
   return (
-    <footer className="bg-brand-dark py-12 text-small text-brand-dark-text">
+    <footer className="bg-brand-dark py-12 text-small text-brand-dark-text max-sm:py-6">
       <Container>
         <div className="grid grid-cols-[1.4fr_3fr] gap-8 max-md:grid-cols-1">
           <div>
             <Link href="/" aria-label={`${BRAND.name} home`} className="inline-block text-white">
-              <Lockup className="h-[44px] w-auto" />
+              <Lockup className="h-[44px] w-auto max-sm:h-[34px]" />
             </Link>
-            <p className="mt-4 max-w-[260px]">{BRAND.tagline}</p>
+            <p className="mt-4 max-w-[260px] max-sm:mt-2">{BRAND.tagline}</p>
             <p className="mt-3">
               <a href={`mailto:${BRAND.email}`} className={link}>
                 {BRAND.email}
@@ -59,7 +59,7 @@ export function SiteFooter() {
             className="col-span-3 grid grid-cols-4 gap-8 max-md:col-span-1 max-md:grid-cols-2 max-sm:block max-sm:columns-2 max-sm:gap-x-4"
           >
             {COLUMNS.map((column) => (
-              <div key={column.title} className="max-sm:mb-6 max-sm:break-inside-avoid">
+              <div key={column.title} className="max-sm:mb-3 max-sm:break-inside-avoid">
                 <h2 className="text-small font-strong text-white">{column.title}</h2>
                 <ul className="m-0 mt-2 grid list-none gap-1 p-0">
                   {column.links.map(([href, label]) => (
@@ -74,7 +74,7 @@ export function SiteFooter() {
             ))}
           </nav>
         </div>
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/20 pt-5">
+        <div className="mt-10 max-sm:mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/20 pt-5">
           <p>
             © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
           </p>

@@ -148,6 +148,7 @@ class TokenPurpose(models.TextChoices):
     EMAIL_VERIFICATION = "email_verification"
     PASSWORD_RESET = "password_reset"  # noqa: S105
     EMAIL_CHANGE = "email_change"
+    STAFF_INVITATION = "staff_invitation"
 
 
 class AuthToken(models.Model):
@@ -222,6 +223,33 @@ class StaffRecoveryCode(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["device", "code_hash"], name="recovery_code_unique")]
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class TrustedDevice(models.Model):
+    """A browser the person chose to trust after a successful second step (D-59).
+
+    Only a keyed hash of the random cookie value is stored, so a database leak yields no usable cookie. A
+    record never replaces the password: it only lets a *correct password* skip the second step while it is
+    live, unexpired, not revoked, used by the same kind of browser, and (for a staff account) last proved a
+    code at most 24 hours ago. `last_mfa_at` moves only when a code is actually verified."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="trusted_devices")
+    token_hash = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=80, blank=True)  # browser family and system, e.g. "Chrome on Android"
+    ip_prefix = models.CharField(max_length=64, blank=True)  # truncated, never a raw address
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_used_at = models.DateTimeField(default=timezone.now)
+    last_mfa_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_reason = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "revoked_at"], name="trusteddevice_user_idx")]
 
     def __str__(self) -> str:
         return str(self.pk)

@@ -8,4 +8,4 @@ open stand-in (D-45). Its `ss01` set is not in these subsets, so `font-feature-s
 fidelity and has no effect until Söhne is licensed. Regenerate or replace from `@fontsource/inter` and
 `@fontsource/source-code-pro` (v5) latin woff2 files.
 
-Inter 700 (`inter-latin-700.woff2`, from `@fontsource/inter` v5, OFL) is used only for the home page headlines (D-47) through the `.font-headline` class; it is loaded without preload so other pages do not fetch it.
+Inter 700 (`inter-latin-700.woff2`, from `@fontsource/inter` v5, OFL) is used only for the home page headlines (D-47) and the headings of the job page and the home sections (D-60) through the `.font-headline` class; it is loaded without preload so other pages do not fetch it.

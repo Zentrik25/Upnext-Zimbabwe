@@ -105,18 +105,6 @@ def can_return(
     return _review_action(actor, facts, Permission.OPP_REVIEW_RETURN, {"approved"}, registry)
 
 
-def can_verify(
-    actor: Actor, facts: RevisionFacts, registry: PermissionRegistry = DEFAULT_REGISTRY
-) -> Decision:
-    return _review_action(
-        actor,
-        facts,
-        Permission.OPP_VERIFY_RECORD,
-        {"in_review", "approved", "published"},
-        registry,
-    )
-
-
 def can_publish(
     actor: Actor, facts: RevisionFacts, registry: PermissionRegistry = DEFAULT_REGISTRY
 ) -> Decision:

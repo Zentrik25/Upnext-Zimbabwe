@@ -7,8 +7,8 @@ Status: DRAFT (identity updated for D-42; the step-by-step launch checklist is `
 | Piece | Where | Notes |
 |---|---|---|
 | SMTP adapter, outbox, worker, retries, 4xx/5xx classification | `notifications/sender.py`, `services.py` | unchanged; Resend is reached through the generic `smtp` backend |
-| Sender identity | `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`, `UPNEXT_SUPPORT_EMAIL` (all `info@upnext.co.zw`, D-42) | env only; no address is hard-coded in code |
-| Multipart messages | `notifications/htmlmail.py` | HTML is derived from the plain text so they cannot drift; flat, no images, no tracking pixels, no scripts |
+| Sender identity | `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`, `UPNEXT_SUPPORT_EMAIL` (From `noreply@upnext.co.zw`, send-only, D-52; Reply-To and support `info@upnext.co.zw`, D-42) | env only; no address is hard-coded in code |
+| Multipart messages | `notifications/emailkit.py`, `content.py` (D-55; see `EMAIL_DESIGN_SYSTEM.md`) | HTML and plain text are both rendered from one structured message so they cannot drift; two own-origin PNG images only (logo; verification illustration), no tracking pixels, no remote resources, no scripts |
 | Resend config checks | `notifications/config.py` (`resend_problems`) | with host `smtp.resend.com`: user must be `resend`, a password (the API key) must be set, port 465 pairs with `ssl`, 587 with `starttls` |
 | Webhook | `POST /api/v1/hooks/email/resend` (`notifications/resend_webhook.py`) | off (404) until `UPNEXT_RESEND_WEBHOOK_SECRET` is set |
 | Suppression | `notifications/suppression.py` | keyed hashes of addresses, never plain text |
@@ -23,7 +23,7 @@ UPNEXT_SMTP_USER=resend
 UPNEXT_SMTP_PASSWORD=<Resend API key, restricted to sending>
 UPNEXT_SMTP_PORT=465
 UPNEXT_SMTP_SECURITY=ssl
-UPNEXT_EMAIL_FROM=UPNEXT Careers <info@upnext.co.zw>
+UPNEXT_EMAIL_FROM=UPNEXT Careers <noreply@upnext.co.zw>
 UPNEXT_EMAIL_REPLY_TO=info@upnext.co.zw
 ```
 

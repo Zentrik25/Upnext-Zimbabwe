@@ -55,6 +55,7 @@ class Item:
     place: str
     closes: str
     path: str
+    kind: str = ""  # the opportunity's category (Jobs, Internships, ...), shown in the alert e-mail
 
     def as_payload(self) -> dict[str, str]:
         return {
@@ -63,6 +64,7 @@ class Item:
             "place": self.place,
             "closes": self.closes,
             "path": self.path,
+            "kind": self.kind,
         }
 
 
@@ -200,6 +202,7 @@ def _item(version: OpportunityVersion) -> Item:
         place=places[0].location.name if places else "Location not stated",
         closes=closes,
         path=f"/opportunities/{version.opportunity.slug}",
+        kind=version.opportunity.category.name,
     )
 
 
@@ -209,7 +212,9 @@ def build_digest(alert: JobAlert, now: datetime) -> Digest | None:
     total = qs.count()
     if total == 0:
         return None
-    versions = list(qs.prefetch_related("locations__location")[:MAX_PER_DIGEST])
+    versions = list(
+        qs.select_related("opportunity__category").prefetch_related("locations__location")[:MAX_PER_DIGEST]
+    )
     return Digest(
         items=[_item(v) for v in versions], more_count=max(total - len(versions), 0), versions=versions
     )

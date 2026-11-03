@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { lazy, Suspense, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Icon } from "@/components/ui";
-import { IconField } from "./auth-parts";
+import { Button } from "@/components/ui";
+import { AuthField } from "./auth-parts";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
 import { FormError } from "./parts";
@@ -38,11 +39,16 @@ export function SignInForm({
     setBusy(true);
     setFailure(null);
     setUnverifiedEmail(null);
-    const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login", {
+    const outcome = await apiFetch<{ roles?: string[]; two_step_required?: boolean }>("POST", "auth/login", {
       email,
       password: String(form.get("password") ?? ""),
       remember: form.get("remember") === "on",
     });
+    if (outcome.ok && outcome.data?.two_step_required) {
+      // Correct password, no session yet: the code comes next (D-54).
+      router.replace(`/sign-in/two-step?next=${encodeURIComponent(safeNext(next, "/account"))}`);
+      return;
+    }
     if (outcome.ok) {
       // Staff go straight to the workspace (and its second step) unless they were sent here from somewhere.
       const staff = (outcome.data?.roles?.length ?? 0) > 0;
@@ -60,7 +66,7 @@ export function SignInForm({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
+    <form onSubmit={submit} className="grid gap-3">
       {notice && !failure ? notice : null}
       {failure ? <FormError>{failure}</FormError> : null}
       {unverifiedEmail ? (
@@ -68,32 +74,35 @@ export function SignInForm({
           <ResendVerification email={unverifiedEmail} />
         </Suspense>
       ) : null}
-      <IconField
+      <AuthField
         id="email"
         name="email"
         label="E-mail address"
-        icon="mail"
         type="email"
-        placeholder="you@example.com"
         autoComplete="username"
         required
         maxLength={254}
       />
-      <IconField
+      <AuthField
         id="password"
         name="password"
         label="Password"
-        icon="lock"
         type="password"
         reveal
-        placeholder="Enter your password"
+        aside={
+          <Link
+            href="/forgot-password"
+            className="inline-flex min-h-[24px] items-center text-ctl text-accent"
+          >
+            Forgot your password?
+          </Link>
+        }
         autoComplete="current-password"
         required
         maxLength={128}
       />
       {options}
-      <Button type="submit" disabled={busy} className="min-h-field gap-2">
-        <Icon name="signIn" className="h-[18px] w-[18px]" />
+      <Button type="submit" disabled={busy} className="sm:min-h-field">
         {busy ? "Signing in…" : "Sign in"}
       </Button>
       {social}

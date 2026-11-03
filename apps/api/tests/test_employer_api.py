@@ -47,7 +47,11 @@ def signed_in(user: User) -> APIClient:
 
 
 def send(client: APIClient, method: str, url: str, data: Any = None) -> Any:
-    kwargs: dict[str, Any] = {"HTTP_X_CSRFTOKEN": csrf(client)}
+    kwargs: dict[str, Any] = {
+        "HTTP_X_CSRFTOKEN": csrf(client),
+        # a real browser sends a User-Agent; the view counter ignores requests without one (D-65)
+        "HTTP_USER_AGENT": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36",
+    }
     if data is not None:
         kwargs["format"] = "json"
     return (

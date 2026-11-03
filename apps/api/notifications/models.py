@@ -27,6 +27,8 @@ class EmailKind(models.TextChoices):
     EMAIL_CHANGE_REQUESTED_NOTICE = "email_change_requested_notice"
     EMAIL_CHANGED_NOTICE = "email_changed_notice"
     JOB_ALERT = "job_alert"
+    # Template ready, trigger NOT built: nothing queues it until the owner approves sending a welcome message.
+    WELCOME = "welcome"
     # Employer notifications (M2). Sent only to active members of the organisation concerned, and only while
     # delivery is verified (see employers/notifications.py).
     EMPLOYER_CLAIM_RECEIVED = "employer_claim_received"
@@ -37,6 +39,9 @@ class EmailKind(models.TextChoices):
     EMPLOYER_LISTING_REJECTED = "employer_listing_rejected"
     EMPLOYER_LISTING_EXPIRING = "employer_listing_expiring"
     EMPLOYER_LISTING_EXPIRED = "employer_listing_expired"
+    # Staff management (D-58): the invitation to set a password, and notices about changes to a staff account.
+    STAFF_INVITATION = "staff_invitation"
+    STAFF_ACCOUNT_CHANGE = "staff_account_change"
 
 
 class OutboxStatus(models.TextChoices):

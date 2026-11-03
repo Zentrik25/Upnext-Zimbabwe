@@ -108,7 +108,7 @@ const LEVEL_TONE: Record<VerificationLevel, TagTone> = {
 
 /** The three verification levels as a compact definition list. Wording comes from `VERIFICATION`, the one source. */
 export function VerificationLevels() {
-  const levels = ["not_verified", "source_checked", "issuer_verified"] as const;
+  const levels = ["not_verified", "issuer_verified"] as const;
   return (
     <dl className="m-0 divide-y divide-line rounded-card border border-border-panel">
       {levels.map((level) => (

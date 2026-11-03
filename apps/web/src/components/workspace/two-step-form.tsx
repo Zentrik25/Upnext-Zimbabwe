@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FormError } from "@/components/account/parts";
+import { TrustDeviceCheckbox } from "@/components/account/trusted-devices-panel";
 import { Button, ButtonLink, Field, TextInput } from "@/components/ui";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 
@@ -25,6 +26,7 @@ export function TwoStepForm({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
+  const [trust, setTrust] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -33,7 +35,7 @@ export function TwoStepForm({
     const result = await apiFetch<{ verified: boolean; recovery_codes?: string[] }>(
       "POST",
       "staff/two-step",
-      { code },
+      { code, trust_device: trust },
     );
     setBusy(false);
     if (!result.ok) {
@@ -123,6 +125,7 @@ export function TwoStepForm({
           onChange={(e) => setCode(e.target.value)}
         />
       </Field>
+      <TrustDeviceCheckbox checked={trust} onChange={setTrust} staff />
       <div>
         <Button type="submit" disabled={busy || code.trim() === ""}>
           {busy ? "Checking…" : enrolling ? "Turn on two-step verification" : "Verify"}

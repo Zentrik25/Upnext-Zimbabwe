@@ -17,10 +17,7 @@ export default async function RegisterPage() {
   if (await getCurrentUser()) redirect("/account");
   const providers = await getAuthProviders();
   return (
-    <AuthPage
-      title="Create your account"
-      intro="An account lets you save opportunities and come back to them. Browsing never needs one."
-    >
+    <AuthPage title="Create your account">
       <RegisterForm googleEnabled={providers.google} />
     </AuthPage>
   );

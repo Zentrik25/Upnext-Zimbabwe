@@ -18,6 +18,9 @@ TTL = {
     TokenPurpose.EMAIL_VERIFICATION: timedelta(hours=24),  # PROPOSED, OQ-17
     TokenPurpose.PASSWORD_RESET: timedelta(minutes=60),  # PROPOSED, OQ-17
     TokenPurpose.EMAIL_CHANGE: timedelta(hours=24),  # PROPOSED, like address confirmation
+    TokenPurpose.STAFF_INVITATION: timedelta(
+        hours=72
+    ),  # D-58: long enough for a weekend, short enough to matter
 }
 MAX_LENGTH = 200
 
