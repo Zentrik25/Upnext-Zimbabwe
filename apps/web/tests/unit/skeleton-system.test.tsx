@@ -24,7 +24,7 @@ const session = vi.hoisted(() => ({ getCurrentUser: vi.fn(), getSavedIds: vi.fn(
 vi.mock("@/lib/session", () => session);
 
 import { HomeLatest, HomeLatestSkeleton } from "@/components/home/latest";
-import { CategoryGridSkeleton, HeroSearchSkeleton } from "@/components/home/sections";
+import { HeroSearchSkeleton } from "@/components/home/sections";
 import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
 import { Results } from "@/components/opportunities/results";
 import {
@@ -233,16 +233,8 @@ describe("home page: loading, success, empty and failure are four different stat
   });
 
   it("the home skeletons are static-free regions with their own status text", () => {
-    const { container } = render(
-      <>
-        <HeroSearchSkeleton />
-        <CategoryGridSkeleton />
-      </>,
-    );
-    expect(screen.getAllByRole("status").map((r) => r.textContent)).toEqual([
-      "Loading search…",
-      "Loading categories…",
-    ]);
+    const { container } = render(<HeroSearchSkeleton />);
+    expect(screen.getAllByRole("status").map((r) => r.textContent)).toEqual(["Loading search…"]);
     expect(container.querySelectorAll("a, button, input, select")).toHaveLength(0);
   });
 });
@@ -397,7 +389,7 @@ describe("route wiring", () => {
 
   it("the slow sections of the public pages sit in their own Suspense boundaries", () => {
     const home = readFileSync(join(app, "page.tsx"), "utf8");
-    expect(home.match(/<Suspense/g)).toHaveLength(3);
+    expect(home.match(/<Suspense/g)).toHaveLength(2); // the search and the latest list
     expect(home).toContain("fallback={<HomeLatestSkeleton />}");
     const list = readFileSync(join(app, "opportunities/page.tsx"), "utf8");
     expect(list.match(/<Suspense/g)).toHaveLength(4);
@@ -409,7 +401,7 @@ describe("route wiring", () => {
 
   it("one request for the data a page's sections share", () => {
     const home = readFileSync(join(app, "page.tsx"), "utf8");
-    expect(home).toContain("cache(listCategories)");
+    expect(home.match(/listCategories\(/g)).toHaveLength(1); // only the search needs the categories now
     const list = readFileSync(join(app, "opportunities/page.tsx"), "utf8");
     expect(list).toContain("cache(listCategories)");
     expect(readFileSync(join(src, "components/opportunities/results.tsx"), "utf8")).toContain("cache(");

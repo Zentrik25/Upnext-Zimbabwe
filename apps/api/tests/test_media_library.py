@@ -156,7 +156,7 @@ def test_who_can_use_the_library(people: dict[str, User]) -> None:
 def test_the_library_validates_every_upload(people: dict[str, User]) -> None:
     client = signed_in(people["editor"])
     assert upload_to_library(client, b"<?php echo 1; ?>").status_code == 400
-    assert upload_to_library(client, picture(size=(200, 120))).json()["error"]["code"] == "image_too_small"
+    assert upload_to_library(client, picture(size=(48, 30))).json()["error"]["code"] == "image_too_small"
     assert upload_to_library(client, b"\xff\xd8\xff" + b"0" * (images.MAX_BYTES + 10)).status_code == 413
     assert client.post(MEDIA, {}, format="multipart", HTTP_X_CSRFTOKEN=csrf(client)).status_code == 400
     assert MediaAsset.objects.count() == 0
