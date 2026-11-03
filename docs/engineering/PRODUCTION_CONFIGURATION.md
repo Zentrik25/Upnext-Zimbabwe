@@ -27,7 +27,7 @@ Secrets are supplied by the environment (an untracked env file or the platform's
 |---|---|---|
 | `DJANGO_SECRET_KEY`, `UPNEXT_TOKEN_KEY`, `UPNEXT_THROTTLE_PEPPER` | signing, link and two-step secrets, throttle keys | Rotating `UPNEXT_TOKEN_KEY` invalidates outstanding e-mail links and resets every staff two-step device. Rotating the pepper only resets throttle counters |
 | `POSTGRES_*` | database | separate role per purpose is a Phase 6/7 task |
-| `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `UPNEXT_PUBLIC_BASE_URL` | the public origin (OQ-01) | web also reads `UPNEXT_PUBLIC_BASE_URL` for canonical URLs, the sitemap and structured data |
+| `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `UPNEXT_PUBLIC_BASE_URL` | the public origin (OQ-01); `DJANGO_ALLOWED_HOSTS` also lists `api`, the internal name the web container reads the API by | web also reads `UPNEXT_PUBLIC_BASE_URL` for canonical URLs, the sitemap and structured data |
 | `UPNEXT_SECURE_COOKIES`, `UPNEXT_HOST_COOKIE_PREFIX` | cookie flags and the `__Host-` prefix | the prefix needs one hostname, `Secure` and `Path=/`; enable it once OQ-01 fixes the topology |
 | `DJANGO_HSTS_SECONDS`, `UPNEXT_TRUST_PROXY_HEADERS` | transport | trust proxy headers only behind a proxy that overwrites `X-Forwarded-Proto` (to be inspected read-only in Phase 7) |
 | `UPNEXT_EMAIL_BACKEND`, `UPNEXT_SMTP_*`, `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO` | e-mail | see section 3 |
@@ -74,7 +74,7 @@ Resend is the selected provider (D-34) but none is configured or enabled. Until 
 
 ## Addendum (D-34, D-42): identity and e-mail variables
 
-Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`. A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
+Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official mailbox `info@upnext.co.zw` (D-42; `UPNEXT_OFFICIAL_EMAIL`, `UPNEXT_SUPPORT_EMAIL`, `UPNEXT_CONTACT_EMAIL`; no other mailbox exists); sender `UPNEXT_EMAIL_FROM`, `UPNEXT_EMAIL_REPLY_TO`; Resend SMTP `UPNEXT_SMTP_*`; webhook secret `UPNEXT_RESEND_WEBHOOK_SECRET`; Sign in with Google `UPNEXT_GOOGLE_CLIENT_ID` and `UPNEXT_GOOGLE_CLIENT_SECRET` (D-50; both must be listed in `x-api-env` of `compose.production.yaml`, which passes only the variables it names; redirect URI `https://upnext.co.zw/api/v1/auth/google/callback`). A template with blank secrets is `infrastructure/compose/production.env.example`. See `RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`.
 
 ## Addendum (launch preparation): production Compose project
 

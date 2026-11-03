@@ -177,7 +177,8 @@ def visible_versions(*, detail: bool = False, include_expired: bool = False) -> 
     ).select_related("opportunity", "opportunity__category", "organisation")
 
 
-SITEMAP_LIMIT = 50000  # the protocol's per-file maximum
+# Under the protocol's 50,000-URL file limit, leaving room for the static and category addresses.
+SITEMAP_LIMIT = 49000
 
 
 def sitemap_entries(now: datetime) -> list[tuple[str, datetime]]:

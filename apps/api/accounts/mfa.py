@@ -23,6 +23,7 @@ from django.utils import timezone
 from audit import services as audit
 from audit.models import ActorType, Severity
 
+from . import trusted_devices
 from .models import StaffMfaDevice, StaffRecoveryCode, User
 
 PERIOD = 30
@@ -34,6 +35,11 @@ MAX_FAILURES, FAILURE_WINDOW = 5, 15 * 60  # PROPOSED, OQ-17
 
 def _key() -> bytes:
     return settings.UPNEXT_TOKEN_KEY.encode()
+
+
+def _action(user: User, name: str) -> str:
+    """Staff events keep the `staff.` prefix (the alert rules count them); everyone else's are `auth.`."""
+    return f"{'staff' if user.is_staff else 'auth'}.mfa_{name}"
 
 
 def secret_for(device: StaffMfaDevice) -> bytes:
@@ -80,6 +86,10 @@ def _fail_key(user: User) -> str:
     return f"mfa-fail:{user.pk}"
 
 
+def recent_failures(user: User) -> int:
+    return int(cache.get(_fail_key(user), 0))
+
+
 def blocked(user: User) -> bool:
     return int(cache.get(_fail_key(user), 0)) >= MAX_FAILURES
 
@@ -92,7 +102,7 @@ def _record_failure(user: User) -> None:
         except ValueError:
             cache.add(key, 1, FAILURE_WINDOW)
     audit.record(
-        action="staff.mfa_failed",
+        action=_action(user, "failed"),
         object_type="user",
         object_id=user.pk,
         actor_id=user.pk,
@@ -152,12 +162,10 @@ def confirm_enrolment(user: User, code: str) -> list[str] | None:
             return None
         device.confirmed_at, device.last_used_step = timezone.now(), step
         device.save(update_fields=["confirmed_at", "last_used_step"])
-        plain = [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(RECOVERY_CODES)]
-        StaffRecoveryCode.objects.bulk_create(
-            [StaffRecoveryCode(device=device, code_hash=_hash_recovery(c)) for c in plain]
-        )
+        plain = _issue_recovery_codes(device)
+        trusted_devices.revoke_all(user, "mfa_changed")
         audit.record(
-            action="staff.mfa_enrolled",
+            action=_action(user, "enrolled"),
             object_type="user",
             object_id=user.pk,
             actor_id=user.pk,
@@ -193,7 +201,7 @@ def verify(user: User, code: str) -> bool:
             _record_failure(user)
             return False
         audit.record(
-            action="staff.mfa_verified",
+            action=_action(user, "verified"),
             object_type="user",
             object_id=user.pk,
             actor_id=user.pk,
@@ -213,14 +221,76 @@ def reset(user: User, *, actor: User | None, reason: str) -> bool:
         if not removed:
             return False
         revoke_sessions(user)
+        trusted_devices.revoke_all(user, "mfa_reset", actor_id=actor.pk if actor else None)
         audit.record(
-            action="staff.mfa_reset",
+            action=_action(user, "reset"),
             object_type="user",
             object_id=user.pk,
             actor_id=actor.pk if actor else None,
             actor_type=ActorType.USER if actor else ActorType.SYSTEM,
             severity=Severity.PRIVILEGED,
             changes={"reason": reason[:200]},
+        )
+    cache.delete(_fail_key(user))
+    return True
+
+
+# --- the person's own settings (any account; staff cannot turn it off while it is required) ---------
+def recovery_codes_left(user: User) -> int:
+    device = device_of(user)
+    if device is None or device.confirmed_at is None:
+        return 0
+    return StaffRecoveryCode.objects.filter(device=device, used_at__isnull=True).count()
+
+
+def _issue_recovery_codes(device: StaffMfaDevice) -> list[str]:
+    StaffRecoveryCode.objects.filter(device=device).delete()
+    plain = [f"{secrets.token_hex(3)}-{secrets.token_hex(3)}" for _ in range(RECOVERY_CODES)]
+    StaffRecoveryCode.objects.bulk_create(
+        [StaffRecoveryCode(device=device, code_hash=_hash_recovery(c)) for c in plain]
+    )
+    return plain
+
+
+def regenerate_recovery_codes(user: User) -> list[str] | None:
+    """Replace every recovery code with a new set (shown once). The caller has already checked a code."""
+    with transaction.atomic():
+        device = (
+            StaffMfaDevice.objects.select_for_update().filter(user=user, confirmed_at__isnull=False).first()
+        )
+        if device is None:
+            return None
+        plain = _issue_recovery_codes(device)
+        trusted_devices.revoke_all(user, "mfa_changed")
+        audit.record(
+            action=_action(user, "recovery_codes_replaced"),
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            severity=Severity.SECURITY,
+        )
+    return plain
+
+
+def abandon_pending(user: User) -> None:
+    """Drop an unconfirmed device so the next setup starts from a fresh key."""
+    StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=True).delete()
+
+
+def disable(user: User) -> bool:
+    """The person turns two-step verification off (the caller has checked their password and a code, and ends
+    their other sessions)."""
+    with transaction.atomic():
+        removed, _ = StaffMfaDevice.objects.filter(user=user, confirmed_at__isnull=False).delete()
+        if not removed:
+            return False
+        trusted_devices.revoke_all(user, "mfa_changed")
+        audit.record(
+            action=_action(user, "disabled"),
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            severity=Severity.SECURITY,
         )
     cache.delete(_fail_key(user))
     return True

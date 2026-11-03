@@ -23,6 +23,12 @@ def _stub(path: Path, body: str) -> None:
     path.chmod(0o755)
 
 
+def _new_key() -> bytes:
+    """A key file of printable characters. `openssl -pass file:` reads the first line, and a random binary key that
+    starts with a NUL byte (about 1 in 256) fails with "Error reading password from BIO", which made this suite flaky."""
+    return os.urandom(48).hex().encode()
+
+
 class Rig:
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -30,7 +36,7 @@ class Rig:
         self.bin.mkdir()
         self.calls = root / "calls.log"
         self.key = root / "key"
-        self.key.write_bytes(os.urandom(48))
+        self.key.write_bytes(_new_key())
         self.backup = root / "upnext-1.dump.enc"
         self.report = root / "report.json"
         _stub(self.bin / "createdb", 'echo "createdb $*" >> "$CALLS"')
@@ -153,7 +159,7 @@ def test_altered_backup_is_refused_before_any_database_is_created(rig: Rig) -> N
 
 def test_wrong_key_is_refused(rig: Rig) -> None:
     rig.make_backup()
-    rig.key.write_bytes(os.urandom(48))
+    rig.key.write_bytes(_new_key())
     result = rig.run()
     assert result.returncode != 0
     assert rig.record()["status"] == "failed"

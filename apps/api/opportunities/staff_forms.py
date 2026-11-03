@@ -9,10 +9,6 @@ from django import forms
 
 from catalog.models import Category, Organisation
 
-from .models import VerificationMethod, VerificationOutcome
-
-LEVELS = [("source_checked", "Source checked"), ("issuer_verified", "Verified with the issuer")]
-
 
 class ActionForm(forms.Form):
     row_version = forms.IntegerField(widget=forms.HiddenInput)
@@ -50,34 +46,24 @@ class ApproveForm(ActionForm):
     )
 
 
-class PublishDirectForm(ApproveForm):
-    duplicate_of = forms.CharField(
+class DuplicateConfirmation(forms.Form):
+    """Asked for only when the listing looks like one that is already open (the screen reveals the box then)."""
+
+    confirm_duplicate = forms.BooleanField(
+        required=False, label="Continue: this is a separate vacancy", help_text="No explanation is needed."
+    )
+
+
+class PublishDirectForm(ActionForm, DuplicateConfirmation):
+    applicant_payment_reviewed = forms.BooleanField(
         required=False,
-        label="Existing listing id",
-        help_text="Only if this is a deliberate separate listing.",
-    )
-    duplicate_reason = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=1000, label="Why it is separate"
+        label="I checked the mention of payments by applicants",
+        help_text="Needed only when the text mentions fees or deposits that applicants must pay.",
     )
 
 
-class SubmitForm(ActionForm):
-    duplicate_of = forms.CharField(
-        required=False,
-        label="Existing listing id",
-        help_text="Only if this is a deliberate separate listing.",
-    )
-    duplicate_reason = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=1000, label="Why it is separate"
-    )
-
-
-class VerificationForm(ActionForm):
-    version_no = forms.IntegerField(min_value=1, label="Revision number")
-    level = forms.ChoiceField(choices=LEVELS)
-    method = forms.ChoiceField(choices=VerificationMethod.choices)
-    outcome = forms.ChoiceField(choices=VerificationOutcome.choices)
-    evidence_note = forms.CharField(widget=forms.Textarea(attrs={"rows": 4}), min_length=20, max_length=2000)
+class SubmitForm(ActionForm, DuplicateConfirmation):
+    pass
 
 
 class CreateDraftForm(forms.Form):

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { openGraphFor } from "@/lib/brand";
+import { socialFor } from "@/lib/brand";
 import Link from "next/link";
 import { Bullets, ProsePage, Section } from "@/components/content/prose";
 import { ButtonLink } from "@/components/ui";
 
+const DESCRIPTION =
+  "Post jobs, internships and graduate programmes on UPNEXT Careers. Organisations are verified and every listing is reviewed by an editor before it is public.";
 export const metadata: Metadata = {
   title: "For employers",
-  description:
-    "Post jobs, internships and graduate programmes on UPNEXT Careers. Organisations are verified and every listing is reviewed by an editor before it is public.",
+  description: DESCRIPTION,
   alternates: { canonical: "/employers" },
-  openGraph: openGraphFor("/employers", { title: "For employers" }),
+  ...socialFor("/employers", { title: "For employers", description: DESCRIPTION }),
 };
 
 export default function EmployersPage() {

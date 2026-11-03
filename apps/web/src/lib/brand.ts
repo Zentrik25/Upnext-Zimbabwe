@@ -41,7 +41,10 @@ export const BRAND = {
 } as const;
 
 /** Open Graph block for a page. Next.js replaces (does not merge) `openGraph`, so every page repeats the site fields. */
-export function openGraphFor(url: string, extra: { title?: string; description?: string } = {}) {
+export function openGraphFor(
+  url: string,
+  extra: { title?: string; description?: string; image?: { url: string; alt?: string } | null } = {},
+) {
   return {
     siteName: BRAND.name,
     type: "website" as const,
@@ -49,6 +52,46 @@ export function openGraphFor(url: string, extra: { title?: string; description?:
     url,
     title: extra.title ?? BRAND.name,
     description: extra.description ?? BRAND.description,
-    images: [{ url: BRAND.assets.ogImage, width: 1200, height: 630, alt: BRAND.name }],
+    images: extra.image
+      ? [{ url: extra.image.url, alt: extra.image.alt || extra.title || BRAND.name }]
+      : [
+          {
+            url: BRAND.assets.ogImage,
+            width: 1200,
+            height: 630,
+            alt: `${BRAND.name}: jobs and opportunities in Zimbabwe`,
+          },
+        ],
   };
+}
+
+/** Twitter/X card for a page. Like `openGraph`, Next.js replaces the layout's `twitter` block as a whole, so a page
+ *  that sets its own Open Graph title must set the card too, or the card keeps the site-wide title. */
+export function twitterFor(
+  extra: { title?: string; description?: string; image?: { url: string; alt?: string } | null } = {},
+) {
+  return {
+    card: "summary_large_image" as const,
+    title: extra.title ?? BRAND.name,
+    description: extra.description ?? BRAND.description,
+    images: [extra.image ? extra.image.url : BRAND.assets.ogImage],
+  };
+}
+
+/** Open Graph and Twitter blocks together, from the same title and description (spread into `Metadata`). */
+export function socialFor(
+  url: string,
+  extra: { title?: string; description?: string; image?: { url: string; alt?: string } | null } = {},
+) {
+  return { openGraph: openGraphFor(url, extra), twitter: twitterFor(extra) };
+}
+
+/** Social crawlers need an absolute https address: the sharing picture, else the featured one, else none (the
+ *  standard UPNEXT image is then used). */
+export function shareImage(
+  image: { featured: string | null; social: string | null; alt: string | null } | null | undefined,
+): { url: string; alt?: string } | null {
+  const url = image?.social || image?.featured;
+  if (!url || !url.startsWith("https://")) return null;
+  return { url, alt: image?.alt || undefined };
 }

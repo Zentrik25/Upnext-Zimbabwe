@@ -317,7 +317,7 @@ def test_a_digest_is_capped_and_points_to_the_search_for_the_rest(
     assert len(row.payload["items"]) == 2 and row.payload["more_count"] == 2
     assert "4 new opportunities" in row.payload["subject"]
     message = outbox.build_message(row)
-    assert message is not None and "category=jobs" in message.body and "See all of them" in message.body
+    assert message is not None and "category=jobs" in message.body and "See all opportunities" in message.body
 
 
 def test_a_closed_listing_is_not_offered_even_if_it_was_new(

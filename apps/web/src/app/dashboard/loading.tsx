@@ -1,16 +1,3 @@
-import { Container } from "@/components/layout";
-import { LoadingRegion, SkeletonPageHeading, SkeletonPanel } from "@/components/ui";
+import { SeekerOverviewLoading } from "@/components/ui/page-skeletons";
 
-export default function Loading() {
-  return (
-    <Container className="py-8">
-      <LoadingRegion label="your dashboard">
-        <SkeletonPageHeading />
-        <div className="grid max-w-[640px] gap-4">
-          <SkeletonPanel lines={3} />
-          <SkeletonPanel lines={4} />
-        </div>
-      </LoadingRegion>
-    </Container>
-  );
-}
+export default SeekerOverviewLoading;

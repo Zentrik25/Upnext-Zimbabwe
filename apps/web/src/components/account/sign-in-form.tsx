@@ -2,23 +2,30 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { Button, Icon } from "@/components/ui";
-import { IconField } from "./auth-parts";
+import { lazy, Suspense, useState, type FormEvent, type ReactNode } from "react";
+import { Button } from "@/components/ui";
+import { AuthField } from "./auth-parts";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
-import { GoogleButton, OrDivider } from "./google-button";
 import { FormError } from "./parts";
-import { ResendVerification } from "./resend-verification";
 
+// Only shown after a "confirm your e-mail first" answer, so it loads on demand and stays out of the first script.
+const ResendVerification = lazy(() =>
+  import("./resend-verification").then((m) => ({ default: m.ResendVerification })),
+);
+
+/** `social` is rendered by the page (a server component) so the Google button and its logo stay out of this
+ *  client bundle, which the mobile script budget (150 KiB) measures. */
 export function SignInForm({
   next,
-  googleEnabled = false,
-  googleFailed = false,
+  notice,
+  options,
+  social,
 }: {
   next?: string;
-  googleEnabled?: boolean;
-  googleFailed?: boolean;
+  notice?: ReactNode;
+  options?: ReactNode;
+  social?: ReactNode;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -32,11 +39,16 @@ export function SignInForm({
     setBusy(true);
     setFailure(null);
     setUnverifiedEmail(null);
-    const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login", {
+    const outcome = await apiFetch<{ roles?: string[]; two_step_required?: boolean }>("POST", "auth/login", {
       email,
       password: String(form.get("password") ?? ""),
       remember: form.get("remember") === "on",
     });
+    if (outcome.ok && outcome.data?.two_step_required) {
+      // Correct password, no session yet: the code comes next (D-54).
+      router.replace(`/sign-in/two-step?next=${encodeURIComponent(safeNext(next, "/account"))}`);
+      return;
+    }
     if (outcome.ok) {
       // Staff go straight to the workspace (and its second step) unless they were sent here from somewhere.
       const staff = (outcome.data?.roles?.length ?? 0) > 0;
@@ -54,58 +66,46 @@ export function SignInForm({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      {googleFailed && !failure ? (
-        <FormError>
-          Google sign-in did not work. Try again, or sign in with your e-mail and password.
-        </FormError>
-      ) : null}
+    <form onSubmit={submit} className="grid gap-3">
+      {notice && !failure ? notice : null}
       {failure ? <FormError>{failure}</FormError> : null}
-      {unverifiedEmail ? <ResendVerification email={unverifiedEmail} /> : null}
-      <IconField
+      {unverifiedEmail ? (
+        <Suspense fallback={null}>
+          <ResendVerification email={unverifiedEmail} />
+        </Suspense>
+      ) : null}
+      <AuthField
         id="email"
         name="email"
         label="E-mail address"
-        icon="mail"
         type="email"
-        placeholder="you@example.com"
         autoComplete="username"
         required
         maxLength={254}
       />
-      <IconField
+      <AuthField
         id="password"
         name="password"
         label="Password"
-        icon="lock"
         type="password"
         reveal
-        placeholder="Enter your password"
+        aside={
+          <Link
+            href="/forgot-password"
+            className="inline-flex min-h-[24px] items-center text-ctl text-accent"
+          >
+            Forgot your password?
+          </Link>
+        }
         autoComplete="current-password"
         required
         maxLength={128}
       />
-      <div className="-mt-1 flex flex-wrap items-center justify-between gap-x-4 text-ctl">
-        <label htmlFor="remember" className="inline-flex min-h-[44px] items-center gap-3 text-check-text">
-          <input id="remember" name="remember" type="checkbox" className="accent-accent" />
-          Remember me
-        </label>
-        <Link href="/forgot-password" className="inline-flex min-h-[44px] items-center text-accent">
-          Forgot your password?
-        </Link>
-      </div>
-      <Button type="submit" disabled={busy} className="min-h-field gap-2">
-        <Icon name="signIn" className="h-[18px] w-[18px]" />
+      {options}
+      <Button type="submit" disabled={busy} className="sm:min-h-field">
         {busy ? "Signing in…" : "Sign in"}
       </Button>
-      <OrDivider />
-      <GoogleButton enabled={googleEnabled} next={safeNext(next)} />
-      <p className="text-center text-ctl">
-        Don’t have an account?{" "}
-        <Link href="/register" className="text-accent underline">
-          Create an account
-        </Link>
-      </p>
+      {social}
     </form>
   );
 }

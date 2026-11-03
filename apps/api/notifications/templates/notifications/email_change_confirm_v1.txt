@@ -1,9 +1,0 @@
-Hello {{ display_name }},
-
-You asked to use this address for your {{ brand_name }} account. Confirm it to finish the change:
-
-{{ link }}
-
-The link works once and expires in 24 hours. Until you confirm, your account keeps its current address. If you did not ask for this, you can ignore this message and nothing will change.
-
-{{ brand_name }} never asks for your password by e-mail.

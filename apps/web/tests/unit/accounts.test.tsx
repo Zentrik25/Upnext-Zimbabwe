@@ -9,6 +9,8 @@ import { ForgotPasswordForm } from "@/components/account/forgot-password-form";
 import { RegisterForm } from "@/components/account/register-form";
 import { ResetPasswordForm } from "@/components/account/reset-password-form";
 import { SaveToggle } from "@/components/account/save-toggle";
+import { GoogleButton } from "@/components/account/google-button";
+import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
 import { SignInForm } from "@/components/account/sign-in-form";
 import { VerifyEmailPanel } from "@/components/account/verify-email-panel";
 import { apiFetch, describeFailure, readCsrfCookie } from "@/lib/client-api";
@@ -235,7 +237,7 @@ describe("SignInForm", () => {
   });
   it("sends the Remember me choice: off until ticked", async () => {
     const calls = script({ status: 200, body: { id: "u" } });
-    const { unmount } = render(<SignInForm />);
+    const { unmount } = render(<SignInForm options={<SignInOptions />} />);
     type("E-mail address", "a@example.org");
     type("Password", "pw");
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
@@ -243,7 +245,7 @@ describe("SignInForm", () => {
     expect(JSON.parse(String(calls[0]!.init.body)).remember).toBe(false);
     unmount();
     const more = script({ status: 200, body: { id: "u" } });
-    render(<SignInForm />);
+    render(<SignInForm options={<SignInOptions />} />);
     type("E-mail address", "a@example.org");
     type("Password", "pw");
     fireEvent.click(screen.getByLabelText("Remember me"));
@@ -252,7 +254,13 @@ describe("SignInForm", () => {
     expect(JSON.parse(String(more[0]!.init.body)).remember).toBe(true);
   });
   it("offers Google as a link carrying the return address, and explains a failed Google attempt", () => {
-    render(<SignInForm next="/saved" googleEnabled googleFailed />);
+    render(
+      <SignInForm
+        next="/saved"
+        notice={<GoogleFailedNotice />}
+        social={<GoogleButton enabled next="/saved" />}
+      />,
+    );
     expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute(
       "href",
       "/api/v1/auth/google/start?next=%2Fsaved",
@@ -359,6 +367,43 @@ describe("EmailChangePanel", () => {
     render(<VerifyEmailPanel token="abc.def" change />);
     fireEvent.click(screen.getByRole("button", { name: "Confirm e-mail address" }));
     expect(await screen.findByText(/Sign in with it from now on/)).toBeInTheDocument();
+  });
+});
+
+describe("SaveToggle as a block button (the listing page)", () => {
+  it("keeps one stable name, shows Save or Saved, and reports the state with aria-pressed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("/auth/csrf")
+          ? new Response(JSON.stringify({ csrf_token: "t" }), { status: 200 })
+          : new Response("{}", { status: 200 }),
+      ),
+    );
+    render(
+      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" block />,
+    );
+    const button = screen.getByRole("button", { name: "Save Engineer" });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button).toHaveTextContent("Save");
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
+    expect(screen.getByRole("button", { name: "Save Engineer" })).toHaveTextContent("Saved");
+  });
+
+  it("sends a visitor to sign in and back", () => {
+    render(
+      <SaveToggle
+        opportunityId="o1"
+        title="Engineer"
+        initialSaved={false}
+        signedIn={false}
+        returnTo="/opportunities/x"
+        block
+      />,
+    );
+    const link = screen.getByRole("link", { name: /Sign in to save Engineer/ });
+    expect(link).toHaveAttribute("href", "/sign-in?next=%2Fopportunities%2Fx");
   });
 });
 

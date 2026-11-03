@@ -55,9 +55,6 @@ from .models import (
     PublishingEvent,
     ReviewDecision,
     VerificationLevel,
-    VerificationMethod,
-    VerificationOutcome,
-    VerificationRecord,
     VersionState,
 )
 from .signals import transition_recorded
@@ -66,19 +63,6 @@ from .validation import fee_lint_triggers, validate_publishable
 logger = logging.getLogger("upnext.workflow")
 
 REASON_CODES_TAKEDOWN = frozenset({"legal", "error", "fraud", "other"})
-_LEVEL_ORDER = {
-    VerificationLevel.NOT_VERIFIED: 0,
-    VerificationLevel.SOURCE_CHECKED: 1,
-    VerificationLevel.ISSUER_VERIFIED: 2,
-}
-# Method rules (P2-08): a source check is never presented as direct confirmation with the issuer.
-_LEVEL_METHODS = {
-    VerificationLevel.SOURCE_CHECKED: {
-        VerificationMethod.SOURCE_PAGE_REVIEW,
-        VerificationMethod.DOCUMENT_REVIEW,
-    },
-    VerificationLevel.ISSUER_VERIFIED: {VerificationMethod.ISSUER_CONTACT},
-}
 
 
 @dataclass(frozen=True)
@@ -336,42 +320,79 @@ def save_draft(
         if version.author_id != actor.pk:
             raise PermissionDeniedError("permission_denied", "Only the author can edit this draft.")
         cleaned, errors = content_mod.clean_draft(content)
+        for path, items in content_mod.slug_errors(
+            cleaned, opportunity_id=opportunity.pk, current_slug=opportunity.slug
+        ).items():
+            errors.setdefault(path, []).extend(items)
         content_mod.raise_if_errors(errors)
         if employer:
             employer_capability.check_content(binding, cleaned, content)
+        before_images = (version.featured_image, version.social_image)
         content_mod.apply_to_version(version, cleaned, actor_id=actor.pk)
         _bump(opportunity)
         _record(ctx, actor, opportunity, version, opportunity.status)
+        _images_changed(actor, opportunity, before_images, (version.featured_image, version.social_image))
         return version
 
     return _run(ctx, actor, opportunity_id, body)
 
 
+def _images_changed(
+    actor: User,
+    opportunity: Opportunity,
+    before: tuple[str | None, str | None],
+    after: tuple[str | None, str | None],
+) -> None:
+    """Audit an image being set, replaced or removed. The file always stays in the Media Library (D-62):
+    taking a picture off a listing only changes this revision, and other listings keep using it."""
+    if before == after:
+        return
+    changes: dict[str, str] = {}
+    for slot, old, new in (("featured", before[0], after[0]), ("social", before[1], after[1])):
+        if old != new:
+            changes[slot] = "removed" if new is None else "replaced" if old else "set"
+    audit.record(
+        action="opportunity.image_changed",
+        object_type="opportunity",
+        object_id=opportunity.pk,
+        actor_id=actor.pk,
+        changes=changes,
+    )
+
+
 def _validate_for_submission(
     version: OpportunityVersion, duplicate_acknowledgement: Mapping[str, Any] | None
 ) -> list[Any]:
-    """Publishability and duplicate checks shared by submission and direct publication."""
+    """Publishability and duplicate checks shared by submission and direct publication.
+
+    A listing that is the same vacancy as one already open (same organisation, same job title, no clear
+    difference in place, closing date or reference) needs one confirmation from the person:
+    `{"confirmed": True}`. No id and no explanation is asked for. A merely similar listing is reported to the
+    person but never blocks (D-62).
+    """
     errors = validate_publishable(version)
     duplicates = find_duplicates(version)
     hard = [d for d in duplicates if d.level == "hard"]
     if hard:
         ack = duplicate_acknowledgement or {}
-        reason = str(ack.get("reason", "")).strip()
-        if str(ack.get("duplicate_of", "")) not in {d.opportunity_id for d in hard} or len(reason) < 10:
-            named = "; ".join(f"{d.title or 'untitled'} ({d.opportunity_id}): {d.reason}" for d in hard)
+        legacy = str(ack.get("duplicate_of", "")) in {d.opportunity_id for d in hard} and (
+            len(str(ack.get("reason", "")).strip()) >= 10
+        )
+        if ack.get("confirmed") is True or legacy:
+            version.duplicate_acknowledgement = {
+                "duplicate_of": sorted(d.opportunity_id for d in hard)[0],
+                "confirmed": True,
+            }
+            version.save()
+        else:
+            named = "; ".join(f"{d.title or 'untitled'}: {d.reason}" for d in hard)
             errors.setdefault("duplicate_acknowledgement", []).append(
                 (
                     "duplicate_detected",
-                    f"This looks like an existing listing: {named}. If it is a separate listing, give "
-                    "its id and explain why.",
+                    f"This looks like a listing that is already open ({named}) "
+                    "If it is a separate vacancy, confirm and continue.",
                 )
             )
-        else:
-            version.duplicate_acknowledgement = {
-                "duplicate_of": str(ack["duplicate_of"]),
-                "reason": reason,
-            }
-            version.save()
     if errors:
         codes = {c for items in errors.values() for c, _ in items}
         if codes == {"duplicate_detected"}:
@@ -690,19 +711,21 @@ def _apply_publication(actor: User, opportunity: Opportunity, version: Opportuni
     version.save()
     _index(version)
     if opportunity.slug is None:
-        opportunity.slug = _assign_slug(opportunity, version.title)
+        opportunity.slug = _assign_slug(opportunity, version.title, version.slug_hint)
         opportunity.first_published_at = now
     opportunity.status = ListingStatus.PUBLISHED
     opportunity.live_version = version
     opportunity.pending_version = None
     opportunity.last_published_at = now
     opportunity.closed_at = None
-    _apply_verification(opportunity, version)
     _bump(opportunity)
     return before
 
 
-def _assign_slug(opportunity: Opportunity, title: str) -> str:
+def _assign_slug(opportunity: Opportunity, title: str, hint: str | None = None) -> str:
+    """The editor's chosen address when it is still free, otherwise one made from the title (D-56)."""
+    if hint and not Opportunity.objects.filter(slug=hint).exclude(pk=opportunity.pk).exists():
+        return hint
     for _ in range(8):
         slug = make_slug(title)
         if not Opportunity.objects.filter(slug=slug).exists():
@@ -735,25 +758,6 @@ def refresh_search_vectors_for_organisation(organisation: Any) -> int:
     for version in versions:
         _index(version)
     return len(versions)
-
-
-def effective_level(version: OpportunityVersion) -> tuple[str, datetime | None]:
-    """Highest confirmed, non-superseded verification level of a revision (D-14); publication adds none."""
-    every = list(VerificationRecord.objects.filter(version=version))
-    superseded = {r.supersedes_id for r in every if r.supersedes_id}
-    records = [r for r in every if r.outcome == VerificationOutcome.CONFIRMED]
-    best, checked_at = VerificationLevel.NOT_VERIFIED, None
-    for record in records:
-        level = VerificationLevel(record.level)
-        if record.pk not in superseded and _LEVEL_ORDER[level] > _LEVEL_ORDER[best]:
-            best, checked_at = level, record.checked_at
-    return str(best), checked_at
-
-
-def _apply_verification(opportunity: Opportunity, version: OpportunityVersion) -> None:
-    level, checked_at = effective_level(version)
-    opportunity.verification_level = level
-    opportunity.verification_checked_at = checked_at
 
 
 # --- T09-T12 lifecycle actions (one-person safety/housekeeping actions) -----------------------------
@@ -1019,64 +1023,37 @@ def _copy_version(opportunity: Opportunity, source: OpportunityVersion, actor: U
     return draft
 
 
-# --- V01 verification ---------------------------------------------------------------------------
-def record_verification(
-    actor: User,
-    opportunity_id: uuid.UUID | str,
-    *,
-    version_no: int,
-    level: str,
-    method: str,
-    outcome: str,
-    evidence_note: str,
-    supersedes_id: uuid.UUID | None = None,
-) -> VerificationRecord:
-    ctx = Context("V01", "verification.record", Permission.OPP_VERIFY_RECORD)
+# --- V02 / V03 verification switch (D-62) -----------------------------------------------------------
+def set_verification(actor: User, opportunity_id: uuid.UUID | str, *, verified: bool) -> Opportunity:
+    """Mark a listing Verified or Not Verified. One action, no note, no second person.
 
-    def body() -> VerificationRecord:
+    Verification is separate from publication (a listing can be live and unverified) and belongs to the
+    listing, not to a revision, so it does not change `row_version`: an editor with the draft open can
+    still save. The change is idempotent (asking for the state it already has writes nothing), applied
+    under the listing's lock, and recorded with who changed it and when (on the listing, in the
+    publishing history and in the audit log). The permission is checked here, whatever the interface showed.
+    """
+    code, action = ("V02", "opportunity.verified") if verified else ("V03", "opportunity.unverified")
+    ctx = Context(code, action, Permission.OPP_VERIFY_RECORD)
+
+    def body() -> Opportunity:
         _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, None)
-        try:
-            version = OpportunityVersion.objects.select_related("opportunity__category").get(
-                opportunity=opportunity, version_no=version_no
-            )
-        except OpportunityVersion.DoesNotExist:
-            raise NotFoundError() from None
-        _enforce(policy.can_verify(_actor(actor), _facts(version)))
-        errors: dict[str, list[tuple[str, str]]] = {}
-        if level not in _LEVEL_METHODS:
-            errors["level"] = [("invalid_choice", "Level must be source_checked or issuer_verified.")]
-        elif method not in _LEVEL_METHODS[VerificationLevel(level)]:
-            allowed = ", ".join(sorted(_LEVEL_METHODS[VerificationLevel(level)]))
-            errors["method"] = [("invalid_choice", f"This level needs method: {allowed}.")]
-        if outcome not in VerificationOutcome.values:
-            errors["outcome"] = [("invalid_choice", "Not a valid outcome.")]
-        note = (evidence_note or "").strip()
-        if not 20 <= len(note) <= 2000:
-            errors["evidence_note"] = [("too_short", "Describe the evidence in 20-2000 characters.")]
-        if errors:
-            raise ValidationFailed(errors)
-        superseded = None
-        if supersedes_id is not None:
-            superseded = VerificationRecord.objects.filter(pk=supersedes_id, version=version).first()
-            if superseded is None:
-                raise ValidationFailed({"supersedes_id": [("not_found_reference", "Unknown record.")]})
-        record = VerificationRecord.objects.create(
-            opportunity=opportunity,
-            version=version,
-            level=level,
-            method=method,
-            outcome=outcome,
-            evidence_note=note,
-            checked_by=actor,
-            supersedes=superseded,
+        if opportunity.is_verified == verified:
+            return opportunity
+        now = timezone.now()
+        opportunity.is_verified = verified
+        opportunity.verification_changed_by = actor
+        opportunity.verification_changed_at = now
+        # Keep the older level column in step: public queries and the content-health counts read it.
+        opportunity.verification_level = (
+            VerificationLevel.ISSUER_VERIFIED if verified else VerificationLevel.NOT_VERIFIED
         )
-        if opportunity.live_version_id == version.pk:
-            _apply_verification(opportunity, version)
-        _bump(opportunity)
-        before = opportunity.status
-        _record(ctx, actor, opportunity, version, before, extra={"level": level, "outcome": outcome})
-        return record
+        opportunity.verification_checked_at = now if verified else None
+        opportunity.save()  # no `_bump`: verification is not a content change
+        shown = opportunity.live_version or opportunity.pending_version
+        _record(ctx, actor, opportunity, shown, opportunity.status, extra={"verified": verified})
+        return opportunity
 
     return _run(ctx, actor, opportunity_id, body)
 
@@ -1156,17 +1133,16 @@ __all__ = [
     "chain_author_ids",
     "create_draft",
     "discard",
-    "effective_level",
     "expire",
     "expire_due",
     "publish",
     "publish_direct",
-    "record_verification",
     "refresh_search_vectors_for_organisation",
     "reject",
     "reopen",
     "return_approved",
     "save_draft",
+    "set_verification",
     "submit",
     "takedown",
     "withdraw",
