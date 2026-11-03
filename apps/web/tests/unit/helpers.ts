@@ -6,7 +6,7 @@ import tokens from "../../src/design/tokens.json";
 export const repoRoot = process.env.UPNEXT_REPO_ROOT ?? resolve(__dirname, "../../../..");
 export const readRepoFile = (rel: string) => readFileSync(resolve(repoRoot, rel), "utf8");
 
-export type TokenColor = { ref: string; prod?: string; dev?: string };
+export type TokenColor = { ref: string; prod?: string; dev?: string; dark: string };
 export const colors = tokens.colors as Record<string, TokenColor>;
 
 export function hexToRgb(hex: string): [number, number, number] {
@@ -42,4 +42,12 @@ export function ref(name: string): string {
   const token = colors[name];
   if (!token) throw new Error(`unknown token ${name}`);
   return token.ref;
+}
+
+/** Dark-theme colour for a token name ("white" is the literal #ffffff). */
+export function dark(name: string): string {
+  if (name === "white") return "#ffffff";
+  const token = colors[name];
+  if (!token) throw new Error(`unknown token ${name}`);
+  return token.dark;
 }

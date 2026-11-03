@@ -1,8 +1,8 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "block w-full min-h-field border border-control-border bg-surface px-[11px] py-[9px] text-base text-ink";
+  "block w-full rounded-control min-h-field border border-control-border bg-surface px-3 py-[10px] text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus aria-[invalid=true]:border-danger aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger";
 
 type FieldProps = {
   /** Required: every control has a visible label (placeholders are never labels). */
@@ -18,7 +18,7 @@ type FieldProps = {
 export function Field({ id, label, hint, error, className, children }: FieldProps) {
   return (
     <div className={cn("grid gap-[5px]", className)}>
-      <label htmlFor={id} className="text-small font-strong">
+      <label htmlFor={id} className="text-ctl font-medium text-check-text">
         {label}
       </label>
       {children}
@@ -28,7 +28,7 @@ export function Field({ id, label, hint, error, className, children }: FieldProp
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} role="alert" className="text-small text-urgent">
+        <p id={`${id}-error`} role="alert" className="text-small text-danger">
           <span className="font-strong">Error:</span> {error}
         </p>
       ) : null}
@@ -61,6 +61,19 @@ export function Select({ invalid, className, children, ...props }: SelectProps) 
     >
       {children}
     </select>
+  );
+}
+
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { id: string; invalid?: boolean };
+
+export function Textarea({ invalid, className, ...props }: TextareaProps) {
+  return (
+    <textarea
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? `${props.id}-error` : undefined}
+      className={cn(control, className)}
+      {...props}
+    />
   );
 }
 

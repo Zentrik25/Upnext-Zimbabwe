@@ -1,0 +1,29 @@
+{
+ "category": "graduate-programmes",
+ "organisation_id": "00000000-0000-4000-8000-000000000006",
+ "title": "Management Associate Programme",
+ "summary": "Entry-level management development programme; closing date and class requirement not stated in the notice.",
+ "description_md": "A structured entry-level programme. The notice did not give a closing date or minimum degree class.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a1",
+   "is_primary": true
+  }
+ ],
+ "employment_type": "trainee",
+ "application_method": "external_url",
+ "application_url": "https://associates.example.org/apply",
+ "sources": [
+  {
+   "kind": "aggregator",
+   "name": "Example jobs aggregator",
+   "url": "https://aggregator.example.org/listing/management-associate",
+   "citation": null,
+   "observed_on": "2026-10-14",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "minimum_degree_class": "not_stated"
+ }
+}

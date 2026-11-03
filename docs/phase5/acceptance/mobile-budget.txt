@@ -1,0 +1,5 @@
+[budget] /: LCP 464 ms, CLS 0.000, transfer 169 KiB, script 142 KiB
+[budget] /opportunities: LCP 464 ms, CLS 0.000, transfer 164 KiB, script 142 KiB
+[budget] /sign-in: LCP 496 ms, CLS 0.000, transfer 165 KiB, script 142 KiB
+[budget] /opportunities/consultancy-water-network-assessment-jq43g3: LCP 440 ms, CLS 0.000, transfer 161 KiB, script 142 KiB
+  4 passed (11.2s)

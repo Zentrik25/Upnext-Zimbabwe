@@ -38,7 +38,7 @@ export default function DesignSystemPage() {
     <Container className="pt-[22px] pb-[65px]">
       <h1 className="text-hero font-strong leading-hero tracking-hero">Design system</h1>
       <p className="mt-[7px] text-base text-muted">
-        Primitives built from the approved flat reference. Listings and organisations below are fictional.
+        Primitives built from the design system (D-39). Listings and organisations below are fictional.
       </p>
 
       <Section id="tokens" title="Accessibility-corrected tokens">
@@ -53,7 +53,7 @@ export default function DesignSystemPage() {
       </Section>
 
       <Section id="buttons" title="Buttons">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button data-testid="btn-primary">Create account</Button>
           <Button variant="secondary" data-testid="btn-secondary">
             Explore opportunities
@@ -98,9 +98,6 @@ export default function DesignSystemPage() {
             <option>Harare</option>
             <option>Bulawayo</option>
           </SearchGroup.Select>
-          <Button size="search" type="submit">
-            Find opportunities
-          </Button>
         </SearchGroup>
       </Section>
 

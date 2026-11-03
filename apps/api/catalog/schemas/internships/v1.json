@@ -1,0 +1,76 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://upnext.invalid/schemas/internships/v1",
+ "title": "Internships and attachments — detail",
+ "description": "Student placements, industrial attachments, internships and apprenticeships. DRAFT v1 — NOT APPROVED (OQ-06). Not the implementation location (apps/api is created in Phase 1/2).",
+ "x-status": "DRAFT",
+ "x-open": "OQ-06",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "placement_type": {
+   "enum": [
+    "industrial_attachment",
+    "internship",
+    "practicum",
+    "apprenticeship"
+   ]
+  },
+  "duration_months": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 36
+  },
+  "expected_start": {
+   "type": "string",
+   "format": "date"
+  },
+  "stipend_provided": {
+   "enum": [
+    "yes",
+    "no",
+    "not_stated"
+   ]
+  },
+  "eligible_study_levels": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "certificate",
+     "diploma",
+     "bachelors_degree",
+     "honours_degree",
+     "masters_degree"
+    ]
+   },
+   "minItems": 0,
+   "maxItems": 5,
+   "uniqueItems": true
+  },
+  "requires_current_enrolment": {
+   "type": "boolean"
+  },
+  "institution_letter_required": {
+   "type": "boolean"
+  },
+  "vacancies": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 1000
+  },
+  "application_documents": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  }
+ },
+ "required": [
+  "placement_type"
+ ]
+}

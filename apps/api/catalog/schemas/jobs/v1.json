@@ -1,0 +1,88 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://upnext.invalid/schemas/jobs/v1",
+ "title": "Jobs — detail",
+ "description": "Category-specific attributes for permanent, contract, temporary and part-time vacancies. DRAFT v1 — NOT APPROVED (OQ-06). Not the implementation location (apps/api is created in Phase 1/2).",
+ "x-status": "DRAFT",
+ "x-open": "OQ-06",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "vacancies": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 1000
+  },
+  "contract_duration_months": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 120
+  },
+  "minimum_qualification": {
+   "enum": [
+    "o_level",
+    "a_level",
+    "certificate",
+    "diploma",
+    "bachelors_degree",
+    "honours_degree",
+    "masters_degree",
+    "doctorate",
+    "professional_qualification",
+    "not_stated"
+   ]
+  },
+  "minimum_experience_years": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 40
+  },
+  "professional_registration": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 120
+   },
+   "minItems": 0,
+   "maxItems": 5,
+   "uniqueItems": true
+  },
+  "languages_required": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "^[a-z]{2,3}$"
+   },
+   "minItems": 0,
+   "maxItems": 6,
+   "uniqueItems": true
+  },
+  "driving_licence_required": {
+   "type": "boolean"
+  },
+  "benefits": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 80
+   },
+   "minItems": 0,
+   "maxItems": 15,
+   "uniqueItems": true
+  },
+  "application_documents": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  }
+ },
+ "required": []
+}

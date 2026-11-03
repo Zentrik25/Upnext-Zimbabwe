@@ -30,19 +30,28 @@ class Permission(StrEnum):
     OPP_REVIEW_REJECT = "opp.review.reject"
     OPP_REVIEW_RETURN = "opp.review.return"
     OPP_VERIFY_RECORD = "opp.verify.record"
+    ANALYTICS_READ = "analytics.read"
     OPP_PUBLISH = "opp.publish"
+    OPP_PUBLISH_DIRECT = "opp.publish_direct"
     OPP_SCHEDULE = "opp.schedule"
     OPP_TAKEDOWN = "opp.takedown"
     OPP_WITHDRAW = "opp.withdraw"
+    OPP_WITHDRAW_OWN = "opp.withdraw_own"
     OPP_EXPIRE = "opp.expire"
     OPP_ARCHIVE = "opp.archive"
     ORG_CREATE = "org.create"
     ORG_EDIT = "org.edit"
+    EMPLOYER_REVIEW = "employer.review"
+    EMPLOYER_VERIFICATION_REVOKE = "employer.verification.revoke"
     TAXONOMY_MANAGE = "taxonomy.manage"
     USER_ROLE_GRANT = "user.role.grant"
     USER_ROLE_REVOKE = "user.role.revoke"
     USER_STATUS_CHANGE = "user.status.change"
     AUDIT_READ_ALL = "audit.read_all"
+    REPORT_READ = "report.read"
+    REPORT_TRIAGE = "report.triage"
+    REPORT_RESOLVE = "report.resolve"
+    REPORT_RESOLVE_ESCALATED = "report.resolve_escalated"
     SETTINGS_MANAGE = "settings.manage"
     ME_PROFILE = "me.profile"
     ME_SAVED = "me.saved"
@@ -57,12 +66,22 @@ PUBLIC_PERMISSIONS: frozenset[str] = frozenset({P.OPP_READ_PUBLIC})
 # Held by every authenticated, active account (seekers and staff alike).
 ACCOUNT_PERMISSIONS: frozenset[str] = frozenset({P.ME_PROFILE, P.ME_SAVED, P.ME_SESSIONS, P.ME_DELETE})
 
+# Editors and Administrators write their own listings (D-46) and may publish a staff-created listing without a
+# second person's approval (`opp.publish_direct`); employer-submitted listings never qualify (see
+# workflow.publish_direct).
 _EDITOR_CODES = frozenset(
     {
+        P.OPP_DRAFT_CREATE,
+        P.OPP_DRAFT_EDIT_OWN,
+        P.OPP_SUBMIT,
+        P.OPP_DISCARD_OWN,
+        P.OPP_AMEND,
+        P.OPP_PUBLISH_DIRECT,
         P.OPP_REVIEW_APPROVE,
         P.OPP_REVIEW_REJECT,
         P.OPP_REVIEW_RETURN,
         P.OPP_VERIFY_RECORD,
+        P.ANALYTICS_READ,
         P.OPP_PUBLISH,
         P.OPP_SCHEDULE,
         P.OPP_TAKEDOWN,
@@ -71,8 +90,28 @@ _EDITOR_CODES = frozenset(
         P.OPP_ARCHIVE,
         P.ORG_CREATE,
         P.ORG_EDIT,
+        P.EMPLOYER_REVIEW,
+        P.REPORT_READ,
+        P.REPORT_TRIAGE,
+        P.REPORT_RESOLVE,
     }
 )
+
+# What a verified employer's member may do through the publishing service (Phase 6A, D-35). This is *not* a
+# staff role: it is not in DEFAULT_REGISTRY, grants no admin access, and holds only author actions. Review,
+# verification and publication codes are deliberately absent (D-18, D-22); a test pins that.
+EMPLOYER_AUTHOR_PERMISSIONS: frozenset[str] = frozenset(
+    {
+        P.OPP_DRAFT_CREATE,
+        P.OPP_DRAFT_EDIT_OWN,
+        P.OPP_SUBMIT,
+        P.OPP_DISCARD_OWN,
+        P.OPP_AMEND,
+        P.OPP_WITHDRAW_OWN,
+    }
+)
+# Categories an employer may post in (they are issuers of vacancies and placements).
+EMPLOYER_CATEGORIES: frozenset[str] = frozenset({"jobs", "internships", "graduate-programmes"})
 
 _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
     {
@@ -96,6 +135,8 @@ _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
                 P.USER_STATUS_CHANGE,
                 P.AUDIT_READ_ALL,
                 P.SETTINGS_MANAGE,
+                P.EMPLOYER_VERIFICATION_REVOKE,
+                P.REPORT_RESOLVE_ESCALATED,
             }
         ),
     }

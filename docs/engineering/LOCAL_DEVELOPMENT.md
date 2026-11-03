@@ -20,7 +20,7 @@ Open **http://localhost:8080/** (home page, shows live API status) and **http://
 
 Stop with `docker compose down` (keep data) or `docker compose down -v` (delete the database volume).
 
-If your source files are not owned by uid 1000, set `UPNEXT_UID` / `UPNEXT_GID` in `.env` to your own ids (Next.js dev rewrites `tsconfig.json` and `next-env.d.ts` in the bind-mounted source). If your network intercepts TLS, set `UPNEXT_CA_BUNDLE=/path/to/ca.pem` in `.env`; it is mounted as a build-time secret only.
+If your source files are not owned by uid 1000, set `UPNEXT_UID` / `UPNEXT_GID` in `.env` to your own ids (Next.js dev rewrites `tsconfig.json` and `next-env.d.ts` in the bind-mounted source). If your network intercepts TLS, set `COMPOSE_FILE=compose.yaml:compose.ca-bundle.yaml` and `UPNEXT_CA_BUNDLE=/path/to/ca.pem` in `.env`; the bundle is mounted as a build-time secret only. It is a separate override because a default secret path (`/dev/null`) makes Compose's Bake builder demand `--allow=fs.read=/dev/null` and fails CI.
 
 ## 2. Database and migrations
 Migrations are applied automatically when the `api` container starts in development (`UPNEXT_RUN_MIGRATIONS=1`). Manually:
@@ -34,7 +34,8 @@ The custom user model (`accounts.User`, uuid primary key, `citext` e-mail) is cr
 
 Create a development staff account (bootstrap only; real role management arrives in Phase 2):
 ```bash
-docker compose exec -e UPNEXT_BOOTSTRAP_PASSWORD='choose-a-long-password' api \
+read -rs UPNEXT_BOOTSTRAP_PASSWORD && export UPNEXT_BOOTSTRAP_PASSWORD   # type a long password; it is not echoed
+docker compose exec -e UPNEXT_BOOTSTRAP_PASSWORD api \
   python manage.py create_staff_user --email you@example.org --display-name "You" --role administrator
 ```
 
@@ -90,7 +91,36 @@ bash tools/scan-secrets.sh                                                      
 Production settings **refuse to start** with a short or default secret key, an empty host list, or insecure cookies.
 
 ## 5. How the pieces fit
-`browser → proxy (Nginx, local only) → web (Next.js, /) | api (Django/DRF, /api/, /health/, /staff/, /static/) → db (PostgreSQL)`. The web app calls the API server-side over the internal network; the browser only ever talks to the single origin (cookie sessions, CSRF header, no CORS). Logs are JSON on stdout with a request id and no credentials, e-mail addresses or query strings.
+`browser → proxy (Nginx, local only) → web (Next.js, /) | api (Django/DRF, /api/, /health/, /static/) → db (PostgreSQL)`. The web app calls the API server-side over the internal network; the browser only ever talks to the single origin (cookie sessions, CSRF header, no CORS). Logs are JSON on stdout with a request id and no credentials, e-mail addresses or query strings.
 
 ## 6. What is not here yet
 Registration/verification/reset flows, the opportunity workflow and CMS, search, matching, notifications, deployment. See `docs/phase1/PHASE1_SCOPE_AND_GATES.md`.
+
+
+## 5. Running and trying the editorial CMS (Phase 2)
+
+```bash
+cd infrastructure/compose
+docker compose up --build            # as in §1
+docker compose exec api python manage.py seed_demo --force   # fictional demo data, development only
+```
+
+`seed_demo` creates four staff accounts (`contributor@`, `editor@`, `second-editor@`, `admin@demo.upnext.example`) with **random passwords printed once** (never stored in the repository), 12 published fictional listings covering all six categories and four non-public items (draft, in review, approved, rejected). Open `http://localhost:8080/workspace`, sign in with an e-mail address and the printed password, then enter the two-step code (`manage.py demo_totp_code --email …` on a demo stack).
+
+Try the workflow: sign in as the Contributor, **Listings → Add**, choose a category and organisation, fill in the draft (including a source), **Submit for review**; sign in as the Editor, open **Listings** and filter *Awaiting my review*, **Approve** it; the Contributor-only author cannot publish, the Editor can. A person who holds both Contributor and Editor roles can publish their own listing only after someone else approved it, and can never approve it. Everything is recorded under **Audit events** (Administrator) and in each listing's history.
+
+Role changes (audited, command line): `docker compose exec api python manage.py manage_staff_role grant --email someone@example.org --role editor --reason "Joins the editorial team" --by admin@demo.upnext.example`.
+
+Public pages: `http://localhost:8080/opportunities`. Backend tests need PostgreSQL and `DJANGO_SETTINGS_MODULE=config.settings.test` (CI sets it; inside the dev container pass `-e DJANGO_SETTINGS_MODULE=config.settings.test`): `docker compose exec -e DJANGO_SETTINGS_MODULE=config.settings.test api pytest`. Browser tests against the seeded stack: `E2E_DEMO_DATA=1 BASE_URL=http://localhost:8080 npm run test:e2e` in `apps/web`.
+
+## Browser tests that need mail or staff codes (Phase 3)
+The seeker and staff journeys read the e-mail spool and demo two-step codes by running `manage.py` in the `worker` container. Point `E2E_EXEC` at it and enable the journeys:
+
+```
+export E2E_EXEC="docker compose -p upnext-dev -f infrastructure/compose/compose.yaml exec -T worker python manage.py"
+cd apps/web
+E2E_ACCOUNTS=1 npx playwright test tests/e2e/accounts-journey.spec.ts
+E2E_CMS=1 E2E_DEMO_PASSWORD=<the UPNEXT_DEMO_PASSWORD used with seed_demo> npx playwright test tests/e2e/cms-journey.spec.ts
+```
+
+The dev and prod-like stacks spool mail to files (`UPNEXT_EMAIL_BACKEND=file`), enable `UPNEXT_DEMO_TOOLS=1` and loosen the public-endpoint limits; none of that is for production. Staff two-step verification is on by default; `seed_demo` enrols the fictional staff accounts so tests can sign in.

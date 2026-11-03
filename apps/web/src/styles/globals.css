@@ -4,6 +4,10 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+    /* The header is sticky and wraps to 78px at 320px: keep in-page targets (#apply, #main, any URL fragment)
+       clear of it (WCAG 2.2 SC 2.4.11). */
+    scroll-padding-top: 5.5rem;
   }
   body {
     margin: 0;
@@ -11,14 +15,18 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: var(--text-base);
+    font-weight: var(--font-weight-light);
+    font-feature-settings: "ss01" 1;
     line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
   }
-  /* Flat design guard (D-08): nothing is ever rounded or shadowed. */
-  *,
-  ::before,
-  ::after {
-    border-radius: 0;
-    box-shadow: none;
+  /* Design system (D-39): radii and shadows come only from tokens (rounded-control/card/feature, shadow-*).
+     Form controls and buttons share the 4px control radius. */
+  button,
+  input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="file"]),
+  select,
+  textarea {
+    border-radius: var(--radius-control);
   }
   h1,
   h2,
@@ -26,9 +34,29 @@
   p {
     margin: 0;
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: var(--leading-title);
+  }
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink);
+    font-weight: var(--font-weight-light);
+  }
+  button,
+  a {
+    transition:
+      background-color 0.15s,
+      color 0.15s,
+      border-color 0.15s;
+  }
   button,
   input,
-  select {
+  select,
+  textarea {
     font: inherit;
   }
   button {
@@ -39,9 +67,35 @@
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
+  /* Checkboxes and radios are 24px squares so every one meets the WCAG 2.2 target size (SC 2.5.8) on its own,
+     whatever its neighbours or wrapping do. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
   ::placeholder {
-    color: #757575; /* browser default, 4.6:1 on white — set explicitly so it can never regress */
+    color: var(--color-muted);
     opacity: 1;
+  }
+}
+
+/* Loading placeholders: one slow opacity pulse on the whole region (compositor only, no layout, no colour change).
+   Only for people who have not asked for reduced motion; everyone else sees a still placeholder. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
   }
 }
 
@@ -52,5 +106,91 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Staff console surfaces (D-46): a pale canvas with white cards in light, the preview-dark surface with raised
+   cards in dark. Both come from the design tokens; nothing here is a new colour. */
+:root {
+  --staff-canvas: var(--color-surface-pale);
+  --staff-card: var(--color-surface);
+}
+:root[data-theme="dark"] {
+  --staff-canvas: var(--color-surface);
+  --staff-card: var(--color-surface-pale);
+}
+
+/* On the black footer and employer band the dark focus colour would vanish: use white there (WCAG 2.4.7, 1.4.11). */
+.bg-brand-dark :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Stripe design system (D-45): weight 300 is the headline voice. Utility classes such as `font-strong` (weight 400,
+   for labels and links) must not thicken a heading, so this rule is deliberately outside the layers. */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--font-weight-light);
+}
+
+/* No link is underlined anywhere (owner instruction 2026-10-29, D-47). Unlayered on purpose: it must win over the
+   `underline` utilities used on individual links. Links stay recognisable by colour and weight, and keep the focus
+   ring; inline links in running text use the heavier weight (below) so they do not rely on colour alone. */
+a,
+a:hover,
+a:focus-visible {
+  text-decoration: none;
+}
+
+/* Inline links in running text (weight 300) are set heavier (400) so they are not told apart by colour alone
+   (WCAG 1.4.1, axe link-in-text-block). Headings, tiles and navigation keep their own weights. */
+p a,
+li a,
+dd a {
+  font-weight: 400;
+}
+
+/* Home page headlines (owner instruction 2026-10-29, D-47): bold Inter. Outside the layers on purpose, like the
+   heading rule above, so it wins over the light-weight heading default. */
+.font-headline {
+  font-family: var(--font-inter-bold), var(--font-sans);
+  font-weight: 700;
+}
+
+/* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */
+.tnum {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The listing page on a phone (owner reference, D-63): a navy header with a white logo and the search, alerts and
+   menu icons, and bold headings on this page only. The weight-300 heading rule above stays for every other page. */
+[data-job-page] :is(h1, h2) {
+  font-weight: 700;
+}
+[data-job-page] [data-bold] {
+  font-weight: 700;
+}
+@media (max-width: 650px) {
+  body:has([data-job-page]) .site-header {
+    background: #061b31; /* the reference's deep navy, in both themes (the ink token turns light in dark) */
+    border-color: #061b31;
+    color: var(--color-on-accent);
+    backdrop-filter: none;
+  }
+  body:has([data-job-page]) .site-header .text-logo {
+    color: var(--color-on-accent);
+  }
+  body:has([data-job-page]) .site-header .job-header-icons {
+    display: flex;
+  }
+  body:has([data-job-page]) .site-header button[aria-controls="mobile-menu"] {
+    background: transparent;
+    color: var(--color-on-accent);
+  }
+  body:has([data-job-page]) .site-header a:focus-visible,
+  body:has([data-job-page]) .site-header button:focus-visible {
+    outline-color: var(--color-on-accent);
   }
 }
