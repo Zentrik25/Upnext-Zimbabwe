@@ -687,5 +687,7 @@ class ListingEventView(APIView):
                 400,
                 {"type": [{"code": "invalid_choice", "message": "view or apply"}]},
             )
+        if analytics.is_automated(request.headers):  # crawlers, previews and prefetches are not readers
+            return Response(status=status.HTTP_204_NO_CONTENT)
         analytics.record(slug.lower(), kind)  # unknown or closed listings are ignored silently
         return Response(status=status.HTTP_204_NO_CONTENT)

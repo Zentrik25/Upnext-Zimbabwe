@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { Button, Select } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { apiFetch, describeFailure, type FieldErrors } from "@/lib/client-api";
 import { COUNTRY_CODES, toE164 } from "@/lib/phone";
 import { GoogleButton, OrDivider } from "./google-button";
-import { IconField } from "./auth-parts";
+import { AUTH_CONTROL, AuthField, AuthSwitch } from "./auth-parts";
 import { FormError, FormSuccess } from "./parts";
 import { ResendVerification } from "./resend-verification";
 
@@ -52,7 +52,7 @@ export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolea
 
   if (done) {
     return (
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <FormSuccess>
           <p className="font-strong">Check your e-mail</p>
           <p className="mt-1">
@@ -61,9 +61,9 @@ export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolea
           </p>
         </FormSuccess>
         <ResendVerification email={done} />
-        <p className="text-ctl">
+        <AuthSwitch>
           Already confirmed? <Link href="/sign-in">Sign in</Link>
-        </p>
+        </AuthSwitch>
       </div>
     );
   }
@@ -71,48 +71,52 @@ export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolea
   const phoneError = errors.phone_number?.[0];
   const termsError = errors.accept_terms?.[0];
   return (
-    <form onSubmit={submit} className="grid gap-4" noValidate>
+    <form onSubmit={submit} className="grid gap-2 sm:gap-3" noValidate>
       {failure ? <FormError>{failure}</FormError> : null}
-      <IconField
+      <GoogleButton enabled={googleEnabled} />
+      <OrDivider label="Or sign up with" />
+      <AuthField
         id="display_name"
         name="display_name"
         label="Full name"
-        icon="user"
-        placeholder="Enter your full name"
         error={errors.display_name?.[0]}
         autoComplete="name"
         required
         maxLength={80}
       />
-      <IconField
+      <AuthField
         id="email"
         name="email"
         label="E-mail address"
-        icon="mail"
         type="email"
-        placeholder="you@example.com"
         error={errors.email?.[0]}
         autoComplete="email"
         required
         maxLength={254}
       />
 
-      <div className="grid gap-[5px]">
+      <div className="grid gap-1">
         <label htmlFor="phone" className="text-ctl font-medium text-check-text">
           Phone number
         </label>
-        <div className="grid grid-cols-[minmax(0,150px)_1fr] gap-2 max-sm:grid-cols-[minmax(0,128px)_1fr]">
+        <div className="grid grid-cols-[minmax(0,152px)_1fr] gap-2">
           <div>
             <label htmlFor="country_code" className="sr-only">
               Country code
             </label>
-            <Select id="country_code" name="country_code" defaultValue="+263" autoComplete="tel-country-code">
+            <select
+              id="country_code"
+              name="country_code"
+              defaultValue="+263"
+              autoComplete="tel-country-code"
+              className={AUTH_CONTROL}
+            >
               {COUNTRY_CODES.map((c) => (
                 <option key={c.code + c.label} value={c.code}>
                   {c.label}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
           <input
             id="phone"
@@ -124,63 +128,65 @@ export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolea
             required
             maxLength={20}
             aria-invalid={phoneError ? true : undefined}
-            aria-describedby={phoneError ? "phone-error" : "phone-hint"}
-            className="block min-h-field w-full rounded-control border border-control-border bg-surface px-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-1 focus-visible:ring-focus aria-[invalid=true]:border-danger aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger"
+            aria-describedby={phoneError ? "phone-error" : undefined}
+            className={AUTH_CONTROL}
           />
         </div>
         {phoneError ? (
           <p id="phone-error" role="alert" className="text-small text-danger">
             <span className="font-strong">Error:</span> {phoneError}
           </p>
-        ) : (
-          <p id="phone-hint" className="text-small text-muted">
-            Choose your country code and enter the number without it.
-          </p>
-        )}
+        ) : null}
       </div>
 
-      <IconField
-        id="password"
-        name="password"
-        label="Password"
-        icon="lock"
-        type="password"
-        reveal
-        placeholder="Create a strong password"
-        hint="At least 10 characters. Choose something not easy to guess; a few unrelated words work well."
-        error={errors.password?.[0]}
-        autoComplete="new-password"
-        required
-        minLength={10}
-        maxLength={128}
-      />
-      <IconField
-        id="confirm_password"
-        name="confirm_password"
-        label="Confirm password"
-        icon="lock"
-        type="password"
-        reveal
-        placeholder="Confirm your password"
-        error={errors.confirm_password?.[0]}
-        autoComplete="new-password"
-        required
-        maxLength={128}
-      />
+      <div className="grid gap-1">
+        <div className="grid grid-cols-2 gap-2">
+          <AuthField
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            reveal
+            aria-describedby={errors.password?.[0] ? "password-error" : "password-hint"}
+            error={errors.password?.[0]}
+            autoComplete="new-password"
+            required
+            minLength={10}
+            maxLength={128}
+          />
+          <AuthField
+            id="confirm_password"
+            name="confirm_password"
+            label="Confirm password"
+            type="password"
+            reveal
+            error={errors.confirm_password?.[0]}
+            autoComplete="new-password"
+            required
+            maxLength={128}
+          />
+        </div>
+        <p id="password-hint" className="text-small text-muted">
+          At least 10 characters. Unrelated words work well.
+        </p>
+      </div>
 
       <div className="grid gap-1">
-        <label htmlFor="accept_terms" className="flex items-start gap-3 text-ctl text-check-text">
+        <label htmlFor="accept_terms" className="flex items-start gap-2.5 text-ctl text-check-text">
           <input
             id="accept_terms"
             name="accept_terms"
             type="checkbox"
-            className="mt-0.5 accent-accent"
+            className="accent-accent"
             aria-invalid={termsError ? true : undefined}
             aria-describedby={termsError ? "terms-error" : undefined}
           />
-          <span>
+          <span data-testid="legal-notice">
             I agree to the <Link href="/terms">Terms of Service</Link> and{" "}
-            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/privacy">Privacy Policy</Link>.{" "}
+            <span className="block text-micro leading-snug text-muted sm:text-small">
+              We record when you agree and to which version. This does not sign you up for any e-mail alerts.
+            </span>
           </span>
         </label>
         {termsError ? (
@@ -190,19 +196,12 @@ export function RegisterForm({ googleEnabled = false }: { googleEnabled?: boolea
         ) : null}
       </div>
 
-      <Button type="submit" disabled={busy} className="min-h-field">
+      <Button type="submit" disabled={busy} className="sm:min-h-field">
         {busy ? "Creating account…" : "Create account"}
       </Button>
-      <p className="text-small text-muted" data-testid="legal-notice">
-        Read the <Link href="/terms">Terms of Service</Link> and the{" "}
-        <Link href="/privacy">Privacy Policy</Link>. We record when you agree and to which version. This does
-        not sign you up for any e-mail alerts.
-      </p>
-      <OrDivider />
-      <GoogleButton enabled={googleEnabled} />
-      <p className="text-center text-ctl">
-        Already have an account? <Link href="/sign-in">Log in</Link>
-      </p>
+      <AuthSwitch>
+        Already have an account? <Link href="/sign-in">Sign in</Link>
+      </AuthSwitch>
     </form>
   );
 }

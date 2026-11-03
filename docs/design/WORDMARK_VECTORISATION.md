@@ -20,7 +20,7 @@ If only raster exists, the owner decides: commission the designer to deliver vec
 - Single source: replace the typeset-outline step in `tools/brand/build_assets.py` with reading the supplied vector, so assets stay reproducible; update `tools/brand/` README and `BRAND_GUIDELINES.md` open point 1.
 - Accessibility: the logo link keeps an accessible name "UPNEXT Careers"; decorative copies are `aria-hidden`; text alternative in Open Graph images stays in metadata.
 - Layout: header and footer lockups must not shift (set explicit width/height); check mobile at 320 px and the 24 px minimum monogram.
-- E-mail: HTML bodies currently carry no images; adding a logo to e-mail is a separate decision (no remote images/tracking).
+- E-mail: decided in D-55: the white lockup is rendered to `apps/web/public/brand/email/upnext-email-logo.png` (`tools/brand/render_email_assets.mjs`) and shown in the e-mail header from the site's own origin; no remote or tracking images.
 
 ## 3. Acceptance checks
 

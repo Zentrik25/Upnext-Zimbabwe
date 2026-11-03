@@ -58,3 +58,33 @@ export function timeInputValue(iso: string | null, timezone: string | null): str
 export function harareToIso(date: string, time: string): string {
   return `${date}T${time ? `${time}:00` : "23:59:59"}+02:00`;
 }
+
+const HARARE = "Africa/Harare";
+
+/** "1 Nov" for a day bucket, "1 Nov, 14:00" for an hour bucket, "Nov 2026" for a month. Always Harare time. */
+export function bucketLabel(iso: string, bucket: "hour" | "day" | "week" | "month"): string {
+  const at = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso);
+  const zone = iso.length === 10 ? "UTC" : HARARE; // a month bucket is a plain date
+  if (bucket === "hour")
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: zone,
+    }).format(at);
+  if (bucket === "month")
+    return new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: zone }).format(at);
+  const text = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: zone }).format(
+    at,
+  );
+  return bucket === "week" ? `Week of ${text}` : text;
+}
+
+/** A count with thousands separators ("12 480"); never an invented figure: null shows a dash. */
+export const count = (n: number | null | undefined): string =>
+  n === null || n === undefined ? "-" : new Intl.NumberFormat("en-GB").format(n);
+
+/** Click-through rate as a percentage; "-" when there were no views to divide by. */
+export const percent = (rate: number | null | undefined): string =>
+  rate === null || rate === undefined ? "-" : `${(rate * 100).toFixed(rate >= 0.1 ? 0 : 1)}%`;

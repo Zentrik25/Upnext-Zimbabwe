@@ -89,6 +89,12 @@ class SummaryOrganisationSerializer(serializers.Serializer[None]):
     profile_slug = serializers.CharField(allow_null=True, required=False)  # detail only (Phase 6A)
 
 
+class ImageSerializer(serializers.Serializer[None]):
+    featured = serializers.URLField(allow_null=True)
+    social = serializers.URLField(allow_null=True)
+    alt = serializers.CharField(allow_null=True)
+
+
 class OpportunitySummarySerializer(serializers.Serializer[None]):
     id = serializers.UUIDField()
     slug = serializers.CharField()
@@ -101,8 +107,11 @@ class OpportunitySummarySerializer(serializers.Serializer[None]):
     employment_type = serializers.ChoiceField(choices=EmploymentType.values, allow_null=True)
     deadline = DeadlineSerializer()
     salary = MoneySerializer(allow_null=True)
+    salary_text = serializers.CharField(allow_null=True)
+    location_text = serializers.CharField(allow_null=True)
     verification = VerificationSerializer()
     primary_source_name = serializers.CharField(allow_null=True)
+    image = ImageSerializer(allow_null=True)
     status = serializers.ChoiceField(choices=["published", "expired", "withdrawn"])
     published_at = serializers.DateTimeField()
     is_saved = serializers.BooleanField(allow_null=True)
@@ -112,7 +121,15 @@ class ApplicationSerializer(serializers.Serializer[None]):
     method = serializers.ChoiceField(choices=ApplicationMethod.values)
     url = serializers.CharField(allow_null=True)
     email = serializers.EmailField(allow_null=True)
+    email_subject = serializers.CharField(allow_null=True)
     instructions = serializers.CharField(allow_null=True)
+
+
+class SeoSerializer(serializers.Serializer[None]):
+    title = serializers.CharField(allow_null=True)
+    description = serializers.CharField(allow_null=True)
+    og_title = serializers.CharField(allow_null=True)
+    og_description = serializers.CharField(allow_null=True)
 
 
 class DetailSkillSerializer(serializers.Serializer[None]):
@@ -124,7 +141,6 @@ class OpportunityDetailSerializer(OpportunitySummarySerializer):
     description_html = serializers.CharField()
     requirements_html = serializers.CharField(allow_null=True)
     geographic_eligibility = serializers.CharField(allow_null=True)
-    location_text = serializers.CharField(allow_null=True)
     experience_level = serializers.ChoiceField(choices=ExperienceLevel.values, allow_null=True)
     funding = MoneySerializer(allow_null=True)
     skills = DetailSkillSerializer(many=True)
@@ -135,6 +151,7 @@ class OpportunityDetailSerializer(OpportunitySummarySerializer):
     sources = SourceSerializer(many=True)
     detail = serializers.DictField()
     detail_schema_version = serializers.IntegerField()
+    seo = SeoSerializer()
     canonical_path = serializers.CharField()
     updated_at = serializers.DateTimeField()
 

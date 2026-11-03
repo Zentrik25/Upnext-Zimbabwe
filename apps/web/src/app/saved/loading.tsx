@@ -1,13 +1,12 @@
-import { Container } from "@/components/layout";
-import { LoadingRegion, SkeletonListingRows, SkeletonPageHeading } from "@/components/ui";
+import { SeekerListLoading } from "@/components/ui/page-skeletons";
 
 export default function Loading() {
   return (
-    <Container className="py-8">
-      <LoadingRegion label="your saved opportunities">
-        <SkeletonPageHeading />
-        <SkeletonListingRows count={5} />
-      </LoadingRegion>
-    </Container>
+    <SeekerListLoading
+      current="saved"
+      label="your saved opportunities"
+      intro="h-[67px] sm:h-[22px]"
+      rows={3}
+    />
   );
 }

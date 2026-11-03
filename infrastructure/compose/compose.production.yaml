@@ -29,7 +29,12 @@ x-api-env: &api-env
   UPNEXT_THROTTLE_PEPPER: ${UPNEXT_THROTTLE_PEPPER:?}
   UPNEXT_ENVIRONMENT: production
   UPNEXT_PUBLIC_BASE_URL: https://upnext.co.zw
-  DJANGO_ALLOWED_HOSTS: upnext.co.zw
+  # Uploaded listing images (D-58) live on the persistent `media` volume, never in a container's own layer.
+  UPNEXT_MEDIA_ROOT: /srv/media
+  # The public host, plus `api`: the web container reads the API over the internal network as http://api:8000, so its
+  # Host header is `api:8000`. Without it Django answers every one of those server-side reads with 400. The edge still
+  # serves, and rewrites the Host to, upnext.co.zw only.
+  DJANGO_ALLOWED_HOSTS: upnext.co.zw,api
   DJANGO_CSRF_TRUSTED_ORIGINS: https://upnext.co.zw
   DJANGO_HSTS_SECONDS: "31536000"
   DJANGO_SSL_REDIRECT: "false" # TLS and the http->https redirect belong to the edge
@@ -40,7 +45,8 @@ x-api-env: &api-env
   UPNEXT_BRAND_DOMAIN: upnext.co.zw
   UPNEXT_OFFICIAL_EMAIL: info@upnext.co.zw
   UPNEXT_SUPPORT_EMAIL: info@upnext.co.zw
-  UPNEXT_EMAIL_FROM: UPNEXT Careers <info@upnext.co.zw>
+  # Send-only sender (D-52): no mailbox exists at noreply@; people who reply reach info@ through Reply-To.
+  UPNEXT_EMAIL_FROM: UPNEXT Careers <noreply@upnext.co.zw>
   UPNEXT_EMAIL_REPLY_TO: info@upnext.co.zw
   # Sending stays off until B-01 is closed AND the owner approves; then set to smtp with the UPNEXT_SMTP_* values.
   UPNEXT_EMAIL_BACKEND: ${UPNEXT_EMAIL_BACKEND:-none}
@@ -50,6 +56,10 @@ x-api-env: &api-env
   UPNEXT_SMTP_USER: ${UPNEXT_SMTP_USER:-}
   UPNEXT_SMTP_PASSWORD: ${UPNEXT_SMTP_PASSWORD:-}
   UPNEXT_RESEND_WEBHOOK_SECRET: ${UPNEXT_RESEND_WEBHOOK_SECRET:-}
+  # Sign in with Google (D-50): the button stays disabled until both are set. Redirect URI to register with Google:
+  # https://upnext.co.zw/api/v1/auth/google/callback
+  UPNEXT_GOOGLE_CLIENT_ID: ${UPNEXT_GOOGLE_CLIENT_ID:-}
+  UPNEXT_GOOGLE_CLIENT_SECRET: ${UPNEXT_GOOGLE_CLIENT_SECRET:-}
   UPNEXT_ALERT_WEBHOOK_URL: ${UPNEXT_ALERT_WEBHOOK_URL:-}
   UPNEXT_ALERT_CERT_HOST: upnext.co.zw:443
   UPNEXT_BACKUP_EXPECTED: ${UPNEXT_BACKUP_EXPECTED:-1}
@@ -109,6 +119,8 @@ services:
     environment: *api-env
     user: "10001:10001"
     networks: [data, app]
+    volumes:
+      - media:/srv/media
     depends_on:
       db: {condition: service_healthy}
     # ALLOWED_HOSTS is the one public host, so the probe must present it (the image's own HEALTHCHECK does not).
@@ -130,6 +142,8 @@ services:
       <<: *api-env
       UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat
     user: "10001:10001"
+    volumes:
+      - media:/srv/media # the housekeeping sweep of unattached uploads (D-58)
     networks: [data, egress] # egress: the mail provider and the alert webhook, once enabled
     depends_on:
       api: {condition: service_healthy}
@@ -172,6 +186,7 @@ services:
       - "127.0.0.1:${UPNEXT_PROXY_PORT:-8090}:80" # loopback only
     volumes:
       - ./nginx.production.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - media:/srv/media:ro
     networks: [app]
     depends_on:
       web: {condition: service_started}
@@ -226,3 +241,5 @@ volumes:
     name: upnext-prod-pgdata
   backups:
     name: upnext-prod-backups
+  media: # uploaded listing images (D-58); NOT yet part of the database backup (B-07)
+    name: upnext-prod-media

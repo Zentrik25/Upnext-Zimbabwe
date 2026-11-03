@@ -296,7 +296,8 @@ def http_findings(
     pages = {
         "web": base_url.rstrip("/") + "/",
         "api": base_url.rstrip("/") + "/api/v1/opportunities?limit=1",
-        "staff": base_url.rstrip("/") + "/staff/sign-in",
+        # Staff sign in on the same page as everyone else (D-49); /staff no longer exists.
+        "sign-in": base_url.rstrip("/") + "/sign-in",
     }
     for label, url in pages.items():
         try:

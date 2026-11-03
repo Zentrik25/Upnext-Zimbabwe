@@ -20,7 +20,7 @@ async function openFirst(page: Page, title: string) {
 test.describe("browse and search", () => {
   test("lists only public opportunities and names the count", async ({ page }) => {
     await page.goto("/opportunities");
-    await expect(page).toHaveTitle(/Opportunities \| UPNEXT Careers/);
+    await expect(page).toHaveTitle(/^Latest Jobs & Opportunities in Zimbabwe \| UPNEXT Careers$/);
     await expect(page.getByRole("heading", { level: 1, name: "Opportunities" })).toBeVisible();
     await expect(page.getByTestId("result-count")).toHaveText("12 opportunities");
     const body = await page.locator("main").innerText();
@@ -79,6 +79,8 @@ test.describe("browse and search", () => {
     const seen = new Set<string>();
     await page.goto("/opportunities?limit=5&sort=closing_soon");
     for (let guard = 0; guard < 6; guard += 1) {
+      // The results stream in after the page shell (their own Suspense boundary): wait for them before reading.
+      await page.getByTestId("results").waitFor();
       for (const title of await page
         .getByTestId("results")
         .getByRole("heading", { level: 3 })
@@ -100,18 +102,19 @@ test.describe("browse and search", () => {
 });
 
 test.describe("detail page", () => {
-  test("shows what is known, what is not, and where it came from", async ({ page }) => {
+  test("shows what is known and what is not", async ({ page }) => {
     await openFirst(page, "Graduate Electrical Engineer");
     await expect(page.getByText("Example Power Services").first()).toBeVisible();
     await expect(page.getByText("USD 700 – 900 per month").first()).toBeVisible();
-    await expect(page.getByTestId("category-details")).toContainText("Minimum qualification");
-    // Demo data: this listing has a recorded source check, which is not issuer verification.
-    await expect(page.getByText("Source checked").first()).toBeVisible();
-    await expect(page.getByLabel("Sources").locator("xpath=..")).toContainText(
-      "This is not confirmation from the issuing organisation.",
-    );
-    await expect(page.getByRole("region", { name: /source/i }).or(page.getByLabel("Sources"))).toBeVisible();
-    await expect(page.getByLabel("Sources")).toContainText("checked");
+    await expect(page.getByTestId("category-details")).toContainText("Application documents");
+    // Retired details (D-57) are stored on this demo listing but are no longer shown.
+    await expect(page.getByTestId("category-details")).not.toContainText("Minimum qualification");
+    await expect(page.getByTestId("category-details")).not.toContainText("Benefits");
+    // Verification is one switch (D-62): the page says Verified or Not verified, whichever the demo data has.
+    await expect(page.getByText(/^(Verified|Not verified)$/).first()).toBeVisible();
+    // No sources block: the verification level is shown only as its label.
+    await expect(page.getByRole("heading", { name: "Where this came from" })).toHaveCount(0);
+    await expect(page.getByLabel("Sources")).toHaveCount(0);
   });
 
   test("the apply link leaves UPNEXT safely and says so", async ({ page }) => {
@@ -128,18 +131,14 @@ test.describe("detail page", () => {
   test("unknown pay and deadline are shown as not stated", async ({ page }) => {
     await openFirst(page, "Public Health Programme Assistant");
     await expect(page.getByText("Deadline not stated").first()).toBeVisible();
-    await expect(page.locator("main")).not.toContainText("USD");
+    // The listing itself states no pay. (Related listings below it are other listings and may state theirs.)
+    await expect(page.locator('article[aria-labelledby="listing-title"]')).not.toContainText("USD");
   });
 
-  test("an unverified listing says so and still names its source", async ({ page }) => {
+  test("an unverified listing says so and shows no source", async ({ page }) => {
     await openFirst(page, "Supply of Solar Water Heating Units");
     await expect(page.getByText("Not verified").first()).toBeVisible();
-    await expect(page.getByLabel("Sources")).toContainText("Example City Procurement Unit tender notice");
-  });
-
-  test("a citation-only source is shown as a citation", async ({ page }) => {
-    await openFirst(page, "Public Health Programme Assistant");
-    await expect(page.getByLabel("Sources")).toContainText("Newspaper");
+    await expect(page.getByText("Example City Procurement Unit tender notice")).toHaveCount(0);
   });
 
   test("unknown and non-public addresses show the designed not-found page", async ({ page }) => {

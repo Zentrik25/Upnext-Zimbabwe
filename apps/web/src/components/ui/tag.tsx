@@ -18,7 +18,7 @@ export function Tag({
 }: HTMLAttributes<HTMLSpanElement> & { tone?: TagTone }) {
   return (
     <span
-      className={cn("inline-block rounded-control border px-1.5 py-[2px] text-small", tones[tone], className)}
+      className={cn("inline-block rounded-control border px-1.5 py-[1px] text-micro", tones[tone], className)}
       {...props}
     />
   );

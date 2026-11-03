@@ -14,6 +14,8 @@ export type ListingRowProps = {
   saved?: boolean;
   /** Optional block under the facts (for example why a recommendation is shown). */
   extra?: ReactNode;
+  /** The listing's own featured picture (never an employer logo). Decorative here: the title link names the row. */
+  image?: string | null;
   /** Replaces the save control (the live toggle comes from the page, since it needs the session). */
   action?: ReactNode;
 };
@@ -40,6 +42,7 @@ export function ListingRow({
   saved,
   action,
   extra,
+  image,
 }: ListingRowProps) {
   return (
     <article className="border-b border-line px-[14px] py-[15px] hover:bg-row-hover">
@@ -51,13 +54,24 @@ export function ListingRow({
           {initials(organisation)}
         </div>
         <div className="min-w-0">
-          <h3 className="text-title font-strong leading-title">
+          <h3 className="text-base font-strong leading-title">
             <a href={href}>{title}</a>
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
         </div>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a small card picture served from our own media path
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            width={96}
+            height={54}
+            className="ml-auto hidden h-[54px] w-24 shrink-0 rounded-card border border-line object-cover sm:block"
+          />
+        ) : null}
         {action ? (
-          <div className="ml-auto">{action}</div>
+          <div className={image ? "" : "ml-auto"}>{action}</div>
         ) : saved === undefined ? null : (
           <SaveButton title={title} saved={saved} className="ml-auto" />
         )}

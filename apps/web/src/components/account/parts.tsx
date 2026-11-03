@@ -37,8 +37,8 @@ export function FormPage({
 }) {
   return (
     <div className="mx-auto w-full max-w-[440px] px-6 pt-8 pb-[65px] max-sm:px-[14px]">
-      <h1 className="text-section font-strong tracking-section">{title}</h1>
-      {intro ? <p className="mt-1 mb-4 text-base text-muted">{intro}</p> : <div className="mb-4" />}
+      <h1 className="text-title tracking-title">{title}</h1>
+      {intro ? <p className="mt-1 mb-4 text-ctl text-muted">{intro}</p> : <div className="mb-4" />}
       {children}
     </div>
   );

@@ -121,6 +121,20 @@ function groups(session: StaffSession): Group[] {
       active: startsWith("/workspace/records/memberships"),
     });
   }
+  if (has("analytics.read"))
+    editorial.push({
+      label: "Analytics",
+      href: "/workspace/analytics",
+      icon: "chart",
+      active: startsWith("/workspace/analytics"),
+    });
+  if (has("opp.draft.create") || has("opp.draft.edit_own"))
+    editorial.push({
+      label: "Media Library",
+      href: "/workspace/media",
+      icon: "image",
+      active: startsWith("/workspace/media"),
+    });
   if (has("org.create"))
     editorial.push({
       label: "Organisations",
@@ -190,6 +204,14 @@ function groups(session: StaffSession): Group[] {
     });
   out.push({ title: "Reports", items: reports });
   const settings: Item[] = [];
+  if (has("user.status.change")) {
+    settings.push({
+      label: "Staff management",
+      href: "/workspace/team",
+      icon: "users",
+      active: startsWith("/workspace/team"),
+    });
+  }
   if (has("user.role.grant")) {
     settings.push({
       label: "Users",

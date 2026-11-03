@@ -25,8 +25,14 @@ export type OpportunitySummary = {
   employment_type: string | null;
   deadline: Deadline;
   salary: Money | null;
+  /** The source's own wording when it gives no amount ("Competitive"); never an amount. */
+  salary_text?: string | null;
+  /** The location as written; shown when no structured place is attached. */
+  location_text?: string | null;
   verification: { level: VerificationLevel; checked_at: string | null };
   primary_source_name: string | null;
+  /** The listing's own pictures (absolute https addresses); null when it has none. Never an employer logo. */
+  image?: { featured: string | null; social: string | null; alt: string | null } | null;
   status: ListingStatus;
   published_at: string;
   is_saved: boolean | null;
@@ -53,10 +59,18 @@ export type OpportunityDetail = OpportunitySummary & {
   reference_number: string | null;
   contact_details: string | null;
   application: {
-    method: "external_url" | "email" | "instructions";
+    method: "external_url" | "email" | "both" | "instructions";
     url: string | null;
     email: string | null;
+    email_subject?: string | null;
     instructions: string | null;
+  };
+  /** Staff-set search and sharing text; null parts mean "derive from the title and summary". */
+  seo?: {
+    title: string | null;
+    description: string | null;
+    og_title: string | null;
+    og_description: string | null;
   };
   sources: Source[];
   detail: Record<string, unknown>;

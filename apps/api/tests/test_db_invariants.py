@@ -151,9 +151,11 @@ def test_slug_and_category_are_immutable(world: World, people: dict[str, User]) 
 
 def test_history_review_and_verification_rows_are_append_only(world: World, people: dict[str, User]) -> None:
     opp = approved(world, people["author"], people["editor"])
-    workflow.record_verification(
-        people["editor2"], opp.pk, version_no=1, level="source_checked", method="source_page_review",
+    assert opp.pending_version is not None
+    VerificationRecord.objects.create(  # history from before the single switch (D-62); the table stays append-only
+        opportunity=opp, version=opp.pending_version, level="source_checked", method="source_page_review",
         outcome="confirmed", evidence_note="Compared the listing with the issuer notice.",
+        checked_by=people["editor2"],
     )  # fmt: skip
     for table in (
         "opportunities_reviewdecision",

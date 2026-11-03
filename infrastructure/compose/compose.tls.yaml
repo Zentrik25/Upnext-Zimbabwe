@@ -20,7 +20,11 @@ services:
       UPNEXT_TOKEN_KEY: ${UPNEXT_TOKEN_KEY:-local-tls-token-key-0123456789-abcdefghij}
       UPNEXT_EMAIL_BACKEND: none
       UPNEXT_SITEMAP_API_CACHE_SECONDS: ${UPNEXT_SITEMAP_API_CACHE_SECONDS:-0} # browser tests publish and withdraw; the load test sets 300
-      UPNEXT_THROTTLE_PUBLIC_READ: ${UPNEXT_THROTTLE_PUBLIC_READ:-240/1m} # the load test raises it; see PERFORMANCE_AND_LOAD.md
+      # The whole browser suite reaches the API from one address, and the suite now sends more than 240 reads a
+      # minute at times; a throttled read made unrelated tests fail at random (an empty sitemap, an unknown listing
+      # answering 200, a missing heading). The production default stays 240/1m (PERFORMANCE_AND_LOAD.md); this is the
+      # rehearsal's own value, and the load test still overrides it.
+      UPNEXT_THROTTLE_PUBLIC_READ: ${UPNEXT_THROTTLE_PUBLIC_READ:-2400/1m}
       UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
       POSTGRES_MIGRATOR_USER: ${POSTGRES_USER}
       POSTGRES_MIGRATOR_PASSWORD: ${POSTGRES_PASSWORD}

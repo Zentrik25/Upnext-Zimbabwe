@@ -1,6 +1,6 @@
 import { OPERATOR } from "@/content/legal/operator";
 import type { Metadata } from "next";
-import { BRAND, openGraphFor } from "@/lib/brand";
+import { BRAND, socialFor } from "@/lib/brand";
 import { ProsePage, Section } from "@/components/content/prose";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Contact",
   description: `How to reach the ${BRAND.name} team.`,
   alternates: { canonical: "/contact" },
-  openGraph: openGraphFor("/contact"),
+  ...socialFor("/contact", { title: "Contact", description: `How to reach the ${BRAND.name} team.` }),
 };
 
 export default function ContactPage() {

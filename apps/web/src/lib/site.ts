@@ -1,5 +1,6 @@
 import "server-only";
 import { BRAND } from "./brand";
+import { GUIDE_PATHS } from "./guides";
 
 /**
  * Public origin used in canonical URLs, the sitemap and structured data. Production sets
@@ -23,4 +24,5 @@ export const STATIC_PATHS = [
   "/contact",
   "/privacy",
   "/terms",
+  ...GUIDE_PATHS,
 ] as const;

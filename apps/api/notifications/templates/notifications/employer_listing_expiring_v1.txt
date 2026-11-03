@@ -1,7 +1,0 @@
-Hello {{ display_name }},
-
-Your listing "{{ title }}" closes on {{ deadline_text }}, in {{ days_left }} day{{ days_left|pluralize }}. When the deadline passes {{ brand_short }} marks it as closed.
-
-If the opportunity stays open and the deadline has changed, start an amendment so it can be reviewed in time: {{ listing_url }}
-
-You get this service message because you act for {{ organisation_name }} on {{ brand_name }}.

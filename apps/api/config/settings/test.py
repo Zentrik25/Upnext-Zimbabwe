@@ -1,10 +1,15 @@
 """Test settings: same PostgreSQL engine as production, fast hasher, quiet logging."""
 
+import tempfile
+from pathlib import Path
+
 from .base import *
 
 DEBUG = False
 ALLOWED_HOSTS = ["testserver", "localhost"]
 EXPOSE_OPENAPI_SCHEMA = True
+UPNEXT_SERVE_MEDIA = True
+MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="upnext-media-test-"))
 # Fast hasher for bulk fixtures only; Argon2 configuration is asserted separately in tests.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher", *PASSWORD_HASHERS]
 STORAGES = {
@@ -31,6 +36,7 @@ REST_FRAMEWORK = {
         "for_you_user": "120/1m",
         "unsubscribe_ip": "30/1h",
         "report_ip": "5/1h",
+        "staff_upload": "30/10m",
     },
 }
 UPNEXT_EMAIL_REQUEST_GAP_SECONDS = 60

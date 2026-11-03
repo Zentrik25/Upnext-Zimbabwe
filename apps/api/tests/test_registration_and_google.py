@@ -159,7 +159,7 @@ def test_a_new_person_is_created_signed_in_and_sent_where_they_were_going(
     )
     assert not user.has_usable_password() and user.terms_accepted_at
     assert client.get("/api/v1/me").json()["email"] == "person@example.org"
-    assert sent[0]["code_verifier"] and sent[0]["client_secret"] == "test-secret"
+    assert sent[0]["code_verifier"] and sent[0]["client_secret"] == GOOGLE["UPNEXT_GOOGLE_CLIENT_SECRET"]
     assert AuditEvent.objects.filter(action="account.register_google", object_id=user.pk).exists()
 
 

@@ -41,7 +41,7 @@ async function login(browser: Browser, who: keyof typeof accounts, viewport = { 
   await expect(page).toHaveURL(/\/workspace\/two-step/);
   await page.locator("#code").fill(demoCode(accounts[who]));
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /Welcome back/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
   return { context, page };
 }
 
@@ -52,41 +52,40 @@ async function run(page: Page, label: string, fill?: () => Promise<void>) {
   await page.locator(`form[aria-label="${label}"] button[type=submit]`).click();
 }
 
-/** Fills the draft editor with a complete, valid listing (unique addresses via `tag`). */
+/** Fills the job editor (D-56) with a complete, valid listing (unique addresses via `tag`). */
 async function fillDraft(page: Page, tag: string) {
   await page
     .locator("#summary")
     .fill("Support community water projects and site visits for a water authority in Harare.");
   await page
-    .locator("#description_md")
+    .locator("#responsibilities")
     .fill(
       "Example Water Authority is recruiting a **Field Officer** to support community water projects across the province.\n\n- Visit sites\n- Prepare reports",
     );
   await page.locator("#employment_type").selectOption("contract");
-  await page.locator("#work_mode").selectOption("on_site");
   const day = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
   await page.locator("#deadline_day").fill(day);
-  await page.locator("#application_url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
-  await page.locator("#location_id").selectOption({ label: "Harare" });
-  await page.locator("#source_0_kind").selectOption("issuer_website");
-  await page.locator("#source_0_name").fill("Example Water Authority vacancies page");
-  await page.locator("#source_0_url").fill(`https://water.example.org/vacancies/${tag}`);
-  await page.locator("#source_0_observed_on").fill(new Date().toISOString().slice(0, 10));
+  await page.locator("#apply-url").fill(`https://water.example.org/vacancies/field-officer-${tag}`);
+  await page.locator("#location_text").fill("Harare");
+  // No source fields (D-62): the form no longer asks where the vacancy was published.
+  await expect(page.locator("#source_url")).toHaveCount(0);
 }
 
+/** Opens the new-opportunity form and sets the three things a draft needs: category, title, organisation. */
 async function createDraft(page: Page, organisation: string, title: string) {
   await page.goto("/workspace/opportunities/new");
   await page.locator("#category").selectOption({ label: "Jobs" });
-  await page.locator("#org-search").fill(organisation);
-  await expect(page.locator("#organisation option", { hasText: organisation })).toHaveCount(1);
-  await page.locator("#organisation").selectOption({ label: organisation });
   await page.locator("#title").fill(title);
-  await page.getByRole("button", { name: "Create draft" }).click();
-  await expect(page).toHaveURL(/\/edit$/);
+  await page.locator("#organisation").fill(organisation);
+  await page.getByRole("option", { name: organisation, exact: true }).click();
 }
 
+/** Saves the draft (the first save creates it; the address becomes .../edit), then opens its listing page. */
 async function saveAndView(page: Page) {
-  await page.getByRole("button", { name: "Save and view" }).click();
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /Saved at/ })).toBeVisible();
+  await expect(page).toHaveURL(/\/workspace\/opportunities\/[0-9a-f-]{36}\/edit$/);
+  await page.goto(page.url().replace(/\/edit$/, ""));
   await expect(page).toHaveURL(/\/workspace\/opportunities\/[0-9a-f-]{36}$/);
 }
 
@@ -150,7 +149,8 @@ test("3. self-approval is refused even for someone who holds an editor role", as
   const id = listing.split("/").pop() ?? "";
   const csrf = (await context.cookies()).find((c) => /csrf/.test(c.name))?.value ?? "";
   const forced = await page.request.post(`/api/v1/staff/opportunities/${id}/actions/approve`, {
-    headers: { "X-CSRFToken": csrf },
+    // Over HTTPS Django also requires a same-origin Referer; a browser sends one, page.request does not.
+    headers: { "X-CSRFToken": csrf, Referer: listing },
     data: { row_version: 0, source_reviewed: true, duplicates_reviewed: true, content_matches_source: true },
   });
   expect(forced.status()).toBe(403);
