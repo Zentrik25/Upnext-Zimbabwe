@@ -10,10 +10,10 @@ import {
 export function SearchSkeleton() {
   return (
     <LoadingRegion label="search" heading={false} className="max-w-[790px]">
-      <div className="h-[46px] rounded-control border border-control-border bg-surface max-sm:hidden" />
+      <div className="h-[42px] rounded-control border border-control-border bg-surface max-sm:hidden" />
       <div className="grid gap-[7px] sm:hidden">
-        <div className="h-search rounded-control border border-control-border bg-surface" />
-        <div className="h-search rounded-control border border-control-border bg-surface" />
+        <div className="h-field rounded-control border border-control-border bg-surface" />
+        <div className="h-field rounded-control border border-control-border bg-surface" />
       </div>
     </LoadingRegion>
   );

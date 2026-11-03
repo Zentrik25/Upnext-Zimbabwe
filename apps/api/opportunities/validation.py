@@ -7,7 +7,7 @@ failures are returned together as `{path: [(code, message)]}`.
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from catalog import markdown
@@ -21,7 +21,7 @@ from .models import ApplicationMethod, OpportunityVersion
 
 # Common-field applicability by category (CATEGORY_SCHEMA_EXAMPLES §2): R required, A allowed, F forbidden.
 _EMPLOYMENT_RULES: dict[str, set[str] | None] = {
-    "jobs": {"permanent", "contract", "temporary", "part_time"},
+    "jobs": {"full_time", "permanent", "contract", "temporary", "part_time"},
     "internships": {"internship"},
     "graduate-programmes": {"trainee"},
     "scholarships": None,
@@ -74,8 +74,19 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         _add(errors, "title", "invalid_format", "The title must not be mostly capital letters.")
     if _URL_IN_TEXT.search(version.title):
         _add(errors, "title", "invalid_format", "The title must not contain a web address.")
-    _length(errors, "summary", version.summary, 20, 300)
-    _length(errors, "description_md", version.description_md, 50, 20000)
+    # The overview is optional (D-56): empty is fine, a short stub is not.
+    if version.summary:
+        _length(errors, "summary", version.summary, 20, 300)
+    # The body is the responsibilities and the qualifications together: neither is forced to repeat the other.
+    if len(version.description_md) + len(version.requirements_md or "") < 50:
+        _add(
+            errors,
+            "description_md",
+            "required",
+            "Add the key responsibilities or the qualifications (at least 50 characters in all).",
+        )
+    if len(version.description_md) > 20000:
+        _add(errors, "description_md", "too_long", "At most 20000 characters.")
     for field in ("description_md", "requirements_md"):
         value = getattr(version, field)
         if value:
@@ -88,7 +99,9 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
 
     locations = list(version.locations.all())
     if not locations:
-        _add(errors, "locations", "required", "Choose at least one location.")
+        # D-57: the location is one written line; structured places are matched from it and may be absent.
+        if not (version.location_text or "").strip():
+            _add(errors, "locations", "required", "Enter where the job is based.")
     elif sum(1 for r in locations if r.is_primary) != 1:
         _add(errors, "locations", "invalid_choice", "Exactly one location must be primary.")
 
@@ -96,8 +109,11 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
     if allowed_types is None:
         if version.employment_type:
             _add(errors, "employment_type", "invalid_choice", "Not applicable to this category.")
-    elif version.employment_type not in allowed_types:
-        _add(errors, "employment_type", "required", f"Choose one of: {', '.join(sorted(allowed_types))}.")
+    elif version.employment_type and version.employment_type not in allowed_types:
+        # An empty type is "not stated" (D-56); a stated one must fit the category.
+        _add(
+            errors, "employment_type", "invalid_choice", f"Choose one of: {', '.join(sorted(allowed_types))}."
+        )
     if version.work_mode and category in _FORBIDDEN["work_mode"]:
         _add(errors, "work_mode", "invalid_choice", "Not applicable to this category.")
     if version.experience_level and category in _FORBIDDEN["experience_level"]:
@@ -106,6 +122,16 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
         "salary"
     ]:
         _add(errors, "salary", "invalid_choice", "Not applicable to this category.")
+    if version.salary_text:
+        if category in _FORBIDDEN["salary"]:
+            _add(errors, "salary_text", "invalid_choice", "Not applicable to this category.")
+        elif version.salary_min is not None or version.salary_max is not None:
+            _add(
+                errors,
+                "salary_text",
+                "invalid_choice",
+                "Give either an amount or the source's wording, not both.",
+            )
     if (version.funding_min is not None or version.funding_max is not None) and category in _FORBIDDEN[
         "funding"
     ]:
@@ -121,7 +147,19 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
             _add(errors, "deadline_at", exc.code, str(exc))
 
     method = version.application_method
-    if method == ApplicationMethod.EXTERNAL_URL:
+    if method == ApplicationMethod.BOTH:
+        if not version.application_url:
+            _add(errors, "application_url", "required", "Add the address where people apply.")
+        else:
+            _recheck_url(errors, "application_url", version.application_url)
+        if not version.application_email:
+            _add(errors, "application_email", "required", "Add the application e-mail address.")
+        else:
+            try:
+                validate_email(version.application_email)
+            except TextError as exc:
+                _add(errors, "application_email", exc.code, str(exc))
+    elif method == ApplicationMethod.EXTERNAL_URL:
         if not version.application_url:
             _add(errors, "application_url", "required", "Add the address where people apply.")
         else:
@@ -137,25 +175,8 @@ def validate_publishable(version: OpportunityVersion, *, now: datetime | None = 
     elif method == ApplicationMethod.INSTRUCTIONS:
         _length(errors, "application_instructions", version.application_instructions, 20, 2000)
 
-    sources = list(version.sources.all())
-    if not sources:
-        _add(errors, "sources", "source_required", "Add at least one source.")
-    elif sum(1 for s in sources if s.is_primary) != 1:
-        _add(errors, "sources", "primary_source_required", "Exactly one source must be primary.")
-    for i, source in enumerate(sources):
-        if not source.url and not source.citation:
-            _add(errors, f"sources.{i}", "required", "A source needs a URL or a citation.")
-        if source.url:
-            _recheck_url(errors, f"sources.{i}.url", source.url)
-        if source.observed_on > now.date():
-            _add(errors, f"sources.{i}.observed_on", "in_past", "The check date cannot be in the future.")
-        elif source.observed_on < (now - timedelta(days=366)).date():
-            _add(
-                errors,
-                f"sources.{i}.observed_on",
-                "out_of_range",
-                "The source was checked more than a year ago.",
-            )
+    # Staff no longer enter sources (D-62), so none is required to publish. Any that exist are history: their
+    # address and date were checked when they were saved, and an old one must not block an amendment.
 
     active = DetailSchema.objects.filter(
         category=version.opportunity.category, status=DetailSchemaStatus.ACTIVE

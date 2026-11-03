@@ -17,6 +17,7 @@ from typing import Any, NoReturn, cast
 from django import forms
 from django.conf import settings
 from django.db.models import Count, QuerySet
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -27,21 +28,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from access.registry import DEFAULT_REGISTRY, Permission, Role
-from accounts import mfa
+from accounts import mfa, trusted_devices
 from accounts.models import User
 from audit import services as audit
 from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
-from core.staff_mfa import SESSION_FLAG, mark_verified
-from opportunities import health, workflow
+from core.staff_mfa import is_fresh, mark_verified
+from employers import staff_analytics
+from opportunities import health, images, workflow
+from opportunities.duplicates import find_duplicates
 from opportunities.errors import WorkflowError
 from opportunities.models import (
     ListingStatus,
     Opportunity,
     OpportunityVersion,
     PublishingEvent,
-    VerificationLevel,
     VersionState,
 )
 from opportunities.staff import (
@@ -50,6 +52,7 @@ from opportunities.staff import (
     QUEUES,
     STATUS_TONES,
     TRANSITION_LABELS,
+    VERIFICATION_LABELS,
     apply_deadline,
     apply_queue,
     listing_actions,
@@ -62,18 +65,13 @@ from reports.models import ListingReport
 
 from .employer_views import _body, _locations, _money, _refused
 from .errors import CodedPermissionDenied, error_response
-from .public_views import _iso
+from .public_views import _iso, detail_of
 from .throttles import UserWriteThrottle
 
 PAGE_SIZE = 25
 MAX_PAGE_SIZE = 50
 SEARCH_MIN, SEARCH_MAX, SEARCH_PER_GROUP = 2, 80, 5
 
-LEVEL_LABELS: dict[str, str] = {
-    VerificationLevel.NOT_VERIFIED: "Not verified",
-    VerificationLevel.SOURCE_CHECKED: "Source checked (not confirmed with the issuer)",
-    VerificationLevel.ISSUER_VERIFIED: "Verified with the issuer",
-}
 SORTS = {
     "updated": "-updated_at",
     "oldest": "updated_at",
@@ -108,7 +106,7 @@ class IsStaffAccount(BasePermission):
 
 
 def mfa_satisfied(request: Request) -> bool:
-    return not settings.UPNEXT_STAFF_MFA_REQUIRED or bool(request._request.session.get(SESSION_FLAG))
+    return not settings.UPNEXT_STAFF_MFA_REQUIRED or is_fresh(request._request.session)
 
 
 class IsVerifiedStaff(IsStaffAccount):
@@ -233,7 +231,10 @@ class TwoStepView(APIView):
                     400,
                 )
             mark_verified(request._request)
-            return Response({"verified": True, "recovery_codes": codes})
+            done = Response({"verified": True, "recovery_codes": codes})
+            if data.get("trust_device") is True:
+                trusted_devices.trust(request._request, done, user)
+            return done
         if not mfa.verify(user, code):
             return error_response(
                 "invalid_code",
@@ -244,7 +245,12 @@ class TwoStepView(APIView):
                 400,
             )
         mark_verified(request._request)
-        return Response({"verified": True})
+        done = Response({"verified": True})
+        if data.get("trust_device") is True:
+            trusted_devices.trust(request._request, done, user)
+        else:
+            trusted_devices.note_verified(request._request, user)
+        return done
 
 
 # --- shapes ----------------------------------------------------------------------------------------------
@@ -292,8 +298,13 @@ def _row(user: User, opp: Opportunity) -> dict[str, Any]:
         "status_label": label,
         "status_tone": tone,
         "version_state": pending.state if pending else None,
-        "verification": opp.verification_level,
-        "verification_label": LEVEL_LABELS.get(opp.verification_level, opp.verification_level),
+        "verified": opp.is_verified,
+        "verification_label": VERIFICATION_LABELS[opp.is_verified],
+        "verified_at": _iso(opp.verification_changed_at) if opp.is_verified else None,
+        "verified_by": opp.verification_changed_by.display_name
+        if opp.is_verified and opp.verification_changed_by
+        else None,
+        "can_verify": user.has_permission_code(Permission.OPP_VERIFY_RECORD),
         "submitted_by": who,
         "submitted_at": _iso(pending.submitted_at) if pending and _may_see(user, pending) else None,
         "updated_at": _iso(opp.updated_at),
@@ -371,8 +382,8 @@ class OpportunityListView(StaffView):
             qs = apply_deadline(qs, deadline) or qs
         if params.get("category"):
             qs = qs.filter(category__code=params["category"])
-        if params.get("verification") in VerificationLevel.values:
-            qs = qs.filter(verification_level=params["verification"])
+        if params.get("verified") in ("yes", "no"):
+            qs = qs.filter(is_verified=params["verified"] == "yes")
         term = params.get("q", "").strip()[:SEARCH_MAX]
         if term:
             qs = search_listings(user, qs, term)
@@ -382,9 +393,18 @@ class OpportunityListView(StaffView):
             qs = qs.distinct()
         items, page = _paginate(request, qs)
         counts = dict(listings_scope(user).values_list("status").annotate(n=Count("pk")))
+        seen = (
+            staff_analytics.views_of([o.pk for o in items])
+            if user.has_permission_code(Permission.ANALYTICS_READ)
+            else None
+        )
         return Response(
             {
-                "data": [_row(user, o) for o in items],
+                # All-time views for the Views column; null without analytics access.
+                "data": [
+                    {**_row(user, o), "views": None if seen is None else seen.get(str(o.pk), 0)}
+                    for o in items
+                ],
                 "page": page,
                 "counts": {
                     "all": sum(counts.values()),
@@ -494,6 +514,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "salary": _money(
                 version.salary_min, version.salary_max, version.salary_currency, version.salary_period
             ),
+            "salary_text": version.salary_text,
             "funding": _money(
                 version.funding_min, version.funding_max, version.funding_currency, version.funding_period
             ),
@@ -503,6 +524,7 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
             "application_method": version.application_method,
             "application_url": version.application_url,
             "application_email": version.application_email,
+            "application_email_subject": version.application_email_subject,
             "application_instructions": version.application_instructions,
             "reference_number": version.reference_number,
             "contact_details": version.contact_details,
@@ -527,8 +549,35 @@ def _version(user: User, version: OpportunityVersion | None) -> dict[str, Any] |
                 for s in version.sources.all()
             ],
             "detail": version.detail,
+            "slug": version.slug_hint,
+            "seo_title": version.seo_title,
+            "seo_description": version.seo_description,
+            "og_title": version.og_title,
+            "og_description": version.og_description,
+            "featured_image": version.featured_image,
+            "featured_image_alt": version.featured_image_alt,
+            "social_image": version.social_image,
+        },
+        "images": {
+            "featured": images.url_of(version.featured_image),
+            "social": images.url_of(version.social_image),
         },
     }
+
+
+def _duplicates_of(opp: Opportunity) -> list[dict[str, str]]:
+    """Open listings that look like this draft: a plain warning for staff, never a block (D-62)."""
+    version = opp.pending_version
+    if version is None or version.state not in (
+        VersionState.DRAFT,
+        VersionState.IN_REVIEW,
+        VersionState.APPROVED,
+    ):
+        return []
+    return [
+        {"id": d.opportunity_id, "title": d.title, "level": d.level, "reason": d.reason, "status": d.status}
+        for d in find_duplicates(version)
+    ]
 
 
 def _detail(user: User, opp: Opportunity) -> dict[str, Any]:
@@ -562,6 +611,10 @@ def _detail(user: User, opp: Opportunity) -> dict[str, Any]:
     ]
     actions = []
     warnings: list[str] = []
+    duplicates = _duplicates_of(opp) if visible else []
+    for d in duplicates:
+        what = "is already open" if d["level"] == "hard" else "looks similar"
+        warnings.append(f"{d['title'] or 'Another listing'} {what} for this organisation. {d['reason']}")
     for name, label in listing_actions(user, opp):
         spec = ACTIONS.get(name)
         actions.append(
@@ -586,6 +639,10 @@ def _detail(user: User, opp: Opportunity) -> dict[str, Any]:
         "verifications": verifications if visible else [],
         "actions": actions,
         "warnings": warnings,
+        "analytics": staff_analytics.job_stats(opp.pk, timezone.now())
+        if visible and user.has_permission_code(Permission.ANALYTICS_READ)
+        else None,
+        "duplicates": duplicates,
         "can_edit": any(a["name"] == "edit" for a in actions),
     }
 
@@ -623,6 +680,28 @@ class OpportunityDetailView(StaffView):
         return Response(_detail(user, opp))
 
 
+class PreviewView(StaffView):
+    """How the open draft (or the live revision) will read to the public, in the public API's own shape, so
+    the staff preview is the public page. Read only; a draft is shown only to those who may see it."""
+
+    @extend_schema(
+        operation_id="previewStaffOpportunity",
+        tags=["staff"],
+        responses={200: OpenApiResponse(description="The public shape of the revision"), 404: None},
+    )
+    def get(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        opp = _visible_listing(user, opportunity_id)
+        if opp is None:
+            return _not_found()
+        version = next(
+            (v for v in (opp.pending_version, opp.live_version) if v is not None and _may_see(user, v)), None
+        )
+        if version is None:
+            return _not_found()
+        return Response(detail_of(version, timezone.now(), preview=True))
+
+
 class SaveDraftView(StaffView):
     @extend_schema(
         operation_id="saveStaffDraft",
@@ -658,6 +737,40 @@ class SaveDraftView(StaffView):
         opp = _visible_listing(user, opportunity_id)
         assert opp is not None
         return Response(_detail(user, opp))
+
+
+class VerificationView(StaffView):
+    """`PUT /staff/opportunities/<id>/verification` with `{"verified": true|false}` (D-62).
+
+    The one place verification changes. It needs `opp.verify.record` (checked again inside the publishing
+    service), does not need a note or a second person, and answers with the listing's row so the screen can
+    show the saved state straight away."""
+
+    @extend_schema(
+        operation_id="setStaffVerification",
+        tags=["staff"],
+        request=None,
+        responses={
+            200: OpenApiResponse(description="The listing row after the change"),
+            400: None,
+            403: None,
+            404: None,
+        },
+    )
+    def put(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        data = _body(request)
+        if data is None or not isinstance(data.get("verified"), bool):
+            return error_response("validation_failed", 'Send {"verified": true} or {"verified": false}.', 400)
+        if _visible_listing(user, opportunity_id) is None:
+            return _not_found()
+        try:
+            workflow.set_verification(user, opportunity_id, verified=data["verified"])
+        except WorkflowError as exc:
+            return _refused(exc)
+        fresh = _visible_listing(user, opportunity_id)
+        assert fresh is not None
+        return Response(_row(user, fresh))
 
 
 class ActionView(StaffView):

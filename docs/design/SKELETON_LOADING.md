@@ -67,9 +67,28 @@ There is no client-side data fetching: search and filters are plain `GET` forms 
   - no hydration warnings (the 33 CSP inline-style messages in dev are identical before and after this change).
 - Screenshots (before / after, loading and loaded): `docs/design/evidence/skeleton-loading/`. "Before" has no skeleton for the public pages: a blank screen until the whole page is ready.
 
+## Re-verification after D-53 (executed 2026-10-31)
+
+D-53 changed real sizes (40px form controls, the type scale, the home hero), so the skeletons were measured again against the **real stack** this time: the Django API on PostgreSQL 16 with the `seed_demo` data, the web app in front of it, and a delaying proxy (1.5 to 2.5 s) between them. Layout shift is the browser's own `layout-shift` entries, at 390 and 1280 px.
+
+| Page | Before | After |
+| --- | --- | --- |
+| Home (hero search 4 px short, button was 37.6 px not 44 px) | 0.0019 (390), 0.0005 (1280) | **0** |
+| `/opportunities` and its category, search and filter views (search skeleton 4 to 8 px tall) | 0.0067 (390), 0.0024 (1280) | **0** |
+| `/opportunities/[slug]`, empty search, failed load | 0 | 0; the failure shows the error and **Try again**, never an empty list |
+| `/account` (skeleton 633 px against 1332 px, no sign-out button, wrong title height) | 0.1785 / 0.078 | **0** (five panels at their real heights) |
+| `/profile`, `/alerts` (skeleton 663 px against 3207 and 1944 px, intro height wrong) | 0.1469 / 0.09 and 0.1469 / 0.045 | **0** (long forms, real intro height) |
+| `/saved` with saved items | 0.3893 / 0.2417 | **0** (three rows, real intro height) |
+| `/dashboard`, `/for-you` | 0 | 0 |
+| Staff workspace: overview, opportunities, activity, content health, manage, records, audit, new listing (as the demo administrator, with the two-step code) | not measured | **0** at both widths |
+
+What changed: `SkeletonInput` fields in the search skeletons are 40 px (`h-field`) and the desktop search group 42 px; the home submit button has an explicit `h-[44px]` (the old `min-h-[44px]` lost to the button's own `min-h-control`, so the real button was 37.6 px); `SkeletonPageHeader` takes the real introduction height at phone and desktop widths and the page title is 29 px under 651 px and 35 px above; `SeekerPageLoading` and the saved and for-you loading files pass that height; new `ProfileLoading`, `AlertsLoading` and `SkeletonChoiceGroup` replace the generic form skeleton; `AccountLoading` draws the five real panels. `tests/unit/skeleton-system.test.tsx` has four tests that tie these sizes to the real controls.
+
+Not zero, by nature of the data: a person with **nothing saved** sees three placeholder rows and then a short "You have not saved anything yet" page, so the footer rises into view (0.22 at 390, 0.13 at 1280). The employer portal skeleton draws the dashboard of an organisation; a person with no organisation yet gets a short claim card instead (0.13 at 390). The staff and employer skeletons were not exercised with an employer account (none is seeded).
+
 ## Limits
 
-- Run on Node 22 (the repository pins 24) with a stub API, in `next dev`; no Django stack, no Docker, no production build timing. The Playwright e2e suite needs the full stack and was not run here; it runs in CI.
+- The 2026-10-30 run used Node 22 (the repository pins 24) with a stub API, in `next dev`; the 2026-10-31 re-verification above used the real Django API and PostgreSQL 16 but still Node 22 and `next dev`, no Docker and no production build timing. The Playwright e2e suite needs the full stack and was not run here; it runs in CI.
 - Staff, employer and account skeletons were checked as rendered components (screenshots) and in unit tests, not behind a real login, since there is no seeded staff account in this environment.
 - Widths 320, 360, 430, 768 and 1024 were not each captured; the layouts use the existing breakpoints (`max-sm`, `md`, container queries) and 390 and 1280 were measured.
 - `listCategories`/`listLocations` return `[]` on failure by design, so the home category tiles are hidden (not shown as an error) if that one request fails. Changing that is a library change outside this task.

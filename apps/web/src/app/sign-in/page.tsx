@@ -20,17 +20,14 @@ export default async function SignInPage({
   if (await getCurrentUser()) redirect(next);
   const providers = await getAuthProviders();
   return (
-    <AuthPage
-      title="Welcome back"
-      intro="Sign in to your account to save opportunities and come back to them."
-    >
+    <AuthPage title="Sign in to your account">
       <SignInForm
         next={next}
         notice={query.error === "google" ? <GoogleFailedNotice /> : undefined}
         options={<SignInOptions />}
         social={
           <>
-            <OrDivider />
+            <OrDivider label="Or sign in with" />
             <GoogleButton enabled={providers.google} next={next} />
             <CreateAccountPrompt />
           </>

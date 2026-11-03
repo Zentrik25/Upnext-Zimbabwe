@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { DraftEditor } from "@/components/workspace/draft-editor";
-import { EmptyState } from "@/components/ui";
+import { JobEditor } from "@/components/workspace/job-editor";
 import { listLocations, listSectors } from "@/lib/catalog";
-import { requireStaff, staffJson } from "@/lib/staff";
+import { can, requireStaff, staffJson } from "@/lib/staff";
 import type { ListingDetail, StaffCategory } from "@/lib/staff-types";
 
 export const metadata: Metadata = { title: "Edit draft" };
@@ -13,7 +12,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function EditPage({ params }: Props) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  await requireStaff(`/workspace/opportunities/${id}/edit`);
+  const session = await requireStaff(`/workspace/opportunities/${id}/edit`);
   const [detail, categories, locations, sectors] = await Promise.all([
     staffJson<ListingDetail>(`opportunities/${id}`),
     staffJson<{ data: StaffCategory[] }>("categories"),
@@ -27,8 +26,7 @@ export default async function EditPage({ params }: Props) {
   if (!categories.ok) throw new Error("Categories could not be loaded.");
   const listing = detail.data;
   if (!listing.can_edit) redirect(`/workspace/opportunities/${id}`);
-  const category = categories.data.data.find((c) => c.code === listing.category.code);
-  if (!category) notFound();
+  if (!categories.data.data.some((c) => c.code === listing.category.code)) notFound();
   return (
     <>
       <p className="m-0 text-ctl">
@@ -36,23 +34,19 @@ export default async function EditPage({ params }: Props) {
           ← Back to the listing
         </Link>
       </p>
-      <h1 className="m-0 mt-3 mb-1 text-section font-light tracking-section">Edit draft</h1>
-      <p className="m-0 mb-5 text-base text-muted">
-        {listing.category.name}. Save as often as you like; submit for review from the listing page when it is
-        ready.
+      <h1 className="m-0 mt-3 mb-1 text-title font-light tracking-title">Edit draft</h1>
+      <p className="m-0 mb-4 max-w-[60ch] text-base text-muted">
+        Changes save as you go. Publish or submit when it is ready.
       </p>
-      <DraftEditor
-        key={listing.row_version}
+      <JobEditor
+        key={listing.id}
+        mode="edit"
+        categories={categories.data.data}
         listing={listing}
-        category={category}
-        locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+        locations={locations}
         sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}
+        canCreateOrganisation={can(session, "org.create")}
       />
-      {!locations.length ? (
-        <EmptyState as="h2" title="Locations could not be loaded">
-          You can still save the draft without a primary location.
-        </EmptyState>
-      ) : null}
     </>
   );
 }

@@ -370,6 +370,43 @@ describe("EmailChangePanel", () => {
   });
 });
 
+describe("SaveToggle as a block button (the listing page)", () => {
+  it("keeps one stable name, shows Save or Saved, and reports the state with aria-pressed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("/auth/csrf")
+          ? new Response(JSON.stringify({ csrf_token: "t" }), { status: 200 })
+          : new Response("{}", { status: 200 }),
+      ),
+    );
+    render(
+      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" block />,
+    );
+    const button = screen.getByRole("button", { name: "Save Engineer" });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(button).toHaveTextContent("Save");
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
+    expect(screen.getByRole("button", { name: "Save Engineer" })).toHaveTextContent("Saved");
+  });
+
+  it("sends a visitor to sign in and back", () => {
+    render(
+      <SaveToggle
+        opportunityId="o1"
+        title="Engineer"
+        initialSaved={false}
+        signedIn={false}
+        returnTo="/opportunities/x"
+        block
+      />,
+    );
+    const link = screen.getByRole("link", { name: /Sign in to save Engineer/ });
+    expect(link).toHaveAttribute("href", "/sign-in?next=%2Fopportunities%2Fx");
+  });
+});
+
 describe("SaveToggle", () => {
   it("sends visitors to sign in and back to the same place", () => {
     render(

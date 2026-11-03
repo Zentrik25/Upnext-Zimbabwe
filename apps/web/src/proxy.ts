@@ -12,7 +12,7 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ""}`,
-    "img-src 'self' data:",
+    "img-src 'self' data: blob:", // blob: is the staff image-upload preview (D-58)
     "font-src 'self'",
     "connect-src 'self'",
     "frame-ancestors 'none'",
