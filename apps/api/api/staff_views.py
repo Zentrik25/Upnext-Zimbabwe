@@ -35,6 +35,7 @@ from catalog.models import Category, Organisation
 from catalog.schemas import load_schema
 from core import staff_dashboard
 from core.staff_mfa import is_fresh, mark_verified
+from employers import staff_analytics
 from opportunities import health, images, workflow
 from opportunities.duplicates import find_duplicates
 from opportunities.errors import WorkflowError
@@ -392,9 +393,18 @@ class OpportunityListView(StaffView):
             qs = qs.distinct()
         items, page = _paginate(request, qs)
         counts = dict(listings_scope(user).values_list("status").annotate(n=Count("pk")))
+        seen = (
+            staff_analytics.views_of([o.pk for o in items])
+            if user.has_permission_code(Permission.ANALYTICS_READ)
+            else None
+        )
         return Response(
             {
-                "data": [_row(user, o) for o in items],
+                # All-time views for the Views column; null without analytics access.
+                "data": [
+                    {**_row(user, o), "views": None if seen is None else seen.get(str(o.pk), 0)}
+                    for o in items
+                ],
                 "page": page,
                 "counts": {
                     "all": sum(counts.values()),
@@ -629,6 +639,9 @@ def _detail(user: User, opp: Opportunity) -> dict[str, Any]:
         "verifications": verifications if visible else [],
         "actions": actions,
         "warnings": warnings,
+        "analytics": staff_analytics.job_stats(opp.pk, timezone.now())
+        if visible and user.has_permission_code(Permission.ANALYTICS_READ)
+        else None,
         "duplicates": duplicates,
         "can_edit": any(a["name"] == "edit" for a in actions),
     }

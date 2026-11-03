@@ -265,6 +265,32 @@ export function JobEditorLoading({ label = "the editor" }: { label?: string }) {
   );
 }
 
+/** The staff Analytics page: compact header with the period selector, figure cards, the chart and the table. */
+export function AnalyticsLoading() {
+  return (
+    <LoadingRegion label="the analytics">
+      <SkeletonPageHeader action />
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="grid gap-2 rounded-card border border-line p-3">
+              <SkeletonLine className="w-1/2" />
+              <SkeletonBlock className="h-[26px] w-2/3" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-card border border-border-panel p-4">
+          <SkeletonLine className="mb-3 w-[180px]" />
+          <SkeletonBlock className="h-[200px]" />
+        </div>
+        <div className="rounded-card border border-border-panel bg-surface">
+          <SkeletonTable rows={8} columns={6} />
+        </div>
+      </div>
+    </LoadingRegion>
+  );
+}
+
 /** The Media Library: title, the upload bar, the search box and a grid of picture tiles with the preview panel. */
 export function MediaLibraryLoading() {
   return (
