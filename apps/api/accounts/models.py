@@ -46,6 +46,13 @@ class User(AbstractBaseUser):
         max_length=24, choices=AccountStatus.choices, default=AccountStatus.PENDING_VERIFICATION
     )
     display_name = models.CharField(max_length=80)
+    # Contact number given at registration, E.164 ("+263781234567"). Private; scrubbed on deletion.
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    # When, and to which version of the Terms and Privacy Policy, the person agreed (proof of acceptance).
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_version = models.CharField(max_length=16, blank=True, default="")
+    # Google account identifier ("sub") once the person signs in with Google; scrubbed on deletion.
+    google_subject = models.CharField(max_length=64, null=True, blank=True, unique=True)
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     row_version = models.PositiveIntegerField(default=0)
@@ -135,3 +142,114 @@ class StaffRoleAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.role}"
+
+
+class TokenPurpose(models.TextChoices):
+    EMAIL_VERIFICATION = "email_verification"
+    PASSWORD_RESET = "password_reset"  # noqa: S105
+    EMAIL_CHANGE = "email_change"
+    STAFF_INVITATION = "staff_invitation"
+
+
+class AuthToken(models.Model):
+    """Single-use e-mail token (SECURITY_ARCHITECTURE §3.5). Only a selector is stored: the emailed value is
+    `base64url(id).base64url(HMAC(key, id|purpose|user|expiry))`, so a database leak yields no usable
+    token."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="auth_tokens")
+    purpose = models.CharField(max_length=24, choices=TokenPurpose.choices)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    invalidated_at = models.DateTimeField(null=True, blank=True)
+    # Only for an e-mail change: the address that replaces the current one once this link is used. Kept in the
+    # row, never in the link, so it cannot be altered by whoever holds the link.
+    new_email = CaseInsensitiveEmailField(null=True, blank=True, max_length=254)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "purpose"], name="authtoken_user_purpose_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.purpose}:{self.pk}"
+
+
+class UserSession(models.Model):
+    """Metadata for "manage my sessions" (ERD §3.1). The payload stays in Django's session table. The key is
+    kept
+    so revocation is a keyed delete rather than a scan of every session; it is the same value Django's own
+    session table already stores as its primary key, so this adds no new exposure (deviation from the ERD's
+    hashed column, recorded in ADR-0019). Browser family and a truncated network prefix only (no raw IP)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="session_records")
+    session_key = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+    user_agent_summary = models.CharField(max_length=80, blank=True)
+    ip_prefix = models.CharField(max_length=64, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "revoked_at"], name="usersession_user_idx")]
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class StaffMfaDevice(models.Model):
+    """Time-based one-time-password device for staff (OQ-16 provisional default P3-07).
+
+    The shared secret is *derived* (HMAC of a server key and this row's random nonce), never stored, in the
+    same spirit as the e-mail tokens: a database leak alone does not reveal it. Rotating the key resets every
+    device."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="mfa_device")
+    nonce = models.CharField(max_length=64)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_step = models.BigIntegerField(default=0)  # replay protection: a code is accepted once
+
+    def __str__(self) -> str:
+        return str(self.user_id)
+
+
+class StaffRecoveryCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    device = models.ForeignKey(StaffMfaDevice, on_delete=models.CASCADE, related_name="recovery_codes")
+    code_hash = models.CharField(max_length=64)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["device", "code_hash"], name="recovery_code_unique")]
+
+    def __str__(self) -> str:
+        return str(self.pk)
+
+
+class TrustedDevice(models.Model):
+    """A browser the person chose to trust after a successful second step (D-59).
+
+    Only a keyed hash of the random cookie value is stored, so a database leak yields no usable cookie. A
+    record never replaces the password: it only lets a *correct password* skip the second step while it is
+    live, unexpired, not revoked, used by the same kind of browser, and (for a staff account) last proved a
+    code at most 24 hours ago. `last_mfa_at` moves only when a code is actually verified."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="trusted_devices")
+    token_hash = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=80, blank=True)  # browser family and system, e.g. "Chrome on Android"
+    ip_prefix = models.CharField(max_length=64, blank=True)  # truncated, never a raw address
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    last_used_at = models.DateTimeField(default=timezone.now)
+    last_mfa_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_reason = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "revoked_at"], name="trusteddevice_user_idx")]
+
+    def __str__(self) -> str:
+        return str(self.pk)

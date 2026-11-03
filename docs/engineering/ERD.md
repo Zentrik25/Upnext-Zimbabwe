@@ -215,3 +215,21 @@ Action catalogue: `auth.register, auth.verify_email, auth.login.success, auth.lo
 2. DB triggers/constraints for: id immutability, slug immutability, version content immutability, partial uniqueness of pipeline/live versions, audit append-only privileges.
 3. Separation of duties (D-18, D-22) checked in the service **and** re-asserted by DB triggers: `review_decision.decided_by` and `verification_record.checked_by` must differ from the author of the version chain (`author_id` of any version, and `submitted_by`); a version may enter state `published` only if `approved_by IS NOT NULL`, `approved_by` differs from the chain's author and submitter, and `content_hash` equals the hash recorded at approval — all inside the publish transaction. There is deliberately **no** author ≠ publisher or approver ≠ publisher constraint: the exact-revision approval by another person is what authorises publication.
 4. Migrations: forward-only with rehearsal on a copy; destructive operations require explicit review.
+
+## 8. Implementation notes (Phase 2)
+
+The tables of §3.3-§3.5 and §3.8 (`audit_event`) exist as Django models in `apps/api` (`catalog`, `audit`, `opportunities`); Django prefixes table names with the app label (`catalog_organisation`, `opportunities_opportunityversion`, `audit_auditevent`). Differences from the draft above, all deliberate:
+
+| Area | Implementation |
+|---|---|
+| Version `funding_period` | added: funding amounts carry an optional period like salary (the contract's `Money` already has one) |
+| Version `duplicate_acknowledgement` | added as JSONB `{duplicate_of, reason}`; part of the content hash |
+| `review_decision.content_hash` | added: every decision records the exact hash it covered; a trigger refuses a decision whose hash differs from the revision's |
+| `opportunity_version.row_version` | not present: the listing's `row_version` is the only optimistic-lock counter |
+| `search_vector` | a stored column maintained by the publishing service when a revision is published and when its organisation is renamed (it needs the organisation name, which a generated column cannot read) |
+| `version_*` child tables | surrogate integer keys; uniqueness by constraint; rows are deletable only while the revision is a draft (trigger) |
+| `audit_event` | no `ip_hash` column yet; `UPDATE`/`DELETE` are rejected by trigger for every role, `TRUNCATE` and DDL are controlled by database privileges at deployment |
+| `job_run`, `email_outbox`, `saved_opportunity`, profile tables | not created (later phases) |
+| Reference data | the six categories and the version-1 detail schemas are inserted by a migration with deterministic uuid5 ids; locations, sectors and skills by `manage.py seed_taxonomies` (contents provisional, P2-02) |
+| Triggers | `upnext_version_guard` (legal state changes, frozen content, approval and publication guards), `upnext_reviewer_not_author` (decisions and verification), `upnext_child_of_draft_only`, `upnext_opportunity_guard` (slug and category immutable), `upnext_append_only`, `upnext_no_delete`, `upnext_prevent_id_update` |
+| Extensions | `pg_trgm` (organisation name and title similarity) |

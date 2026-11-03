@@ -1,0 +1,35 @@
+{
+ "category": "jobs",
+ "organisation_id": "00000000-0000-4000-8000-000000000002",
+ "title": "Public Health Programme Assistant",
+ "summary": "Fixed-term programme support post covering logistics, community outreach and monitoring records in Masvingo.",
+ "description_md": "Support programme logistics, community outreach and monitoring records for a health programme.",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a5",
+   "is_primary": true
+  }
+ ],
+ "work_mode": "on_site",
+ "employment_type": "contract",
+ "application_method": "email",
+ "application_email": "recruitment@example.org",
+ "sources": [
+  {
+   "kind": "newspaper",
+   "name": "Example national daily, classified section",
+   "url": null,
+   "citation": "Example national daily, classifieds, 10 October 2026, p. 14",
+   "observed_on": "2026-10-10",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "contract_duration_months": 12,
+  "minimum_qualification": "diploma",
+  "languages_required": [
+   "en",
+   "sn"
+  ]
+ }
+}

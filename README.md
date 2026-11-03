@@ -1,8 +1,10 @@
-# UPNEXT
+# UPNEXT Careers (development name: NextJob Zimbabwe)
+
+> Jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe. Website: https://upnext.co.zw (not live; nothing is deployed). Internal identifiers (`UPNEXT_*` variables, repository, Compose projects) keep their spelling on purpose (D-42). E-mail goes through Resend once configured and verified (D-34): see `docs/engineering/RESEND_INTEGRATION.md`, `DOMAIN_AND_DNS_SETUP.md`, `EMAIL_DELIVERY_VERIFICATION.md`. Production settings template: `infrastructure/compose/production.env.example`.
 
 Zimbabwe-first opportunity discovery: jobs, internships, graduate programmes, scholarships, tenders and grants.
 
-**Status: Phase 1 (application foundation) — implemented and awaiting review.** The Phase 0 documentation package is the approved baseline; see `docs/governance/DECISION_REGISTER.md` (source of truth for decisions) and `docs/phase1/PHASE1_REPORT.md` (what was built and verified). Nothing is deployed, and nothing touches The Granite Post or the existing Traefik/Nginx.
+**Status: Phase 2 (opportunity catalogue and editorial CMS) — implemented and awaiting review.** Phase 1 (application foundation) was approved. The Phase 0 documentation package is the approved baseline; see `docs/governance/DECISION_REGISTER.md` (source of truth for decisions) and `docs/phase1/PHASE1_REPORT.md` and `docs/phase2/PHASE2_REPORT.md` (what was built and verified). Nothing is deployed, and nothing touches The Granite Post or the existing Traefik/Nginx.
 
 ## Repository layout
 | Path | Contents |

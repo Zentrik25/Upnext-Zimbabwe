@@ -1,0 +1,431 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildContent,
+  canCreate,
+  dayOf,
+  seoDefaults,
+  slugFromTitle,
+  detailFromText,
+  emptyState,
+  matchPlaces,
+  moreDetailFields,
+  stateFromDraft,
+  toggleBullets,
+} from "@/lib/job-editor";
+import type { DraftContent, StaffCategory } from "@/lib/staff-types";
+
+const jobs: StaffCategory = {
+  code: "jobs",
+  name: "Jobs",
+  detail_fields: [
+    {
+      name: "vacancies",
+      type: "integer",
+      format: null,
+      enum: null,
+      item_enum: null,
+      item_type: null,
+      max_length: null,
+      required: false,
+    },
+    {
+      name: "benefits",
+      type: "array",
+      format: null,
+      enum: null,
+      item_enum: null,
+      item_type: "string",
+      max_length: null,
+      required: false,
+    },
+    {
+      name: "driving_licence_required",
+      type: "boolean",
+      format: null,
+      enum: null,
+      item_enum: null,
+      item_type: null,
+      max_length: null,
+      required: false,
+    },
+  ],
+};
+const tenders: StaffCategory = { code: "tenders", name: "Tenders", detail_fields: [] };
+const org = { id: "org-1", name: "Acme" };
+
+const stored = {
+  title: "Accountant",
+  summary: "",
+  description_md: "- Keep the books",
+  requirements_md: null,
+  locations: [
+    { location_id: "b", name: "Bulawayo", is_primary: false },
+    { location_id: "h", name: "Harare", is_primary: true },
+  ],
+  location_text: null,
+  geographic_eligibility: null,
+  work_mode: null,
+  employment_type: "full_time",
+  experience_level: null,
+  salary: null,
+  salary_text: "Competitive",
+  funding: null,
+  deadline_at: "2027-03-01T21:59:59Z",
+  deadline_timezone: "Africa/Harare",
+  deadline_is_date_only: true,
+  application_method: "both",
+  application_url: "https://acme.example/apply",
+  application_email: "jobs@acme.example",
+  application_email_subject: "Accountant",
+  application_instructions: null,
+  reference_number: null,
+  contact_details: null,
+  skills: [{ skill_id: "sk-1", name: "Excel", is_required: true }],
+  sector_ids: ["s-1"],
+  sectors: [],
+  sources: [
+    {
+      kind: "newspaper",
+      name: "Herald",
+      url: null,
+      citation: "Herald 30 Oct, p. 12",
+      observed_on: "2026-10-30",
+      is_primary: false,
+    },
+    {
+      kind: "issuer_website",
+      name: "acme.example",
+      url: "https://acme.example/jobs",
+      citation: null,
+      observed_on: "2026-10-29",
+      is_primary: true,
+    },
+  ],
+  detail: { vacancies: 2, benefits: ["Medical aid"] },
+  slug: null,
+  seo_title: null,
+  seo_description: null,
+  og_title: null,
+  og_description: null,
+} as unknown as DraftContent;
+
+const places = [
+  { id: "h", name: "Harare", kind: "city" },
+  { id: "b", name: "Bulawayo", kind: "city" },
+  { id: "z", name: "Zimbabwe", kind: "country" },
+  { id: "r", name: "Remote", kind: "remote" },
+];
+const opts = { addressLocked: false, places };
+
+describe("state from a stored draft", () => {
+  it("shows what is stored: location written out primary first and pay wording; sources are not part of the form", () => {
+    const s = stateFromDraft(stored, jobs, org, places);
+    expect(s.locationText).toBe("Harare, Bulawayo");
+    expect(s.salaryText).toBe("Competitive");
+    expect(s.applyMethod).toBe("both");
+    expect(Object.keys(s).filter((k) => /source/i.test(k) && !/social/i.test(k))).toEqual([]);
+    expect(s.deadlineDay).toBe("2027-03-01");
+    expect(s.detail).toMatchObject({ vacancies: "2", benefits: "Medical aid" });
+  });
+
+  it("shows an older structured amount or range as one pay line, so nothing is lost silently", () => {
+    const exact = stateFromDraft(
+      {
+        ...stored,
+        salary_text: null,
+        salary: { min: "500.00", max: "500.00", currency: "USD", period: "month" },
+      },
+      jobs,
+      org,
+    );
+    expect(exact.salaryText).toContain("500");
+    const range = stateFromDraft(
+      {
+        ...stored,
+        salary_text: null,
+        salary: { min: "500.00", max: "700.00", currency: "ZWG", period: "year" },
+      },
+      jobs,
+      org,
+    );
+    expect(range.salaryText).toContain("700");
+  });
+
+  it("keeps the location the editor wrote, and writes out a place that was only attached", () => {
+    const written = stateFromDraft({ ...stored, location_text: "Harare CBD" }, jobs, org, places);
+    expect(written.locationText).toBe("Harare CBD");
+    expect(stateFromDraft(stored, jobs, org).locationText).toBe(""); // no names known, nothing invented
+  });
+});
+
+describe("drafts saved before the simplified editor", () => {
+  it("opens with the new fields absent, shows what was stored, and saves without inventing anything", () => {
+    const legacy = { ...stored } as unknown as Record<string, unknown>;
+    for (const key of [
+      "salary_text",
+      "application_email_subject",
+      "slug",
+      "seo_title",
+      "seo_description",
+      "og_title",
+      "og_description",
+    ])
+      delete legacy[key];
+    legacy.employment_type = "permanent"; // a type the old editor offered and the category still accepts
+    legacy.application_method = "external_url";
+    legacy.salary = { min: "500.00", max: "700.00", currency: "USD", period: "month" };
+    const draft = legacy as unknown as DraftContent;
+    const s = stateFromDraft(draft, jobs, org);
+    expect(s.employmentType).toBe("permanent");
+    expect(s.salaryText).toContain("500");
+    expect([s.slug, s.seoTitle, s.ogTitle, s.applySubject]).toEqual(["", "", "", ""]);
+    const { content } = buildContent(s, jobs, draft, opts);
+    expect(content.salary).toBeNull(); // pay is one line now
+    expect(content.salary_text).toContain("700");
+    expect(content.employment_type).toBe("permanent");
+    expect(content.seo_title).toBeNull();
+  });
+
+  it("keeps a stored work arrangement and experience level that the main form no longer shows", () => {
+    const draft = {
+      ...stored,
+      work_mode: "hybrid",
+      experience_level: "senior",
+      contact_details: "HR office",
+    } as unknown as DraftContent;
+    const { content } = buildContent(stateFromDraft(draft, jobs, org), jobs, draft, opts);
+    expect([content.work_mode, content.experience_level, content.contact_details]).toEqual([
+      "hybrid",
+      "senior",
+      "HR office",
+    ]);
+  });
+});
+
+describe("the request body", () => {
+  it("round-trips a stored draft without inventing or losing anything", () => {
+    const s = stateFromDraft(stored, jobs, org, places);
+    const { content, errors } = buildContent(s, jobs, stored, opts);
+    expect(errors).toEqual({});
+    expect(content.locations).toEqual([
+      { location_id: "h", is_primary: true },
+      { location_id: "b", is_primary: false },
+    ]);
+    expect(content.salary).toBeNull();
+    expect(content.salary_text).toBe("Competitive");
+    expect(content.skills).toEqual([{ skill_id: "sk-1", is_required: true }]);
+    expect("deadline_at" in content).toBe(false); // the day did not change
+    expect(content.detail).toEqual({ vacancies: 2, benefits: ["Medical aid"] });
+    // Sources are no longer part of the form (D-62): none is sent, so the stored ones are left exactly as they are.
+    expect("sources" in content).toBe(false);
+  });
+
+  it("sends only the chosen application method's fields, and instructions with any method", () => {
+    const s = stateFromDraft(stored, jobs, org);
+    const web = buildContent(
+      { ...s, applyMethod: "external_url", applyInstructions: "Quote the reference" },
+      jobs,
+      stored,
+      opts,
+    ).content;
+    expect([web.application_url, web.application_email, web.application_email_subject]).toEqual([
+      "https://acme.example/apply",
+      null,
+      null,
+    ]);
+    expect(web.application_instructions).toBe("Quote the reference");
+    const email = buildContent({ ...s, applyMethod: "email" }, jobs, stored, opts).content;
+    expect([email.application_url, email.application_email, email.application_email_subject]).toEqual([
+      null,
+      "jobs@acme.example",
+      "Accountant",
+    ]);
+    const both = buildContent(s, jobs, stored, opts).content;
+    expect([both.application_url, both.application_email]).toEqual([
+      "https://acme.example/apply",
+      "jobs@acme.example",
+    ]);
+    const none = buildContent(
+      { ...s, applyMethod: "instructions", applyInstructions: "Hand deliver to reception" },
+      jobs,
+      stored,
+      opts,
+    ).content;
+    expect([none.application_url, none.application_email]).toEqual([null, null]); // no fake destination
+  });
+
+  it("sends pay as the one line typed, trimmed, and nothing when it is empty (the page shows TBA)", () => {
+    const base = { ...emptyState("jobs"), organisation: org, title: "T" };
+    expect(buildContent({ ...base, salaryText: "" }, jobs, null, opts).content).toMatchObject({
+      salary: null,
+      salary_text: null,
+    });
+    expect(
+      buildContent({ ...base, salaryText: " US$500 per month " }, jobs, null, opts).content,
+    ).toMatchObject({
+      salary: null,
+      salary_text: "US$500 per month",
+    });
+  });
+
+  it("derives the structured places from the written location, in written order", () => {
+    const base = { ...emptyState("jobs"), organisation: org, title: "T" };
+    const at = (locationText: string) =>
+      buildContent({ ...base, locationText }, jobs, null, opts).content.locations;
+    expect(at("Bulawayo and Harare")).toEqual([
+      { location_id: "b", is_primary: true },
+      { location_id: "h", is_primary: false },
+    ]);
+    expect(at("Somewhere unlisted")).toEqual([]);
+    expect(at("")).toEqual([]);
+  });
+
+  it("carries funding, not pay, for a category that has no pay", () => {
+    const s = {
+      ...emptyState("tenders"),
+      organisation: org,
+      title: "T",
+      fundingMin: "1000",
+      fundingCurrency: "USD",
+    };
+    const { content } = buildContent(s, tenders, null, opts);
+    expect("salary" in content).toBe(false);
+    expect(content.funding).toMatchObject({ min: "1000", currency: "USD" });
+  });
+
+  it("rewrites the deadline only when the day changed, as an end-of-day Harare time, and clears it when emptied", () => {
+    const s = stateFromDraft(stored, jobs, org);
+    const moved = buildContent({ ...s, deadlineDay: "2027-04-02" }, jobs, stored, opts).content;
+    expect(moved).toMatchObject({
+      deadline_at: "2027-04-02T23:59:59+02:00",
+      deadline_timezone: "Africa/Harare",
+      deadline_is_date_only: true,
+    });
+    const cleared = buildContent({ ...s, deadlineDay: "" }, jobs, stored, opts).content;
+    expect(cleared).toMatchObject({
+      deadline_at: null,
+      deadline_timezone: null,
+      deadline_is_date_only: false,
+    });
+    expect(
+      "deadline_at" in
+        buildContent({ ...emptyState("jobs"), organisation: org, title: "T" }, jobs, null, opts).content,
+    ).toBe(false);
+  });
+
+  it("never asks for or sends a source, for a new draft or an edited one", () => {
+    const fresh = buildContent({ ...emptyState("jobs"), organisation: org, title: "T" }, jobs, null, opts);
+    expect("sources" in fresh.content).toBe(false);
+    const edited = buildContent(stateFromDraft(stored, jobs, org), jobs, stored, opts);
+    expect("sources" in edited.content).toBe(false);
+  });
+
+  it("generates the search title, description and address from the job, to be edited only when needed", () => {
+    const s = {
+      ...emptyState("jobs"),
+      organisation: org,
+      title: "Driver Salesperson (Harare) – Urgent",
+      summary: "",
+      responsibilities: "- Sell and deliver\n- Keep records",
+    };
+    expect(seoDefaults(s)).toEqual({
+      title: "Driver Salesperson (Harare) – Urgent at Acme",
+      description: "Sell and deliver Keep records",
+      slug: "driver-salesperson-harare-urgent",
+    });
+    expect(seoDefaults({ ...s, title: "" }).slug).toBe("");
+    expect(slugFromTitle("Café Manager")).toBe("cafe-manager");
+    expect(slugFromTitle("!!!")).toBe("opportunity");
+  });
+
+  it("never sends an address once it is permanent, and sends a chosen one before", () => {
+    const s = { ...stateFromDraft(stored, jobs, org), slug: "my-chosen-address" };
+    expect(buildContent(s, jobs, stored, opts).content.slug).toBe("my-chosen-address");
+    expect("slug" in buildContent(s, jobs, stored, { ...opts, addressLocked: true }).content).toBe(false);
+  });
+
+  it("keeps empty search and sharing text as null so the page derives it", () => {
+    const { content } = buildContent(
+      { ...emptyState("jobs"), organisation: org, title: "T" },
+      jobs,
+      null,
+      opts,
+    );
+    expect([content.seo_title, content.seo_description, content.og_title, content.og_description]).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
+});
+
+describe("helpers", () => {
+  it("reads category details by schema type and reports invalid JSON", () => {
+    const { detail, errors } = detailFromText(
+      [
+        ...jobs.detail_fields,
+        {
+          name: "fee",
+          type: "object",
+          format: null,
+          enum: null,
+          item_enum: null,
+          item_type: null,
+          max_length: null,
+          required: false,
+        },
+      ],
+      {
+        vacancies: "3",
+        benefits: "Housing\n  Medical aid \n",
+        driving_licence_required: "no",
+        fee: "{not json",
+      },
+    );
+    expect(detail).toEqual({
+      vacancies: 3,
+      benefits: ["Housing", "Medical aid"],
+      driving_licence_required: false,
+    });
+    expect(errors["detail.fee"]).toBeTruthy();
+  });
+
+  it("promotes vacancies to the main form and hides the details the owner retired", () => {
+    expect(moreDetailFields(jobs).map((f) => f.name)).toEqual([]);
+    expect(moreDetailFields(tenders)).toEqual([]);
+  });
+
+  it("still sends a retired detail that is already stored, so older listings lose nothing", () => {
+    const { content } = buildContent(stateFromDraft(stored, jobs, org, places), jobs, stored, opts);
+    expect(content.detail).toMatchObject({ benefits: ["Medical aid"] });
+  });
+
+  it("matches places by whole word, and nationwide or remote wording to the country and remote entries", () => {
+    expect(matchPlaces("Harare", places)).toEqual(["h"]);
+    expect(matchPlaces("Hararexyz", places)).toEqual([]);
+    expect(matchPlaces("Nationwide, or remote", places)).toEqual(["z", "r"]);
+    expect(matchPlaces("Remote, then Harare", places)).toEqual(["r", "h"]);
+  });
+
+  it("toggles bullets on the selected lines only, and back", () => {
+    const text = "One\nTwo\nThree";
+    const on = toggleBullets(text, 4, 7);
+    expect(on.text).toBe("One\n- Two\nThree");
+    const off = toggleBullets(on.text, on.start, on.end);
+    expect(off.text).toBe(text);
+    expect(toggleBullets("A\n\nB", 0, 4).text).toBe("- A\n\n- B");
+  });
+
+  it("knows the day of a Harare deadline", () => {
+    expect(dayOf("2027-03-01T21:59:59Z")).toBe("2027-03-01");
+    expect(dayOf(null)).toBe("");
+  });
+
+  it("can create a draft only with a category, an organisation and a title", () => {
+    const s = emptyState("jobs");
+    expect(canCreate(s)).toBe(false);
+    expect(canCreate({ ...s, organisation: org, title: "  " })).toBe(false);
+    expect(canCreate({ ...s, organisation: org, title: "Accountant" })).toBe(true);
+  });
+});
