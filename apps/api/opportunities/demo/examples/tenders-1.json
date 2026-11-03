@@ -1,0 +1,60 @@
+{
+ "category": "tenders",
+ "organisation_id": "00000000-0000-4000-8000-000000000009",
+ "title": "Supply of Solar Water Heating Units",
+ "summary": "Open tender for supply and delivery of solar water heating units to municipal clinics in Mutare.",
+ "description_md": "Open tender for registered suppliers to supply and deliver solar water heating units.",
+ "requirements_md": "- Registered supplier\n- Tax and procurement documentation\n- Technical quotation",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a3",
+   "is_primary": true
+  }
+ ],
+ "work_mode": "on_site",
+ "deadline_at": "2026-11-13T10:00:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "instructions",
+ "application_instructions": "Place sealed bids in the tender box at the procurement unit reception before the closing time. Late bids are not accepted.",
+ "reference_number": "EX-CITY/2026/014",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b6"
+ ],
+ "sources": [
+  {
+   "kind": "issuer_notice",
+   "name": "Example City Procurement Unit tender notice",
+   "url": "https://city.example.org/tenders/EX-CITY-2026-014",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "procuring_entity": "Example City Procurement Unit",
+  "procurement_reference": "EX-CITY/2026/014",
+  "procurement_method": "open_tender",
+  "procurement_category": "goods",
+  "lots": 2,
+  "bidder_requirements": [
+   "Registered supplier in good standing",
+   "Valid tax clearance"
+  ],
+  "mandatory_documents": [
+   "Company registration certificate",
+   "Valid tax clearance certificate",
+   "Technical specifications and quotation"
+  ],
+  "submission_location": "Procurement unit reception, Example Civic Centre, Mutare",
+  "clarification_deadline_at": "2026-11-06T16:00:00+02:00",
+  "site_visit_at": "2026-11-03T09:00:00+02:00",
+  "site_visit_mandatory": false,
+  "bid_opening_at": "2026-11-13T10:30:00+02:00",
+  "tender_fee": {
+   "amount": "20.00",
+   "currency": "USD"
+  },
+  "bid_security_required": false
+ }
+}

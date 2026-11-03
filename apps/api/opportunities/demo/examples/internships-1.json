@@ -1,0 +1,58 @@
+{
+ "category": "internships",
+ "organisation_id": "00000000-0000-4000-8000-000000000003",
+ "title": "ICT Industrial Attachment",
+ "summary": "Six-month attachment supporting web platforms and IT operations for students enrolled in an ICT programme.",
+ "description_md": "Gain practical experience supporting web platforms, user support and basic networking for a digital studio in Bulawayo.",
+ "requirements_md": "- Currently enrolled in an ICT or computer science programme\n- Basic web or networking knowledge",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a2",
+   "is_primary": true
+  }
+ ],
+ "work_mode": "hybrid",
+ "employment_type": "internship",
+ "deadline_at": "2026-12-04T23:59:59+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": true,
+ "application_method": "external_url",
+ "application_url": "https://studio.example.org/attachments",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b2"
+ ],
+ "skills": [
+  {
+   "skill_id": "00000000-0000-4000-8000-0000000000c3",
+   "is_required": false
+  }
+ ],
+ "sources": [
+  {
+   "kind": "issuer_notice",
+   "name": "Example Digital Studio attachment notice",
+   "url": "https://studio.example.org/notices/attachment-2027",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "placement_type": "industrial_attachment",
+  "duration_months": 6,
+  "expected_start": "2027-01-11",
+  "stipend_provided": "not_stated",
+  "eligible_study_levels": [
+   "diploma",
+   "bachelors_degree"
+  ],
+  "requires_current_enrolment": true,
+  "institution_letter_required": true,
+  "vacancies": 3,
+  "application_documents": [
+   "CV",
+   "Letter from your institution",
+   "Academic transcript"
+  ]
+ }
+}

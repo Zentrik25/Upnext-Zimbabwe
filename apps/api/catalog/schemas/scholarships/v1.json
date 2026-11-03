@@ -1,0 +1,135 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://upnext.invalid/schemas/scholarships/v1",
+ "title": "Scholarships — detail",
+ "description": "Undergraduate, postgraduate, research and short-course funding for study. DRAFT v1 — NOT APPROVED (OQ-06). Not the implementation location (apps/api is created in Phase 1/2).",
+ "x-status": "DRAFT",
+ "x-open": "OQ-06",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "study_level": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "certificate",
+     "diploma",
+     "bachelors_degree",
+     "honours_degree",
+     "masters_degree",
+     "doctorate",
+     "postdoctoral",
+     "short_course"
+    ]
+   },
+   "minItems": 1,
+   "maxItems": 8,
+   "uniqueItems": true
+  },
+  "study_destination": {
+   "enum": [
+    "zimbabwe",
+    "abroad",
+    "either"
+   ]
+  },
+  "host_institutions": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 200
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  },
+  "eligible_countries": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "^[A-Z]{2}$"
+   },
+   "minItems": 0,
+   "maxItems": 60,
+   "uniqueItems": true
+  },
+  "coverage": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "tuition",
+     "accommodation",
+     "living_allowance",
+     "travel",
+     "books_and_materials",
+     "research_costs",
+     "health_insurance",
+     "other"
+    ]
+   },
+   "minItems": 0,
+   "maxItems": 8,
+   "uniqueItems": true
+  },
+  "award_count": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 10000
+  },
+  "award_duration_months": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 96
+  },
+  "renewable": {
+   "type": "boolean"
+  },
+  "maximum_age": {
+   "type": "integer",
+   "minimum": 15,
+   "maximum": 80
+  },
+  "target_groups": {
+   "type": "array",
+   "items": {
+    "enum": [
+     "women",
+     "persons_with_disabilities",
+     "rural_applicants",
+     "orphans_and_vulnerable_children",
+     "first_generation_students",
+     "other"
+    ]
+   },
+   "minItems": 0,
+   "maxItems": 6,
+   "uniqueItems": true
+  },
+  "fields_of_study": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 15,
+   "uniqueItems": true
+  },
+  "application_documents": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 2,
+    "maxLength": 100
+   },
+   "minItems": 0,
+   "maxItems": 20,
+   "uniqueItems": true
+  }
+ },
+ "required": [
+  "study_level"
+ ]
+}

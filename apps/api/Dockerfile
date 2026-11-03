@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Python 3.14.8 on Debian 13 (trixie), pinned by digest (OQ-28 / PHASE1_VERSION_VERIFICATION.md).
-FROM python:3.14.8-slim-trixie@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS base
+FROM python:3.15.0-slim-trixie@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -30,14 +30,21 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM base AS prod
 COPY --chown=upnext:upnext . .
 # Build-time placeholders only so `collectstatic` can import settings; no real secret is baked in.
-RUN DJANGO_SETTINGS_MODULE=config.settings.dev DJANGO_SECRET_KEY=build-only-placeholder \
+# It must use the production settings: the manifest it writes is what the production storage reads.
+# UPNEXT_ENVIRONMENT is set for this one command only (the start-up safeguards need real https settings,
+# which do not exist at build time); it is not stored in the image environment.
+RUN DJANGO_SETTINGS_MODULE=config.settings.prod UPNEXT_ENVIRONMENT=local-prod-like \
+    DJANGO_SECRET_KEY=build-only-placeholder-build-only-placeholder-build-only-placeholder \
+    DJANGO_ALLOWED_HOSTS=build UPNEXT_SECURE_COOKIES=true \
     POSTGRES_DB=build POSTGRES_USER=build POSTGRES_PASSWORD=build \
     python manage.py collectstatic --noinput \
  && chown -R upnext:upnext /app/staticfiles
+# The persistent media location (a named volume in production inherits this ownership when it is first created).
+RUN mkdir -p /srv/media && chown upnext:upnext /srv/media
 USER upnext
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
   CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=2).status == 200 else 1)"]
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 # No gunicorn access log: the JSON request log (core.middleware) records every request without query strings.
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "30"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-class", "gthread", "--threads", "4", "--timeout", "30"]

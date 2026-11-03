@@ -1,34 +1,37 @@
-"""Phase 1 endpoints: API root, CSRF bootstrap, login/logout, current user.
-
-Registration, e-mail verification, password reset and the rest of the account product are Phase 4.
-"""
+"""API root, CSRF bootstrap, login and logout (the rest of the account product is in account_views)."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
+from typing import Any
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import check_password, make_password
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import exceptions, status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.drf import HasRequiredPermission
-from access.registry import Permission
+from accounts import google, login_challenge, mfa, services, trusted_devices
 from accounts.models import AccountStatus, User
+from accounts.sessions import client_ip
+from audit import services as audit
+from audit.models import Severity
 from core.context import get_request_id
+from core.staff_mfa import SESSION_FLAG as STAFF_SESSION_FLAG
+from core.staff_mfa import mark_trusted
 
 from . import schema as _schema  # noqa: F401  (registers the OpenAPI auth extension)
+from .account_serializers import LoginCodeSerializer
 from .errors import CodedPermissionDenied, error_response
 from .serializers import (
     ApiRootSerializer,
@@ -55,7 +58,9 @@ class ApiRootView(APIView):
 
     @extend_schema(operation_id="getApiRoot", responses=ApiRootSerializer, tags=["health"])
     def get(self, request: Request) -> Response:
-        return Response({"name": "UPNEXT API", "version": settings.API_VERSION, "status": "ok"})
+        return Response(
+            {"name": f"{settings.UPNEXT_BRAND_SHORT} API", "version": settings.API_VERSION, "status": "ok"}
+        )
 
 
 @method_decorator(never_cache, name="dispatch")
@@ -78,7 +83,10 @@ class LoginView(APIView):
         tags=["auth"],
         request=LoginSerializer,
         responses={
-            200: UserSerializer,
+            200: OpenApiResponse(
+                UserSerializer,
+                description="Signed in; or {two_step_required: true} when a code is still needed",
+            ),
             401: OpenApiResponse(description="invalid_credentials (generic)"),
             403: OpenApiResponse(description="email_not_verified or account_unavailable"),
             429: OpenApiResponse(description="rate_limited"),
@@ -98,10 +106,18 @@ class LoginView(APIView):
         user = User.objects.filter(email=email).first()
         if user is None:
             _dummy_password_check(password)
-        credentials_ok = user is not None and user.check_password(password)
+        credentials_ok = user is not None and user.check_password(services.normalise_password(password))
         if not credentials_ok or user is None:
             EmailFailureLimiter.record_failure(email)
             logger.info("login failed", extra={"event": "auth.login.failure", "email_hash": email_hash})
+            audit.record(
+                action="auth.login_failed",
+                object_type="user",
+                object_id=user.pk if user else None,
+                actor_id=None,
+                severity=Severity.SECURITY,
+                changes={"email_hash": email_hash, "ip_hash": hash_key(client_ip(request._request) or "-")},
+            )
             return error_response(
                 "invalid_credentials", "Incorrect e-mail or password.", status.HTTP_401_UNAUTHORIZED
             )
@@ -112,10 +128,101 @@ class LoginView(APIView):
         if user.status != AccountStatus.ACTIVE:
             raise CodedPermissionDenied("account_unavailable")
 
+        # A trusted device (D-59) may stand in for the code, never for the password or past its limits.
+        device = (
+            trusted_devices.recognise(request._request, user, failures=EmailFailureLimiter.count(email))
+            if mfa.is_enrolled(user)
+            else None
+        )
+        if login_challenge.required_for(user) and device is None:
+            # Correct password, but no session yet: the code comes first (accounts.login_challenge).
+            login_challenge.begin(
+                request._request, user, remember=serializer.validated_data["remember"], method="password"
+            )
+            EmailFailureLimiter.reset(email)
+            return Response({"two_step_required": True})
+
         login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+        request._request.session.pop(STAFF_SESSION_FLAG, None)  # every sign-in earns its own second step...
+        if device is not None and user.active_roles():
+            # ...unless this trusted device proved a code within the staff limit (real date kept).
+            mark_trusted(request._request, device.last_mfa_at.timestamp())
+        if not serializer.validated_data["remember"]:
+            request.session.set_expiry(0)  # a browser-session cookie: gone when the browser closes
         EmailFailureLimiter.reset(email)
         logger.info("login succeeded", extra={"event": "auth.login.success", "user_id": str(user.pk)})
+        audit.record(
+            action="auth.login",
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            changes={
+                "ip_hash": hash_key(client_ip(request._request) or "-"),
+                "trusted_device": str(device.pk) if device else None,
+            },
+        )
         return Response(UserSerializer(user).data)
+
+
+@method_decorator(never_cache, name="dispatch")
+class LoginTwoStepView(APIView):
+    """Second step of sign-in for an account that turned two-step verification on."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    @extend_schema(
+        operation_id="loginTwoStep",
+        tags=["auth"],
+        request=LoginCodeSerializer,
+        responses={
+            200: UserSerializer,
+            400: OpenApiResponse(description="invalid_code, or two_step_expired when sign-in must restart"),
+            429: OpenApiResponse(description="rate_limited"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        data = LoginCodeSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        held = login_challenge.pending(request._request)
+        if held is None:
+            return error_response(
+                "two_step_expired",
+                "Your sign-in timed out. Enter your password again.",
+                status.HTTP_400_BAD_REQUEST,
+            )
+        if mfa.blocked(held.user):
+            return error_response(
+                "rate_limited",
+                "Too many incorrect codes. Try again in 15 minutes.",
+                status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        if not mfa.verify(held.user, data.validated_data["code"]):
+            return error_response(
+                "invalid_code",
+                "That code is not valid. Each code works once, so wait for the next one on your device, "
+                "or use an unused recovery code. Check that your phone's time is set automatically.",
+                status.HTTP_400_BAD_REQUEST,
+            )
+        login_challenge.complete(request._request, held)
+        audit.record(
+            action="auth.login",
+            object_type="user",
+            object_id=held.user.pk,
+            actor_id=held.user.pk,
+            changes={
+                "method": held.method,
+                "two_step": True,
+                "ip_hash": hash_key(client_ip(request._request) or "-"),
+            },
+        )
+        logger.info("login succeeded", extra={"event": "auth.login.success", "user_id": str(held.user.pk)})
+        response = Response(UserSerializer(held.user).data)
+        if data.validated_data["trust_device"]:
+            trusted_devices.trust(request._request, response, held.user)
+        else:
+            trusted_devices.note_verified(request._request, held.user)
+        return response
 
 
 class LogoutView(APIView):
@@ -132,19 +239,94 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@method_decorator(never_cache, name="dispatch")
-class MeView(APIView):
-    permission_classes = [HasRequiredPermission]
-    required_permission = Permission.ME_PROFILE
-
-    @extend_schema(operation_id="getMe", tags=["me"], responses=UserSerializer)
-    def get(self, request: Request) -> Response:
-        return Response(UserSerializer(cast(User, request.user)).data)
-
-
 def api_not_found(request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
     """Catch-all so unknown /api/v1/ paths return the standard JSON error, not an HTML page."""
     return JsonResponse(
         {"error": {"code": "not_found", "message": "Not found.", "request_id": get_request_id()}},
         status=404,
     )
+
+
+class ProvidersView(APIView):
+    """Which sign-in options this installation offers (so the page never shows a button that cannot work)."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        operation_id="listAuthProviders",
+        tags=["auth"],
+        responses={200: OpenApiResponse(description="{google: boolean}")},
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"google": google.configured()})
+
+
+def _sign_in_failed(reason: str) -> HttpResponseRedirect:
+    logger.info("google sign-in refused", extra={"event": "auth.google.refused", "reason": reason})
+    return HttpResponseRedirect("/sign-in?error=google")
+
+
+class GoogleStartView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    @extend_schema(
+        operation_id="startGoogleSignIn",
+        tags=["auth"],
+        parameters=[OpenApiParameter("next", str, required=False)],
+        responses={302: OpenApiResponse(description="Redirect to Google, or back to /sign-in?error=google")},
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        if not google.configured():
+            return _sign_in_failed("not configured")
+        return HttpResponseRedirect(google.begin(request._request, request.query_params.get("next")))
+
+
+class GoogleCallbackView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginIpThrottle]
+
+    @extend_schema(
+        operation_id="googleSignInCallback",
+        tags=["auth"],
+        parameters=[
+            OpenApiParameter("code", str, required=False),
+            OpenApiParameter("state", str, required=False),
+        ],
+        responses={
+            302: OpenApiResponse(
+                description="Signed in: redirect to the requested page; otherwise /sign-in?error=google"
+            )
+        },
+    )
+    def get(self, request: Request) -> HttpResponseRedirect:
+        code, state = request.query_params.get("code", ""), request.query_params.get("state", "")
+        if not google.configured():
+            return _sign_in_failed("not configured")
+        if not code or not state or len(code) > 2048 or len(state) > 200:
+            request._request.session.pop(google.SESSION_KEY, None)
+            return _sign_in_failed("missing code or state")
+        try:
+            identity, next_path = google.exchange(request._request, code, state)
+            user = google.resolve_user(identity)
+        except google.GoogleSignInError as exc:
+            return _sign_in_failed(exc.reason)
+        device = trusted_devices.recognise(request._request, user) if mfa.is_enrolled(user) else None
+        if login_challenge.required_for(user) and device is None:
+            login_challenge.begin(request._request, user, remember=True, method="google")
+            return HttpResponseRedirect(f"/sign-in/two-step?next={quote(next_path, safe='')}")
+        login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
+        if device is not None and user.active_roles():
+            mark_trusted(request._request, device.last_mfa_at.timestamp())
+        audit.record(
+            action="auth.login",
+            object_type="user",
+            object_id=user.pk,
+            actor_id=user.pk,
+            changes={
+                "method": "google",
+                "trusted_device": str(device.pk) if device else None,
+                "ip_hash": hash_key(client_ip(request._request) or "-"),
+            },
+        )
+        return HttpResponseRedirect(next_path)

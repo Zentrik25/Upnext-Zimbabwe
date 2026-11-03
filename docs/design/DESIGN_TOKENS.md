@@ -1,5 +1,11 @@
 # UPNEXT design tokens — extracted from the approved reference
 
+> **Update 2026-10-29 (D-45): the interface follows the Stripe design system supplied by the owner** (`DESIGN.md`, `preview.html`, `preview-dark.html`). Where this document describes the monochrome palette, 600-weight headings or the black accent of D-39/D-42, the values in `apps/web/src/design/tokens.json` now govern: purple `#533afd` (hover `#4434d4`) for primary actions, links and focus; deep navy `#061b31` headings and slate `#64748d` secondary text; borders `#e5edf5`; brand dark `#1c1e54` for the footer and employer band; weight 300 for body and headlines and 400 for buttons, links and navigation; tracking -1.4px at 56px, -0.96px at 48px, -0.64px at 32px, -0.26px at 26px, -0.22px at 22px; shadows `rgba(23,23,23,.06) 0 3px 6px`, `rgba(23,23,23,.08) 0 15px 35px`, `rgba(50,50,93,.25) 0 30px 45px -30px` with `rgba(0,0,0,.1) 0 18px 36px -18px`, and `rgba(3,3,39,.25) 0 14px 21px -14px` with `rgba(0,0,0,.1) 0 8px 17px -8px`; radii 1, 4, 5, 6, 8px; Source Code Pro for code and technical labels; ruby `#ea2261` and magenta `#f96bee` only as a decorative hero accent and for the error ring. Dark theme values are the owner's dark preview (surface `#0e0f2e`). **The logo is unchanged: the flat black or white UN monogram, never recoloured.** Söhne is not redistributable, so Inter stands in. Accessibility corrections: `ACCESSIBILITY_DEVIATIONS.md` DEV-02 to DEV-06. Light is the default theme.
+
+
+> **Superseded by D-39 (2026-10-28).** The web app now follows the Stripe-inspired design system. The live token values are in `apps/web/src/design/tokens.json` (generated into `tokens.generated.css`); the corrections to the system are in `ACCESSIBILITY_DEVIATIONS.md` section 0. Everything below describes the earlier flat reference and is kept as a historical record.
+
+
 **Status: DRAFT for owner sign-off.** Source of truth: `reference/approved-flat.html` (SHA-256 `77883daef17704f358e42a27a9b4197ac0c83aad9143e5335b071ca23977cce8`, unchanged). Authority: DECISION_REGISTER D-08 (the reference is the definitive design source; blue accent, Arial, sizing, spacing and square corners are preserved) as amended by D-19 (accessibility takes precedence over exact fidelity where the reference conflicts with WCAG 2.2 AA; minimum corrections only). Reference values are exact measurements; the four **production deviations** are listed in `ACCESSIBILITY_DEVIATIONS.md` and in §1a. Nothing else is invented.
 
 **Method.** Values were read from the *computed* styles of the rendered reference in Chromium (Playwright) at 1440, 390 and 320px, then cross-checked against the CSS source. Raw output: `docs/design/evidence/reference-computed-styles.json`. The reference contains two CSS layers; the later "strict flat editorial UI" layer wins and is what is recorded below. Where a value could only be read from CSS source (an element not rendered in the sampled state), it is marked **(css)**.
@@ -88,7 +94,7 @@ Every other value in this document is used exactly as measured. The theme must e
 | 3-column layout | 190px · fluid · 215px, gap 22px |
 | ≤990px | 175px · fluid; aside moves under feed |
 | ≤650px | single column, gap 15px; filters become 2-column grid, gap 8px |
-| radius | **0** everywhere (`!important` in reference) |
+| radius | **0** everywhere in the reference (`!important`); **4px on buttons, inputs, selects and textareas** by owner decision D-29 (`--radius-control`); everything else stays 0 |
 | shadow / gradient / filter | none |
 | button (standard) | padding 7px 12px, min-height 33px, 1px border |
 | search controls | min-height 39px, padding 8px 11px (36px button ≤650px) |

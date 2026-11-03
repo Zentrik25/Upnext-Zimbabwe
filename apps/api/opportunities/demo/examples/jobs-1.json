@@ -1,0 +1,74 @@
+{
+ "category": "jobs",
+ "organisation_id": "00000000-0000-4000-8000-000000000001",
+ "title": "Graduate Electrical Engineer",
+ "summary": "Support distribution projects, site inspections and technical reporting at an electricity services company in Harare.",
+ "description_md": "Example Power Services is recruiting a **Graduate Electrical Engineer** to assist engineers on distribution network projects.\n\n### Responsibilities\n- Assist with site inspections and commissioning checks\n- Prepare technical reports and as-built drawings\n- Support the safety and quality programme",
+ "requirements_md": "- Bachelor's degree in electrical or electronic engineering\n- Basic technical reporting skills\n- Willingness to work on site",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a1",
+   "is_primary": true
+  }
+ ],
+ "location_text": "Head office, with regular site travel",
+ "work_mode": "on_site",
+ "employment_type": "permanent",
+ "experience_level": "entry",
+ "salary": {
+  "min": "700.00",
+  "max": "900.00",
+  "currency": "USD",
+  "period": "month"
+ },
+ "deadline_at": "2026-11-27T16:30:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "external_url",
+ "application_url": "https://careers.example.org/graduate-electrical-engineer",
+ "reference_number": "GEE-2026-07",
+ "skills": [
+  {
+   "skill_id": "00000000-0000-4000-8000-0000000000c1",
+   "is_required": true
+  },
+  {
+   "skill_id": "00000000-0000-4000-8000-0000000000c2",
+   "is_required": false
+  }
+ ],
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b1"
+ ],
+ "sources": [
+  {
+   "kind": "issuer_website",
+   "name": "Example Power Services careers page",
+   "url": "https://careers.example.org/vacancies/graduate-electrical-engineer",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "vacancies": 2,
+  "minimum_qualification": "bachelors_degree",
+  "minimum_experience_years": 0,
+  "professional_registration": [
+   "Registration with the relevant statutory professional body, or eligibility to register"
+  ],
+  "languages_required": [
+   "en"
+  ],
+  "driving_licence_required": true,
+  "benefits": [
+   "Medical aid contribution",
+   "Transport allowance"
+  ],
+  "application_documents": [
+   "CV",
+   "Certified copies of qualifications",
+   "Cover letter"
+  ]
+ }
+}

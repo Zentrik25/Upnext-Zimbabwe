@@ -12,7 +12,7 @@ export function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ""}`,
-    "img-src 'self' data:",
+    "img-src 'self' data: blob:", // blob: is the staff image-upload preview (D-58)
     "font-src 'self'",
     "connect-src 'self'",
     "frame-ancestors 'none'",
@@ -23,16 +23,23 @@ export function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
+  headers.set("x-pathname", request.nextUrl.pathname); // lets the root layout drop the public header on /workspace
   headers.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set("Content-Security-Policy", csp);
+  // HSTS only where the request really arrived over https (the front sets X-Forwarded-Proto) and the
+  // operator turned it on; never includeSubDomains or preload without approval.
+  const hsts = Number.parseInt(process.env.UPNEXT_HSTS_SECONDS ?? "0", 10);
+  if (hsts > 0 && request.headers.get("x-forwarded-proto") === "https") {
+    response.headers.set("Strict-Transport-Security", `max-age=${hsts}`);
+  }
   return response;
 }
 
 export const config = {
   matcher: [
     {
-      source: "/((?!api/|health/|staff/|static/|_next/static|_next/image|favicon.ico).*)",
+      source: "/((?!api/|health/|django-admin/|static/|_next/static|_next/image|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

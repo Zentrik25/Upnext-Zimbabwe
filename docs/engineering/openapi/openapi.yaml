@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: UPNEXT API
+  title: NextJob API
   version: 1.0.0-draft.1
-  summary: Contract for /api/v1 (DRAFT — documentation only, no implementation exists)
+  summary: Contract for /api/v1 (DRAFT; Phase 1 and Phase 2 implement the operations listed in API_CONTRACTS.md)
   description: |
     Status: DRAFT for review. Not an implementation. Items tagged `x-open: OQ-n` depend on an unresolved
     decision in docs/governance/DECISION_REGISTER.md and are not defaulted.
@@ -25,6 +25,10 @@ tags:
   - name: me
     description: Authenticated seeker
   - name: discovery
+  - name: alerts
+    description: Job alerts (Phase 6B). Nothing is sent while e-mail delivery is unverified (B-01).
+  - name: staff
+    description: Staff workspace API (D-49). Signed-in staff with two-step verification only; all changes go through the publishing service.
   - name: editorial
     description: Staff only. x-status reserved — exposure depends on the staff-UI decision.
   - name: administration
@@ -97,6 +101,288 @@ paths:
           description: Detail
           content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } }
         '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  # --- Phase 6A employer portal (D-35). Every id is resolved through the caller's memberships: someone else's id is 404.
+  /employer/overview:
+    get:
+      tags: [employer]
+      operationId: getEmployerOverview
+      summary: 'Claims and organisations of the signed-in account'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Overview', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /employer/organisations/search:
+    get:
+      tags: [employer]
+      operationId: searchOrganisationsToClaim
+      summary: 'Find an existing organisation to claim (id and name only)'
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 100 } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Up to 8 matches', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /employer/claims:
+    post:
+      tags: [employer]
+      operationId: submitOrganisationClaim
+      summary: 'Ask to act for an organisation'
+      description: 'Needs a confirmed e-mail address. A claim grants nothing until staff with `employer.review` decide it; nobody decides their own claim.'
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'The waiting claim', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/claims/{claim_id}:
+    delete:
+      tags: [employer]
+      operationId: withdrawOrganisationClaim
+      summary: 'Withdraw a waiting claim'
+      parameters:
+        - { name: claim_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: Withdrawn }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/organisations/{organisation_id}/profile:
+    get:
+      tags: [employer]
+      operationId: getEmployerProfile
+      summary: 'Live, waiting and last rejected company profile'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Profile state', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [employer]
+      operationId: submitEmployerProfile
+      summary: 'Submit profile text for review (owners of verified organisations)'
+      description: 'Frozen with a content hash; decided by a different person. An earlier waiting revision is withdrawn.'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'Revision waiting for review', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/organisations/{organisation_id}/profile/revisions/{revision_id}:
+    delete:
+      tags: [employer]
+      operationId: withdrawEmployerProfileRevision
+      summary: 'Withdraw a waiting revision'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: revision_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: Withdrawn }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/organisations/{organisation_id}/listings:
+    get:
+      tags: [employer]
+      operationId: listEmployerListings
+      summary: 'The organisation listings'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Listings with status, the reasons editors gave, and next actions', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [employer]
+      operationId: createEmployerListing
+      summary: 'Create a draft (jobs, internships, graduate programmes)'
+      description: 'Goes through the publishing service. The organisation comes from the membership, never from the body; `sources` is not accepted (provenance is recorded automatically).'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'The draft', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/organisations/{organisation_id}/analytics:
+    get:
+      tags: [employer]
+      operationId: getEmployerAnalytics
+      summary: 'Aggregate counters per listing'
+      description: 'Counts only, approximate; no visitor data exists.'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Views and apply clicks over 7 and 30 days and in total, and saves', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/listings/{opportunity_id}:
+    get:
+      tags: [employer]
+      operationId: getEmployerListing
+      summary: 'A listing with its current revision'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Listing', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [employer]
+      operationId: saveEmployerListing
+      summary: 'Save the open draft (author only)'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'Saved draft', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/submit:
+    post:
+      tags: [employer]
+      operationId: submitEmployerListing
+      summary: 'Submit the draft for editorial review'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/discard:
+    post:
+      tags: [employer]
+      operationId: discardEmployerListing
+      summary: 'Discard the draft or rejected revision'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/reopen:
+    post:
+      tags: [employer]
+      operationId: reopenEmployerListing
+      summary: 'Reopen a rejected revision as a new draft'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/amend:
+    post:
+      tags: [employer]
+      operationId: amendEmployerListing
+      summary: 'Start an amendment of a published listing'
+      description: 'Body `{row_version}`. Employers can never approve, verify or publish; staff do, under the existing separation of duties.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/close:
+    post:
+      tags: [employer]
+      operationId: closeEmployerListing
+      summary: 'Close (withdraw) the organisation''s own published listing'
+      description: 'Body `{row_version, reason}` (reason 10 to 1000 characters). A one-person safety action like T10 for a listing bound to an organisation the caller currently acts for; the listing stays readable, marked withdrawn. Employers still can never approve, verify or publish.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'The listing after the action', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /employers/{slug}:
+    get:
+      tags: [public]
+      operationId: getEmployerProfilePublic
+      summary: Approved company profile of a verified organisation
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Profile, content: { application/json: { schema: { type: object } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /opportunities/{slug}/events:
+    post:
+      tags: [public]
+      operationId: recordListingEvent
+      summary: Count a view or an apply click (aggregate only)
+      description: 'Body {type: view or apply}. No cookie, identifier or session is read or stored; unknown or closed listings are ignored.'
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '204': { description: Counted or ignored }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '413': { description: too_large, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /opportunities/{slug}/reports:
+    post:
+      tags: [public]
+      operationId: createListingReport
+      summary: Report a public listing (M2)
+      description: 'Anonymous, no cookie, no file upload. Body {reason: fake_job, payment_scam, incorrect_application, expired, misleading, duplicate or other; details: 10-2000 characters; evidence_url: optional https link, never fetched; contact_email: optional; website: honeypot, leave empty}. A report never changes the listing; staff review it in the admin. Unknown and non-public listings both answer 404. The same client reporting the same listing for the same reason while that report is open is collapsed into it (same reference). Rate limited per client and per listing.'
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Slug' }
+      responses:
+        '202': { description: Received, content: { application/json: { schema: { type: object, required: [reference, message], properties: { reference: { type: string, example: R-7KQ2M9XA }, message: { type: string } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { description: too_large, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /sitemap:
+    get:
+      tags: [public]
+      operationId: getSitemapEntries
+      summary: Slugs of the listings that belong in the XML sitemap
+      description: Published listings that are still open, in slug order, at most 50000. Added in Phase 4; additive.
+      responses:
+        '200': { description: 'Entries', content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: array, items: { type: object, required: [slug, updated_at], properties: { slug: { type: string }, updated_at: { type: string, format: date-time } } } } } } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /categories:
     get:
@@ -174,6 +460,77 @@ paths:
       responses:
         '202': { $ref: '#/components/responses/AcceptedGeneric' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /hooks/email:
+    post:
+      tags: [auth]
+      operationId: receiveEmailEvents
+      summary: Signed bounce and complaint feed from the e-mail provider side (Phase 5)
+      description: |
+        Off (503 `webhook_disabled`) unless a shared secret is configured. Headers `X-Upnext-Timestamp` (unix seconds,
+        within 5 minutes) and `X-Upnext-Signature` (hex HMAC-SHA256 of `timestamp.body`). A signature works once.
+        Body `{events:[{type: bounce|complaint, permanent: boolean, address: string}]}`; permanent bounces and
+        complaints add the address to the suppression list (stored as a keyed hash).
+      security: []
+      responses:
+        '204': { description: 'Applied' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: 'invalid_signature (also for a stale timestamp or a replay)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /hooks/email/resend:
+    post:
+      tags: [auth]
+      operationId: receiveResendEmailEvents
+      summary: Resend (Svix-signed) delivery events (D-34)
+      description: |
+        Off (404 `webhook_disabled`, so a disabled endpoint looks absent) unless `UPNEXT_RESEND_WEBHOOK_SECRET` (`whsec_...`) is set. Headers `svix-id`,
+        `svix-timestamp` (unix seconds, within 5 minutes) and `svix-signature` (`v1,<base64 HMAC-SHA256>` over
+        `id.timestamp.rawbody`, one or more space-separated). A repeated `svix-id` is acknowledged and ignored.
+        `email.bounced` with a Permanent bounce and `email.complained` suppress the single recipient (keyed hash);
+        every other event type changes nothing. Headers `webhook-id`, `webhook-timestamp`, `webhook-signature` (Standard Webhooks names) are accepted in
+        place of the `svix-*` ones. An event naming zero or several recipients suppresses nobody. See
+        docs/engineering/RESEND_INTEGRATION.md for what was verified and what is still to confirm.
+      security: []
+      responses:
+        '204': { description: 'Applied or acknowledged' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: 'invalid_signature (also for a stale timestamp)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '413': { description: 'too_large', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: 'webhook_disabled', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /auth/providers:
+    get:
+      tags: [auth]
+      operationId: listAuthProviders
+      summary: Which sign-in options this installation offers
+      security: []
+      responses:
+        '200': { description: '`{google: boolean}`; the sign-in page shows the Google button only when true' }
+  /auth/google/start:
+    get:
+      tags: [auth]
+      operationId: startGoogleSignIn
+      summary: Begin Sign in with Google (OpenID Connect code flow with PKCE)
+      description: 'Redirects to Google, or back to `/sign-in?error=google` when Google sign-in is not configured. `next` is a path on this site; anything else is replaced by `/`.'
+      security: []
+      parameters:
+        - { name: next, in: query, required: false, schema: { type: string } }
+      responses:
+        '302': { description: 'Redirect to Google' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/google/callback:
+    get:
+      tags: [auth]
+      operationId: googleSignInCallback
+      summary: Google returns here with a one-time code
+      description: 'Checks state, nonce, issuer, audience, expiry and a verified e-mail address; signs the person in (never an account with a staff role) and redirects to the requested path, or to `/sign-in?error=google`.'
+      security: []
+      parameters:
+        - { name: code, in: query, required: false, schema: { type: string } }
+        - { name: state, in: query, required: false, schema: { type: string } }
+      responses:
+        '302': { description: 'Redirect' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /auth/login:
     post:
       tags: [auth]
@@ -184,11 +541,24 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } }
       responses:
         '200':
-          description: Session cookie set (rotated); returns the user
+          description: 'Session cookie set (rotated); returns the user. For an account that turned on two-step verification (D-54, not staff) no session is created yet and the body is `{two_step_required: true}`; the code goes to `/auth/login/two-step`.'
           headers: { Set-Cookie: { schema: { type: string }, description: '__Host-upnext_sid; HttpOnly; Secure; SameSite=Lax' } }
-          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+          content: { application/json: { schema: { oneOf: [{ $ref: '#/components/schemas/User' }, { type: object, required: [two_step_required], properties: { two_step_required: { type: boolean, const: true } } }] } } }
         '401': { description: 'Generic `invalid_credentials`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '403': { description: '`email_not_verified` or `account_unavailable` (only after correct credentials; x-open OQ-04/OQ-15)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/login/two-step:
+    post:
+      tags: [auth]
+      operationId: loginTwoStep
+      description: Second step of sign-in (D-54). Needs the pending state left by a correct password (or Google sign-in) in this browser's session, which lasts 10 minutes. A 6-digit code or an unused recovery code; 5 wrong codes per 15 minutes block further tries.
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 }, trust_device: { type: boolean, default: false, description: 'Trust this browser for 30 days (D-59): sets an HttpOnly, SameSite=Lax cookie whose hash is stored server side' } } } } }
+      responses:
+        '200': { description: 'Session cookie set (rotated); returns the user. With trust_device, also the trusted-device cookie', headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/User' } } } }
+        '400': { description: '`invalid_code`, or `two_step_expired` when sign-in must start again', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /auth/logout:
     post:
@@ -220,6 +590,19 @@ paths:
         content: { application/json: { schema: { type: object, required: [token, new_password], additionalProperties: false, properties: { token: { type: string, maxLength: 200 }, new_password: { type: string, minLength: 10, maxLength: 128, format: password } } } } }
       responses:
         '204': { description: 'Password changed' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /auth/staff-invitation/accept:
+    post:
+      tags: [auth]
+      operationId: acceptStaffInvitation
+      description: 'The invited person chooses their password from the one-time link. Added in D-58.'
+      security: [{ csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [token, password], additionalProperties: false, properties: { token: { type: string, maxLength: 200 }, password: { type: string, minLength: 10, maxLength: 128, format: password } } } } }
+      responses:
+        '204': { description: 'Account active; sign in' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '429': { $ref: '#/components/responses/RateLimited' }
   /auth/password/change:
@@ -269,6 +652,79 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { description: 'e-mail delivery has not been verified, so the change is not available (`email_unavailable`)', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /me/two-step:
+    get:
+      tags: [me]
+      operationId: getTwoStep
+      description: Whether two-step verification is on for the caller (D-54). `staff` accounts manage theirs in the staff workspace.
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'State', content: { application/json: { schema: { type: object, required: [enabled, recovery_codes_left, staff], properties: { enabled: { type: boolean }, recovery_codes_left: { type: integer }, staff: { type: boolean } } } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/two-step/setup:
+    post:
+      tags: [me]
+      operationId: startTwoStepSetup
+      description: Password re-entry, then a pending authenticator key (the secret is derived, never stored). Nothing is on until a code is confirmed.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password], additionalProperties: false, properties: { password: { type: string, maxLength: 128 } } } } }
+      responses:
+        '200': { description: 'Setup key', content: { application/json: { schema: { type: object, required: [secret, uri], properties: { secret: { type: string }, uri: { type: string, description: 'otpauth:// URI for a QR code' } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /me/two-step/confirm:
+    post:
+      tags: [me]
+      operationId: confirmTwoStepSetup
+      description: Confirms the pending key with a code, turns two-step verification on, returns 8 single-use recovery codes (shown once). The caller and their other sessions stay signed in.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], additionalProperties: false, properties: { code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '200': { description: 'On', content: { application/json: { schema: { type: object, required: [recovery_codes], properties: { recovery_codes: { type: array, items: { type: string } } } } } } }
+        '400': { description: '`invalid_code`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /me/two-step/disable:
+    post:
+      tags: [me]
+      operationId: disableTwoStep
+      description: Turns it off. Needs the password and a current code (or recovery code); signs out the caller's other sessions. Refused for staff accounts.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password, code], additionalProperties: false, properties: { password: { type: string, maxLength: 128 }, code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '204': { description: 'Off' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /me/two-step/recovery-codes:
+    post:
+      tags: [me]
+      operationId: replaceTwoStepRecoveryCodes
+      description: Replaces every recovery code with a new set (shown once). Needs the password and a current code.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [password, code], additionalProperties: false, properties: { password: { type: string, maxLength: 128 }, code: { type: string, maxLength: 32 } } } } }
+      responses:
+        '200': { description: 'New codes', content: { application/json: { schema: { type: object, required: [recovery_codes], properties: { recovery_codes: { type: array, items: { type: string } } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /me/deletion-request:
     post:
       tags: [me]
@@ -280,9 +736,10 @@ paths:
         required: true
         content: { application/json: { schema: { type: object, required: [password], additionalProperties: false, properties: { password: { type: string, maxLength: 128 } } } } }
       responses:
-        '202': { description: 'Request recorded', content: { application/json: { schema: { type: object, required: [deletion_requested_at], properties: { deletion_requested_at: { type: string, format: date-time }, scheduled_for: { type: [string, 'null'], format: date-time, description: 'null until OQ-09 defines the cooling-off period' } } } } } }
+        '202': { description: 'Request recorded', content: { application/json: { schema: { type: object, required: [deletion_requested_at], properties: { deletion_requested_at: { type: string, format: date-time }, scheduled_for: { type: [string, 'null'], format: date-time, description: 'Request time plus the cooling-off period (14 days by provisional default P4-05)' } } } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/ReauthRequired' }
+        '409': { $ref: '#/components/responses/Conflict' }
     delete:
       tags: [me]
       operationId: cancelAccountDeletion
@@ -295,6 +752,8 @@ paths:
     get:
       tags: [me]
       operationId: getProfile
+      summary: The caller's own private profile (Phase 6B)
+      description: Always 200. `exists` is false until something was saved. Never readable by anyone but its owner.
       security: [{ cookieAuth: [] }]
       responses:
         '200': { description: 'Profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
@@ -302,7 +761,7 @@ paths:
     patch:
       tags: [me]
       operationId: updateProfile
-      description: Partial update. `null` clears an optional field; omitted fields are unchanged; arrays replace.
+      description: Partial update. `null` clears an optional field; omitted fields are unchanged; arrays replace. Taxonomy values are ids (categories are codes).
       security: [{ cookieAuth: [], csrf: [] }]
       requestBody:
         required: true
@@ -311,6 +770,63 @@ paths:
         '200': { description: 'Updated profile', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [me]
+      operationId: deleteProfile
+      description: Removes the profile and everything in it. Idempotent; 204 whether or not one existed. The account and its display name stay.
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Deleted' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/profile/reset-preferences:
+    post:
+      tags: [me]
+      operationId: resetProfilePreferences
+      description: Clears categories, industries, preferred places, employment types and work arrangements; keeps the about-you fields.
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'Profile after the reset', content: { application/json: { schema: { $ref: '#/components/schemas/Profile' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/alerts:
+    get:
+      tags: [alerts]
+      operationId: getJobAlert
+      summary: The caller's job-alert settings (Phase 6B)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Alert settings', content: { application/json: { schema: { $ref: '#/components/schemas/JobAlert' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    put:
+      tags: [alerts]
+      operationId: updateJobAlert
+      description: |
+        Partial update of the caller's alert. Switching it on needs `consent: true` (nothing is pre-ticked), a confirmed
+        e-mail address (403 otherwise) and at least one category or place. Switching it off records the withdrawal.
+      security: [{ cookieAuth: [], csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/JobAlertUpdate' } } }
+      responses:
+        '200': { description: 'Updated settings', content: { application/json: { schema: { $ref: '#/components/schemas/JobAlert' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /alerts/unsubscribe:
+    post:
+      tags: [alerts]
+      operationId: unsubscribeJobAlert
+      summary: One-click unsubscribe from the link in every alert
+      description: No session and no CSRF token (RFC 8058 one-click POST from a mail client). The signed token, in the query or the body, is the credential; its only effect is to switch that person's alert off. Idempotent.
+      security: []
+      parameters:
+        - { name: token, in: query, required: false, schema: { type: string } }
+      requestBody:
+        required: false
+        content: { application/json: { schema: { type: object, additionalProperties: false, properties: { token: { type: string, maxLength: 500 } } } } }
+      responses:
+        '204': { description: 'Alerts are off' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /me/sessions:
     get:
       tags: [me]
@@ -330,6 +846,33 @@ paths:
         '204': { description: 'Revoked' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /me/trusted-devices:
+    get:
+      tags: [me]
+      operationId: listTrustedDevices
+      description: 'Browsers the person trusted (D-59), newest use first; `current` marks this browser. `code_every_hours` is the staff limit (24), null for other accounts.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Devices', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    delete:
+      tags: [me]
+      operationId: revokeAllTrustedDevices
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '204': { description: 'Every trusted device forgotten' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /me/trusted-devices/{device_id}:
+    delete:
+      tags: [me]
+      operationId: revokeTrustedDevice
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { name: device_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: 'Forgotten' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /me/saved:
     get:
       tags: [me]
@@ -337,9 +880,11 @@ paths:
       security: [{ cookieAuth: [] }]
       parameters:
         - { name: category, in: query, schema: { type: string } }
+        - { name: ids, in: query, description: 'Comma-separated opportunity ids (at most 50). Returns only the saved states among them, without listing content (used to mark save buttons). Added in Phase 3; additive.', schema: { type: string, maxLength: 2000 } }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:
+        '400': { $ref: '#/components/responses/BadRequest' }
         '200':
           description: Saved opportunities, newest first, with availability
           content: { application/json: { schema: { type: object, required: [data, page], properties: { data: { type: array, items: { $ref: '#/components/schemas/SavedItem' } }, page: { $ref: '#/components/schemas/PageInfo' } } } } }
@@ -372,12 +917,12 @@ paths:
     get:
       tags: [discovery]
       operationId: getForYou
-      summary: Rules-based personalised feed
+      summary: Rules-based personalised feed (rules-v1, Phase 6B)
       description: |
-        Relevance estimates, not eligibility decisions. Returns useful results even for an incomplete profile
-        (departure from the reference lock panel, x-open OQ-23). Missing profile data never disqualifies;
-        unknown requirements are reported under `match.unknowns`, never treated as satisfied.
-      x-open: OQ-23
+        Relevance estimates, not eligibility decisions (docs/engineering/RECOMMENDATION_SPEC.md). A listing appears only
+        with at least one positive signal; missing data never excludes it and never counts as a match; unknown
+        requirements are reported under `match.unknowns`. With no profile, or no match, `meta.mode` is `newest` and the
+        page is the newest open listings with no reasons. Computed on request; nothing is stored.
       security: [{ cookieAuth: [] }]
       parameters:
         - { name: category, in: query, schema: { type: string } }
@@ -397,12 +942,16 @@ paths:
                   page: { $ref: '#/components/schemas/PageInfo' }
                   meta:
                     type: object
-                    required: [model_version, profile_complete]
+                    required: [model_version, mode, fields_filled, fields_total, suggestions]
                     properties:
                       model_version: { type: string, examples: ['rules-v1'] }
-                      profile_complete: { type: boolean }
-                      suggestions: { type: array, items: { type: object, required: [code, text], properties: { code: { type: string }, text: { type: string } } } }
+                      mode: { type: string, enum: [matched, newest] }
+                      fields_filled: { type: integer }
+                      fields_total: { type: integer }
+                      suggestions: { type: array, items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
   /editorial/opportunities:
     get:
@@ -650,6 +1199,469 @@ paths:
         '200': { description: 'Ready', content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, const: ok } } } } } }
         '503': { description: 'Not ready' }
 
+  # --- Staff API (D-49). Every read starts from the visibility rule of the Django Admin list and every write calls the
+  # publishing service, which decides and audits; a staff role AND the second step are needed in the same session.
+  /staff/session:
+    get:
+      tags: [staff]
+      operationId: getStaffSession
+      summary: 'Who is signed in, their role and permissions, and whether two-step verification passed'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/two-step:
+    get:
+      tags: [staff]
+      operationId: getStaffTwoStep
+      summary: 'Two-step enrolment state (the setup key only while enrolling)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: verifyStaffTwoStep
+      summary: 'Verify or enrol the second step for this session'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/analytics:
+    get:
+      tags: [staff]
+      operationId: getStaffAnalytics
+      summary: 'Traffic figures, chart series, listing counts and the most and recently viewed listings (staff with analytics.read)'
+      description: 'Query: period = 24h, 7d, 30d (default), 90d or all. Views are page views (one per browser tab session); unique visitors are not measured (`unique_visitors` is null). Cached for 60 seconds per person and period. Definitions: docs/engineering/ANALYTICS.md. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/analytics/opportunities:
+    get:
+      tags: [staff]
+      operationId: listStaffAnalyticsOpportunities
+      summary: 'Listings ranked by views, apply clicks and click-through rate for a period or a Harare date range (staff with analytics.read)'
+      description: 'Query: period, or from and to (YYYY-MM-DD, both days included, at most 400 days), q, sort = views, all_views, clicks, ctr, published or title, dir = asc or desc, page, page_size (up to 50). Click-through rate is apply clicks divided by views of the same window and is null when the window has no views. Added in D-65.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/images:
+    post:
+      tags: [staff]
+      operationId: uploadListingImage
+      summary: 'Upload a listing image (JPEG, PNG or WebP, up to 5 MB); returns its generated name and absolute address'
+      description: 'Multipart upload. The real content decides the type; the picture is re-encoded to JPEG, orientation applied, metadata removed, large pictures scaled down. Attach it by saving the name as featured_image or social_image in the draft content. Added in D-58.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
+      responses:
+        '200': { description: 'The same picture was already in the library; nothing new was stored', content: { application/json: { schema: { type: object } } } }
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/media:
+    get:
+      tags: [staff]
+      operationId: listStaffMedia
+      summary: 'Browse and search the Media Library (newest first, paged); each picture says how many listings use it'
+      description: 'Query: q (title or file name), page, page_size (up to 48). Added in D-62.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: uploadStaffMedia
+      summary: 'Upload a picture to the Media Library (JPEG, PNG or WebP, up to 5 MB)'
+      description: 'Same validation and optimisation as /staff/images. A picture that is already in the library is returned (200, reused true) instead of being stored again. Added in D-62.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
+      responses:
+        '200': { description: 'Already in the library', content: { application/json: { schema: { type: object } } } }
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/team:
+    get:
+      tags: [staff]
+      operationId: listStaffTeam
+      summary: 'Staff accounts with summary counts, filters, sorting and paging (Administrators only)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: inviteStaff
+      summary: 'Invite a staff member (name, email, role); sends a single-use, time-limited link'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/team/{targetId}:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      tags: [staff]
+      operationId: getStaffMember
+      summary: 'One staff profile: role, permissions, listing work, sessions, activity and the actions available'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [staff]
+      operationId: updateStaffMember
+      summary: 'Change the display name (the only editable detail)'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/team/{targetId}/activity:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      tags: [staff]
+      operationId: listStaffMemberActivity
+      summary: 'Audit events by or about this person, newest first'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/team/{targetId}/actions/{action}:
+    parameters: [{ name: targetId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [change-role, suspend, reactivate, remove, reinstate, resend-invitation, send-recovery, revoke-trusted-devices, revoke-sessions] } }]
+    post:
+      tags: [staff]
+      operationId: runStaffMemberAction
+      summary: 'Role change, suspend, reactivate, remove, reinstate, resend invitation, send recovery link, revoke sessions'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/dashboard:
+    get:
+      tags: [staff]
+      operationId: getStaffDashboard
+      summary: 'Dashboard figures scoped to what the staff member may see'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/opportunities:
+    get:
+      tags: [staff]
+      operationId: listStaffOpportunities
+      summary: 'Visible listings with filters, status counts and paging'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: createStaffDraft
+      summary: 'Start a draft (workflow T01)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/opportunities/{opportunityId}:
+    get:
+      tags: [staff]
+      operationId: getStaffOpportunity
+      summary: 'A visible listing with its revisions, history and permitted actions'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/opportunities/{opportunityId}/verification:
+    parameters: [{ name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      tags: [staff]
+      operationId: setStaffVerification
+      summary: 'Verify or unverify a listing with {"verified": true|false}'
+      description: 'One switch, independent of publication; no note or second person. Needs opp.verify.record (Editors and Administrators), enforced by the publishing service. Idempotent; the change is recorded with who and when. Added in D-62.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [verified], properties: { verified: { type: boolean } } } } }
+      responses:
+        '200': { description: 'The listing row after the change', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/opportunities/{opportunityId}/draft:
+    patch:
+      tags: [staff]
+      operationId: saveStaffDraft
+      summary: 'Save your own draft (workflow T02)'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/opportunities/{opportunityId}/preview:
+    get:
+      tags: [staff]
+      operationId: previewStaffOpportunity
+      summary: 'How the open draft (or the live revision) reads to the public (D-56)'
+      description: 'The public API''s own listing shape, with the chosen address and the present moment standing in for a slug and a publication time. Read only; a draft is shown only to people who may see it.'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { $ref: '#/components/schemas/OpportunityDetail' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/opportunities/{opportunityId}/actions/{action}:
+    post:
+      tags: [staff]
+      operationId: runStaffAction
+      summary: 'Run one editorial action through the publishing service'
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: action, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /staff/activity:
+    get:
+      tags: [staff]
+      operationId: listStaffActivity
+      summary: 'Workflow transitions on visible listings'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/search:
+    get:
+      tags: [staff]
+      operationId: searchStaff
+      summary: 'Grouped suggestions for the staff search box'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/categories:
+    get:
+      tags: [staff]
+      operationId: listStaffCategories
+      summary: 'Categories with their active detail schema fields'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/organisations:
+    get:
+      tags: [staff]
+      operationId: listStaffOrganisations
+      summary: 'Organisations by name (people who may create organisations)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/records:
+    get:
+      tags: [staff]
+      operationId: listStaffRecordKinds
+      summary: 'listStaffRecordKinds'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/records/{kind}:
+    get:
+      tags: [staff]
+      operationId: listStaffRecords
+      summary: 'listStaffRecords'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/records/{kind}/{recordId}:
+    get:
+      tags: [staff]
+      operationId: getStaffRecord
+      summary: 'getStaffRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/records/{kind}/{recordId}/actions/{action}:
+    post:
+      tags: [staff]
+      operationId: runStaffRecordAction
+      summary: 'runStaffRecordAction'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+        - { name: action, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /staff/content-health:
+    get:
+      tags: [staff]
+      operationId: getStaffContentHealth
+      summary: 'getStaffContentHealth'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/catalog:
+    get:
+      tags: [staff]
+      operationId: listStaffCatalogKinds
+      summary: 'listStaffCatalogKinds'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/catalog/{kind}:
+    get:
+      tags: [staff]
+      operationId: listStaffCatalog
+      summary: 'listStaffCatalog'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [staff]
+      operationId: createStaffCatalogRecord
+      summary: 'createStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/catalog/{kind}/{recordId}:
+    get:
+      tags: [staff]
+      operationId: getStaffCatalogRecord
+      summary: 'getStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [staff]
+      operationId: updateStaffCatalogRecord
+      summary: 'updateStaffCatalogRecord'
+      parameters:
+        - { name: kind, in: path, required: true, schema: { type: string } }
+        - { name: recordId, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /staff/lookup/{what}:
+    get:
+      tags: [staff]
+      operationId: lookupStaffReference
+      summary: 'Small pickers for reference fields: organisations and locations by name.'
+      parameters:
+        - { name: what, in: path, required: true, schema: { type: string } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
     cookieAuth:
@@ -714,7 +1726,7 @@ components:
         next_cursor: { type: [string, 'null'] }
         total: { type: [integer, 'null'], description: 'Exact count for filtered public lists when affordable, else null' }
     WorkMode: { type: string, enum: [on_site, hybrid, remote] }
-    EmploymentType: { type: string, enum: [permanent, contract, temporary, part_time, internship, trainee] }
+    EmploymentType: { type: string, enum: [full_time, permanent, contract, temporary, part_time, internship, trainee] }
     ExperienceLevel: { type: string, enum: [none, entry, mid, senior, executive], description: 'value set to confirm' }
     DeadlineState: { type: string, enum: [open, closing_soon, unknown, expired] }
     ListingStatus: { type: string, enum: [draft, in_review, approved, rejected, published, expired, withdrawn, archived] }
@@ -797,7 +1809,7 @@ components:
         title: { type: string }
         summary: { type: string }
         category: { $ref: '#/components/schemas/Category' }
-        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string } } }
+        organisation: { type: object, required: [id, name], properties: { id: { type: string, format: uuid }, name: { type: string }, profile_slug: { type: [string, 'null'], description: 'Detail only: slug of the approved company profile of a verified organisation (Phase 6A)' } } }
         locations:
           type: array
           items: { type: object, required: [slug, name, is_primary], properties: { slug: { type: string }, name: { type: string }, is_primary: { type: boolean } } }
@@ -805,8 +1817,20 @@ components:
         employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
         deadline: { $ref: '#/components/schemas/Deadline' }
         salary: { $ref: '#/components/schemas/Money' }
+        salary_text: { type: [string, 'null'], maxLength: 120, description: 'The source''s own wording when it gives no amount ("Competitive"); never an amount. Added in D-56; additive.' }
+        location_text: { type: [string, 'null'], description: 'The location as written; shown when no structured place is attached. Added in D-57; additive.' }
         verification: { $ref: '#/components/schemas/Verification' }
         primary_source_name: { type: [string, 'null'] }
+        image:
+          description: 'The listing''s own pictures as absolute https addresses; null when it has none (the site then uses its standard image). The sharing picture falls back to the featured one. A picture never implies verification. Added in D-58; additive.'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [featured, social, alt]
+              properties:
+                featured: { type: [string, 'null'], format: uri }
+                social: { type: [string, 'null'], format: uri }
+                alt: { type: [string, 'null'], maxLength: 125 }
         status: { type: string, enum: [published, expired, withdrawn] }
         published_at: { type: string, format: date-time }
         is_saved: { type: [boolean, 'null'], description: 'null for anonymous callers' }
@@ -819,7 +1843,6 @@ components:
             description_html: { type: string, description: 'Server-sanitised HTML from the Markdown subset' }
             requirements_html: { type: [string, 'null'] }
             geographic_eligibility: { type: [string, 'null'] }
-            location_text: { type: [string, 'null'] }
             experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
             funding: { $ref: '#/components/schemas/Money' }
             skills: { type: array, items: { type: object, required: [name, is_required], properties: { name: { type: string }, is_required: { type: boolean } } } }
@@ -829,15 +1852,17 @@ components:
             application:
               type: object
               required: [method]
-              description: UPNEXT never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
+              description: NextJob never submits applications; this only describes where to go (x-open OQ-05 for non-external methods).
               properties:
-                method: { type: string, enum: [external_url, email, instructions] }
+                method: { type: string, enum: [external_url, email, both, instructions], description: '`both` carries a web address and an e-mail address (D-56).' }
                 url: { type: [string, 'null'], format: uri }
                 email: { type: [string, 'null'], format: email }
+                email_subject: { type: [string, 'null'], maxLength: 150, description: 'Optional subject line for the e-mail application (D-56).' }
                 instructions: { type: [string, 'null'] }
             sources: { type: array, items: { $ref: '#/components/schemas/Source' } }
             detail: { type: object, additionalProperties: true, description: 'Category-specific attributes validated against the versioned schema' }
             detail_schema_version: { type: integer }
+            seo: { type: object, properties: { title: { type: [string, 'null'] }, description: { type: [string, 'null'] }, og_title: { type: [string, 'null'] }, og_description: { type: [string, 'null'] } }, description: 'Optional search-engine and sharing text set by staff; empty means derive from the title and summary (D-56).' }
             canonical_path: { type: string, examples: ['/opportunities/graduate-electrical-engineer-k7m3qp'] }
             updated_at: { type: string, format: date-time }
     User:
@@ -851,6 +1876,9 @@ components:
         status: { $ref: '#/components/schemas/AccountStatus' }
         roles: { type: array, items: { $ref: '#/components/schemas/StaffRole' }, description: 'for UI navigation only; never trusted by the server' }
         created_at: { type: string, format: date-time }
+        deletion_requested_at: { type: [string, 'null'], format: date-time, description: 'Set while an account-deletion request is pending (OQ-09). Added in Phase 3; additive.' }
+        deletion_scheduled_for: { type: [string, 'null'], format: date-time, description: 'When a pending deletion will be carried out (request plus the cooling-off period). Added in Phase 4; additive.' }
+        email_change_available: { type: boolean, description: 'True when change of e-mail address can be used: delivery has been verified (P5-07) and the account holds no staff role. Added in Phase 5; additive.' }
     AdminUser:
       allOf:
         - $ref: '#/components/schemas/User'
@@ -863,11 +1891,13 @@ components:
     RegisterRequest:
       type: object
       additionalProperties: false
-      required: [email, password, display_name]
+      required: [email, password, display_name, phone_number, accept_terms]
       properties:
         email: { type: string, format: email, maxLength: 254 }
         password: { type: string, minLength: 10, maxLength: 128, format: password }
         display_name: { type: string, minLength: 1, maxLength: 80 }
+        phone_number: { type: string, minLength: 8, maxLength: 24, description: 'International number with its country code; spaces and hyphens are ignored (stored as E.164)' }
+        accept_terms: { type: boolean, description: 'Must be true: agreement to the Terms of Service and Privacy Policy, recorded with its version' }
     LoginRequest:
       type: object
       additionalProperties: false
@@ -875,39 +1905,73 @@ components:
       properties:
         email: { type: string, format: email, maxLength: 254 }
         password: { type: string, maxLength: 128, format: password }
+        remember: { type: boolean, default: true, description: '"Remember me": false makes the session cookie end when the browser closes' }
     TokenRequest:
       type: object
       additionalProperties: false
       required: [token]
       properties: { token: { type: string, maxLength: 200 } }
+    Qualification: { type: string, enum: [o_level, a_level, certificate, diploma, bachelors_degree, honours_degree, masters_degree, doctorate, professional_qualification], description: 'Same vocabulary as the jobs detail schema minimum_qualification' }
+    NamedRef:
+      type: object
+      required: [id, slug, name]
+      properties: { id: { type: string, format: uuid }, slug: { type: string }, name: { type: string } }
     Profile:
       type: object
-      required: [country, category_interests, sector_interests, preferred_locations, skills, fields_of_study, work_arrangements]
+      description: Private to its owner. Holds taxonomy references and enums only; no free text, contact detail or protected characteristic.
+      required: [exists, home_location, highest_qualification, experience_level, work_arrangements, employment_types, categories, sectors, preferred_locations, skills, fields_filled, fields_total, updated_at]
       properties:
-        country: { type: string, pattern: '^[A-Z]{2}$', default: ZW }
-        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        exists: { type: boolean }
+        home_location: { oneOf: [ { $ref: '#/components/schemas/NamedRef' }, { type: 'null' } ] }
+        highest_qualification: { oneOf: [ { $ref: '#/components/schemas/Qualification' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
-        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string, description: 'category code' } }
-        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
-        preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
-        skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
-        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
-        updated_at: { type: string, format: date-time }
+        employment_types: { type: array, maxItems: 6, uniqueItems: true, items: { $ref: '#/components/schemas/EmploymentType' } }
+        categories: { type: array, maxItems: 6, items: { $ref: '#/components/schemas/Category' } }
+        sectors: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/NamedRef' } }
+        preferred_locations: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/NamedRef' } }
+        skills: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/Skill' } }
+        fields_filled: { type: integer }
+        fields_total: { type: integer }
+        updated_at: { type: [string, 'null'], format: date-time }
     ProfileUpdate:
       type: object
       additionalProperties: false
       minProperties: 1
       properties:
-        country: { type: string, pattern: '^[A-Z]{2}$' }
-        highest_qualification: { type: [string, 'null'], enum: [secondary, diploma_certificate, degree, postgraduate, null] }
+        home_location: { type: [string, 'null'], format: uuid, description: 'A city or province' }
+        highest_qualification: { oneOf: [ { $ref: '#/components/schemas/Qualification' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         work_arrangements: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: '#/components/schemas/WorkMode' } }
-        category_interests: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
-        sector_interests: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        employment_types: { type: array, maxItems: 6, uniqueItems: true, items: { $ref: '#/components/schemas/EmploymentType' } }
+        categories: { type: array, maxItems: 6, uniqueItems: true, items: { type: string, description: 'category code' } }
+        sectors: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
         preferred_locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
         skills: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
-        fields_of_study: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
+    JobAlert:
+      type: object
+      required: [enabled, frequency, categories, locations, consented_at, consent_wording_version, last_sent_at, delivery_available, consent_wording, updated_at]
+      properties:
+        enabled: { type: boolean }
+        frequency: { type: string, enum: [daily, weekly] }
+        categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
+        locations: { type: array, items: { $ref: '#/components/schemas/NamedRef' } }
+        consented_at: { type: [string, 'null'], format: date-time }
+        consent_wording_version: { type: string }
+        last_sent_at: { type: [string, 'null'], format: date-time }
+        delivery_available: { type: boolean, description: 'False while e-mail delivery is unverified (B-01): settings are stored, nothing is sent' }
+        consent_wording: { type: string, description: 'The exact consent sentence shown next to the unticked box' }
+        updated_at: { type: [string, 'null'], format: date-time }
+    JobAlertUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        enabled: { type: boolean }
+        frequency: { type: string, enum: [daily, weekly] }
+        categories: { type: array, maxItems: 6, uniqueItems: true, items: { type: string } }
+        locations: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        consent: { type: boolean, description: 'Must be true when switching the alert on' }
     SessionInfo:
       type: object
       required: [id, created_at, last_seen_at, current]
@@ -932,16 +1996,19 @@ components:
         opportunity: { $ref: '#/components/schemas/OpportunitySummary' }
         match:
           type: object
-          required: [reasons, unknowns]
-          description: Relevance estimate, not an eligibility decision. Reasons must be derived from the same deterministic factors that produced the ranking.
+          required: [reasons, unknowns, notes]
+          description: Relevance estimate, not an eligibility decision. Every reason comes from the signal that ranked the listing. There is no numeric score.
           properties:
-            score: { type: [number, 'null'], minimum: 0, maximum: 100, description: 'x-open OQ-23: may be omitted or hidden by the UI' }
             reasons:
               type: array
-              items: { type: object, required: [signal, text], properties: { signal: { type: string, enum: [category_interest, sector_interest, location, skills, education, experience, deadline] }, text: { type: string } } }
+              items: { type: object, required: [signal, text], properties: { signal: { type: string, enum: [category_interest, sector_interest, skills, location, work_arrangement, employment_type, experience, education] }, text: { type: string } } }
             unknowns:
               type: array
-              description: Requirements or profile facts that could not be compared; never treated as satisfied
+              description: Things the profile states that the listing does not; never treated as satisfied
+              items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
+            notes:
+              type: array
+              description: Information that is neither a match nor an exclusion, for example a stated minimum qualification above the profile's level
               items: { type: object, required: [signal, text], properties: { signal: { type: string }, text: { type: string } } }
     DraftContent:
       type: object
@@ -959,16 +2026,23 @@ components:
         employment_type: { oneOf: [ { $ref: '#/components/schemas/EmploymentType' }, { type: 'null' } ] }
         experience_level: { oneOf: [ { $ref: '#/components/schemas/ExperienceLevel' }, { type: 'null' } ] }
         salary: { $ref: '#/components/schemas/Money' }
+        salary_text: { type: [string, 'null'], maxLength: 120 }
         funding: { $ref: '#/components/schemas/Money' }
         deadline_at: { type: [string, 'null'], format: date-time }
         deadline_timezone: { type: [string, 'null'] }
         deadline_is_date_only: { type: boolean, x-open: OQ-22 }
-        application_method: { type: string, enum: [external_url, email, instructions], x-open: OQ-05 }
+        application_method: { type: string, enum: [external_url, email, both, instructions], x-open: OQ-05 }
         application_url: { type: [string, 'null'], format: uri, maxLength: 2048, pattern: '^https?://' }
         application_email: { type: [string, 'null'], format: email }
+        application_email_subject: { type: [string, 'null'], maxLength: 150 }
         application_instructions: { type: [string, 'null'], maxLength: 2000 }
         reference_number: { type: [string, 'null'], maxLength: 100 }
         contact_details: { type: [string, 'null'], maxLength: 500 }
+        slug: { type: [string, 'null'], minLength: 6, maxLength: 80, description: 'Staff only. The address wanted for the first publication; ignored once the listing has its permanent slug (D-56).' }
+        seo_title: { type: [string, 'null'], maxLength: 70, description: 'Staff only (D-56).' }
+        seo_description: { type: [string, 'null'], maxLength: 200, description: 'Staff only (D-56).' }
+        og_title: { type: [string, 'null'], maxLength: 90, description: 'Staff only (D-56).' }
+        og_description: { type: [string, 'null'], maxLength: 200, description: 'Staff only (D-56).' }
         skills: { type: array, maxItems: 30, items: { type: object, required: [skill_id, is_required], additionalProperties: false, properties: { skill_id: { type: string, format: uuid }, is_required: { type: boolean } } } }
         sector_ids: { type: array, maxItems: 5, items: { type: string, format: uuid } }
         sources:
@@ -1037,7 +2111,7 @@ components:
           type: object
           additionalProperties: false
           description: Required for approve; all three must be true
-          properties: { source_reviewed: { type: boolean }, duplicates_reviewed: { type: boolean }, content_matches_source: { type: boolean } }
+          properties: { source_reviewed: { type: boolean }, duplicates_reviewed: { type: boolean }, content_matches_source: { type: boolean }, applicant_payment_reviewed: { type: boolean, description: 'Required (true) only when the text of a non-tender listing mentions payments by applicants (Phase 2, AC-CAT-05)' } }
         duplicate_acknowledgement:
           type: [object, 'null']
           description: Required on submit when a hard duplicate exists (x-open OQ-08)

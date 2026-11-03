@@ -41,6 +41,7 @@ Account-status gating (OQ-15): `pending_verification` — only verify/resend/res
 | **Approve (T04) / reject (T05)** | — | ◐ | ◐ | **not the author or submitter of that chain**; reason on reject |
 | Return approved → rejected (T06) | — | ◐ | ◐ | not the author; reason required |
 | Record verification (V01) | — | ◐ | ◐ | not the author of that version |
+| View staff analytics (D-65) | — | ✔ | ✔ | `analytics.read`: views and apply clicks per listing; an Administrator sees every listing, an Editor the listings the staff scope lets them see |
 | **Publish (T07)** | — | ◐ | ◐ | the exact revision (content hash) must have been **approved by a different authorised person**; the publisher may be the approver, a third person, or the author themself (D-22). Never an unapproved or changed revision |
 | Schedule publish (T08) | — | ◐ | ◐ | only if `[OQ-14]` approved; same guards re-checked at execution |
 | Take down (T09), withdraw (T10), manual expire (T11), archive (T12) | — | ✔ | ✔ | reason required; one-person safety actions |
@@ -102,5 +103,38 @@ Permissions are **codes**; roles are **sets of codes** in one registry (`apps/ap
 | Admin UI | state fields read-only; actions call services |
 | Tests | table-driven cases generated from this matrix (every role × capability × condition both allowed and denied) |
 
-Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
-Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage`. Seekers hold `me.*`; everyone holds `opp.read_public`.
+Permission codes: `opp.read_public, opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, analytics.read, opp.publish, opp.publish_direct, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, employer.verification.revoke, opp.withdraw_own, taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, report.read, report.triage, report.resolve, report.resolve_escalated, settings.manage, me.profile, me.saved, me.sessions, me.delete`.
+Role → code grants: **Contributor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, org.create`. **Editor** — `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.publish_direct, opp.review.approve, opp.review.reject, opp.review.return, opp.verify.record, analytics.read, opp.publish, opp.schedule, opp.takedown, opp.withdraw, opp.expire, opp.archive, org.create, org.edit, employer.review, report.read, report.triage, report.resolve`. **Administrator** — all Editor codes plus `taxonomy.manage, user.role.grant, user.role.revoke, user.status.change, audit.read_all, settings.manage, employer.verification.revoke, report.resolve_escalated`. Seekers hold `me.*`; everyone holds `opp.read_public`.
+
+## Phase 6A addendum: verified employer members (D-35)
+
+A member of a **verified** organisation is not a staff role (there is no assignment row, no admin access, `User.is_staff` is unchanged). Through the publishing service such a member holds only `opp.draft.create, opp.draft.edit_own, opp.submit, opp.discard_own, opp.amend, opp.withdraw_own` (constant `EMPLOYER_AUTHOR_PERMISSIONS`), and only for listings bound to their own organisation in the categories jobs, internships and graduate programmes. `opp.withdraw_own` lets them close (withdraw) their own organisation's published listing, a one-person safety action like T10 that removes content and never adds it. They never hold a review, verification, publication, takedown or staff withdrawal (`opp.withdraw`) code. `employer.review` (Editors, Administrators) decides organisation claims and company-profile revisions; `employer.verification.revoke` (Administrators) withdraws an organisation's verification.
+
+## Phase 6B addendum: seeker profile, For You and alerts (D-38)
+
+No new permission code and no new role. The seeker features sit behind the existing account-level codes held by every authenticated, active account: `me.profile` (profile, For You, alert settings) and `me.saved` (saved opportunities). Access rules:
+
+| Capability | Anonymous | Seeker (own account) | Another seeker | Employer member | Contributor / Editor | Administrator |
+|---|---|---|---|---|---|---|
+| Browse and search listings | yes | yes | yes | yes | yes | yes |
+| Read, change, reset, delete **own** profile | no | yes | no | own only | own only | own only |
+| Read anyone else's profile | no | no | no | **no** | **no** | **no** (no code, no route, not in Django Admin) |
+| Read the For You page | no | own | own | own | own | own |
+| Read, change **own** job alert | no | yes | no | own only | own only | own only |
+| Unsubscribe from an alert | with the signed link in the message | yes | no | no | no | no |
+
+Enforcement: every `/me/*` and `/discovery/for-you` view works on `request.user` only and no route carries an identifier that selects an account (`tests/test_profiles.py::test_no_url_exposes_a_seeker_profile_by_id`); `profiles` and `alerts` models are not registered in Django Admin (tested); the unsubscribe operation is on the reviewed public list in `tests/test_endpoint_review.py`.
+
+## M2 addendum: report moderation (public reports about listings)
+
+A report is a message to staff, written by anyone without an account. **It never changes a listing by itself**; a person acts on the listing through the publishing service, with the permissions in the tables above.
+
+| Capability | Contributor | Editor | Administrator |
+|---|---|---|---|
+| See reports and their history (`report.read`) | no | yes | yes |
+| Start an investigation, add notes, escalate (`report.triage`) | no | yes | yes |
+| Resolve or dismiss a report that is not escalated (`report.resolve`) | no | yes | yes |
+| Resolve or dismiss an **escalated** report; reopen a closed one (`report.resolve_escalated`) | no | no | yes |
+| Withdraw, mark as expired or take down the reported listing | per the listing tables (`opp.withdraw`, `opp.expire`, `opp.takedown`) | yes | yes |
+
+Separation of duties for reports: a person who **authored or submitted** any revision of the reported listing, or created it, cannot resolve or dismiss a report about it, nor take an action on the listing *through the report*; they can still add notes and escalate. Every step is recorded twice: in the report's append-only history and in the audit log. Taking a listing action from a report calls the same publishing-service transition as the listing screens, so the listing's own rules and audit apply unchanged.

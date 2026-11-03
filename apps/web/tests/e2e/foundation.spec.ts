@@ -1,15 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import {
-  BOX_KEYS,
-  COLOR_KEYS,
-  TEXT_KEYS,
-  expectMatchesReference,
-  prodRgb,
-  reference,
-  refRgb,
-  rgb,
-} from "./support";
+import { refRgb, rgb } from "./support";
 
 const PAGES = ["/", "/design-system"];
 const WIDTHS = [320, 390, 768, 1440];
@@ -24,19 +15,35 @@ async function collectViolations(page: Page) {
 }
 
 test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
-  test("home renders with landmarks and a live API status", async ({ page }) => {
+  test("home renders with landmarks, categories and the latest listings", async ({ page }) => {
     const errors = await collectViolations(page);
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle(/UPNEXT/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Discover what's next.");
+    await expect(page).toHaveTitle(/UPNEXT Careers/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Find your next opportunity in Zimbabwe.",
+    );
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
-    await expect(page.getByTestId("service-status")).toContainText("Connected");
+    await expect(page.getByRole("navigation", { name: "Browse by category" })).toBeVisible();
     // In the Next.js dev server, HMR and un-nonced dev styles legitimately log CSP/WebSocket noise, so the
     // strict check runs against the production-mode stack (E2E_STRICT_CONSOLE=1, see LOCAL_DEVELOPMENT.md).
-    if (process.env.E2E_STRICT_CONSOLE === "1")
-      expect(errors, "no console errors / CSP violations").toEqual([]);
+    if (process.env.E2E_STRICT_CONSOLE === "1") {
+      // Next.js's own route announcer sets two inline styles (`style.cssText`) when it mounts after hydration, which
+      // this strict style-src reports once. Whether that happened before the test ended was a race, so wait for the
+      // announcer, then allow exactly that one report: any other console error, and any second inline-style
+      // violation (a style attribute of ours), still fails.
+      await page.waitForLoadState("networkidle");
+      await page.locator("next-route-announcer").waitFor({ state: "attached" });
+      const announcer = (m: string) =>
+        /^Applying inline style violates the following Content Security Policy/.test(m);
+      const reported = errors.filter(announcer);
+      expect(reported.length, "at most the route announcer's one inline-style report").toBeLessThanOrEqual(1);
+      expect(
+        errors.filter((m) => !announcer(m)),
+        "no console errors / CSP violations",
+      ).toEqual([]);
+    }
   });
 
   test("the API answers through /api/v1/ and the health probes", async ({ request }) => {
@@ -48,6 +55,14 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     const missing = await request.get("/api/v1/does-not-exist");
     expect(missing.status()).toBe(404);
     expect((await missing.json()).error.code).toBe("not_found");
+  });
+
+  test("the staff workspace sends a visitor to sign in and is never indexed", async ({ page, request }) => {
+    await page.goto("/workspace");
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fworkspace/);
+    const api = await request.get("/api/v1/staff/dashboard");
+    expect([401, 403]).toContain(api.status());
+    expect((await request.get("/robots.txt")).status()).toBe(200);
   });
 
   test("unknown pages show the designed not-found state", async ({ page }) => {
@@ -70,7 +85,12 @@ test.describe("security headers (SEC-01)", () => {
     expect(h["cross-origin-opener-policy"]).toBe("same-origin");
     expect(h["permissions-policy"]).toContain("camera=()");
     expect(h["x-powered-by"]).toBeUndefined();
-    expect(h["strict-transport-security"]).toBeUndefined(); // HSTS is an edge decision (OQ-01/OQ-10)
+    if (process.env.BASE_URL?.startsWith("https://")) {
+      // The local TLS rehearsal turns HSTS on (P5-03); a real deployment does the same behind its own TLS.
+      expect(h["strict-transport-security"]).toMatch(/^max-age=(\d{8,})$/);
+    } else {
+      expect(h["strict-transport-security"]).toBeUndefined(); // never over plain http
+    }
   });
 
   test("each request gets a fresh nonce", async ({ request }) => {
@@ -141,12 +161,20 @@ test.describe("accessibility (A11Y-01…A11Y-05)", () => {
   });
 });
 
-test.describe("flat design (gate 9: VIS-04, A11Y-08)", () => {
+test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
+  const SHADOWS = [
+    "none",
+    "rgba(23, 23, 23, 0.06) 0px 3px 6px 0px",
+    "rgba(23, 23, 23, 0.08) 0px 15px 35px 0px",
+    "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
+    "rgba(3, 3, 39, 0.25) 0px 14px 21px -14px, rgba(0, 0, 0, 0.1) 0px 8px 17px -8px",
+  ];
   for (const path of PAGES) {
-    test(`nothing is rounded, shadowed or gradient-filled on ${path}`, async ({ page }) => {
+    test(`radii, shadows and gradients stay inside the design system on ${path}`, async ({ page }) => {
       await page.goto(path);
-      const offenders = await page.evaluate(() => {
+      const offenders = await page.evaluate((shadows) => {
         const bad: string[] = [];
+        const allowed = ["0px", "1px", "4px", "5px", "6px", "8px"];
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
           const radii = [
@@ -155,209 +183,93 @@ test.describe("flat design (gate 9: VIS-04, A11Y-08)", () => {
             cs.borderBottomLeftRadius,
             cs.borderBottomRightRadius,
           ];
-          if (radii.some((r) => r !== "0px")) bad.push(`radius ${el.tagName}.${el.className}`);
-          if (cs.boxShadow !== "none") bad.push(`shadow ${el.tagName}.${el.className}`);
-          if (cs.backgroundImage !== "none") bad.push(`bg-image ${el.tagName}.${el.className}`);
+          // The one exception (D-61): the fully rounded quick-link chips of the home page, nothing else.
+          const pill = el.closest('nav[aria-label="Quick links"]') !== null;
+          if (radii.some((r) => !allowed.includes(r) && !(pill && r === "999px")))
+            bad.push(`radius ${el.tagName}.${el.className}`);
+          // Tailwind prefixes shadow utilities with fully transparent ring layers; only the visible layer counts.
+          const visible =
+            cs.boxShadow.replace(/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?/g, "").replace(/, $/, "") || "none";
+          // The design system's focus and error ring (Level "Ring": 0 0 0 1-2px in one colour) is also allowed.
+          const ring = /^rgb\(\d+, \d+, \d+\) 0px 0px 0px [12]px$/.test(visible);
+          if (!shadows.includes(visible) && !ring) bad.push(`shadow ${el.tagName}.${el.className}`);
+          // No gradients (the logo and the identity are flat): only hidden decorative elements may carry a background image.
+          if (cs.backgroundImage !== "none" && el.getAttribute("aria-hidden") !== "true")
+            bad.push(`bg-image ${el.tagName}.${el.className}`);
           if (cs.textShadow !== "none") bad.push(`text-shadow ${el.tagName}.${el.className}`);
         }
         return bad;
-      });
+      }, SHADOWS);
       expect(offenders).toEqual([]);
     });
   }
 
-  test("body typography equals the reference (Arial 13px, line-height 1.55)", async ({ page }) => {
+  test("body typography follows the design system (Inter 300, 16px, line-height 1.4, deep navy on white)", async ({
+    page,
+  }) => {
     await page.goto("/");
-    await expectMatchesReference(page.locator("body"), reference("header_and_chrome", "body"), [
-      "fontFamily",
-      "fontSize",
-      "fontWeight",
-      "lineHeight",
-      "color",
-      "backgroundColor",
-    ]);
-  });
-});
-
-test.describe("reference parity of the primitives (1440px) — only DEV-01…DEV-04 may differ", () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
-  const ALL = [...BOX_KEYS, ...TEXT_KEYS, ...COLOR_KEYS];
-  const BORDER_COLORS = ["borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"];
-
-  test("header, logo and notice", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(
-      page.getByRole("banner"),
-      reference("header_and_chrome", "header"),
-      ["backgroundColor", "borderBottomWidth", "borderBottomColor", "height"],
-      { height: "59px" },
-    );
-    await expectMatchesReference(
-      page.getByRole("banner").locator("span").first(),
-      reference("header_and_chrome", "logo"),
-      ["fontSize", "fontWeight", "letterSpacing", "color"],
-    );
-    await expectMatchesReference(
-      page.getByRole("note"),
-      reference("header_and_chrome", "notice"),
-      [...BOX_KEYS, "fontSize", "backgroundColor", "borderBottomColor", "textAlign"].filter(
-        (k) => k !== "borderTopWidth",
-      ),
-      {
-        color: prodRgb("muted"),
-      },
-    );
-    // DEV-02: production muted text is the approved #687380.
-    await expect(page.getByRole("note")).toHaveCSS("color", rgb("#687380"));
+    const body = page.locator("body");
+    await expect(body).toHaveCSS("font-size", "16px");
+    await expect(body).toHaveCSS("font-weight", "300");
+    await expect(body).toHaveCSS("line-height", "22.4px");
+    await expect(body).toHaveCSS("color", rgb("#061b31"));
+    await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
   });
 
-  test("hero heading", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(
-      page.getByRole("heading", { level: 1 }),
-      reference("header_and_chrome", "h1"),
-      ["fontSize", "fontWeight", "letterSpacing", "lineHeight", "color"],
-    );
-  });
-
-  test("buttons", async ({ page }) => {
+  test("primary buttons use Stripe Purple and the 4px control radius", async ({ page }) => {
     await page.goto("/design-system");
-    await expectMatchesReference(
-      page.getByTestId("btn-secondary"),
-      reference("header_and_chrome", "btnSecondary"),
-      [...ALL, ...BORDER_COLORS],
-    );
     const primary = page.getByTestId("btn-primary");
-    await expect(primary).toHaveCSS("background-color", refRgb("accent"));
-    await expect(primary).toHaveCSS("color", "rgb(255, 255, 255)");
-    await expect(primary).toHaveCSS("min-height", "33px");
-    await expect(primary).toHaveCSS("font-size", "12px");
-    await expect(primary).toHaveCSS("padding", "7px 12px");
+    await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
+    await expect(primary).toHaveCSS("border-top-left-radius", "4px");
     await primary.hover();
-    await expect(primary).toHaveCSS("background-color", refRgb("accent-hover"));
+    await expect(primary).toHaveCSS("background-color", rgb("#4434d4"));
   });
 
-  test("fields use the corrected control border and the reference box", async ({ page }) => {
+  test("form controls use the corrected DEV-04 border", async ({ page }) => {
     await page.goto("/design-system");
-    const cases = [
-      ["field-input", "field"],
-      ["field-select", "filterSelect"],
-    ] as const;
-    for (const [id, evidenceKey] of cases) {
-      await expectMatchesReference(
-        page.getByTestId(id),
-        reference("header_and_chrome", evidenceKey),
-        [...ALL],
-        {
-          fontSize: "13px",
-        },
-      );
-      // DEV-04: reference #d9e1eb → approved #7693b7 on all four sides.
-      for (const side of BORDER_COLORS)
-        await expect(page.getByTestId(id)).toHaveCSS(
-          side.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()),
-          rgb("#7693b7"),
-        );
-      await expect(page.getByTestId(id)).toHaveCSS("min-height", "36px");
-    }
+    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#64748d"));
+    await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
 
-  test("search group matches the reference geometry with the corrected outline", async ({ page }) => {
-    await page.goto("/design-system");
-    const group = page.getByTestId("search-group");
-    const box = await group.boundingBox();
-    expect(box?.width).toBe(790);
-    expect(box?.height).toBe(41);
-    await expect(group).toHaveCSS("border-top-color", rgb("#7693b7"));
-    await expect(group.getByRole("button")).toHaveCSS("min-height", "39px");
-    await expect(group.getByRole("button")).toHaveCSS("background-color", refRgb("accent"));
-    await expect(group.getByRole("combobox")).toHaveCSS("width", "155px");
-  });
+  test.describe("dark theme (D-40; light is the default, owner 2026-10-29)", () => {
+    // A dark device setting must NOT turn the site dark: only an explicit choice does.
+    test.use({ colorScheme: "dark" });
 
-  test("tags, panel and tabs", async ({ page }) => {
-    await page.goto("/design-system");
-    await expectMatchesReference(page.getByTestId("tag-urgent"), reference("listing_cards", "tagUrgent"), [
-      ...ALL,
-      ...BORDER_COLORS,
-    ]);
-    await expectMatchesReference(
-      page.getByTestId("tag-default"),
-      reference("listing_cards", "tag"),
-      [...ALL, ...BORDER_COLORS],
-      {
-        color: prodRgb("meta"), // DEV-01
-      },
-    );
-    await expectMatchesReference(page.getByTestId("panel"), reference("header_and_chrome", "asidecard"), [
-      ...BOX_KEYS,
-      ...BORDER_COLORS,
-    ]);
-    const tabs = page.getByRole("navigation", { name: "Opportunity categories" });
-    await expectMatchesReference(
-      tabs.getByRole("link", { name: "Jobs" }),
-      reference("header_and_chrome", "pill"),
-      [
-        "color",
-        "fontSize",
-        "fontWeight",
-        "paddingTop",
-        "paddingRight",
-        "paddingBottom",
-        "paddingLeft",
-        "borderBottomWidth",
-      ],
-    );
-    await expectMatchesReference(
-      tabs.getByRole("link", { name: "All" }),
-      reference("header_and_chrome", "pillActive"),
-      ["color", "fontSize", "fontWeight", "borderBottomWidth", "borderBottomColor"],
-    );
-  });
+    test("the default is light even on a dark device; Dark is explicit and remembered; Light returns", async ({
+      page,
+    }) => {
+      await page.goto("/");
+      const body = page.locator("body");
+      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+      await expect(body).toHaveCSS("color", rgb("#061b31"));
+      await page.getByRole("button", { name: "Dark" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
+      await expect(body).toHaveCSS("color", rgb("#e8ecf0"));
+      await page.reload();
+      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
+      await page.getByRole("button", { name: "Light" }).click();
+      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+    });
 
-  test("listing row and save control", async ({ page }) => {
-    await page.goto("/design-system");
-    const row = page.locator("article").first();
-    await expect(row).toHaveCSS("border-bottom-width", "1px");
-    await expect(row).toHaveCSS("border-bottom-color", refRgb("line"));
-    await expect(row).toHaveCSS("padding", "15px 14px");
-    await expectMatchesReference(
-      row.getByRole("heading", { level: 3 }),
-      reference("listing_cards", "jobtitle"),
-      ["fontSize", "fontWeight", "lineHeight", "color"],
-    );
-    await expectMatchesReference(
-      row.getByText("Example Power Services", { exact: true }),
-      reference("listing_cards", "company"),
-      ["fontSize", "lineHeight"],
-      { color: prodRgb("company") },
-    ); // DEV-03
-    const avatar = row.locator("div[aria-hidden='true']").first();
-    await expectMatchesReference(avatar, reference("listing_cards", "avatar"), [
-      "backgroundColor",
-      "color",
-      "fontWeight",
-      "borderTopWidth",
-      "borderTopColor",
-    ]);
-    expect((await avatar.boundingBox())?.width).toBe(39);
-    await expectMatchesReference(page.getByTestId("save-idle"), reference("listing_cards", "bookmark"), [
-      "color",
-      "fontSize",
-      "lineHeight",
-      "paddingLeft",
-      "paddingRight",
-    ]);
-  });
+    test("the primary button stays purple in dark with white text", async ({ page }) => {
+      await page.goto("/design-system");
+      await page.getByRole("button", { name: "Dark" }).first().click();
+      const primary = page.getByTestId("btn-primary");
+      await expect(primary).toHaveCSS("background-color", rgb("#665efd"));
+      await expect(primary).toHaveCSS("color", rgb("#ffffff"));
+    });
 
-  test("footer", async ({ page }) => {
-    await page.goto("/");
-    await expectMatchesReference(page.getByRole("contentinfo"), reference("header_and_chrome", "footer"), [
-      "paddingTop",
-      "paddingBottom",
-      "borderTopWidth",
-      "borderTopColor",
-      "fontSize",
-    ]);
-    await expect(page.getByRole("contentinfo")).toHaveCSS("color", prodRgb("muted"));
+    test("no serious or critical accessibility violations on the home page in dark", async ({ page }) => {
+      await page.goto("/");
+      await page.getByRole("button", { name: "Dark" }).click();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze();
+      expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
+    });
   });
 });

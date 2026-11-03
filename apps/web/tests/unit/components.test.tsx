@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   Button,
@@ -101,23 +101,51 @@ describe("SearchGroup", () => {
         <label htmlFor="q" className="sr-only">
           Keyword
         </label>
-        <SearchGroup.Input id="q" />
+        <SearchGroup.Input id="q" name="q" />
         <label htmlFor="l" className="sr-only">
           Location
         </label>
         <SearchGroup.Select id="l">
           <option>All</option>
         </SearchGroup.Select>
-        <Button size="search" type="submit">
-          Find
-        </Button>
       </SearchGroup>,
     );
     const group = screen.getByRole("search", { name: "Search opportunities" });
     expect(within(group).getByLabelText("Keyword")).toBeInTheDocument();
     expect(within(group).getByLabelText("Location")).toBeInTheDocument();
-    expect(within(group).getByRole("button", { name: "Find" })).toHaveAttribute("type", "submit");
+    expect(within(group).queryByRole("button")).toBeNull(); // no separate Search button
     expect(group.className).toContain("border-control-border");
+    const box = within(group).getByRole("searchbox");
+    expect(box).toHaveAttribute("enterkeyhint", "search");
+    expect(box.parentElement?.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  });
+  it("does not send a blank search, and trims what it sends", () => {
+    const submitted: string[] = [];
+    function Harness() {
+      return (
+        <SearchGroup aria-label="s" action="/opportunities" method="get">
+          <SearchGroup.Input id="q" name="q" />
+        </SearchGroup>
+      );
+    }
+    render(<Harness />);
+    const form = screen.getByRole("search");
+    const field = screen.getByRole("searchbox") as HTMLInputElement;
+    // React handles submit at its root, so observe afterwards, on the document, and stop jsdom navigating
+    const observe = (e: Event) => {
+      submitted.push(String(e.defaultPrevented));
+      e.preventDefault();
+    };
+    document.addEventListener("submit", observe);
+    field.value = "   ";
+    fireEvent.submit(form);
+    expect(field.value).toBe("");
+    expect(submitted).toEqual(["true"]);
+    field.value = "  solar   water ";
+    fireEvent.submit(form);
+    expect(field.value).toBe("solar water");
+    expect(submitted).toEqual(["true", "false"]);
+    document.removeEventListener("submit", observe);
   });
 });
 

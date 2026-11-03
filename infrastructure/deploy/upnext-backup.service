@@ -1,0 +1,9 @@
+# Install (as root, after approval): copy to /etc/systemd/system/, then `systemctl enable --now upnext-backup.timer`.
+[Unit]
+Description=UPNEXT Careers encrypted database backup with off-server copy
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/upnext/upnext.env
+ExecStart=/opt/upnext/infrastructure/deploy/backup-job.sh

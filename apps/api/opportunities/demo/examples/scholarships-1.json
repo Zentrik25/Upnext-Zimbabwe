@@ -1,0 +1,74 @@
+{
+ "category": "scholarships",
+ "organisation_id": "00000000-0000-4000-8000-000000000007",
+ "title": "Postgraduate Engineering Scholarship",
+ "summary": "Funded master's study in engineering at Zimbabwean or partner institutions, with tuition and a living allowance.",
+ "description_md": "Illustrative scholarship for technical research and advanced study, awarded by a foundation to Zimbabwean applicants.",
+ "requirements_md": "- Relevant undergraduate degree\n- Academic transcripts\n- Research statement",
+ "locations": [
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a7",
+   "is_primary": true
+  },
+  {
+   "location_id": "00000000-0000-4000-8000-0000000000a1",
+   "is_primary": false
+  }
+ ],
+ "geographic_eligibility": "Open to Zimbabwean citizens resident in Zimbabwe",
+ "funding": {
+  "min": "8000.00",
+  "max": "12000.00",
+  "currency": "USD",
+  "period": "year"
+ },
+ "deadline_at": "2027-01-29T17:00:00+02:00",
+ "deadline_timezone": "Africa/Harare",
+ "deadline_is_date_only": false,
+ "application_method": "external_url",
+ "application_url": "https://foundation.example.org/scholarships/postgraduate-engineering",
+ "sector_ids": [
+  "00000000-0000-4000-8000-0000000000b1"
+ ],
+ "sources": [
+  {
+   "kind": "issuer_website",
+   "name": "Example Education Foundation scholarships page",
+   "url": "https://foundation.example.org/scholarships/postgraduate-engineering",
+   "citation": null,
+   "observed_on": "2026-10-12",
+   "is_primary": true
+  }
+ ],
+ "detail": {
+  "study_level": [
+   "masters_degree"
+  ],
+  "study_destination": "either",
+  "host_institutions": [
+   "Accredited partner universities listed on the foundation's website"
+  ],
+  "eligible_countries": [
+   "ZW"
+  ],
+  "coverage": [
+   "tuition",
+   "living_allowance",
+   "books_and_materials"
+  ],
+  "award_count": 5,
+  "award_duration_months": 24,
+  "renewable": false,
+  "maximum_age": 35,
+  "fields_of_study": [
+   "Electrical engineering",
+   "Mechanical engineering",
+   "Civil engineering"
+  ],
+  "application_documents": [
+   "Academic transcripts",
+   "Two reference letters",
+   "Research statement"
+  ]
+ }
+}

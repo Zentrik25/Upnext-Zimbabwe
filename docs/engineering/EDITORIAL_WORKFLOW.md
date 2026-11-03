@@ -102,3 +102,14 @@ Actor roles are defined in `ROLE_PERMISSION_MATRIX.md`. "Author" means the user 
 ## 7. Queues and views (for the staff interface)
 
 Contributor: own drafts and rejected items. Editor and Administrator: the `in_review` queue excluding items they authored, and the `approved` queue (they may publish approved items, including their own). Everyone with a staff role sees the history (`publishing_event`) of items they may view. These are views over the same tables, not separate states.
+
+## 8. Implementation notes (Phase 2)
+
+Implemented in `apps/api/opportunities/workflow.py` with the pure rules in `apps/api/access/policy.py` and database triggers (ERD §8). T01-T07 and T09-T15 and V01 exist; **T08 (scheduled publishing) is not implemented** (default P2-05, OQ-14 open).
+
+- **Review chain.** "Author of any version in the chain" is computed by walking `based_on_version_id` from the revision under review, collecting each revision's author and submitter, and stopping at the first revision that is already published or superseded. A reopened rejected revision therefore keeps its predecessors' authors in the chain, while an amendment of a published listing starts a new chain (its author and submitter only). The same walk exists in SQL (`upnext_chain_authors`) so the database agrees.
+- **Exact revision.** The content hash covers every material field (core text, searchable facts, money, deadline, application, category and detail with its schema version, locations, skills, sectors, sources, duplicate acknowledgement). It is set at submit, re-computed and compared at approve and at publish (`approval_stale` on mismatch) and recorded in the review decision.
+- **Refusals are evidence.** A refused attempt rolls back and is then written as a `severity=security` audit event (`<action>.denied`) in its own transaction.
+- **Verification (P2-08).** `source_checked` needs method `source_page_review` or `document_review`; `issuer_verified` needs `issuer_contact`; only `confirmed` records count; a later record may supersede an earlier one; publication and amendments never carry a level forward.
+- **Duplicates (P2-09).** Hard duplicates (same normalised primary-source address, or same application address and organisation) block submit unless the author names the other listing and gives a reason; soft duplicates are listed in the audit event.
+- **Applicant-payment lint (AC-CAT-05).** If a non-tender listing's text mentions application, registration, processing or handling fees, deposits or payments, approval requires the extra checklist item `applicant_payment_reviewed`.

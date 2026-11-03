@@ -10,16 +10,35 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.prod
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
       DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+      UPNEXT_ENVIRONMENT: local-prod-like # lets the production images run with demo data; never set on a real deployment
       UPNEXT_SECURE_COOKIES: "true" # production refuses to start without it; Chromium accepts Secure cookies on localhost
       UPNEXT_EXPOSE_OPENAPI_SCHEMA: "false"
       UPNEXT_RUN_MIGRATIONS: "1"
+      UPNEXT_STAFF_MFA_REQUIRED: "true"
+      UPNEXT_SERVE_MEDIA: "true" # local verification only: Django serves /media/ where production nginx does
+      UPNEXT_MEDIA_ROOT: /tmp/media # writable for the unprivileged user; throw-away like the rest of this stack
     volumes: !override []
     user: "10001:10001"
+  worker:
+    build:
+      target: prod
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api,proxy
+      UPNEXT_ENVIRONMENT: local-prod-like
+      UPNEXT_SECURE_COOKIES: "true"
+      UPNEXT_EMAIL_BACKEND: file
+      UPNEXT_WORKER_HEARTBEAT: /tmp/worker-heartbeat
+    volumes: !override []
+    user: "10001:10001"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -n \"$(find /tmp/worker-heartbeat -mmin -2 2>/dev/null)\""]
   web:
     build:
       target: prod
     environment: !override
       API_INTERNAL_URL: http://api:8000
+      UPNEXT_SITEMAP_CACHE_SECONDS: "0"
       NEXT_TELEMETRY_DISABLED: "1"
     volumes: !override []
     tmpfs: !override []

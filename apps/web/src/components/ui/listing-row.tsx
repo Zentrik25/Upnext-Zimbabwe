@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "./button";
+import { ButtonLink } from "./button";
 import { SaveButton } from "./save-button";
 import { Tag, type TagTone } from "./tag";
 
@@ -10,7 +10,14 @@ export type ListingRowProps = {
   facts: string[];
   tags?: { label: string; tone?: TagTone }[];
   sourceNote?: ReactNode;
-  saved: boolean;
+  /** Static save control for presentational use. Omit it when there is nothing to save. */
+  saved?: boolean;
+  /** Optional block under the facts (for example why a recommendation is shown). */
+  extra?: ReactNode;
+  /** The listing's own featured picture (never an employer logo). Decorative here: the title link names the row. */
+  image?: string | null;
+  /** Replaces the save control (the live toggle comes from the page, since it needs the session). */
+  action?: ReactNode;
 };
 
 function initials(name: string): string {
@@ -33,23 +40,41 @@ export function ListingRow({
   tags = [],
   sourceNote,
   saved,
+  action,
+  extra,
+  image,
 }: ListingRowProps) {
   return (
     <article className="border-b border-line px-[14px] py-[15px] hover:bg-row-hover">
       <div className="flex items-start gap-[11px]">
         <div
           aria-hidden="true"
-          className="grid h-avatar w-avatar shrink-0 place-items-center border border-avatar-border bg-avatar-bg font-bold text-avatar-text"
+          className="grid h-avatar w-avatar shrink-0 place-items-center rounded-card border border-avatar-border bg-avatar-bg font-bold text-avatar-text"
         >
           {initials(organisation)}
         </div>
         <div className="min-w-0">
-          <h3 className="text-title font-strong leading-title">
+          <h3 className="text-base font-strong leading-title">
             <a href={href}>{title}</a>
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
         </div>
-        <SaveButton title={title} saved={saved} className="ml-auto" />
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a small card picture served from our own media path
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            width={96}
+            height={54}
+            className="ml-auto hidden h-[54px] w-24 shrink-0 rounded-card border border-line object-cover sm:block"
+          />
+        ) : null}
+        {action ? (
+          <div className={image ? "" : "ml-auto"}>{action}</div>
+        ) : saved === undefined ? null : (
+          <SaveButton title={title} saved={saved} className="ml-auto" />
+        )}
       </div>
       <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
         {facts.map((fact) => (
@@ -61,11 +86,17 @@ export function ListingRow({
           </li>
         ))}
       </ul>
+      {extra}
       <div className="mt-[13px] flex items-center justify-between gap-2">
         <span className="text-small text-muted">{sourceNote}</span>
-        <Button variant="secondary" type="button" aria-label={`View details for ${title}`}>
+        <ButtonLink
+          variant="secondary"
+          href={href}
+          aria-label={`View details for ${title}`}
+          className="whitespace-nowrap"
+        >
           View details
-        </Button>
+        </ButtonLink>
       </div>
     </article>
   );
