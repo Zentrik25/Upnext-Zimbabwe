@@ -42,7 +42,7 @@ async function login(browser: Browser, who: keyof typeof accounts, viewport = { 
   await expect(page).toHaveURL(/\/workspace\/two-step/);
   await page.locator("#code").fill(demoCode(accounts[who]));
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /Welcome back/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
   return { context, page };
 }
 

@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
-import { cache, Suspense } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { Container } from "@/components/layout";
-import {
-  CategoryGrid,
-  CategoryGridSkeleton,
-  HeroFrame,
-  HeroSearch,
-  HeroSearchSkeleton,
-  TrustSection,
-} from "@/components/home/sections";
+import { HeroFrame, HeroSearch, HeroSearchSkeleton, TrustSection } from "@/components/home/sections";
 import { HomeLatest, HomeLatestSkeleton } from "@/components/home/latest";
 import { Icon } from "@/components/ui/icons";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -26,21 +19,14 @@ export const metadata: Metadata = {
   ...socialFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
 };
 
-/** One request each for the hero search and the category tiles, which both need the categories. */
-const categoriesOnce = cache(listCategories);
-
 async function HomeSearch() {
-  const [categories, locations] = await Promise.all([categoriesOnce(), listLocations()]);
+  const [categories, locations] = await Promise.all([listCategories(), listLocations()]);
   return <HeroSearch categories={categories} locations={locations} />;
-}
-
-async function HomeCategories() {
-  return <CategoryGrid categories={await categoriesOnce()} />;
 }
 
 /**
  * Static content (the headline, the illustration, the section headings, the trust section) is sent at once. The
- * three sections that wait for the API each have their own Suspense boundary, so none of them holds up the others.
+ * two sections that wait for the API each have their own Suspense boundary, so none of them holds up the others.
  */
 export default function HomePage() {
   return (
@@ -53,9 +39,6 @@ export default function HomePage() {
           <HomeSearch />
         </Suspense>
       </HeroFrame>
-      <Suspense fallback={<CategoryGridSkeleton />}>
-        <HomeCategories />
-      </Suspense>
       <section aria-labelledby="latest-title" className="pt-5 pb-6">
         <Container>
           <div className="flex flex-wrap items-end justify-between gap-3">

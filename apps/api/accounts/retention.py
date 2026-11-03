@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from alerts import service as alert_service
-from employers.models import ListingDailyStat
+from employers.models import ListingDailyStat, ListingHourlyStat
 from notifications.models import EmailOutbox, OutboxStatus
 from reports import services as report_service
 
@@ -55,6 +55,9 @@ def run(now: datetime | None = None) -> dict[str, int]:
     )
     counts["listing_stats"] = ListingDailyStat.objects.filter(
         day__lt=(now - timedelta(days=settings.UPNEXT_RETENTION_LISTING_STATS_DAYS)).date()
+    ).delete()[0]
+    counts["listing_hourly_stats"] = ListingHourlyStat.objects.filter(
+        hour__lt=now - timedelta(days=settings.UPNEXT_RETENTION_LISTING_STATS_DAYS)
     ).delete()[0]
     counts["alert_ledger"] = alert_service.purge_ledger(now)
     counts["report_contacts"] = report_service.purge_closed(now)

@@ -1,5 +1,5 @@
 # Direct runtime dependencies (exact pins for the approved stack; see docs/engineering/VERSION_RECOMMENDATION.md and PHASE1_VERSION_VERIFICATION.md).
-Django==5.2.18
+Django==6.1.2
 djangorestframework==3.18.3
 psycopg[binary]==3.3.6
 drf-spectacular

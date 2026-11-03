@@ -10,7 +10,7 @@ const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[
     title: "Opportunities",
     links: [
       ["/opportunities", "All opportunities"],
-      ["/#categories", "Browse by category"],
+      ["/opportunities", "Browse by category"],
     ],
   },
   {
