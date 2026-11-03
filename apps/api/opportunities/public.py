@@ -19,7 +19,7 @@ from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core import signing
-from django.db.models import F, FloatField, Q, QuerySet
+from django.db.models import Count, F, FloatField, Max, Q, QuerySet
 from django.db.models.functions import Cast
 from django.http import QueryDict
 from django.utils import timezone
@@ -181,17 +181,58 @@ def visible_versions(*, detail: bool = False, include_expired: bool = False) -> 
 SITEMAP_LIMIT = 49000
 
 
-def sitemap_entries(now: datetime) -> list[tuple[str, datetime]]:
-    """(slug, last published) for every listing that is open for browsing, in a stable order. Closed,
-    withdrawn and archived listings are left out (P4-03); a listing whose deadline passed is left out even
-    before the expiry job has run, as in the default list."""
+def _open_versions(now: datetime) -> QuerySet[OpportunityVersion]:
+    return visible_versions().filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
+
+
+def sitemap_entries(now: datetime) -> list[tuple[str, datetime, str]]:
+    """(slug, last published, category code) for every listing open for browsing, in a stable order.
+    Closed, withdrawn and archived listings are left out (P4-03); a listing whose deadline passed is left
+    out even before the expiry job has run, as in the default list."""
     rows = (
-        visible_versions()
-        .filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
+        _open_versions(now)
         .order_by("opportunity__slug")
-        .values_list("opportunity__slug", "opportunity__last_published_at")[:SITEMAP_LIMIT]
+        .values_list("opportunity__slug", "opportunity__last_published_at", "opportunity__category__code")[
+            :SITEMAP_LIMIT
+        ]
     )
-    return [(slug, stamp) for slug, stamp in rows if slug and stamp]
+    return [(slug, stamp, code) for slug, stamp, code in rows if slug and stamp]
+
+
+def sitemap_facets(now: datetime) -> dict[str, Any]:
+    """Counts and newest publication per category, per city or province, and for remote work (open listings).
+    They let the web app list a landing page only when it holds enough real listings (no thin pages), without
+    one list request per page. Locations of kind country and remote are not landing pages: the country is the
+    whole list, and remote work has its own page."""
+    base = _open_versions(now)
+    categories = base.values("opportunity__category__code").annotate(
+        n=Count("pk", distinct=True), newest=Max("opportunity__last_published_at")
+    )
+    places = (
+        base.filter(locations__location__active=True, locations__location__kind__in=["city", "province"])
+        .values("locations__location__slug", "locations__location__name")
+        .annotate(n=Count("pk", distinct=True), newest=Max("opportunity__last_published_at"))
+        .order_by("locations__location__slug")
+    )
+    remote = base.filter(work_mode="remote").aggregate(
+        n=Count("pk", distinct=True), newest=Max("opportunity__last_published_at")
+    )
+    return {
+        "categories": [
+            {"code": r["opportunity__category__code"], "count": r["n"], "updated_at": r["newest"]}
+            for r in categories.order_by("opportunity__category__code")
+        ],
+        "locations": [
+            {
+                "slug": r["locations__location__slug"],
+                "name": r["locations__location__name"],
+                "count": r["n"],
+                "updated_at": r["newest"],
+            }
+            for r in places
+        ],
+        "remote": {"count": remote["n"], "updated_at": remote["newest"]},
+    }
 
 
 def derive_deadline_state(deadline_at: datetime | None, now: datetime) -> str:

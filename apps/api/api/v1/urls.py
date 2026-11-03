@@ -13,6 +13,7 @@ from api import (
     staff_catalog,
     staff_images,
     staff_records,
+    staff_seo,
     staff_team,
     staff_views,
     views,
@@ -194,6 +195,7 @@ urlpatterns = [
         name="staff-record-action",
     ),
     path("staff/content-health", staff_views.ContentHealthView.as_view(), name="staff-content-health-api"),
+    path("staff/seo", staff_seo.SeoView.as_view(), name="staff-seo"),
     path("staff/catalog", staff_catalog.CatalogIndexView.as_view(), name="staff-catalog"),
     path("staff/catalog/<slug:kind>", staff_catalog.CatalogListView.as_view(), name="staff-catalog-list"),
     path(
