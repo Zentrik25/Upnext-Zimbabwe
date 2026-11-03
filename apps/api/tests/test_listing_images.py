@@ -102,7 +102,7 @@ def test_size_and_dimension_limits() -> None:
         images.process(b"\xff\xd8\xff" + b"0" * images.MAX_BYTES)
     assert big.value.code == "file_too_large"
     with pytest.raises(images.ImageRejected) as small:
-        images.process(picture(size=(300, 200)))
+        images.process(picture(size=(48, 30)))
     assert small.value.code == "image_too_small"
     with pytest.raises(images.ImageRejected) as wide:
         images.process(picture("PNG", size=(images.MAX_SIDE + 1, 450)))
@@ -231,7 +231,7 @@ def test_upload_rejects_bad_files_with_meaningful_codes(people: dict[str, User])
     client = signed_in(people["editor"])
     cases = [
         (b"<?php echo 1; ?>", "not_an_image"),
-        (picture(size=(200, 120)), "image_too_small"),
+        (picture(size=(48, 30)), "image_too_small"),
         (b"", "validation_failed"),
     ]
     for data, code in cases:
@@ -447,3 +447,27 @@ def test_production_settings_do_not_serve_media_through_django(settings: Any) ->
 
     assert base.UPNEXT_SERVE_MEDIA is False  # the default; only development and tests turn it on
     assert str(base.MEDIA_URL) == "/media/"
+
+
+def test_very_small_pictures_are_accepted_but_a_dot_is_not() -> None:
+    """D-64: staff can upload small pictures; only a few-pixel icon is refused."""
+    for size in ((64, 36), (120, 80), (200, 100)):
+        data, width, height = images.process(picture(size=size))
+        assert (width, height) == size and data[:3] == b"\xff\xd8\xff"
+    for size in ((63, 36), (64, 35), (16, 16)):
+        with pytest.raises(images.ImageRejected) as refused:
+            images.process(picture(size=size))
+        assert refused.value.code == "image_too_small"
+    assert "64 x 36" in refused.value.message
+
+
+def test_a_small_picture_uploads_through_the_library_and_can_be_attached(
+    world: World, people: dict[str, User]
+) -> None:
+    client = signed_in(people["editor"])
+    response = upload(client, picture(size=(120, 80)), name="logo.png")
+    assert response.status_code == 201
+    name = response.json()["name"]
+    opp = new_draft(world, people["editor"])
+    save(people["editor"], opp, featured_image=name)
+    assert images.exists(name)

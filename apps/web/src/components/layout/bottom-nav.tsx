@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
   { href: "/", label: "Home", icon: "home", match: (p) => p === "/" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
-  { href: "/#categories", label: "Categories", icon: "grid", match: () => false },
+  { href: "/opportunities", label: "Categories", icon: "grid", match: () => false },
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
   {
     href: "/account",

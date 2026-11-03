@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { AuthFooter, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { adsenseClient, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
@@ -77,6 +78,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
   const pathname = requestHeaders.get("x-pathname") ?? "";
   const auth = AUTH_PATHS.includes(pathname);
+  // AdSense verification snippet: public pages only (never the staff workspace or the sign-in forms), and only
+  // when the owner has set UPNEXT_ADSENSE_CLIENT.
+  const adsense = workspace || auth ? undefined : adsenseClient();
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html
@@ -86,6 +90,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {adsense ? (
+          <script async nonce={nonce} src={adsenseScriptSrc(adsense)} crossOrigin="anonymous" />
+        ) : null}
       </head>
       <body>
         {workspace ? (

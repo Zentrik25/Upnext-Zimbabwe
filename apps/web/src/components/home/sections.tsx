@@ -5,7 +5,7 @@ import { Container } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion, SkeletonInput, SkeletonLine } from "@/components/ui/skeleton";
 import { SearchForm } from "@/components/ui/search-form";
-import { CATEGORY_ICON, Icon, type IconName } from "@/components/ui/icons";
+import { Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VerificationTag } from "@/components/opportunities/parts";
@@ -112,7 +112,7 @@ const QUICK_LINKS: readonly { label: string; href: string; icon: IconName }[] = 
   { label: "Jobs", href: "/opportunities?category=jobs", icon: "briefcase" },
   { label: "Tenders", href: "/opportunities?category=tenders", icon: "doc" },
   { label: "Scholarships", href: "/opportunities?category=scholarships", icon: "cap" },
-  { label: "More", href: "#categories", icon: "grid" },
+  { label: "More", href: "/opportunities", icon: "grid" },
 ];
 
 function QuickLinks() {
@@ -241,64 +241,6 @@ export function HeroSearchSkeleton() {
       </div>
       <div className="h-[44px] w-full rounded-control bg-line" />
     </LoadingRegion>
-  );
-}
-
-/** Explore by category: one outlined tile per category (icon, name), same destinations as the list filter. */
-export function CategoryGrid({ categories }: { categories: Category[] }) {
-  if (categories.length === 0) return null;
-  return (
-    <section id="categories" aria-labelledby="categories-title" className="pt-5">
-      <Container>
-        <div className="border-b border-line pb-5">
-          <h2 id="categories-title" className="font-headline text-title tracking-title">
-            Explore by category
-          </h2>
-          <nav aria-label="Browse by category" className="mt-3">
-            <ul className="m-0 grid list-none grid-cols-3 gap-3 p-0 max-sm:gap-2 md:grid-cols-6">
-              {categories.map((category) => (
-                <li key={category.code}>
-                  <Link
-                    href={`/opportunities?category=${category.code}`}
-                    className="flex min-h-[66px] items-center max-[400px]:min-h-[84px] max-[400px]:flex-col max-[400px]:justify-center max-[400px]:text-center gap-2.5 rounded-control border border-border-panel bg-surface px-3 text-small leading-tight text-ink break-words shadow-subtle hover:shadow-ambient max-sm:gap-2 max-sm:px-2.5 sm:text-ctl"
-                  >
-                    <Icon
-                      name={CATEGORY_ICON[category.code] ?? "grid"}
-                      className="h-6 w-6 shrink-0 text-accent max-sm:h-[22px] max-sm:w-[22px]"
-                    />
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-/** The category tiles while the categories load: six tiles of the real tile size, in the real grid. */
-export function CategoryGridSkeleton() {
-  return (
-    <section aria-label="Explore by category" className="pt-5">
-      <Container>
-        <LoadingRegion label="categories" heading={false} className="border-b border-line pb-5">
-          {/* the real heading is 20px type at the body line height (22px): the slot is as tall, the bar is not */}
-          <div className="flex h-[22px] items-center">
-            <SkeletonLine className="h-[18px] w-[200px]" />
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-3 max-sm:gap-2 md:grid-cols-6">
-            {Array.from({ length: 6 }, (_, index) => (
-              <div
-                key={index}
-                className="min-h-[66px] rounded-control border border-border-panel bg-surface max-[400px]:min-h-[84px]"
-              />
-            ))}
-          </div>
-        </LoadingRegion>
-      </Container>
-    </section>
   );
 }
 
