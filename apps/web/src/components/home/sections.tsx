@@ -264,7 +264,7 @@ function TrustCard({ icon, title, children }: { icon: IconName; title: string; c
 
 /** What the editorial process really guarantees today (see About and the verification labels). */
 export function TrustSection() {
-  const levels = ["not_verified", "source_checked", "issuer_verified"] as const;
+  const levels = ["not_verified", "issuer_verified"] as const;
   return (
     <section aria-labelledby="trust-title" className="pb-8">
       <Container>

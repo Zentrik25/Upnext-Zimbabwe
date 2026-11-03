@@ -148,7 +148,7 @@ describe("the image upload control", () => {
     render(<ImageUpload id="f" value="" onChange={onChange} />);
     fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file()] } });
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(name));
-    expect(FakeXhr.last.url).toBe("/api/v1/staff/images");
+    expect(FakeXhr.last.url).toBe("/api/v1/staff/media");
     expect(FakeXhr.last.method).toBe("POST");
     expect(FakeXhr.last.headers["X-CSRFToken"]).toBe("tok");
     expect(FakeXhr.last.withCredentials).toBe(true);
@@ -269,7 +269,7 @@ describe("the job editor carries the images", () => {
   it("the editor shows a Featured image section and a Media & SEO sharing image, and the old notice is gone", () => {
     const source = readRepoFile("apps/web/src/components/workspace/job-editor.tsx");
     expect(source).toContain('title="Featured image"');
-    expect(source).toContain("Recommended aspect ratio: 16:9");
+    expect(source).toContain("Recommended aspect ratio 16:9");
     expect(source).toContain('title="Sharing image"');
     expect(source).not.toContain("cannot be uploaded yet");
   });

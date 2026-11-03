@@ -3,12 +3,12 @@ import {
   buildContent,
   canCreate,
   dayOf,
+  seoDefaults,
+  slugFromTitle,
   detailFromText,
   emptyState,
-  hostOf,
   matchPlaces,
   moreDetailFields,
-  sourceName,
   stateFromDraft,
   toggleBullets,
 } from "@/lib/job-editor";
@@ -52,7 +52,6 @@ const jobs: StaffCategory = {
 };
 const tenders: StaffCategory = { code: "tenders", name: "Tenders", detail_fields: [] };
 const org = { id: "org-1", name: "Acme" };
-const today = "2026-10-31";
 
 const stored = {
   title: "Accountant",
@@ -116,16 +115,15 @@ const places = [
   { id: "z", name: "Zimbabwe", kind: "country" },
   { id: "r", name: "Remote", kind: "remote" },
 ];
-const opts = { today, addressLocked: false, places };
+const opts = { addressLocked: false, places };
 
 describe("state from a stored draft", () => {
-  it("shows what is stored: location written out primary first, pay wording, primary source, other sources kept", () => {
+  it("shows what is stored: location written out primary first and pay wording; sources are not part of the form", () => {
     const s = stateFromDraft(stored, jobs, org, places);
     expect(s.locationText).toBe("Harare, Bulawayo");
     expect(s.salaryText).toBe("Competitive");
     expect(s.applyMethod).toBe("both");
-    expect(s.sourceUrl).toBe("https://acme.example/jobs");
-    expect(s.otherSources).toHaveLength(1);
+    expect(Object.keys(s).filter((k) => /source/i.test(k) && !/social/i.test(k))).toEqual([]);
     expect(s.deadlineDay).toBe("2027-03-01");
     expect(s.detail).toMatchObject({ vacancies: "2", benefits: "Medical aid" });
   });
@@ -218,9 +216,8 @@ describe("the request body", () => {
     expect(content.skills).toEqual([{ skill_id: "sk-1", is_required: true }]);
     expect("deadline_at" in content).toBe(false); // the day did not change
     expect(content.detail).toEqual({ vacancies: 2, benefits: ["Medical aid"] });
-    const sources = content.sources as { is_primary: boolean; observed_on: string }[];
-    expect(sources.map((x) => x.is_primary)).toEqual([true, false]);
-    expect(sources[0]!.observed_on).toBe("2026-10-29"); // an unchanged source keeps its own check date
+    // Sources are no longer part of the form (D-62): none is sent, so the stored ones are left exactly as they are.
+    expect("sources" in content).toBe(false);
   });
 
   it("sends only the chosen application method's fields, and instructions with any method", () => {
@@ -316,23 +313,29 @@ describe("the request body", () => {
     ).toBe(false);
   });
 
-  it("dates a new or changed source today, and names it from its address without inventing", () => {
+  it("never asks for or sends a source, for a new draft or an edited one", () => {
+    const fresh = buildContent({ ...emptyState("jobs"), organisation: org, title: "T" }, jobs, null, opts);
+    expect("sources" in fresh.content).toBe(false);
+    const edited = buildContent(stateFromDraft(stored, jobs, org), jobs, stored, opts);
+    expect("sources" in edited.content).toBe(false);
+  });
+
+  it("generates the search title, description and address from the job, to be edited only when needed", () => {
     const s = {
       ...emptyState("jobs"),
       organisation: org,
-      title: "T",
-      sourceUrl: "https://www.herald.co.zw/jobs/1",
-      sourceKind: "newspaper",
+      title: "Driver Salesperson (Harare) – Urgent",
+      summary: "",
+      responsibilities: "- Sell and deliver\n- Keep records",
     };
-    const sources = buildContent(s, jobs, null, opts).content.sources as Record<string, unknown>[];
-    expect(sources[0]).toMatchObject({
-      name: "herald.co.zw",
-      observed_on: today,
-      is_primary: true,
-      citation: null,
+    expect(seoDefaults(s)).toEqual({
+      title: "Driver Salesperson (Harare) – Urgent at Acme",
+      description: "Sell and deliver Keep records",
+      slug: "driver-salesperson-harare-urgent",
     });
-    const none = buildContent({ ...s, sourceUrl: "" }, jobs, null, opts).content.sources;
-    expect(none).toEqual([]); // no source given: none is made up
+    expect(seoDefaults({ ...s, title: "" }).slug).toBe("");
+    expect(slugFromTitle("Café Manager")).toBe("cafe-manager");
+    expect(slugFromTitle("!!!")).toBe("opportunity");
   });
 
   it("never sends an address once it is permanent, and sends a chosen one before", () => {
@@ -414,13 +417,9 @@ describe("helpers", () => {
     expect(toggleBullets("A\n\nB", 0, 4).text).toBe("- A\n\n- B");
   });
 
-  it("knows the day of a Harare deadline and the host of an address", () => {
+  it("knows the day of a Harare deadline", () => {
     expect(dayOf("2027-03-01T21:59:59Z")).toBe("2027-03-01");
     expect(dayOf(null)).toBe("");
-    expect(hostOf("https://www.example.org/x")).toBe("example.org");
-    expect(hostOf("not a url")).toBeNull();
-    expect(sourceName("", "issuer_notice", "")).toBe("Issuer notice");
-    expect(sourceName("", "other", "Gazette no. 12, p. 4")).toBe("Gazette no. 12, p. 4");
   });
 
   it("can create a draft only with a category, an organisation and a title", () => {

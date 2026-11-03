@@ -3,13 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { JobEditor } from "@/components/workspace/job-editor";
 import { listLocations, listSectors } from "@/lib/catalog";
-import { can, currentTime, requireStaff, staffJson } from "@/lib/staff";
+import { can, requireStaff, staffJson } from "@/lib/staff";
 import type { StaffCategory } from "@/lib/staff-types";
 
 export const metadata: Metadata = { title: "Create opportunity" };
-
-/** Today's date in Harare (UTC+2 all year): the day a new source is checked. */
-const harareToday = () => new Date(currentTime() + 2 * 3600 * 1000).toISOString().slice(0, 10);
 
 export default async function NewOpportunityPage() {
   const session = await requireStaff("/workspace/opportunities/new");
@@ -37,7 +34,6 @@ export default async function NewOpportunityPage() {
         locations={locations}
         sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}
         canCreateOrganisation={can(session, "org.create")}
-        today={harareToday()}
       />
     </>
   );

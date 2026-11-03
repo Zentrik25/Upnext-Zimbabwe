@@ -10,6 +10,7 @@ from api import (
     profile_views,
     public_views,
     report_views,
+    staff_analytics,
     staff_catalog,
     staff_images,
     staff_records,
@@ -157,7 +158,19 @@ urlpatterns = [
         staff_views.ActionView.as_view(),
         name="staff-opportunity-action",
     ),
+    path(
+        "staff/opportunities/<uuid:opportunity_id>/verification",
+        staff_views.VerificationView.as_view(),
+        name="staff-opportunity-verification",
+    ),
+    path("staff/analytics", staff_analytics.AnalyticsOverviewView.as_view(), name="staff-analytics"),
+    path(
+        "staff/analytics/opportunities",
+        staff_analytics.AnalyticsOpportunitiesView.as_view(),
+        name="staff-analytics-opportunities",
+    ),
     path("staff/images", staff_images.ImageUploadView.as_view(), name="staff-image-upload"),
+    path("staff/media", staff_images.MediaView.as_view(), name="staff-media"),
     path("staff/team", staff_team.TeamListView.as_view(), name="staff-team"),
     path("staff/team/<uuid:target_id>", staff_team.TeamDetailView.as_view(), name="staff-team-member"),
     path(

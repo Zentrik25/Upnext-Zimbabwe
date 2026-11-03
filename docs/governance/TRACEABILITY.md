@@ -66,6 +66,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-56 | Staff management for Administrators (D-58): list, search, filter, sort and page staff; summary counts; profile with role, permissions, listing work, sessions and audit activity; invite by name, e-mail and an existing role with a single-use 72-hour link and no password sent; accept the invitation; resend; change role; suspend and reactivate; revoke sessions; send a recovery link; remove (deactivate, never delete) and reinstate; nobody changes their own access and the last active Administrator is protected; every change audited and the person told by branded e-mail; no Publisher role and no change to separation of duties | D-58; D-23; D-18; D-22; D-49 | SC-12, SC-13 | listStaffTeam, inviteStaff, getStaffMember, updateStaffMember, listStaffMemberActivity, runStaffMemberAction, acceptStaffInvitation | STAFFTEAM-01…STAFFTEAM-08 | OQ-13 |
 | R-57 | Listing images (D-58): featured and optional sharing image uploaded in the job editor (preview, replace, remove, progress, drag and drop, mobile); content-based validation (JPEG, PNG, WebP, size and dimension limits), orientation applied, metadata removed, re-encoded under generated names on persistent storage; staff-only, rate limited, no orphans; absolute https addresses on public pages, cards, structured previews and Open Graph/Twitter cards; standard UPNEXT image when none; a picture never implies employer verification | D-58; D-56; D-14 | SC-01, SC-12 | uploadListingImage | IMG-01…IMG-08 | B-07 |
 | R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
+| R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
+| R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
 
 ## 2. Screen register
 
@@ -184,7 +186,11 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffSession` | GET `/staff/session` | staff | R-55 |
 | `getStaffTwoStep` | GET `/staff/two-step` | staff | R-55 |
 | `verifyStaffTwoStep` | POST `/staff/two-step` | staff | R-55 |
+| `getStaffAnalytics` | GET `/staff/analytics` | staff | R-63 |
+| `listStaffAnalyticsOpportunities` | GET `/staff/analytics/opportunities` | staff | R-63 |
 | `uploadListingImage` | POST `/staff/images` | staff | R-57 |
+| `listStaffMedia` | GET `/staff/media` | staff | R-62 |
+| `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
 | `listStaffTeam` | GET `/staff/team` | staff | R-56 |
 | `inviteStaff` | POST `/staff/team` | staff | R-56 |
 | `getStaffMember` | GET `/staff/team/{targetId}` | staff | R-56 |
@@ -195,6 +201,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
 | `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
 | `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
+| `setStaffVerification` | PUT `/staff/opportunities/{opportunityId}/verification` | staff | R-62 |
 | `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
 | `previewStaffOpportunity` | GET `/staff/opportunities/{opportunityId}/preview` | staff | R-55 |
 | `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
@@ -242,6 +249,16 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | IMG-06 | Unattached uploads are swept after a day; attached ones stay |
 | IMG-07 | Public API image block with absolute https addresses, sharing-image fallback, no invented picture, no verification claim; revision hash |
 | IMG-08 | Upload component, job-editor state and payload, job page image, card image and Open Graph/Twitter metadata (Vitest) |
+| MEDIA-01 | Media Library: upload registers one asset (identical uploads reused), thumbnails, search, paging, usage counts, permissions, migration of earlier uploads |
+| MEDIA-02 | Reuse across listings; removing or replacing a picture never deletes the file; library browser, picker and upload component (Vitest) |
+| ANLY-01 | Counting: hourly and daily counters agree, a real browser view and an apply click are counted, crawlers, scripts, previews, prefetches and requests without a User-Agent are not, closed listings are not, nothing identifying a visitor is stored |
+| ANLY-02 | Windows and buckets: rolling 24-hour, 7-day and 30-day edges, all-time from the daily counters, no invented history, Harare day boundaries, hourly, daily, weekly and monthly series zero-filled and equal to the cards |
+| ANLY-03 | Ranking: per-listing views, apply clicks and click-through rate of the same window (blank without views), sort, search, paging, Harare date ranges and their validation, the Views column and per-listing statistics |
+| ANLY-04 | Access and cost: analytics.read for Editors and Administrators only, scope enforced on the server, cache, query counts that do not grow with listings, retention, and the staff interface (Vitest: chart, panel, view, table, skeleton, empty and error states, view-beacon behaviour, hero image removed from staff pages only) |
+| DUP-01 | Duplicate rules: same organisation and title needs one confirmation; different titles, shared address, e-mail or source never flagged; similar and differing-detail cases only warn |
+| DUP-02 | Staff API reports duplicates and accepts the single confirmation; source fields are absent from the job form and payload |
+| VERIFY-01 | Verification switch: idempotent, records who and when, does not change row_version, survives amendment, public level follows it, migration of earlier levels |
+| VERIFY-02 | Verification permission enforced on the server (Contributor, seeker, anonymous, missing CSRF refused); table and detail toggle (Vitest) |
 | UT-01 | Unknown salary/deadline/requirements render as 'Not stated'; never defaulted |
 | UT-02 | Slug generation: format, collision retry, reserved words; immutability after assignment |
 | UT-03 | Profile validation limits and clear-on-null semantics |
@@ -526,7 +543,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | PERM-01 | `apps/api/tests/test_access_registry.py::test_perm_01_initial_roles_are_exactly_three_and_no_publisher` | executed |
 | PERM-02 | `apps/api/tests/test_access_registry.py::test_perm_02_future_role_needs_only_a_registry_entry` | executed |
 | PERM-03 | `apps/api/tests/test_access_registry.py::test_perm_03_registry_matches_the_permission_matrix_document` | executed |
-| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_return_or_verify_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
+| SOD-01 | `apps/api/tests/test_access_policy.py::test_sod_01_author_cannot_approve_reject_or_return_even_with_authority` | executed (pure policy; workflow wiring is Phase 2) |
 | SOD-02 | `apps/api/tests/test_access_policy.py::test_sod_02_another_editor_or_administrator_can_approve` | executed (pure policy) |
 | SOD-04 | `apps/api/tests/test_access_policy.py::test_sod_04_the_approver_may_publish_the_exact_revision` | executed (pure policy) |
 | SOD-09 | `apps/api/tests/test_access_policy.py::test_sod_09_administrator_can_publish_someone_elses_approved_listing` | executed (pure policy) |
@@ -726,6 +743,16 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | IMG-06 | `apps/api/tests/test_listing_images.py::test_unattached_uploads_are_swept_after_a_day_but_attached_ones_stay` | executed |
 | IMG-07 | `apps/api/tests/test_listing_images.py (public output tests)` | executed |
 | IMG-08 | `apps/web/tests/unit/team-and-images.test.tsx` | executed |
+| MEDIA-01 | `apps/api/tests/test_media_library.py` | executed |
+| MEDIA-02 | `apps/api/tests/test_media_library.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| ANLY-01 | `apps/api/tests/test_staff_analytics.py (counting and bot tests)` | executed |
+| ANLY-02 | `apps/api/tests/test_staff_analytics.py (window, bucket and time-zone tests)` | executed |
+| ANLY-03 | `apps/api/tests/test_staff_analytics.py (table and per-listing tests)` | executed |
+| ANLY-04 | `apps/api/tests/test_staff_analytics.py (permission, cache, query and retention tests); apps/web/tests/unit/analytics.test.tsx` | executed |
+| DUP-01 | `apps/api/tests/test_duplicate_detection.py` | executed |
+| DUP-02 | `apps/api/tests/test_duplicate_detection.py; apps/web/tests/unit/job-editor.test.ts` | executed |
+| VERIFY-01 | `apps/api/tests/test_verification_switch.py; apps/api/tests/test_workflow.py` | executed |
+| VERIFY-02 | `apps/api/tests/test_verification_switch.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
 | TRUST-01 | `apps/api/tests/test_trusted_devices.py (trust, cookie, expiry, limit tests)` | executed |
 | TRUST-02 | `apps/api/tests/test_trusted_devices.py (recognition tests)` | executed |
 | TRUST-03 | `apps/api/tests/test_trusted_devices.py (staff 24-hour tests)` | executed |

@@ -6,7 +6,7 @@
  * an absent value, and a field the source does not give is simply left empty.
  */
 import { salaryLine } from "./format";
-import type { DetailField, DraftContent, SourceRow, StaffCategory } from "./staff-types";
+import type { DetailField, DraftContent, StaffCategory } from "./staff-types";
 
 export type Option = { value: string; label: string };
 export type ApplyMethod = "external_url" | "email" | "both" | "instructions";
@@ -34,17 +34,6 @@ export const JOB_TYPES: Record<string, Option[]> = {
   "graduate-programmes": [{ value: "trainee", label: "Trainee programme" }],
 };
 
-export const SOURCE_KINDS: Option[] = [
-  { value: "issuer_website", label: "Issuer website" },
-  { value: "issuer_notice", label: "Issuer notice" },
-  { value: "government_gazette", label: "Government gazette" },
-  { value: "newspaper", label: "Newspaper" },
-  { value: "email_from_issuer", label: "E-mail from the issuer" },
-  { value: "social_media", label: "Social media" },
-  { value: "aggregator", label: "Aggregator" },
-  { value: "other", label: "Other" },
-];
-
 export type EditorState = {
   category: string;
   organisation: { id: string; name: string } | null;
@@ -61,13 +50,6 @@ export type EditorState = {
   applyEmail: string;
   applySubject: string;
   applyInstructions: string;
-  sourceUrl: string;
-  sourceKind: string;
-  sourceReference: string;
-  /** When the editor looked at the primary source; empty means "today, for a new or changed source". */
-  sourceObservedOn: string;
-  /** Sources other than the primary one are kept and edited under "Source & verification". */
-  otherSources: SourceRow[];
   // More details
   workMode: string;
   experienceLevel: string;
@@ -102,19 +84,42 @@ export function dayOf(iso: string | null): string {
   return new Date(new Date(iso).getTime() + 2 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-/** "herald.co.zw" for a web address, so a source has a name without the editor typing one. */
-export function hostOf(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
+/** The address the server derives from a title (a random six-character code is added when it is published). */
+export function slugFromTitle(title: string): string {
+  const words = title
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return (
+    (words.length > 60
+      ? words.slice(0, 60).split("-").slice(0, -1).join("-") || words.slice(0, 60)
+      : words
+    ).replace(/^-+|-+$/g, "") || "opportunity"
+  );
 }
 
-export function sourceName(url: string, kind: string, reference: string): string {
-  const host = url ? hostOf(url) : null;
-  if (host) return host;
-  return reference.trim().slice(0, 60) || SOURCE_KINDS.find((k) => k.value === kind)?.label || "Source";
+/** What search engines and shared links show when nothing is typed: made from the job title and the page. */
+export function seoDefaults(
+  s: Pick<EditorState, "title" | "organisation" | "summary" | "responsibilities">,
+): {
+  title: string;
+  description: string;
+  slug: string;
+} {
+  const full = [s.title.trim(), s.organisation?.name].filter(Boolean).join(" at ");
+  return {
+    title: full.slice(0, 70),
+    description: (
+      s.summary.trim() ||
+      s.responsibilities
+        .replace(/^\s*[-*]\s+/gm, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    ).slice(0, 160),
+    slug: s.title.trim() ? slugFromTitle(s.title) : "",
+  };
 }
 
 export type PlaceOption = { id: string; name: string; kind?: string };
@@ -203,11 +208,6 @@ export function emptyState(category: string): EditorState {
     applyEmail: "",
     applySubject: "",
     applyInstructions: "",
-    sourceUrl: "",
-    sourceKind: "issuer_website",
-    sourceReference: "",
-    sourceObservedOn: "",
-    otherSources: [],
     workMode: "",
     experienceLevel: "",
     referenceNumber: "",
@@ -257,14 +257,6 @@ export function stateFromDraft(
   s.applyEmail = content.application_email ?? "";
   s.applySubject = content.application_email_subject ?? "";
   s.applyInstructions = content.application_instructions ?? "";
-  const primary = content.sources.find((x) => x.is_primary) ?? content.sources[0];
-  if (primary) {
-    s.sourceUrl = primary.url ?? "";
-    s.sourceKind = primary.kind;
-    s.sourceReference = primary.citation ?? "";
-    s.sourceObservedOn = primary.observed_on;
-  }
-  s.otherSources = content.sources.filter((x) => x !== primary);
   s.workMode = content.work_mode ?? "";
   s.experienceLevel = content.experience_level ?? "";
   s.referenceNumber = content.reference_number ?? "";
@@ -345,7 +337,7 @@ export function buildContent(
   state: EditorState,
   category: StaffCategory,
   existing: DraftContent | null,
-  options: { today: string; addressLocked: boolean; places?: PlaceOption[] },
+  options: { addressLocked: boolean; places?: PlaceOption[] },
 ): { content: Record<string, unknown>; errors: Record<string, string[]> } {
   const pays = PAY_CATEGORIES.includes(category.code);
   const { detail, errors } = detailFromText(category.detail_fields, state.detail);
@@ -358,33 +350,6 @@ export function buildContent(
   const method = state.applyMethod;
   const wantsUrl = method === "external_url" || method === "both";
   const wantsEmail = method === "email" || method === "both";
-
-  const primaryUrl = state.sourceUrl.trim();
-  const primaryReference = state.sourceReference.trim();
-  const previous = existing?.sources.find((x) => x.is_primary) ?? existing?.sources[0];
-  const sources: Record<string, unknown>[] = [];
-  if (primaryUrl || primaryReference) {
-    const unchanged =
-      previous && (previous.url ?? "") === primaryUrl && (previous.citation ?? "") === primaryReference;
-    sources.push({
-      kind: state.sourceKind,
-      name: sourceName(primaryUrl, state.sourceKind, primaryReference),
-      url: orNull(primaryUrl),
-      citation: orNull(primaryReference),
-      // "Checked on" is when the editor looked at this source: today for a new or changed link.
-      observed_on: state.sourceObservedOn || (unchanged && previous ? previous.observed_on : options.today),
-      is_primary: true,
-    });
-  }
-  for (const other of state.otherSources)
-    sources.push({
-      kind: other.kind,
-      name: other.name,
-      url: orNull(other.url ?? ""),
-      citation: orNull(other.citation ?? ""),
-      observed_on: other.observed_on || options.today,
-      is_primary: false,
-    });
 
   const content: Record<string, unknown> = {
     title: state.title.trim(),
@@ -409,7 +374,6 @@ export function buildContent(
     application_email_subject: wantsEmail ? orNull(state.applySubject) : null,
     application_instructions: orNull(state.applyInstructions),
     sector_ids: state.sectorIds,
-    sources,
     detail,
     seo_title: orNull(state.seoTitle),
     seo_description: orNull(state.seoDescription),

@@ -121,6 +121,20 @@ function groups(session: StaffSession): Group[] {
       active: startsWith("/workspace/records/memberships"),
     });
   }
+  if (has("analytics.read"))
+    editorial.push({
+      label: "Analytics",
+      href: "/workspace/analytics",
+      icon: "chart",
+      active: startsWith("/workspace/analytics"),
+    });
+  if (has("opp.draft.create") || has("opp.draft.edit_own"))
+    editorial.push({
+      label: "Media Library",
+      href: "/workspace/media",
+      icon: "image",
+      active: startsWith("/workspace/media"),
+    });
   if (has("org.create"))
     editorial.push({
       label: "Organisations",
