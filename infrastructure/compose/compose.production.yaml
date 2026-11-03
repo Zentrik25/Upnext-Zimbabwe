@@ -166,6 +166,7 @@ services:
       UPNEXT_HSTS_SECONDS: "31536000"
       NEXT_TELEMETRY_DISABLED: "1"
       UPNEXT_LEGAL_APPROVED: ${UPNEXT_LEGAL_APPROVED:-false} # owner-controlled publication gate for /privacy and /terms (D-44)
+      UPNEXT_ADSENSE_CLIENT: ${UPNEXT_ADSENSE_CLIENT:-} # blank = no Google script on any page; see ADSENSE_SITE_VERIFICATION.md
     user: "1000:1000"
     networks: [app]
     depends_on:
