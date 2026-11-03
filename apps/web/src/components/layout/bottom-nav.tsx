@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
   { href: "/", label: "Home", icon: "home", match: (p) => p === "/" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
-  { href: "/opportunities", label: "Categories", icon: "grid", match: () => false },
+  { href: "/categories", label: "Categories", icon: "grid", match: (p) => p.startsWith("/categories") },
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
   {
     href: "/account",
@@ -39,7 +39,7 @@ export function BottomNav() {
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-[56px] flex-col items-center justify-center gap-0.5 border-t-2 text-small",
+                    "flex min-h-[56px] flex-col items-center justify-center gap-0.5 border-t-2 text-small leading-none",
                     active ? "border-accent-solid text-accent" : "border-transparent text-muted",
                   )}
                 >

@@ -39,7 +39,9 @@ export default async function ReportPage({ params }: Props) {
         </Link>
       </nav>
       <div className="mx-auto w-full max-w-[640px]">
-        <h1 className="text-section font-strong tracking-section">Report this opportunity</h1>
+        <h1 className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section">
+          Report this opportunity
+        </h1>
         <p className="mt-1 mb-5 text-base text-muted">
           Tell us if something about this opportunity looks wrong, false or unsafe. Our staff will check it.
           Never pay money to get a job, interview or scholarship.

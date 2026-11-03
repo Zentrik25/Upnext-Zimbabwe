@@ -350,7 +350,8 @@ describe("private routes cannot be indexed by accident", () => {
     /^\/employers\/\[slug\]$/,
     /^\/privacy$/,
     /^\/terms$/,
-    /^\/guides\/[a-z-]+$/,
+    /^\/guides(\/[a-z-]+)?$/,
+    /^\/categories$/,
   ];
   function pageFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {

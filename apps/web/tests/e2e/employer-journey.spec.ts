@@ -77,7 +77,9 @@ async function fillListing(page: Page, title: string, extra = "") {
 
 test("1. the public pages for employers exist, say what happens and need no account", async ({ page }) => {
   await page.goto("/employers");
-  await expect(page.getByRole("heading", { level: 1, name: "For employers" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Reach people looking for work in Zimbabwe" }),
+  ).toBeVisible();
   await expect(page.getByText("We never receive or track applications")).toBeVisible();
   await expect(page).toHaveTitle(/For employers \| UPNEXT Careers/);
   await expect(page.getByRole("link", { name: "For employers" }).last()).toBeVisible(); // footer link

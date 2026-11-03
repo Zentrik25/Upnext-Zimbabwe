@@ -33,9 +33,12 @@ export default async function SavedPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <section aria-labelledby="saved-title" className="border-b border-line py-[22px]">
+      <section aria-labelledby="saved-title" className="border-b border-line bg-surface-pale py-5 sm:py-6">
         <Container>
-          <h1 id="saved-title" className="text-section font-strong tracking-section">
+          <h1
+            id="saved-title"
+            className="text-[28px] font-strong leading-[1.15] tracking-section sm:text-section"
+          >
             Saved opportunities
           </h1>
           <p className="mt-1 text-base text-muted">
@@ -59,7 +62,7 @@ export default async function SavedPage({ searchParams }: { searchParams: Promis
         ) : result.data.length === 0 ? (
           <EmptyState title={active ? "Nothing saved in this category" : "You have not saved anything yet"}>
             Use the heart on a listing to keep it here.{" "}
-            <Link href="/opportunities" className="text-accent underline">
+            <Link href="/opportunities" className="text-accent">
               Browse opportunities
             </Link>
           </EmptyState>
