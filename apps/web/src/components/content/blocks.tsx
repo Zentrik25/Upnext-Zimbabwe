@@ -87,10 +87,20 @@ export function ProcessSteps({ steps }: { steps: { title: string; body: ReactNod
 }
 
 /** A compact fact block: a heading and short text on a hairline border. Use in grids of two or three, never nested. */
-export function InfoCard({ title, children }: { title: string; children: ReactNode }) {
+export function InfoCard({
+  title,
+  children,
+  level = 3,
+}: {
+  title: string;
+  children: ReactNode;
+  /** Heading level: 3 under a section heading (default), 2 when the cards follow the page title directly. */
+  level?: 2 | 3;
+}) {
+  const Heading = level === 2 ? "h2" : "h3";
   return (
     <div className="rounded-card border border-border-panel bg-surface p-4">
-      <h3 className="text-base font-strong leading-snug text-ink">{title}</h3>
+      <Heading className="text-base font-strong leading-snug text-ink">{title}</Heading>
       <div className="mt-1 text-base text-muted">{children}</div>
     </div>
   );

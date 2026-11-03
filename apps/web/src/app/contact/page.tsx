@@ -19,12 +19,12 @@ export default function ContactPage() {
       <Container className="pt-6 pb-[65px]">
         <div className="max-w-[760px]">
           <InfoGrid cols={2}>
-            <InfoCard title="General questions and listing corrections">
+            <InfoCard title="General questions and listing corrections" level={2}>
               <a href={`mailto:${BRAND.email}`} className="text-accent" data-testid="contact-email">
                 {BRAND.email}
               </a>
             </InfoCard>
-            <InfoCard title="Account help and privacy requests">
+            <InfoCard title="Account help and privacy requests" level={2}>
               <a
                 href={`mailto:${OPERATOR.privacyEmail}`}
                 className="text-accent"
