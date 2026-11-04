@@ -26,7 +26,7 @@ Nothing here changes those decisions. A decision-register entry superseding them
 ## Variables (all blank in git; the owner sets them in the deployed environment)
 | Variable | Meaning |
 |---|---|
-| `UPNEXT_ADSENSE_CLIENT` | The real publisher id `ca-pub-…` from the owner's AdSense account. Invalid or blank: advertising is off |
+| `UPNEXT_ADSENSE_CLIENT` | The real publisher id `ca-pub-…` from the owner's AdSense account. Invalid or blank: advertising is off and `/ads.txt` answers 404. On its own it only serves `/ads.txt`: no Google script loads and no ad shows |
 | `UPNEXT_ADSENSE_MODE` | `verify` or `live`. Blank or anything else: off |
 | `UPNEXT_ADSENSE_SLOT_JOB_DETAIL`, `UPNEXT_ADSENSE_SLOT_GUIDE` | Real ad-unit ids (digits) created in AdSense after approval; a placement with no id renders nothing |
 
@@ -36,13 +36,13 @@ Nothing here changes those decisions. A decision-register entry superseding them
 3. **Certified consent platform.** The built-in prompt is a simple first-party choice, **not** a Google-certified consent management platform (CMP). Google's AdSense rules for serving ads to visitors in the EEA, the United Kingdom and Switzerland are understood to require a Google-certified CMP (for example one using the IAB TCF); confirm the current requirement with Google and either integrate a certified CMP or limit serving. Until then do not set `live` for those audiences. The prompt asks every visitor because UPNEXT does not locate visitors.
 4. **Publisher id and ad units** from the owner's AdSense account (none is in git, none is invented). Ad units cannot be created before the site is approved.
 5. **Content-Security-Policy check.** The Google hosts in `lib/adsense.ts` follow Google's published guidance but were not tested against real AdSense output (the browser run used intercepted requests). Ads also write inline styles, which `style-src` (no `'unsafe-inline'`) may block. Test on a staging host with a real approved account, review any widening (security review), and do not relax the policy on other pages.
-6. **ads.txt** may be required by AdSense once approved: serve `/ads.txt` from the web app (not done; needs the publisher id).
+6. **ads.txt** is built (`app/ads.txt/route.ts`): `/ads.txt` serves Google's one authorising line once `UPNEXT_ADSENSE_CLIENT` is set, and answers 404 until then. The certification id in the line (`f08c47fec0942fa0`) must be confirmed against the snippet AdSense shows in the owner's account. The route needs the Nginx and Traefik in front of the app to pass `/ads.txt` through to the web app; that was not checked and the infrastructure was not touched.
 7. **AdSense content eligibility.** Google decides whether the site has enough original, substantial content. The guides and listings are the only eligible pages; thin pages (lists, forms) deliberately carry no ads.
 8. **Deployment** (Phase 7 approval) and the privacy text's `/privacy#advertising` anchor are live only after a release; nothing is deployed.
 9. Layout shift is reserved by height; confirm real Core Web Vitals after activation.
 10. **Page weight.** With ads off, the home, search and sign-in pages ship no ad code (measured identical to the base build). Opportunity and guide pages carry the ad block (about 1.3 KiB gzipped) even with ads off, so the listing-page script allowance in `tests/e2e/mobile-budget.spec.ts` is 153 KiB; real-device testing is still required (B-10).
 
 ## How to activate (owner, after the steps above)
-1. To get the site verified now: set `UPNEXT_ADSENSE_CLIENT` and `UPNEXT_ADSENSE_MODE=verify`, redeploy, then in AdSense choose "AdSense code snippet", tick "I've placed the code" and "Request review". In `verify` mode a Google script loads for every visitor with no prompt, because the crawler must find it in the page; the policy says so. AdSense's *ads.txt* and *meta tag* methods avoid loading Google's script and need no page change to the policy.
+1. **Preferred way to get the site verified (no Google script on the pages):** set only `UPNEXT_ADSENSE_CLIENT`, redeploy, open `https://upnext.co.zw/ads.txt` to confirm it shows the line, then in AdSense choose "Ads.txt snippet" and "Request review". Leave `UPNEXT_ADSENSE_MODE` blank. Alternative: also set `UPNEXT_ADSENSE_MODE=verify` and choose "AdSense code snippet"; then a Google script loads for every visitor with no prompt, because the crawler must find it in the page, and the policy says so.
 2. After approval, create ad units, set the two slot variables and `UPNEXT_ADSENSE_MODE=live`.
 3. To turn it all off, blank the variables.
