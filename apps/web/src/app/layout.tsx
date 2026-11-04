@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { AuthFooter, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { adsenseClient, adsenseScriptSrc } from "@/lib/adsense";
+import { adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
@@ -78,9 +78,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
   const pathname = requestHeaders.get("x-pathname") ?? "";
   const auth = AUTH_PATHS.includes(pathname);
-  // AdSense verification snippet: public pages only (never the staff workspace or the sign-in forms), and only
-  // when the owner has set UPNEXT_ADSENSE_CLIENT.
-  const adsense = workspace || auth ? undefined : adsenseClient();
+  // AdSense site-verification snippet: only in `verify` mode (owner-set UPNEXT_ADSENSE_MODE), on public pages only
+  // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
+  // after the visitor agrees, by the ad slot (components/ads).
+  const adsense = workspace || auth || adsenseMode() !== "verify" ? undefined : adsenseClient();
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html

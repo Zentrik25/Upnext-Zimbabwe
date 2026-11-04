@@ -204,7 +204,7 @@ describe("LegalDocument rendering", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeTruthy();
     expect(screen.queryByTestId("draft-notice")).toBeNull();
     const meta = screen.getByTestId("legal-meta");
-    expect(within(meta).getAllByText("29 October 2026", { selector: "time" }).length).toBe(2);
+    expect(within(meta).getAllByText("3 November 2026", { selector: "time" }).length).toBe(2);
     expect(within(meta).getByText(PRIVACY.version)).toBeTruthy();
     expect(within(meta).getByRole("link", { name: "support@upnext.co.zw" }).getAttribute("href")).toBe(
       "mailto:support@upnext.co.zw",

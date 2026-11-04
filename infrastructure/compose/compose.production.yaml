@@ -166,7 +166,11 @@ services:
       UPNEXT_HSTS_SECONDS: "31536000"
       NEXT_TELEMETRY_DISABLED: "1"
       UPNEXT_LEGAL_APPROVED: ${UPNEXT_LEGAL_APPROVED:-false} # owner-controlled publication gate for /privacy and /terms (D-44)
-      UPNEXT_ADSENSE_CLIENT: ${UPNEXT_ADSENSE_CLIENT:-} # blank = no Google script on any page; see ADSENSE_SITE_VERIFICATION.md
+      # Advertising is OFF while these are blank (docs/engineering/ADSENSE_SITE_VERIFICATION.md). The owner sets them; none is invented.
+      UPNEXT_ADSENSE_CLIENT: ${UPNEXT_ADSENSE_CLIENT:-}
+      UPNEXT_ADSENSE_MODE: ${UPNEXT_ADSENSE_MODE:-} # off (blank) | verify (ownership snippet, no ads) | live (ads after consent)
+      UPNEXT_ADSENSE_SLOT_JOB_DETAIL: ${UPNEXT_ADSENSE_SLOT_JOB_DETAIL:-}
+      UPNEXT_ADSENSE_SLOT_GUIDE: ${UPNEXT_ADSENSE_SLOT_GUIDE:-}
     user: "1000:1000"
     networks: [app]
     depends_on:

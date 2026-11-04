@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(), usePathname: () => "/" }));
+// The advertising slot is an async server component (it reads the request path); jsdom renders synchronously and
+// the slot renders nothing unless advertising is live, so it is stubbed here. Its own tests are in ads.test.tsx.
+vi.mock("@/components/ads/ad-slot", () => ({ AdSlot: () => null }));
 
 const catalog = vi.hoisted(() => ({
   getSitemapEntries: vi.fn(),
