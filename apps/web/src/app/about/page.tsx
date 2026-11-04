@@ -21,21 +21,14 @@ export default function AboutPage() {
     >
       <Section title="What UPNEXT does">
         <p>
-          We collect opportunities published by employers, institutions and funders, check where each one came
-          from, and present it with its source. You can browse and search without an account. An account lets
+          We collect opportunities published by employers, institutions and funders and present them in one
+          place, each with a verification label. You can browse and search without an account. An account lets
           you save listings and come back to them.
         </p>
         <p>
           <Link href="/opportunities" className="text-accent underline">
             Browse opportunities
           </Link>
-        </p>
-      </Section>
-      <Section title="Where listings come from">
-        <p>
-          Every listing names at least one source: the issuer&apos;s own website or notice, a newspaper, a
-          gazette, a message from the issuer, or similar. The page shows the source, the date we looked at it
-          and, where there is one, a link to it.
         </p>
       </Section>
       <Section title="What the labels mean">

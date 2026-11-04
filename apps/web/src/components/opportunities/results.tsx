@@ -117,8 +117,7 @@ export async function Results({
         </nav>
       ) : null}
       <Notice className="mt-6 rounded-card border border-border-notice">
-        Verification labels describe what UPNEXT checked. A listing that is not verified still names its
-        source.
+        Verification labels describe what UPNEXT checked.
       </Notice>
     </>
   );
