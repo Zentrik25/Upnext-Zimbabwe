@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { fetchRead } from "./server-fetch";
 import type {
   Category,
   Location,
@@ -37,7 +38,7 @@ async function visitorHeaders(): Promise<Record<string, string>> {
 async function get(path: string, params?: URLSearchParams, revalidate?: number): Promise<Response | null> {
   const query = params && [...params.keys()].length > 0 ? `?${params.toString()}` : "";
   try {
-    return await fetch(`${base()}/api/v1/${path}${query}`, {
+    return await fetchRead(`${base()}/api/v1/${path}${query}`, {
       ...(revalidate === undefined ? { cache: "no-store" as const } : { next: { revalidate } }),
       signal: AbortSignal.timeout(revalidate === undefined ? 4000 : 20000),
       // The cached sitemap is shared by every crawler, so it is not attributed to one visitor.

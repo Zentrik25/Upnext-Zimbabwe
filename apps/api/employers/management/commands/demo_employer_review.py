@@ -41,6 +41,28 @@ class Command(BaseCommand):
         group.add_argument("--publish-listing", metavar="TITLE_FRAGMENT")
         group.add_argument("--reject-listing", metavar="TITLE_FRAGMENT")
         group.add_argument("--withdraw-listing", metavar="TITLE_FRAGMENT", help="clean up after a test run")
+        group.add_argument(
+            "--withdraw-staff-listing",
+            metavar="TITLE_FRAGMENT",
+            help="clean up a staff-created (not employer-owned) listing after a test run",
+        )
+
+    @staticmethod
+    def _withdraw(fragment: str, *, employer_owned: bool) -> None:
+        """Withdraw the one published listing whose title contains `fragment`, as the demo second editor."""
+        published = Opportunity.objects.filter(
+            employer_binding__isnull=not employer_owned,
+            live_version__title__icontains=fragment,
+            status="published",
+        ).first()
+        if published is None:
+            raise CommandError(f"No published {'employer' if employer_owned else 'staff'} listing matches.")
+        workflow.withdraw(
+            _staff(SECOND_EDITOR),
+            published.pk,
+            expected_row_version=published.row_version,
+            reason="Demo: clean-up after the browser test.",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         if os.environ.get("UPNEXT_DEMO_TOOLS") != "1":
@@ -66,19 +88,9 @@ class Command(BaseCommand):
                 raise CommandError("No waiting profile revision for that organisation.")
             services.decide_profile_revision(_staff(EDITOR), revision.pk, approve=True)
         elif options["withdraw_listing"]:
-            published = Opportunity.objects.filter(
-                employer_binding__isnull=False,
-                live_version__title__icontains=options["withdraw_listing"],
-                status="published",
-            ).first()
-            if published is None:
-                raise CommandError("No published employer listing matches.")
-            workflow.withdraw(
-                _staff(SECOND_EDITOR),
-                published.pk,
-                expected_row_version=published.row_version,
-                reason="Demo: clean-up after the browser test.",
-            )
+            self._withdraw(options["withdraw_listing"], employer_owned=True)
+        elif options["withdraw_staff_listing"]:
+            self._withdraw(options["withdraw_staff_listing"], employer_owned=False)
         else:
             fragment = options["publish_listing"] or options["reject_listing"]
             opportunity = (

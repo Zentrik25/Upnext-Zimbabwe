@@ -12,7 +12,7 @@ from accounts.models import User
 from employers import listings, services
 from employers.models import ClaimStatus, OrganisationClaim
 from opportunities.models import ListingStatus, Opportunity
-from tests.factories import World
+from tests.factories import World, published
 
 pytestmark = pytest.mark.django_db
 
@@ -60,3 +60,24 @@ def test_claim_listing_and_profile_are_decided_through_the_services(
     assert revision.profile.live_revision == revision
     with pytest.raises(CommandError, match="No employer listing"):
         call_command("demo_employer_review", reject_listing="nothing")
+
+
+def test_a_staff_listing_is_withdrawn_for_clean_up_but_the_employer_flag_leaves_it_alone(
+    monkeypatch: pytest.MonkeyPatch,
+    make_user: Callable[..., User],
+    world: World,
+    people: dict[str, User],
+) -> None:
+    """The browser CMS journey publishes a staff listing; if a step fails it must still be withdrawn afterwards."""
+    monkeypatch.setenv("UPNEXT_DEMO_TOOLS", "1")
+    make_user(email="second-editor@demo.upnext.example", roles=("editor", "contributor"))
+    title = "Cleanup Probe Officer 7Q"
+    opp = published(world, people["author"], people["editor"], title=title)
+    assert Opportunity.objects.filter(pk=opp.pk, employer_binding__isnull=True).exists()
+    with pytest.raises(CommandError, match="No published employer listing"):
+        call_command("demo_employer_review", withdraw_listing="Cleanup Probe")
+    assert Opportunity.objects.get(pk=opp.pk).status == ListingStatus.PUBLISHED
+    call_command("demo_employer_review", withdraw_staff_listing="Cleanup Probe")
+    assert Opportunity.objects.get(pk=opp.pk).status == ListingStatus.WITHDRAWN
+    with pytest.raises(CommandError, match="No published staff listing"):
+        call_command("demo_employer_review", withdraw_staff_listing="Cleanup Probe")

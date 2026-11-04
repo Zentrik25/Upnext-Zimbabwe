@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
-import { demoCode } from "./exec";
+import { demoCode, manage } from "./exec";
 
 /**
  * Browser-level review of the editorial workspace (/workspace, D-46) with the fictional demo staff accounts.
@@ -97,6 +97,14 @@ const state: { editUrl: string; listingUrl: string; slug: string } = {
 const contexts: BrowserContext[] = [];
 test.afterAll(async () => {
   await Promise.all(contexts.map((c) => c.close()));
+  // Whatever happened, withdraw the listing this run published. When a step fails, the serial group skips the withdraw step
+  // (7) and its retry publishes a new listing, which would leave the first one public and make later specs that expect the
+  // seeded 12 listings see 13.
+  try {
+    manage(`demo_employer_review --withdraw-staff-listing "${TITLE}"`);
+  } catch {
+    /* it was never published, or step 7 already withdrew it */
+  }
 });
 
 test("1. a Contributor starts a draft and fills it in", async ({ browser }) => {

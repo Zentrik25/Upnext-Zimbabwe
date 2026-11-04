@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
+import { fetchRead } from "./server-fetch";
 import type { OpportunitySummary } from "./catalog-types";
 import type { ForYouFeed, JobAlert, SeekerProfile } from "./seeker-types";
 
@@ -38,7 +39,7 @@ async function authedGet(path: string): Promise<Response | null> {
   const cookie = (await cookies()).toString();
   if (!cookie) return null;
   try {
-    return await fetch(`${base()}/api/v1/${path}`, {
+    return await fetchRead(`${base()}/api/v1/${path}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(4000),
       headers: { Accept: "application/json", Cookie: cookie },
@@ -146,7 +147,7 @@ export async function getForYou(
 /** Which sign-in options the API offers; Google is offered only when the installation is set up for it. */
 export async function getAuthProviders(): Promise<{ google: boolean }> {
   try {
-    const response = await fetch(`${base()}/api/v1/auth/providers`, {
+    const response = await fetchRead(`${base()}/api/v1/auth/providers`, {
       cache: "no-store",
       signal: AbortSignal.timeout(3000),
       headers: { Accept: "application/json" },

@@ -1,4 +1,5 @@
 import "server-only";
+import { fetchRead } from "./server-fetch";
 
 export type ApiRoot = { name: string; version: string; status: string };
 export type ApiResult =
@@ -14,7 +15,7 @@ function isApiRoot(value: unknown): value is ApiRoot {
 export async function getApiRoot(): Promise<ApiResult> {
   const base = process.env.API_INTERNAL_URL ?? "http://localhost:8000";
   try {
-    const response = await fetch(`${base}/api/v1/`, {
+    const response = await fetchRead(`${base}/api/v1/`, {
       cache: "no-store",
       signal: AbortSignal.timeout(2000),
       headers: { Accept: "application/json" },
