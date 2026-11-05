@@ -84,7 +84,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const auth = AUTH_PATHS.includes(pathname);
   // Signed-in people reach their own dashboard from the Home tab; the public front page stays one tap away in the menu.
   const signedIn = workspace || auth ? null : await getCurrentUser();
-  const home = signedIn ? homeOf(signedIn.home_path) : "/";
+  // Only a jobseeker's dashboard shares the public frame; staff and employers reach theirs from the header.
+  const home = signedIn && homeOf(signedIn.home_path) === "/dashboard" ? "/dashboard" : "/";
   // AdSense site-verification snippet: only in `verify` mode (owner-set UPNEXT_ADSENSE_MODE), on public pages only
   // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
   // after the visitor agrees, by the ad slot (components/ads).

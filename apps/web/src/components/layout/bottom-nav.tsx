@@ -5,19 +5,8 @@ import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
-type Tab = { href: string; label: string; icon: IconName; match: (path: string) => boolean };
-
-/** `home` is where the Home tab goes: the public front page for a visitor, the person's own dashboard once signed in. */
-const tabs = (home: string): Tab[] => [
-  {
-    href: home,
-    label: "Home",
-    icon: "home",
-    match: (p) =>
-      home === "/"
-        ? p === "/"
-        : p === "/" || ["/dashboard", "/for-you", "/workspace", "/employer"].some((x) => p.startsWith(x)),
-  },
+const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
+  { href: "/", label: "Home", icon: "home", match: (p) => p === "/" || p === "/dashboard" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
   { href: "/opportunities", label: "Categories", icon: "grid", match: () => false },
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
@@ -25,18 +14,9 @@ const tabs = (home: string): Tab[] => [
     href: "/account",
     label: "Account",
     icon: "user",
-    match: (p) => ["/account", "/profile", "/alerts"].some((x) => p.startsWith(x)),
+    match: (p) => ["/account", "/profile", "/alerts", "/for-you"].some((x) => p.startsWith(x)),
   },
 ];
-
-/** Dashboards with their own frame need a full page load (app/layout.tsx chooses the frame once per load). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Tab(allProps: any) {
-  const { prefetch: _ignored, ...props } = allProps;
-  void _ignored;
-  const own = /^\/(employer|workspace)(\/|$)/.test(String(props.href));
-  return own ? <a {...props} /> : <Link prefetch={false} {...props} />;
-}
 
 /** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
  *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
@@ -50,12 +30,12 @@ export function BottomNav({ home = "/" }: { home?: string }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="m-0 grid list-none grid-cols-5 p-0">
-          {tabs(home).map((tab) => {
+          {TABS.map((tab) => {
             const active = tab.match(pathname);
             return (
               <li key={tab.label}>
-                <Tab
-                  href={tab.href}
+                <Link
+                  href={tab.label === "Home" ? home : tab.href}
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
@@ -65,7 +45,7 @@ export function BottomNav({ home = "/" }: { home?: string }) {
                 >
                   <Icon name={tab.icon} />
                   {tab.label}
-                </Tab>
+                </Link>
               </li>
             );
           })}

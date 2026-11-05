@@ -104,7 +104,9 @@ test("2. an employer registers, confirms the address and signs in to an empty da
   await expect(page.getByText("E-mail address confirmed")).toBeVisible();
   await signIn(page, "/employer");
   await expect(page).toHaveURL(/\/employer$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Employer Dashboard" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Employer Dashboard", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("You do not act for an organisation yet")).toBeVisible();
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
@@ -174,7 +176,9 @@ test("4b. signing in with no return address lands on the employer dashboard, nev
 }) => {
   await signIn(page); // no ?next=
   await expect(page).toHaveURL(/\/employer$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Employer Dashboard" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Employer Dashboard", exact: true }),
+  ).toBeVisible();
   // already signed in: the sign-in page sends them straight back, with no loop
   await page.goto("/sign-in");
   await expect(page).toHaveURL(/\/employer$/);

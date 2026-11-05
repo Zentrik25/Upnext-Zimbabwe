@@ -30,14 +30,6 @@ function MenuIcon({ open }: { open: boolean }) {
 }
 
 /** `groups` are shown in order with a thin rule between them. */
-/** The employer and staff dashboards have their own frame, chosen once per full page load (app/layout.tsx), so
- *  links into them must be ordinary page loads; everything else stays a client-side link. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Anchor(props: any) {
-  const own = /^\/(employer|workspace)(\/|$)/.test(String(props.href));
-  return own ? <a {...props} /> : <Link {...props} />;
-}
-
 export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedIn: boolean }) {
   // The menu is open for one page only: navigating (or any change of address) closes it without an effect.
   const pathname = usePathname();
@@ -150,7 +142,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
                       const current = pathname === item.href;
                       return (
                         <li key={item.href}>
-                          <Anchor
+                          <Link
                             href={item.href}
                             aria-current={current ? "page" : undefined}
                             className={cn(
@@ -165,7 +157,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
                               {...(current ? { fill: "currentColor" } : {})}
                             />
                             {item.label}
-                          </Anchor>
+                          </Link>
                         </li>
                       );
                     })}

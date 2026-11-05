@@ -30,7 +30,9 @@ export async function SiteHeader() {
     ...(user
       ? [
           [
-            { href: dashboard, label: "Dashboard", icon: "grid" as const },
+            ...(dashboard === "/dashboard"
+              ? [{ href: dashboard, label: "Dashboard", icon: "grid" as const }]
+              : []),
             { href: "/for-you", label: "For you", icon: "home" as const },
             { href: "/saved", label: "Saved", icon: "bookmark" as const },
             { href: "/account", label: "Account", icon: "user" as const },
@@ -61,6 +63,16 @@ export async function SiteHeader() {
             <Icon name="bell" className="h-6 w-6" />
           </Link>
         </div>
+        {/* Staff and employers: their dashboard has its own frame, so this is a full page load (server-rendered). */}
+        {user && dashboard !== "/dashboard" ? (
+          <a
+            href={dashboard}
+            aria-label="Dashboard"
+            className="ml-auto inline-flex h-[44px] w-[44px] items-center justify-center text-accent sm:hidden"
+          >
+            <Icon name="grid" className="h-6 w-6" />
+          </a>
+        ) : null}
         <MobileMenu groups={menuGroups} signedIn={Boolean(user)} />
         <nav
           aria-label="Primary"
