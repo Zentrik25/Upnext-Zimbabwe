@@ -1,7 +1,8 @@
 # Google Indexing API for job listing pages — DRAFT
 
-Status: DRAFT (D-68). Implemented and tested with mocked Google answers; **off by default, never enabled, no credential
-exists, nothing deployed.** Using the API asks Google to crawl a URL sooner; it does not guarantee crawling, indexing,
+Status: DRAFT (D-68). **Owner decision 2026-11-05: approved for record mode only.** Implemented and tested with mocked
+Google answers; off by default; the production overlay fixes `record`; **live sending is not authorised**; no credential
+exists; nothing deployed. Using the API asks Google to crawl a URL sooner; it does not guarantee crawling, indexing,
 a Google for Jobs listing or any ranking.
 
 ## 1. What it does and does not do
@@ -66,15 +67,17 @@ pages reach Google through the sitemap.
    (`…@….iam.gserviceaccount.com`) with permission **Owner**. Without owner rights Google answers `403`.
 5. On the server, outside the repository: `install -o 10001 -g 10001 -m 600 key.json /etc/upnext/google-indexing.json`,
    then delete every other copy (downloads folder, chat, e-mail).
-6. In the production environment file: `UPNEXT_INDEXING_KEY_HOST_PATH=/etc/upnext/google-indexing.json` and
-   `UPNEXT_INDEXING_MODE=record`. Start with the overlay:
+6. In the production environment file: `UPNEXT_INDEXING_KEY_HOST_PATH=/etc/upnext/google-indexing.json` (the overlay
+   fixes `UPNEXT_INDEXING_MODE=record`; the environment cannot change it). Start with the overlay:
    `docker compose -f compose.production.yaml -f compose.production.indexing.yaml up -d`.
 7. Publish or withdraw a test job, then `docker compose … exec worker python manage.py indexing_status`: the queue
    shows the expected `URL_UPDATED` / `URL_DELETED` rows and nothing has been sent.
 8. Run `docker compose … exec worker python manage.py check_production_config`: the Indexing API checks pass.
-9. Set `UPNEXT_INDEXING_MODE=live`, recreate api and worker. Within 5 minutes `indexing_status` shows `sent`. If
+9. **Only after the owner's explicit written authorisation** (not given as of 2026-11-05): change `record` to `live` in
+   both places of `compose.production.indexing.yaml` as a reviewed commit, deploy, recreate api and worker. Within
+   5 minutes `indexing_status` shows `sent`. If
    Google needs more than 200 a day, request a higher quota in the Cloud console (Indexing API → Quotas).
-10. **Rollback**: set `UPNEXT_INDEXING_MODE=off` (or drop the overlay) and recreate api and worker. Revoke the key in
+10. **Rollback**: drop the overlay (the base file means `off`) or return it to `record`, and recreate api and worker. Revoke the key in
     the Cloud console if it may have leaked. The sitemap keeps working either way.
 
 ## 5. Operations

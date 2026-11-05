@@ -1,6 +1,6 @@
 # SEO and Google indexing audit and implementation (2026-11) — DRAFT
 
-Status: DRAFT (D-68). Date: 2026-11-05. Branch `ccr-b636fca1-2o9zex`. **Not merged, not deployed.** Builds on the D-51 work
+Status: DRAFT (D-68; owner decisions of 2026-11-05 applied: 503 with Retry-After approved, landing pages conditionally approved, Indexing API approved for record mode only). Date: 2026-11-05. Branch `ccr-b636fca1-2o9zex`. **Not merged, not deployed.** Builds on the D-51 work
 (`SEO_READINESS_REPORT.md`), which is not repeated here. Nothing in this report claims that Google has crawled, indexed or
 ranked any URL: there is no Search Console data, and the production site could not be reached.
 
@@ -20,7 +20,7 @@ Console state are all NOT VERIFIED.
 
 | ID | Sev | Finding | Evidence | Fix | Status |
 |---|---|---|---|---|---|
-| SEO-B01 | **Critical** | A live job page whose API read failed (API down, **429 rate limit**, unexpected answer) was served as **HTTP 200 "Opportunity not found" with `noindex`**. One crawl during an outage or a rate-limit burst (anonymous reads are limited to 240/min per address) tells Google to drop a live job. Same on company profiles; the plain and category lists answered 200 + `noindex` | Build: API stopped → `/opportunities/graduate-electrical-engineer-s3wycp` 200, title "Opportunity not found", `robots: noindex` | Faults throw `ContentUnavailableError` (`lib/unavailable.ts`): the response is a **5xx** with the shared retry view (crawlers keep the indexed copy and retry). A missing listing is still a real 404 | Fixed; owner to confirm the reading of D-51 (1) (D-68) |
+| SEO-B01 | **Critical** | A live job page whose API read failed (API down, **429 rate limit**, unexpected answer) was served as **HTTP 200 "Opportunity not found" with `noindex`**. One crawl during an outage or a rate-limit burst (anonymous reads are limited to 240/min per address) tells Google to drop a live job. Same on company profiles; the plain and category lists answered 200 + `noindex` | Build: API stopped → `/opportunities/graduate-electrical-engineer-s3wycp` 200, title "Opportunity not found", `robots: noindex` | Faults throw `ContentUnavailableError` (`lib/unavailable.ts`); Next.js answers 500, and the UPNEXT proxy turns a 5xx on public crawlable addresses into **503 with `Retry-After: 120`** (owner decision). A missing listing is still a real 404 | Fixed; approved by the owner (D-68 (1)) |
 | SEO-B02 | **High** | On `/opportunities` and every category list, `<title>`, `<link rel="canonical">`, the description and `robots` were **streamed into `<body>`** for Googlebot, AI crawlers and Lighthouse's own mobile agent. Google ignores `rel=canonical` outside `<head>`; Lighthouse failed `meta-description` | Build: Googlebot UA → canonical at body offset; Next.js 16 streams metadata to every agent not in its `htmlLimitedBots` list, which leaves out `Googlebot` | `htmlLimitedBots: /.*/` in `next.config.ts`: metadata is always in `<head>`. No extra request (the metadata and the results share one cached call) | Fixed |
 | SEO-B03 | High | When the API failed, `/sitemap.xml` answered **200 with only 8 static URLs**, silently dropping every listing and category; it also made seven API requests | Build: API stopped → 200, 8 `<loc>` | Answers 5xx instead (crawlers keep the last good file); one feed request | Fixed |
 | SEO-B04 | Medium | No `lastmod` on category lists or guides; company profiles absent from the sitemap (open item SEO-A13) | Build: `sitemap.xml` | The API feed reports each list's newest publication and every public profile; guides use their `dateModified`. Static pages keep no date rather than an invented one | Fixed |
@@ -80,7 +80,9 @@ closed listing can appear:
 Each page: unique title, H1, description and intro saying how listings were chosen (no counts, salaries or claims written by
 hand), the real listings server-rendered, cursor pagination, links to the other landing pages, the six category lists and the
 guides, BreadcrumbList (never JobPosting on a list). **Indexable and in the sitemap only with at least 3 open listings**
-(PROPOSED threshold); below it `noindex, follow` with a link to the broader list; later pages `noindex, follow`, self-canonical;
+(owner-approved initial value, configurable with `UPNEXT_LANDING_MIN_LISTINGS`) **and only when its listings are not
+exactly the same set as the plain list or one category list** (the API reports `duplicate_of`; owner condition: meaningful,
+unique content); below it `noindex, follow` with a link to the broader list; later pages `noindex, follow`, self-canonical;
 unknown slugs 404; `/jobs` 308 to the jobs list. Build check: with the demo data `/jobs/harare` held 2 listings and was
 `noindex`, unlisted; after publishing 2 more Harare jobs through the workflow it became indexable and appeared in the sitemap
 with the newest publication as `lastmod`. axe (WCAG 2.2 AA tags) clean and no horizontal scroll at 320, 390 and 1440 px.
@@ -97,9 +99,9 @@ Google**.
 
 | Check | Before | After |
 |---|---|---|
-| Job page, API down | 200, "Opportunity not found", `noindex` | **500**, retry view for visitors |
-| `/opportunities?category=jobs`, API down | 200, `noindex` (in `<body>`) | **500** |
-| `/sitemap.xml`, API down | 200, 8 URLs | **500** |
+| Job page, API down | 200, "Opportunity not found", `noindex` | **503 + Retry-After** at the proxy (500 from the web app) |
+| `/opportunities?category=jobs`, API down | 200, `noindex` (in `<body>`) | **503 + Retry-After** |
+| `/sitemap.xml`, API down | 200, 8 URLs | **503 + Retry-After** |
 | Canonical and title on `/opportunities` and category lists (Googlebot UA) | in `<body>` | in `<head>` |
 | `/opportunities/GRADUATE-ELECTRICAL-ENGINEER-S3WYCP` | 200 | 308 → lowercase |
 | Sitemap `lastmod` | listings only | listings, 6 category lists, guides (2026-11-03), landing pages, profiles |
@@ -175,8 +177,8 @@ item; then set up the Indexing API (`GOOGLE_INDEXING_API.md` section 4) in `reco
 
 ## 10. Outstanding issues requiring owner action
 
-1. **Approve or amend D-68**: the 5xx reading of D-51 (1); the six landing pages, their copy and the 3-listing threshold; the
-   Indexing API (and when to switch `record` → `live`).
+1. D-68 decided on 2026-11-05. Still open: the owner's **written authorisation to switch the Indexing API from `record` to
+   `live`** once production readiness is verified; final review of the landing-page copy.
 2. **Phase 7 deployment approval** (separate, written). Nothing here is deployed; The Granite Post, Traefik and Nginx are
    untouched.
 3. **Search Console**: verify the domain property, submit the sitemap, add the service account as Owner.
