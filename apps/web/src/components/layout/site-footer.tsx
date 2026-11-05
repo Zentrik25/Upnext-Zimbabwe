@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { Lockup } from "@/components/brand/logo";
 import { BRAND } from "@/lib/brand";
+import { OPPORTUNITY_DESTINATIONS } from "@/lib/destinations";
 import { GUIDES } from "@/lib/guides";
 import { Container } from "./container";
 import { ThemeToggle } from "./theme-toggle";
 
 const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[] = [
   {
+    // The six opportunity destinations of D-69, each a distinct, descriptive link (lib/destinations.ts).
     title: "Opportunities",
-    links: [
-      ["/opportunities", "All opportunities"],
-      ["/opportunities", "Browse by category"],
-    ],
+    links: OPPORTUNITY_DESTINATIONS.map((d) => [d.href, d.label] as const),
   },
   {
     title: "Guides",
@@ -21,7 +20,8 @@ const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[
     title: "Employers",
     links: [
       ["/employers", "For employers"],
-      ["/employer", "Employer sign-in"],
+      ["/sign-in", "Sign in"],
+      ["/employer", "Employer dashboard"],
       ["/employers/register", "Employer registration"],
     ],
   },

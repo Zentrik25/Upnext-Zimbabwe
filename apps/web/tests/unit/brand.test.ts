@@ -25,7 +25,7 @@ describe("UPNEXT Careers identity (D-42)", () => {
   it("uses the approved homepage title and description verbatim", () => {
     expect(BRAND.homeTitle).toBe("UPNEXT Careers | Jobs & Opportunities in Zimbabwe");
     expect(BRAND.homeDescription).toBe(
-      "Discover jobs and career opportunities in Zimbabwe with UPNEXT Careers. Explore vacancies, internships and other opportunities from trusted sources.",
+      "Discover the latest jobs, tenders, internships, graduate trainee programmes, scholarships and career opportunities across Zimbabwe on UPNEXT Careers.",
     );
   });
 

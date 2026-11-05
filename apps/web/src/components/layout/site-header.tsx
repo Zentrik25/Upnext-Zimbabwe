@@ -12,8 +12,10 @@ export async function SiteHeader() {
   const menuGroups: MenuItem[][] = [
     [
       { href: "/", label: "Home", icon: "home" },
-      { href: "/opportunities", label: "Jobs", icon: "briefcase" },
+      { href: "/opportunities", label: "All opportunities", icon: "grid" },
+      { href: "/opportunities?category=jobs", label: "Jobs", icon: "briefcase" },
       { href: "/opportunities?category=internships", label: "Internships", icon: "users" },
+      { href: "/opportunities?category=graduate-programmes", label: "Graduate programmes", icon: "layers" },
       { href: "/opportunities?category=scholarships", label: "Scholarships", icon: "cap" },
       { href: "/opportunities?category=tenders", label: "Tenders", icon: "doc" },
     ],

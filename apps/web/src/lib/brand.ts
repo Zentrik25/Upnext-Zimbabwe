@@ -23,9 +23,9 @@ export const BRAND = {
   tagline: "Jobs and opportunities in Zimbabwe.",
   /** Homepage `<title>` (exact text approved by the owner). */
   homeTitle: "UPNEXT Careers | Jobs & Opportunities in Zimbabwe",
-  /** Homepage description (exact text approved by the owner); other pages use `description`. */
+  /** Homepage description (exact text approved by the owner, 2026-11-05, D-69); other pages use `description`. */
   homeDescription:
-    "Discover jobs and career opportunities in Zimbabwe with UPNEXT Careers. Explore vacancies, internships and other opportunities from trusted sources.",
+    "Discover the latest jobs, tenders, internships, graduate trainee programmes, scholarships and career opportunities across Zimbabwe on UPNEXT Careers.",
   description:
     "Jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe, each with a clear verification label.",
   /** Static brand files (public/brand). */

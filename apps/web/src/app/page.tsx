@@ -13,7 +13,6 @@ import { websiteFor } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  alternates: { canonical: "/" },
   title: { absolute: BRAND.homeTitle },
   description: BRAND.homeDescription,
   ...socialFor("/", { title: BRAND.homeTitle, description: BRAND.homeDescription }),
@@ -31,6 +30,10 @@ async function HomeSearch() {
 export default function HomePage() {
   return (
     <>
+      {/* The owner specified the canonical as the origin with its trailing slash (D-69). Next.js metadata always
+          writes a root canonical as the bare origin (the same URL by RFC 3986), so this one tag is written here;
+          React places it in <head>. No other canonical is set for the home page. */}
+      <link rel="canonical" href={`${siteUrl()}/`} />
       {websiteFor(siteUrl()).map((block, index) => (
         <JsonLd key={index} data={block} />
       ))}
