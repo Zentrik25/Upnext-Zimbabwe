@@ -157,6 +157,33 @@ def settings_findings(conf: Any, environ: dict[str, str]) -> list[Finding]:
         f"UPNEXT_EMAIL_BACKEND={backend}",
         real_deployment_only=True,
     )
+    indexing_mode = str(getattr(conf, "UPNEXT_INDEXING_MODE", "off")).lower()
+    c.check(
+        "Indexing API mode is known",
+        indexing_mode in ("off", "record", "live"),
+        f"UPNEXT_INDEXING_MODE={indexing_mode!r} (use off, record or live)",
+    )
+    if indexing_mode == "live":
+        # Every process that records transitions queues notifications; only the worker sends them, so only the
+        # worker is given the key. A process without a key is told so; a key it is given must be private.
+        key_path = str(getattr(conf, "UPNEXT_INDEXING_CREDENTIALS_FILE", ""))
+        c.warn(
+            "Indexing API key file is given to this process",
+            bool(key_path),
+            "UPNEXT_INDEXING_CREDENTIALS_FILE is unset: this process queues but cannot send (expected in the "
+            "api container; the worker must have it)",
+        )
+        if key_path:
+            c.check(
+                "Indexing API key file is mounted, private and outside the application",
+                _private_key_file(key_path),
+                "UPNEXT_INDEXING_CREDENTIALS_FILE is missing, readable by others, or inside /app",
+            )
+        c.check(
+            "Indexing API notifies the https production origin",
+            str(conf.UPNEXT_PUBLIC_BASE_URL).startswith("https://"),
+            "UPNEXT_PUBLIC_BASE_URL is not https",
+        )
     c.warn(
         "an e-mail provider is configured",
         backend == "smtp",
@@ -164,6 +191,26 @@ def settings_findings(conf: Any, environ: dict[str, str]) -> list[Finding]:
         "and verified)",
     )
     return c.items
+
+
+def _private_key_file(path: str) -> bool:
+    """A key file that exists, is a regular file, is not readable by others and is not part of the image."""
+    import stat
+    from pathlib import Path
+
+    if not path:
+        return False
+    target = Path(path)
+    try:
+        info = target.stat()
+    except OSError:
+        return False
+    resolved = str(target.resolve())
+    return (
+        stat.S_ISREG(info.st_mode)
+        and not info.st_mode & stat.S_IROTH
+        and not resolved.startswith(("/app/", "/repo/"))
+    )
 
 
 def _mail_hash(conf: Any) -> str:

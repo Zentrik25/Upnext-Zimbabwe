@@ -32,6 +32,9 @@ Status: DRAFT (Phase 5, P5-05). Describes what the application provides and what
 | `disk.low` | critical | a path in `UPNEXT_ALERT_DISK_PATHS` is at least `UPNEXT_ALERT_DISK_PERCENT` (85) full | §9 capacity |
 | `db.size` | warning | database at least `UPNEXT_ALERT_DB_BYTES` (off until real capacity is known, OQ-10) | §9 capacity |
 | `cert.expiring` / `cert.unreadable` | warning at 30 days, critical at 7 days or unreadable | `UPNEXT_ALERT_CERT_HOST=host:port` is set | §10 certificate |
+| `indexing.dead` | warning | only while `UPNEXT_INDEXING_MODE=live` (D-68): a Google Indexing API notification was rejected or ran out of attempts in the last 24 hours | §12 indexing |
+| `indexing.stuck` | warning | live: the oldest waiting notification is more than 30 hours old (a quota day plus retries) | §12 indexing |
+| `indexing.failed` | critical | live: the last sending run failed (key file or access token) | §12 indexing |
 
 Not yet covered, and why: 5xx-rate and latency alerts need metrics from the front or an external collector (OQ-26); dead-man's-switch for the whole server needs the external probe.
 
@@ -67,3 +70,7 @@ Unit tests exercise every alert and the debouncing with a fake clock (`tests/tes
 ## Addendum (D-34): Resend webhook
 
 Watch the `email.webhook.resend` log events (counts and event types only) and the suppression count. A sudden rise in permanent bounces or any complaint should be reviewed the same day. A 401 burst on `/api/v1/hooks/email/resend` means a wrong secret or clock drift; 404 means the secret is not set. Runbook for a leaked key: revoke it in Resend, create a new restricted key, update `UPNEXT_SMTP_PASSWORD`, restart the worker.
+
+## 12. indexing
+Google Indexing API for job pages (D-68, `GOOGLE_INDEXING_API.md`). `manage.py indexing_status` (in the worker) shows the mode, counts, today's quota and the last errors. `indexing.failed` with a `credentials_*` code: the key file is missing, unreadable, not private (`chmod 600`, owner 10001) or not a service-account key; with `token_http_400`: the key was revoked or the Cloud project disabled the API. `indexing.dead` with `http_403`: the service account is not an **Owner** of the Search Console property; with `http_400`: report it as a bug (the address or type was rejected). `indexing.stuck`: the daily quota (200 by default) is too small for the volume, or Google keeps answering 429; request more quota or lower the batch. Sending can be stopped at once with `UPNEXT_INDEXING_MODE=off`; the sitemap keeps working.
+

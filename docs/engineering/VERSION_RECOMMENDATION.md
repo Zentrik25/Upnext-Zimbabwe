@@ -57,3 +57,7 @@ V-01 run migrations and tests against `postgres:18.x` with Django 5.2.18 + psyco
 
 ## 6. What I need from you
 Approve the pins in §1 (or choose: Django 6.1 instead of 5.2; Node 26 after promotion; PostgreSQL 17). Until then OQ-28 remains open and Phase 1 cannot start.
+
+## Addendum (D-68, 2026-11-05): `cryptography` for the Google Indexing API
+**Need:** RS256 signature of the service-account assertion (OAuth 2.0 JWT-bearer grant). Python's standard library has no RSA signing; hand-written RSA would be unreviewed cryptography. **Choice:** `cryptography==50.0.2`, the newest release on PyPI on 2026-11-05, resolved with `uv pip compile runtime.in --python-version 3.14 --generate-hashes` into the existing `runtime.txt` (every other pin unchanged; its only dependency, `cffi`, was already pinned). **Evidence:** installed from hashes on CPython 3.14.6 (abi3 manylinux wheels, no compiler needed); `pip-audit --require-hashes -r requirements/runtime.txt` reported no known vulnerabilities on 2026-11-05; CI repeats the audit. **Alternatives rejected:** `google-auth` (several more transitive packages for one token call), `PyJWT[crypto]` (needs `cryptography` anyway). Used only in `apps/api/indexing/google.py`.
+

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "profiles",
     "alerts",
     "reports",
+    "indexing",
 ]
 
 MIDDLEWARE = [
@@ -261,6 +262,15 @@ UPNEXT_TERMS_VERSION = get_str("UPNEXT_TERMS_VERSION", "1.1")
 # redirect address to register with Google is UPNEXT_PUBLIC_BASE_URL + /api/v1/auth/google/callback.
 UPNEXT_GOOGLE_CLIENT_ID = get_str("UPNEXT_GOOGLE_CLIENT_ID", "")
 UPNEXT_GOOGLE_CLIENT_SECRET = get_str("UPNEXT_GOOGLE_CLIENT_SECRET", "")
+# Google Indexing API for job listing pages only (D-68, docs/engineering/GOOGLE_INDEXING_API.md).
+# Modes: off (default: nothing recorded or sent), record (the queue is written but never sent, to inspect it
+# first), live (sent by the worker). The service-account key is a JSON file mounted read-only from outside the
+# repository (for example a Docker secret); only its path is configured here; the key never reaches the web
+# app or a browser.
+UPNEXT_INDEXING_MODE = get_str("UPNEXT_INDEXING_MODE", "off")
+UPNEXT_INDEXING_CREDENTIALS_FILE = get_str("UPNEXT_INDEXING_CREDENTIALS_FILE", "")
+UPNEXT_INDEXING_DAILY_QUOTA = get_int("UPNEXT_INDEXING_DAILY_QUOTA", 200)  # Google's default publish quota
+UPNEXT_INDEXING_BATCH = get_int("UPNEXT_INDEXING_BATCH", 20)  # requests per worker cycle (every 5 minutes)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": f"{UPNEXT_BRAND_SHORT} Careers API",

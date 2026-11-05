@@ -1,0 +1,25 @@
+# OPTIONAL overlay (D-68): the Google Indexing API for job listing pages. Without it the Indexing API is off: no
+# notification is recorded or sent, and no Google key exists anywhere in the stack.
+#   docker compose -f compose.production.yaml -f compose.production.indexing.yaml ...
+# Read docs/engineering/GOOGLE_INDEXING_API.md first. Nothing here is deployed or enabled by this repository.
+#
+# UPNEXT_INDEXING_KEY_HOST_PATH  the service-account key on the server, OUTSIDE the repository and every image,
+#                                owned by uid 10001 and chmod 600 (the worker refuses a key others can read).
+# UPNEXT_INDEXING_MODE           record (default here: queue only, nothing sent, to inspect first) | live (send).
+#
+# Both the api (staff decisions) and the worker (scheduled expiry) queue notifications, so both get the mode. Only
+# the worker sends, so only the worker gets the key, read-only; the web container never sees it.
+services:
+  api:
+    environment:
+      UPNEXT_INDEXING_MODE: ${UPNEXT_INDEXING_MODE:-record}
+  worker:
+    environment:
+      UPNEXT_INDEXING_MODE: ${UPNEXT_INDEXING_MODE:-record}
+      UPNEXT_INDEXING_CREDENTIALS_FILE: /run/upnext/google-indexing.json
+      UPNEXT_INDEXING_DAILY_QUOTA: ${UPNEXT_INDEXING_DAILY_QUOTA:-200}
+    volumes:
+      - type: bind
+        source: ${UPNEXT_INDEXING_KEY_HOST_PATH:?set UPNEXT_INDEXING_KEY_HOST_PATH to the key file on the server}
+        target: /run/upnext/google-indexing.json
+        read_only: true
