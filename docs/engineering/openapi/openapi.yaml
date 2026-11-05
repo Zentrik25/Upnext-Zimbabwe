@@ -72,7 +72,7 @@ paths:
         - { name: posted_within_days, in: query, schema: { type: integer, minimum: 1, maximum: 365 } }
         - { name: include_expired, in: query, schema: { type: boolean, default: false }, x-open: OQ-20 }
         - { name: sort, in: query, description: '`relevance` only valid with `q`', schema: { type: string, enum: [relevance, newest, closing_soon] } }
-        - { name: collection, in: query, description: 'a landing-page collection of open employment listings (D-68; apps/api/opportunities/collections.py); combines with the other filters; an unknown value is 400 invalid_filter', schema: { type: string, enum: [harare, bulawayo, graduate-trainee, engineering, finance-and-accounting, ngo] } }
+        - { name: collection, in: query, description: 'a landing-page collection of open employment listings (D-68; apps/api/opportunities/collections.py); combines with the other filters; an unknown value is 400 invalid_filter', schema: { type: string, enum: [harare, bulawayo, engineering, finance-and-accounting, ngo] } }
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Cursor' }
       responses:

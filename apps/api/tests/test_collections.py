@@ -37,7 +37,6 @@ def test_the_collections_are_the_six_landing_pages_of_the_web_app() -> None:
     assert list(COLLECTIONS) == [
         "harare",
         "bulawayo",
-        "graduate-trainee",
         "engineering",
         "finance-and-accounting",
         "ngo",
@@ -57,15 +56,10 @@ def test_city_collections_hold_employment_listings_placed_in_the_city_or_its_pro
     assert city.slug not in slugs("bulawayo")
 
 
-def test_graduate_trainee_holds_programmes_and_entry_level_jobs_only(
-    world: World, people: dict[str, User]
-) -> None:
-    programme = live(world, people, "graduate-programmes-1", "gp")
-    entry = live(world, people, "jobs-1", "entry", experience_level="entry")
-    senior = live(world, people, "jobs-1", "senior", experience_level="senior")
-    internship = live(world, people, "internships-1", "intern")
-    assert slugs("graduate-trainee") == {programme.slug, entry.slug}
-    assert senior.slug not in slugs("graduate-trainee") and internship.slug not in slugs("graduate-trainee")
+def test_the_consolidated_graduate_collection_no_longer_exists() -> None:
+    # D-69: /jobs/graduate-trainee redirects to the graduate programmes list, so the API offers no such collection.
+    response = APIClient().get(LIST, {"collection": "graduate-trainee"})
+    assert response.status_code == 400 and response.json()["error"]["code"] == "invalid_filter"
 
 
 def test_sector_collections_use_the_sector_or_whole_words_of_the_title(

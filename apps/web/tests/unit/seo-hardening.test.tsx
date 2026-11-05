@@ -40,6 +40,7 @@ import type { OpportunityDetail } from "@/lib/catalog-types";
 import {
   LANDING_MIN_LISTINGS,
   LANDING_PAGES,
+  LANDING_REDIRECTS,
   LANDING_SLUGS,
   landingIndexable,
   landingMinListings,
@@ -153,15 +154,18 @@ const props = (slug: string, search: Record<string, string> = {}) => ({
 
 describe("organic landing pages (SEO-B10, D-68)", () => {
   beforeEach(() => catalog.listOpportunities.mockReset());
-  it("are exactly the six collections the API defines (keep in step with opportunities/collections.py)", () => {
-    expect(LANDING_SLUGS).toEqual([
-      "harare",
-      "bulawayo",
-      "graduate-trainee",
-      "engineering",
-      "finance-and-accounting",
-      "ngo",
-    ]);
+  it("are exactly the five collections the API defines (keep in step with opportunities/collections.py)", () => {
+    expect(LANDING_SLUGS).toEqual(["harare", "bulawayo", "engineering", "finance-and-accounting", "ngo"]);
+  });
+  it("send the consolidated graduate page in one permanent step to the Graduate Trainee Programmes list (D-69)", async () => {
+    expect(LANDING_REDIRECTS).toEqual({ "graduate-trainee": "/opportunities?category=graduate-programmes" });
+    await expect(LandingPage(props("graduate-trainee", { cursor: "abc" }))).rejects.toThrow(
+      "NEXT_REDIRECT /opportunities?category=graduate-programmes",
+    );
+    await expect(landingMeta(props("graduate-trainee"))).rejects.toThrow("NEXT_REDIRECT");
+    expect(catalog.listOpportunities).not.toHaveBeenCalled(); // no request for the old collection
+    // The target is a final page, not another redirect.
+    expect(Object.values(LANDING_REDIRECTS).some((t) => t.startsWith("/jobs/"))).toBe(false);
   });
   it("each has a unique title, heading and description", () => {
     const pages = Object.values(LANDING_PAGES);

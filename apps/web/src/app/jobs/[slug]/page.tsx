@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { Container } from "@/components/layout";
 import { OpportunityRow } from "@/components/opportunities/parts";
@@ -12,6 +12,7 @@ import { listOpportunities } from "@/lib/catalog";
 import { GUIDES } from "@/lib/guides";
 import {
   LANDING_PAGES,
+  LANDING_REDIRECTS,
   landingIndexable,
   landingMinListings,
   landingPage,
@@ -45,8 +46,15 @@ const load = cache((slug: string, cursor: string | undefined) => {
   return listOpportunities(query);
 });
 
+/** A consolidated page moves, in one step and without its query (a cursor belongs to the old list), to its target. */
+function redirectIfConsolidated(slug: string): void {
+  const target = Object.hasOwn(LANDING_REDIRECTS, slug) ? LANDING_REDIRECTS[slug] : undefined;
+  if (target) permanentRedirect(target);
+}
+
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
+  redirectIfConsolidated(slug);
   const page = landingPage(slug);
   if (!page) return { title: "Page not found", robots: { index: false } };
   const cursor = await cursorOf(searchParams);
@@ -74,6 +82,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
  */
 export default async function LandingPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  redirectIfConsolidated(slug);
   const page = landingPage(slug);
   if (!page) notFound();
   const cursor = await cursorOf(searchParams);

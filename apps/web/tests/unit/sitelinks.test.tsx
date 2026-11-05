@@ -123,10 +123,11 @@ describe("the eight priority destinations (D-69)", () => {
     expect(headings.size).toBe(6);
   });
 
-  it("keeps Sign In linked but out of the index, the crawl and the sitemap", async () => {
+  it("keeps Sign In linked, crawlable so its noindex can be read, and out of the sitemap", async () => {
     expect(signInMeta.robots).toEqual({ index: false });
     const rule = (robots().rules as { disallow: string[] }[])[0]!;
-    expect(rule.disallow).toContain("/sign-in");
+    // Not disallowed (D-69): a crawler barred from it could never see its noindex.
+    expect(rule.disallow.some((d) => "/sign-in".startsWith(d.replace(/\/$/, "")) && d !== "/")).toBe(false);
     catalog.getSitemapEntries.mockResolvedValue({
       ok: true,
       data: { data: [], categories: [{ code: "jobs", count: 1, updated_at: null }] },

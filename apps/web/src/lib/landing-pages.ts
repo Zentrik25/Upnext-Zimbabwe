@@ -58,16 +58,6 @@ export const LANDING_PAGES = {
       "Jobs, internships and graduate programmes that the employer places in Bulawayo or Bulawayo Province. A listing leaves this page when its closing date passes or the issuer withdraws it.",
     broader: { href: "/opportunities?category=jobs", label: "All jobs in Zimbabwe" },
   },
-  "graduate-trainee": {
-    slug: "graduate-trainee",
-    title: "Graduate Trainee Jobs in Zimbabwe",
-    heading: "Graduate trainee jobs in Zimbabwe",
-    description:
-      "Open graduate trainee programmes and entry-level jobs in Zimbabwe, each reviewed before it is published and shown with a clear verification label.",
-    intro:
-      "Graduate trainee and other structured graduate programmes, together with jobs whose stated experience level is entry level. Check each listing for the qualifications and the year of graduation it asks for. Internships for students are listed separately.",
-    broader: { href: "/opportunities?category=graduate-programmes", label: "All graduate programmes" },
-  },
   engineering: {
     slug: "engineering",
     title: "Engineering Jobs in Zimbabwe",
@@ -99,6 +89,17 @@ export const LANDING_PAGES = {
     broader: { href: "/opportunities?category=jobs", label: "All jobs in Zimbabwe" },
   },
 } as const satisfies Record<string, LandingPage>;
+
+/**
+ * Former landing pages consolidated into a better destination (owner instruction 2026-11-05, D-69). Each answers with
+ * one permanent redirect (308) straight to the final, self-canonical page: never a chain, never listed in the
+ * sitemap. `/jobs/graduate-trainee` ("Graduate trainee jobs": graduate programmes plus entry-level jobs) served the
+ * same search as the Graduate Trainee Programmes list and mostly held the same listings, so it now points there;
+ * entry-level jobs stay on the jobs list.
+ */
+export const LANDING_REDIRECTS: Readonly<Record<string, string>> = {
+  "graduate-trainee": "/opportunities?category=graduate-programmes",
+};
 
 export type LandingSlug = keyof typeof LANDING_PAGES;
 export const LANDING_SLUGS = Object.keys(LANDING_PAGES) as LandingSlug[];

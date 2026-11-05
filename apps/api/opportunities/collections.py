@@ -11,9 +11,10 @@ scholarships and grants are not "jobs" and stay on their own category lists. Whe
 offered to search engines is decided by the web app from the count this module reports (an almost empty
 collection is `noindex`), never here.
 
-Adding a collection is a product decision: the web app needs its copy (`apps/web/src/lib/landing-pages.ts`)
-and the decision register an entry. Keep the slugs in step with that file; a test on each side pins the
-list."""
+The former "graduate-trainee" collection was consolidated into the graduate programmes category list (D-69):
+the web app redirects `/jobs/graduate-trainee` there. Adding a collection is a product decision: the web app
+needs its copy (`apps/web/src/lib/landing-pages.ts`) and the decision register an entry. Keep the slugs in
+step with that file; a test on each side pins the list."""
 
 from __future__ import annotations
 
@@ -54,11 +55,6 @@ class Collection:
 _CONDITIONS = {
     "harare": lambda: _in_city("harare", "harare-province"),
     "bulawayo": lambda: _in_city("bulawayo", "bulawayo-province"),
-    # Graduate programmes, and jobs whose stated experience level is "entry". Internships are for students.
-    "graduate-trainee": lambda: (
-        Q(opportunity__category__code="graduate-programmes")
-        | Q(opportunity__category__code="jobs", experience_level="entry")
-    ),
     "engineering": lambda: _sector_or_title("engineering", r"\mengineer(s|ing)?\M"),
     "finance-and-accounting": lambda: _sector_or_title("finance", r"\maccount(s|ant|ants|ancy|ing)\M"),
     "ngo": lambda: Q(sectors__sector__slug="ngo"),
@@ -69,7 +65,6 @@ COLLECTIONS: dict[str, Collection] = {
     for c in (
         Collection("harare", "Employment listings placed in Harare or Harare Province."),
         Collection("bulawayo", "Employment listings placed in Bulawayo or Bulawayo Province."),
-        Collection("graduate-trainee", "Graduate programmes, and jobs at entry level."),
         Collection(
             "engineering", "Employment listings in the Engineering sector or titled engineer/engineering."
         ),

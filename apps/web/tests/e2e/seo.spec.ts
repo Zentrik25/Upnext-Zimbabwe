@@ -21,20 +21,14 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(response.status()).toBe(200);
     const text = await response.text();
     expect(text).toMatch(/User-Agent: \*/i);
-    for (const path of [
-      "/workspace",
-      "/api/",
-      "/account",
-      "/saved",
-      "/sign-in",
-      "/register",
-      "/reset-password",
-      "/employer/",
-    ])
+    for (const path of ["/workspace", "/api/", "/account", "/saved", "/reset-password", "/employer/"])
       expect(text).toContain(`Disallow: ${path}`);
     // a crawler must be able to fetch a page to see its noindex: these are linked publicly and say noindex themselves
+    // (sign-in, registration and password help since D-69)
     for (const path of ["/employers/register", "/opportunities/*/report", "?*cursor=", "?*sort="])
       expect(text).not.toContain(path);
+    for (const path of ["/sign-in", "/register", "/forgot-password"])
+      expect(text).not.toMatch(new RegExp(`^Disallow: ${path}$`, "m"));
     expect(text).not.toMatch(/Disallow: \/$/m);
     expect(text).toMatch(/Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
   });

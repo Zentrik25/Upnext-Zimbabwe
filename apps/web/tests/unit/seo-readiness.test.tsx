@@ -96,14 +96,22 @@ describe("robots.txt", () => {
   });
   it("blocks private areas, but not the public employer pages", () => {
     const d = rules[0]!.disallow;
-    for (const path of ["/workspace", "/api/", "/account", "/sign-in", "/employer/"])
+    for (const path of ["/workspace", "/api/", "/account", "/employer/", "/reset-password", "/verify-email"])
       expect(d).toContain(path);
     expect(d).not.toContain("/employer"); // would also match /employers
     expect(d).not.toContain("/employers");
   });
   it("never hides a noindex: pages linked from public pages that say noindex are crawlable", () => {
     const d = rules[0]!.disallow;
-    for (const path of ["/employers/register", "/opportunities/*/report"]) expect(d).not.toContain(path);
+    // D-69: the public sign-in, registration and password-help forms are linked everywhere and say noindex.
+    for (const path of [
+      "/employers/register",
+      "/opportunities/*/report",
+      "/sign-in",
+      "/register",
+      "/forgot-password",
+    ])
+      expect(d).not.toContain(path);
     expect(d.some((rule) => /[?*]/.test(rule.replace("/opportunities/*", "")))).toBe(false);
     expect(d.some((rule) => /(sort|cursor|limit)=/.test(rule))).toBe(false);
   });

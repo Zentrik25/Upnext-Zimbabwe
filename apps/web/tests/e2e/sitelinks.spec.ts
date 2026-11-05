@@ -46,6 +46,18 @@ test.describe("priority destinations (D-69)", () => {
     expect(titles.size).toBe(DESTINATIONS.length);
   });
 
+  test("each category list is a plain link whose first response already holds its listings (no script needed)", async ({
+    request,
+  }) => {
+    const home = await (await request.get("/opportunities")).text();
+    for (const [label, href] of DESTINATIONS.filter(([, h]) => h.includes("?category="))) {
+      // The category tab is an ordinary <a href>, not a script-driven control.
+      expect(home, label).toContain(`href="${href.replace(/&/g, "&amp;")}"`);
+      const html = await (await request.get(href)).text();
+      expect(html.match(/href="\/opportunities\/[a-z0-9-]+"/g)?.length ?? 0, label).toBeGreaterThan(0);
+    }
+  });
+
   test("the footer stays usable and accessible on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/");
