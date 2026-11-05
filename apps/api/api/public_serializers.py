@@ -156,9 +156,15 @@ class OpportunityDetailSerializer(OpportunitySummarySerializer):
     updated_at = serializers.DateTimeField()
 
 
+class CollectionInfoSerializer(serializers.Serializer[None]):
+    slug = serializers.CharField()
+    duplicate_of = serializers.CharField(allow_null=True)
+
+
 class OpportunityListSerializer(serializers.Serializer[None]):
     data = OpportunitySummarySerializer(many=True)  # type: ignore[assignment]
     page = PageInfoSerializer()
+    collection = CollectionInfoSerializer(required=False)  # first page of a `collection` query only
 
 
 class SitemapEntrySerializer(serializers.Serializer[None]):
@@ -166,8 +172,21 @@ class SitemapEntrySerializer(serializers.Serializer[None]):
     updated_at = serializers.DateTimeField()
 
 
+class SitemapListSerializer(serializers.Serializer[None]):
+    """One category list or landing-page collection: open listings and the newest publication among them."""
+
+    code = serializers.CharField(required=False)
+    slug = serializers.CharField(required=False)
+    count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+    duplicate_of = serializers.CharField(allow_null=True, required=False)  # collections only (D-68)
+
+
 class SitemapSerializer(serializers.Serializer[None]):
     data = SitemapEntrySerializer(many=True)  # type: ignore[assignment]
+    categories = SitemapListSerializer(many=True)
+    collections = SitemapListSerializer(many=True)
+    employers = SitemapEntrySerializer(many=True)
 
 
 class CategoryListSerializer(serializers.Serializer[None]):

@@ -1,5 +1,5 @@
-"""The background worker: the e-mail outbox every cycle; account deletions, retention, job alerts and listing
-expiry every few minutes."""
+"""The background worker: the e-mail outbox every cycle; account deletions, retention, job alerts, listing
+expiry and Google Indexing API notifications every few minutes."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from alerts import service as alert_service
 from core import alerts as alert_catalogue
 from core.models import JobRun
 from employers import reminders
+from indexing import service as indexing
 from notifications.services import process_batch, status_summary
 from opportunities import expiry, images
 
@@ -57,6 +58,10 @@ class Command(BaseCommand):
                     expiry.run()
                 except Exception:  # an expiry problem must never stop the outbox or deletions
                     logger.exception("listing expiry failed", extra={"event": "expiry.failed"})
+                try:  # Google Indexing API for job pages (D-68): sends only when UPNEXT_INDEXING_MODE=live
+                    indexing.run()
+                except Exception:  # an indexing problem must never stop the outbox or deletions
+                    logger.exception("indexing failed", extra={"event": "indexing.failed"})
                 try:  # seven-day employer reminders: off while e-mail delivery is unverified (B-01)
                     reminders.run()
                 except Exception:  # a reminder problem must never stop the outbox or deletions

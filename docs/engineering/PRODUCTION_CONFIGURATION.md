@@ -79,3 +79,10 @@ Public origin `UPNEXT_PUBLIC_BASE_URL=https://upnext.co.zw`; the one official ma
 ## Addendum (launch preparation): production Compose project
 
 `infrastructure/compose/compose.production.yaml` is the production stack definition (see `PRODUCTION_DEPLOYMENT_PLAN.md` §1). It sets the identity (`https://upnext.co.zw`, `info@upnext.co.zw` only) in the file itself, reads secrets from the environment with no defaults, runs the API and worker as the unprivileged database role, keeps migrations in a `release` profile that holds the owner credentials, and keeps e-mail at backend `none`. Validate without a server: `docker compose --env-file <file> -f compose.production.yaml config` and `pytest tests/test_production_compose.py`. **Not run on the VPS; not deployed.**
+
+## Google Indexing API (D-68, DRAFT, off by default)
+`UPNEXT_INDEXING_MODE` (`off` default | `record` queue only | `live` send), `UPNEXT_INDEXING_CREDENTIALS_FILE` (worker only: the path of the mounted service-account key), `UPNEXT_INDEXING_DAILY_QUOTA` (200), `UPNEXT_INDEXING_BATCH` (20 per 5-minute cycle). `compose.production.yaml` sets none of them, so the feature is off; the optional overlay `infrastructure/compose/compose.production.indexing.yaml` fixes the mode to `record` for api and worker (owner decision: record mode only; live needs written authorisation) and mounts the key read-only into the worker only, from `UPNEXT_INDEXING_KEY_HOST_PATH` (outside the repository, owner 10001, `chmod 600`). Setup, security and rollback: `GOOGLE_INDEXING_API.md`.
+
+## Landing pages and temporary unavailability (D-68)
+`UPNEXT_LANDING_MIN_LISTINGS` (web, default 3): open listings a `/jobs/*` page needs before it is indexed and listed in the sitemap; a page whose listings repeat another list exactly is never indexed. The UPNEXT proxy answers a server error on public crawlable addresses (`/`, `/opportunities…`, `/jobs…`, `/employers…`, `/guides/…`, `/sitemap.xml`) with `503` and `Retry-After: 120`; other addresses keep the application's own error pages.
+

@@ -152,9 +152,53 @@ def evaluate(now: datetime | None = None) -> list[Alert]:
         if size >= limit:
             found.append(Alert("db.size", WARNING, f"database is {size // 1_048_576} MiB", "capacity"))
 
+    found.extend(_indexing_alerts(now))
+
     host = os.environ.get("UPNEXT_ALERT_CERT_HOST", "")  # host:port of the public front
     if host:
         found.extend(_certificate_alerts(host, now))
+    return found
+
+
+def _indexing_alerts(now: datetime) -> list[Alert]:
+    """Google Indexing API (D-68): only while it is live."""
+    from core.models import JobRun
+    from indexing import service
+
+    if service.mode() != "live":
+        return []
+    found: list[Alert] = []
+    summary = service.status_summary(now)
+    if summary["dead_last_24h"]:
+        found.append(
+            Alert(
+                "indexing.dead",
+                WARNING,
+                f"{summary['dead_last_24h']} Indexing API notification(s) rejected or out of attempts "
+                "in 24 h",
+                "indexing",
+            )
+        )
+    age = summary["oldest_waiting_seconds"]
+    if age is not None and age > 30 * 3600:  # a quota day plus the worker cycle and retries
+        found.append(
+            Alert(
+                "indexing.stuck",
+                WARNING,
+                f"oldest waiting notification is {int(age // 3600)} h old",
+                "indexing",
+            )
+        )
+    run = JobRun.objects.filter(name="indexing").first()
+    if run is not None and run.last_status == "failed":
+        found.append(
+            Alert(
+                "indexing.failed",
+                CRITICAL,
+                f"the last Indexing API run failed: {run.last_detail}",
+                "indexing",
+            )
+        )
     return found
 
 

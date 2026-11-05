@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache, Suspense } from "react";
-import { Container } from "@/components/layout";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { JobView } from "@/components/opportunities/job-view";
 import { ListingEvents } from "@/components/opportunities/listing-events";
 import { RelatedCard } from "@/components/opportunities/job-parts";
-import { EmptyState } from "@/components/ui";
 import { Icon } from "@/components/ui/icons";
 import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
@@ -19,6 +17,7 @@ import type { OpportunityDetail } from "@/lib/catalog-types";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor, isOpen, jobPostingFor } from "@/lib/structured-data";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
+import { unavailable } from "@/lib/unavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +40,9 @@ function plain(html: string, max = 160): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await getOpportunity(slug);
-  if (!result.ok || result.data === null) return { title: "Opportunity not found", robots: { index: false } };
+  // A fault is a server error, never "noindex": see lib/unavailable.ts. A missing listing is a 404 (the page decides).
+  if (!result.ok) unavailable(result.reason);
+  if (result.data === null) return { title: "Opportunity not found", robots: { index: false } };
   const listing = result.data;
   const seo = listing.seo;
   const title = seo?.title || `${listing.title} at ${listing.organisation.name}`;
@@ -69,19 +70,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function OpportunityPage({ params }: Props) {
   const { slug } = await params;
   const result = await getOpportunity(slug);
-  if (!result.ok) {
-    return (
-      <Container className="py-10" role="alert">
-        <EmptyState as="h1" title="This opportunity is unavailable">
-          {result.reason === "rate-limited"
-            ? "Too many requests. Wait a minute and try again."
-            : "The service could not be reached. Try again shortly."}
-        </EmptyState>
-      </Container>
-    );
-  }
+  if (!result.ok) unavailable(result.reason);
   if (result.data === null) notFound();
   const listing = result.data;
+  // The API finds a listing case-insensitively; any other spelling of the address moves to the one canonical one.
+  if (slug !== listing.slug) permanentRedirect(`/opportunities/${listing.slug}`);
   const pageUrl = absolute(`/opportunities/${listing.slug}`);
   const posting = jobPostingFor(listing, pageUrl);
   return (

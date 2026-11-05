@@ -11,6 +11,12 @@ const config: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  // Every page's title, description, canonical and robots tags are sent in <head>, for every client. By default
+  // Next.js streams metadata into <body> for clients it does not list as limited, and that list leaves out
+  // Googlebot and unknown crawlers: on the list pages the canonical and robots tags then reached Googlebot only
+  // inside <body>, where Google ignores rel=canonical (SEO audit 2026-11, SEO-B02). The cost is small: the list's
+  // metadata request is the same cached request the results use.
+  htmlLimitedBots: /.*/,
   async rewrites() {
     if (!isDev || !apiOrigin) return [];
     return [

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/layout";
 import { JsonLd } from "@/components/seo/json-ld";
-import { ButtonLink, EmptyState, Tag } from "@/components/ui";
+import { ButtonLink, Tag } from "@/components/ui";
 import { OpportunityRow } from "@/components/opportunities/parts";
 import { getEmployerProfile, listOpportunities } from "@/lib/catalog";
 import { absolute } from "@/lib/site";
+import { unavailable } from "@/lib/unavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,8 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = await getEmployerProfile(slug);
-  if (!result.ok || result.data === null) return { title: "Employer not found", robots: { index: false } };
+  if (!result.ok) unavailable(result.reason); // a fault is a server error, never "noindex" (lib/unavailable.ts)
+  if (result.data === null) return { title: "Employer not found", robots: { index: false } };
   const profile = result.data;
   const description = profile.tagline || `${profile.organisation.name} on UPNEXT Careers.`;
   return {
@@ -30,17 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function EmployerProfilePage({ params }: Props) {
   const { slug } = await params;
   const result = await getEmployerProfile(slug);
-  if (!result.ok) {
-    return (
-      <Container className="py-10" role="alert">
-        <EmptyState as="h1" title="This page is unavailable">
-          {result.reason === "rate-limited"
-            ? "Too many requests. Wait a minute and try again."
-            : "The service could not be reached. Try again shortly."}
-        </EmptyState>
-      </Container>
-    );
-  }
+  if (!result.ok) unavailable(result.reason);
   if (result.data === null) notFound();
   const p = result.data;
   // Only what the public list already shows: published listings of this organisation.

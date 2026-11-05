@@ -108,11 +108,13 @@ export function HeroFrame({ children }: { children: ReactNode }) {
 }
 
 /** The four shortcuts under the search: white chips with an icon. Static, so they are sent with the headline. */
-const QUICK_LINKS: readonly { label: string; href: string; icon: IconName }[] = [
+// `hidden` completes a short visible label for screen readers and crawlers ("More" alone says nothing about where it
+// leads); the visible chip is unchanged (D-61).
+const QUICK_LINKS: readonly { label: string; href: string; icon: IconName; hidden?: string }[] = [
   { label: "Jobs", href: "/opportunities?category=jobs", icon: "briefcase" },
   { label: "Tenders", href: "/opportunities?category=tenders", icon: "doc" },
   { label: "Scholarships", href: "/opportunities?category=scholarships", icon: "cap" },
-  { label: "More", href: "/opportunities", icon: "grid" },
+  { label: "More", href: "/opportunities", icon: "grid", hidden: " opportunities" },
 ];
 
 function QuickLinks() {
@@ -130,6 +132,7 @@ function QuickLinks() {
                 className="h-[18px] w-[18px] shrink-0 text-ink max-sm:h-3.5 max-sm:w-3.5 max-[340px]:hidden"
               />
               {link.label}
+              {link.hidden ? <span className="sr-only">{link.hidden}</span> : null}
             </Link>
           </li>
         ))}

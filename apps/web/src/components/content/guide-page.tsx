@@ -57,7 +57,7 @@ export function GuidePage({
       <ProsePage title={guide.title} intro={intro}>
         <p className="text-small text-muted" data-testid="guide-dates">
           Published <time dateTime={guide.datePublished}>{dateLong(guide.datePublished)}</time>
-          {guide.dateModified !== guide.datePublished ? (
+          {(guide.dateModified as string) !== guide.datePublished ? (
             <>
               {" "}
               · Updated <time dateTime={guide.dateModified}>{dateLong(guide.dateModified)}</time>

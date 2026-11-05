@@ -5,7 +5,7 @@ import { Bullets, ProsePage, Section } from "@/components/content/prose";
 import { VERIFICATION } from "@/lib/format";
 
 const DESCRIPTION =
-  "What UPNEXT Careers is, where its listings come from and what its verification labels mean.";
+  "What UPNEXT Careers is, what its verification labels mean, how you apply and how to ask for a correction.";
 export const metadata: Metadata = {
   title: "About",
   description: DESCRIPTION,

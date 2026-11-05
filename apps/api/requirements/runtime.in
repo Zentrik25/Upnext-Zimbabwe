@@ -8,3 +8,4 @@ gunicorn
 whitenoise
 jsonschema
 pillow
+cryptography  # RS256 signature of the Google Indexing API service-account token (D-68); no other Google library

@@ -42,7 +42,10 @@ describe("structured data", () => {
     const data = jobPostingFor(base, "https://example.test/opportunities/graduate-engineer-abc123")!;
     expect(data["@type"]).toBe("JobPosting");
     expect(data.title).toBe("Graduate Engineer");
-    expect(data.description).toBe("Assist engineers & write reports. Site visits");
+    // The full visible text as HTML, under the page's own heading (SEO-B06); base has no requirements.
+    expect(data.description).toBe(
+      "<h2>Key responsibilities</h2><p>Assist engineers &amp; write reports.</p><ul><li>Site visits</li></ul>",
+    );
     expect(data.validThrough).toBe("2026-12-02T14:30:00Z");
     expect(data.employmentType).toBe("CONTRACTOR");
     expect(data.directApply).toBe(false);
