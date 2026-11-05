@@ -69,6 +69,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
 | R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
 | R-64 | Search-engine hardening and organic discovery (D-68): a page whose data could not be loaded is a server error, never 200 with noindex; metadata in <head> for every client; one canonical address per listing; the full JobPosting description; a sitemap with real lastmod values, company profiles and no shortened file on failure; six fact-defined landing pages, indexable only from three open listings; the Google Indexing API for JobPosting pages only, off by default, idempotent, quota-aware, retried with back-off, its key mounted in the worker only | D-68; D-51; D-28; P4-02 | SC-01, SC-02, SC-03 | listOpportunities, getSitemapEntries, getOpportunity | SEO-10, SEO-11, SEO-12, SEO-13, IDX-01, IDX-02, IDX-03 | OQ-20 |
+| R-65 | Branded search (D-69): eight priority destinations linked from every public page with descriptive crawlable links; the seven public ones with unique titles, descriptions, headings and visible text, self-canonical, in the sitemap when they hold listings; Sign In linked but noindex, disallowed and unlisted; home title, description and trailing-slash canonical as the owner specified; BreadcrumbList on category lists | D-69; D-68; D-51; P4-02 | SC-01, SC-02 | listOpportunities, getSitemapEntries | SEO-14 | OQ-20 |
 
 ## 2. Screen register
 
@@ -97,7 +98,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | Operation | Method path | Tag | Requirements |
 |---|---|---|---|
 | `getApiRoot` | GET `/` | health | R-24 |
-| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-64 |
+| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-65, R-64 |
 | `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29, R-64 |
 | `getEmployerOverview` | GET `/employer/overview` | employer | R-42 |
 | `searchOrganisationsToClaim` | GET `/employer/organisations/search` | employer | R-42 |
@@ -119,7 +120,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |
 | `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `createListingReport` | POST `/opportunities/{slug}/reports` | public | R-50 |
-| `getSitemapEntries` | GET `/sitemap` | public | R-29, R-64 |
+| `getSitemapEntries` | GET `/sitemap` | public | R-29, R-65, R-64 |
 | `listCategories` | GET `/categories` | public | R-01 |
 | `listLocations` | GET `/locations` | public | R-01 |
 | `listSectors` | GET `/sectors` | public | R-01 |
@@ -411,6 +412,7 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-11 | One canonical listing address (any other spelling is a permanent redirect); the JobPosting description is the full visible description and requirements as HTML, never cut short |
 | SEO-12 | Sitemap from one feed: real lastmod for listings, category lists, landing pages, guides and company profiles, none for static pages; categories only with an open listing, landing pages only from the threshold |
 | SEO-13 | Landing pages: collections defined by recorded facts, employment categories only, never a closed listing or a repeated row, cursor bound to the collection; indexable only from a configurable threshold (3) and only when its listings do not repeat another list exactly, copy unique, later pages noindex and self-canonical, unknown slugs 404, real listings and related links server-rendered |
+| SEO-14 | Priority destinations: all eight linked from the footer under their names and at distinct addresses; seven public pages 200, one H1, self-canonical in <head>, unique titles and descriptions, visible introduction, BreadcrumbList on category lists, no JobPosting on lists; Sign In noindex, disallowed and not in the sitemap; footer accessible and without horizontal scroll on a phone |
 | IDX-01 | Indexing API queue: only pages that carry JobPosting; URL_UPDATED on publication, one URL_DELETED when a job closes in any way; one row per event; newer events supersede unsent ones; a rolled-back decision queues nothing; a queue failure never blocks a decision |
 | IDX-02 | Indexing API sending: a verified RS256 service-account assertion with the indexing scope only; quota per Pacific day never exceeded; 429 defers to the next day; 401, 5xx and network errors retried with growing back-off; other 4xx dead with an alert; stale claims recovered; the current listing state wins |
 | IDX-03 | Indexing API configuration: off by default and in the base Compose file; the optional overlay is record-only whatever the environment says (owner decision); key only in the worker, read-only; preflight refuses a key others can read; credentials never exposed by an API or a log |
@@ -685,6 +687,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-11 | `apps/web/tests/unit/seo-hardening.test.tsx; apps/web/tests/unit/seo.test.tsx` | executed (Google's Rich Results Test was not run: no external access) |
 | SEO-12 | `apps/web/tests/unit/seo-readiness.test.tsx (sitemap.xml source); apps/api/tests/test_collections.py; apps/api/tests/test_sitemap.py` | executed |
 | SEO-13 | `apps/api/tests/test_collections.py; apps/web/tests/unit/seo-hardening.test.tsx (organic landing pages)` | executed |
+| SEO-14 | `apps/web/tests/unit/sitelinks.test.tsx; apps/web/tests/e2e/sitelinks.spec.ts` | executed |
 | IDX-01 | `apps/api/tests/test_indexing.py (what is queued)` | executed with mocked Google answers; nothing was sent to Google |
 | IDX-02 | `apps/api/tests/test_indexing.py (sending, credentials and tokens)` | executed with mocked Google answers; nothing was sent to Google |
 | IDX-03 | `apps/api/tests/test_indexing.py (configuration checks); apps/api/tests/test_production_compose.py::test_indexing_is_off_without_its_overlay_and_the_key_reaches_only_the_worker` | executed |
