@@ -234,7 +234,8 @@ test.describe("signed-in pages", () => {
     // One sign-in, then an axe scan of two pages at four widths: it took 17 s to 34 s on CI runners of different speed,
     // so the default 30 s limit failed whenever the runner was slow. slow() triples the limit; no assertion is relaxed.
     test.slow();
-    await page.goto("/sign-in");
+    // The demo contributor is staff, who land in the workspace; ask for the Account page explicitly (D-70).
+    await page.goto("/sign-in?next=%2Faccount");
     await page.getByLabel("E-mail address").fill("contributor@demo.upnext.example");
     await page.getByLabel("Password", { exact: true }).fill(PASSWORD!);
     await page.getByRole("button", { name: "Sign in" }).click();

@@ -121,7 +121,8 @@ describe("landing (D-70)", () => {
     expect(landing("/workspace", "/employer")).toBe("/employer");
     expect(landing("/employer/analytics", "/dashboard")).toBe("/dashboard");
     expect(landing("/employer/analytics", "/employer")).toBe("/employer/analytics");
-    expect(landing("/employer", "/dashboard")).toBe("/employer"); // the claim page is open to every account
+    expect(landing("/employer", "/dashboard")).toBe("/employer"); // the dashboard and claim pages are open to every account
+    expect(landing("/employer/claim", "/dashboard")).toBe("/employer/claim");
     expect(landing("/saved", "/dashboard")).toBe("/saved");
   });
   it("reads a return address only when it is safe", () => {

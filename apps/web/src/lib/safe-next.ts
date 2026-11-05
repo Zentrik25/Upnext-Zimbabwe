@@ -58,6 +58,7 @@ export function landing(next: string | undefined, homePath: unknown): string {
   const wanted = next ? safeNext(next, "") : "";
   if (!wanted || wanted === "/sign-in") return home;
   if (wanted.startsWith("/workspace") && home !== "/workspace") return home;
-  if (wanted.startsWith("/employer/") && home === "/dashboard") return home;
+  // The claim page is how an account becomes an employer, so it is open to everyone.
+  if (wanted.startsWith("/employer/") && wanted !== "/employer/claim" && home === "/dashboard") return home;
   return wanted;
 }
