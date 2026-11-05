@@ -77,9 +77,9 @@ export default async function EmployerListingPage({ params }: Props) {
           <p className="text-base">{WHAT_NEXT[listing.status] ?? WHAT_NEXT[listing.version_state] ?? ""}</p>
           {listing.public_path && listing.status === "published" ? (
             <p className="mt-2 text-base">
-              <Link href={listing.public_path} className="text-accent underline">
+              <a href={listing.public_path} className="text-accent underline">
                 View the public listing
-              </Link>
+              </a>
             </p>
           ) : null}
         </Callout>

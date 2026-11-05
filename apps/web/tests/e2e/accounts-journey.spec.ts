@@ -273,6 +273,7 @@ test("7. sign-in only follows safe return addresses", async ({ page }) => {
   for (const next of ["https://evil.example/", "//evil.example", "/staff/", "/api/v1/me"]) {
     await signIn(page, EMAIL, THIRD_PASSWORD, next);
     await expect(page).toHaveURL(/\/dashboard$/); // a refused address becomes the person's own dashboard (D-70)
+    await page.goto("/account"); // Sign out lives on the Account page
     await signOut(page);
   }
 });
@@ -292,6 +293,7 @@ test("8. the account pages fit every width and are accessible", async ({ page })
   await page.setViewportSize({ width: 390, height: 900 });
   await signIn(page, EMAIL, THIRD_PASSWORD);
   await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto("/account");
   // The URL changes before the page has streamed in (its title arrives with it): wait for the real page, or axe
   // checks the loading placeholder, which has no title yet.
   await expect(page.getByRole("heading", { level: 1, name: "Account settings", exact: true })).toBeVisible();

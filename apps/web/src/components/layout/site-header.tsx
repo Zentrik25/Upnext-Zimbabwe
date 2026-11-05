@@ -80,12 +80,13 @@ export async function SiteHeader() {
           </Link>
           {user ? (
             <>
-              <Link
+              {/* A full page load: the dashboards have their own frame, chosen once per page load (app/layout.tsx). */}
+              <a
                 href={dashboard}
                 className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
               >
                 Dashboard
-              </Link>
+              </a>
               <Link
                 href="/for-you"
                 className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"

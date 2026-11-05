@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileForm } from "@/components/employer/profile-form";
 import { Callout } from "@/components/ui";
@@ -41,9 +40,9 @@ export default async function ProfilePage({ params }: Props) {
           <p className="mt-1 whitespace-pre-line text-base">{state.live.about}</p>
           {state.slug ? (
             <p className="mt-2 text-base">
-              <Link href={`/employers/${state.slug}`} className="text-accent underline">
+              <a href={`/employers/${state.slug}`} className="text-accent underline">
                 View the public page
-              </Link>
+              </a>
             </p>
           ) : null}
         </Callout>

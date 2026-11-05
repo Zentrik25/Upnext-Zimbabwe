@@ -140,7 +140,10 @@ test("3. a claim grants nothing until staff verify the organisation", async ({ p
 
 test("4. a company profile is public only after an editor approves it", async ({ page }) => {
   await signIn(page, "/employer");
-  await page.getByRole("link", { name: /Company profile/ }).click();
+  await page
+    .getByRole("link", { name: /Company profile/i })
+    .first()
+    .click();
   await expect(page.getByText("There is no public profile yet.")).toBeVisible();
   await page.getByLabel("Tagline (optional)").fill("Digging responsibly");
   await page

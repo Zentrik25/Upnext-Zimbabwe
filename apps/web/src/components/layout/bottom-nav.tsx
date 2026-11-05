@@ -29,6 +29,15 @@ const tabs = (home: string): Tab[] => [
   },
 ];
 
+/** Dashboards with their own frame need a full page load (app/layout.tsx chooses the frame once per load). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Tab(allProps: any) {
+  const { prefetch: _ignored, ...props } = allProps;
+  void _ignored;
+  const own = /^\/(employer|workspace)(\/|$)/.test(String(props.href));
+  return own ? <a {...props} /> : <Link prefetch={false} {...props} />;
+}
+
 /** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
  *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
  *  would multiply API load (and trip the per-address read limit in the browser suite). */
@@ -45,7 +54,7 @@ export function BottomNav({ home = "/" }: { home?: string }) {
             const active = tab.match(pathname);
             return (
               <li key={tab.label}>
-                <Link
+                <Tab
                   href={tab.href}
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
@@ -56,7 +65,7 @@ export function BottomNav({ home = "/" }: { home?: string }) {
                 >
                   <Icon name={tab.icon} />
                   {tab.label}
-                </Link>
+                </Tab>
               </li>
             );
           })}

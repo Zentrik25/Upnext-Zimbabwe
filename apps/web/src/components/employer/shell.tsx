@@ -322,12 +322,12 @@ export function EmployerShell({
           <Link
             href="/employer"
             aria-label="UPNEXT Careers employer dashboard"
-            className="flex-none min-[1100px]:hidden"
+            className="hidden flex-none sm:block min-[1100px]:hidden"
           >
             <Monogram className="h-[22px] w-auto" />
           </Link>
           <div className="min-w-0 py-2">
-            <h1 className="m-0 truncate text-[22px] leading-[1.2] font-strong tracking-title">
+            <h1 className="m-0 text-[18px] leading-[1.2] font-strong tracking-title sm:truncate sm:text-[22px]">
               {heading[1]}
             </h1>
             <p className="m-0 hidden truncate text-ctl text-muted sm:block">{heading[2]}</p>
@@ -410,26 +410,27 @@ export function EmployerShell({
                       </Link>
                     </li>
                     <li>
-                      <Link href="/account" onClick={close} className={menuLink}>
+                      <a href="/account" onClick={close} className={menuLink}>
                         <Icon name="user" />
                         <span>My account</span>
-                      </Link>
+                      </a>
                     </li>
                     {user.homePath !== "/employer" ? (
                       <li>
-                        <Link href={user.homePath} onClick={close} className={menuLink}>
+                        <a href={user.homePath} onClick={close} className={menuLink}>
                           <Icon name="grid" />
                           <span>
                             {user.homePath === "/workspace" ? "Staff workspace" : "Job seeker dashboard"}
                           </span>
-                        </Link>
+                        </a>
                       </li>
                     ) : null}
                     <li>
-                      <Link href="/" onClick={close} className={menuLink}>
+                      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full page load: the public site has its own frame */}
+                      <a href="/" onClick={close} className={menuLink}>
                         <Icon name="external" />
                         <span>View public site</span>
-                      </Link>
+                      </a>
                     </li>
                   </ul>
                   <div className="mt-[6px] border-t border-line px-[2px] pt-[6px]">

@@ -32,17 +32,17 @@ export default async function EmployerSettingsPage() {
           </div>
         </dl>
         <p className="mt-3 text-ctl">
-          <Link href="/account/personal" className="text-accent underline">
+          <a href="/account/personal" className="text-accent underline">
             Personal details
-          </Link>
+          </a>
           {" · "}
-          <Link href="/account/security" className="text-accent underline">
+          <a href="/account/security" className="text-accent underline">
             Password and two-step verification
-          </Link>
+          </a>
           {" · "}
-          <Link href="/account/sessions" className="text-accent underline">
+          <a href="/account/sessions" className="text-accent underline">
             Where you are signed in
-          </Link>
+          </a>
         </p>
       </section>
       <section aria-labelledby="set-orgs" className="rounded-card border border-border-panel p-4">

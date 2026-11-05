@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { FormError, FormSuccess } from "@/components/account/parts";
@@ -535,9 +534,9 @@ export function OpportunityForm({
           The page address and the search and sharing text are written by UPNEXT editors when the listing is
           reviewed, so they stay consistent and accurate. The address is{" "}
           {listing?.public_path ? (
-            <Link href={listing.public_path} className="text-accent underline">
+            <a href={listing.public_path} className="text-accent underline">
               {listing.public_path}
-            </Link>
+            </a>
           ) : (
             "created when the listing is published"
           )}

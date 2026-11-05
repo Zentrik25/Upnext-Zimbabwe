@@ -521,3 +521,127 @@ def test_an_employer_cannot_review_verify_or_publish_their_own_listing(
 def test_the_stored_counters_hold_no_visitor_columns() -> None:
     names = {f.name for model in (ListingDailyStat, ListingHourlyStat) for f in model._meta.get_fields()}
     assert names <= {"id", "opportunity", "day", "hour", "views", "apply_clicks"}
+
+
+# --- pictures follow the moderation and verification rules (D-70) --------------------------------------
+def test_a_picture_change_on_a_published_listing_needs_an_amendment_and_a_fresh_review(
+    acme: tuple[Any, dict[str, Opportunity]], employer: User, people: dict[str, User]
+) -> None:
+    _, mine = acme
+    live = mine["live"]
+    web = signed_in(employer)
+    assert APIClient().get(f"/api/v1/opportunities/{slug(live)}").json()["image"] is None
+    first, second = upload(web, jpeg(shade=20)).json()["name"], upload(web, jpeg(shade=200)).json()["name"]
+    # 1. a published (frozen) revision cannot be edited in place, so a picture cannot be swapped under review
+    live.refresh_from_db()
+    refused = send(
+        web,
+        "patch",
+        f"{J}/listings/{live.pk}",
+        {"row_version": live.row_version, "content": {"featured_image": first}},
+    )
+    assert refused.status_code in (403, 409)
+    assert live.live_version is not None and live.live_version.featured_image is None
+    # 2. an amendment is a new draft: the public keeps the old revision until editors approve the new one
+    amended = send(web, "post", f"{J}/listings/{live.pk}/amend", {"row_version": live.row_version}).json()
+    saved = send(
+        web,
+        "patch",
+        f"{J}/listings/{live.pk}",
+        {"row_version": amended["row_version"], "content": {"featured_image": first}},
+    )
+    assert saved.status_code == 200 and saved.json()["content"]["featured_image"] == first
+    public = APIClient().get(f"/api/v1/opportunities/{slug(live)}").json()
+    assert public["image"] is None  # not public: nobody has reviewed it
+    sent = send(web, "post", f"{J}/listings/{live.pk}/submit", {"row_version": saved.json()["row_version"]})
+    assert sent.status_code == 200 and sent.json()["status"] == "published"  # the live one stays up
+    # 3. replacing it is another draft cycle; while waiting the version is frozen, so no swap after submission
+    live.refresh_from_db()
+    swap = send(
+        web,
+        "patch",
+        f"{J}/listings/{live.pk}",
+        {"row_version": live.row_version, "content": {"featured_image": second}},
+    )
+    assert swap.status_code in (403, 409)
+    # 4. only a different person's approval and publication puts the new picture on the public page
+    workflow.approve(people["editor2"], live.pk, expected_row_version=live.row_version, checklist=CHECKLIST)
+    live.refresh_from_db()
+    workflow.publish(people["editor2"], live.pk, expected_row_version=live.row_version)
+    public = APIClient().get(f"/api/v1/opportunities/{slug(live)}").json()
+    assert public["image"]["featured"] and first in public["image"]["featured"]
+
+
+def test_a_picture_never_makes_a_listing_or_organisation_verified(
+    acme: tuple[Any, dict[str, Opportunity]], employer: User
+) -> None:
+    _, mine = acme
+    web = signed_in(employer)
+    name = upload(web, jpeg(shade=77)).json()["name"]
+    d = mine["draft"]
+    send(
+        web,
+        "patch",
+        f"{J}/listings/{d.pk}",
+        {"row_version": d.row_version, "content": {"featured_image": name}},
+    )
+    d.refresh_from_db()
+    assert d.is_verified is False
+
+
+def test_another_organisations_member_cannot_edit_or_attach_to_my_listing(
+    acme: tuple[Any, dict[str, Opportunity]], rival: User, people: dict[str, User], world: World
+) -> None:
+    _, mine = acme
+    other_org(rival, people, world)
+    web = signed_in(rival)
+    name = upload(web, jpeg(shade=99)).json()["name"]
+    d = mine["draft"]
+    for method, url, body in (
+        (
+            "patch",
+            f"{J}/listings/{d.pk}",
+            {"row_version": d.row_version, "content": {"featured_image": name}},
+        ),
+        ("post", f"{J}/listings/{d.pk}/submit", {"row_version": d.row_version}),
+        ("post", f"{J}/listings/{d.pk}/discard", {"row_version": d.row_version}),
+        ("post", f"{J}/listings/{mine['live'].pk}/close", {"row_version": 1, "reason": "A rival closes it."}),
+    ):
+        assert send(web, method, url, body).status_code == 404, url
+    assert web.get(f"{J}/listings/{d.pk}/preview").status_code == 404
+    d.refresh_from_db()
+    assert d.status == ListingStatus.DRAFT
+    assert d.pending_version is not None and d.pending_version.featured_image is None
+
+
+def test_listing_pictures_are_served_by_unguessable_names_and_the_api_names_only_the_callers_own(
+    acme: tuple[Any, dict[str, Opportunity]],
+    employer: User,
+    rival: User,
+    people: dict[str, User],
+    world: World,
+) -> None:
+    """Stored pictures are public files with random 128-bit names (like the staff library): they are not
+    listed per organisation, and neither list nor detail endpoints of another organisation reveal a name."""
+    org, mine = acme
+    other_org(rival, people, world)
+    name = upload(signed_in(employer), jpeg(shade=55)).json()["name"]
+    d = mine["draft"]
+    send(
+        signed_in(employer),
+        "patch",
+        f"{J}/listings/{d.pk}",
+        {"row_version": d.row_version, "content": {"featured_image": name}},
+    )
+    stranger = signed_in(rival)
+    for url in (
+        f"{J}/organisations/{org.pk}/listings",
+        f"{J}/listings/{d.pk}",
+        f"{J}/organisations/{org.pk}/dashboard",
+        f"{J}/overview",
+    ):
+        assert name not in stranger.get(url).content.decode(), url
+    assert (
+        stranger.get("/api/v1/staff/media").status_code == 403
+    )  # the staff library is not open to employers
+    assert len(name.removeprefix("listings/").removesuffix(".jpg")) == 32
