@@ -91,10 +91,13 @@ export default async function LandingPage({ params, searchParams }: Props) {
       <section aria-labelledby="landing-title" className="border-b border-line py-[22px]">
         <Container>
           <nav aria-label="Breadcrumb" className="mb-2 text-small text-muted">
-            <Link href="/opportunities" className="text-accent underline">
-              Opportunities
-            </Link>{" "}
-            / <span aria-current="page">{page.heading}</span>
+            {/* In a paragraph, so the link gets the inline-link weight (globals.css, axe link-in-text-block). */}
+            <p className="m-0">
+              <Link href="/opportunities" className="text-accent underline">
+                Opportunities
+              </Link>{" "}
+              / <span aria-current="page">{page.heading}</span>
+            </p>
           </nav>
           <h1 id="landing-title" className="text-section font-strong tracking-section">
             {page.heading}
@@ -169,10 +172,12 @@ export default async function LandingPage({ params, searchParams }: Props) {
             </>
           )}
           <Notice className="mt-6 rounded-card border border-border-notice">
-            Verification labels describe what UPNEXT checked.{" "}
-            <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
-              How to apply safely
-            </Link>
+            <p className="m-0">
+              Verification labels describe what UPNEXT checked.{" "}
+              <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
+                How to apply safely
+              </Link>
+            </p>
           </Notice>
         </section>
         <aside aria-labelledby="landing-related" className="text-base">
