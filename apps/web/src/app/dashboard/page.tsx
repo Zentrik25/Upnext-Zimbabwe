@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/layout";
+import { OpportunityRow } from "@/components/opportunities/parts";
 import { SavedRow } from "@/components/opportunities/saved-row";
 import { RecommendedRow } from "@/components/seeker/recommended-row";
 import { SeekerNav } from "@/components/seeker/seeker-nav";
 import { EmptyState, Panel } from "@/components/ui";
+import { listCategories, listOpportunities } from "@/lib/catalog";
 import { getCurrentUser, getForYou, getJobAlert, getProfile, getSaved } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +18,21 @@ const FEW = new URLSearchParams({ limit: "3" });
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in?next=%2Fdashboard");
-  const [forYou, saved, profile, alert] = await Promise.all([
+  const [forYou, saved, profile, alert, latest, allCategories] = await Promise.all([
     getForYou(FEW),
     getSaved(FEW),
     getProfile(),
     getJobAlert(),
+    listOpportunities(new URLSearchParams({ limit: "6" })),
+    listCategories(),
   ]);
+  // "Latest" is its own list only when the recommendations are matched; with no preferences the recommended
+  // list already is the newest open opportunities, so it is shown once, under that name.
+  const matched = forYou.ok && forYou.data.meta.mode === "matched";
+  const shown = new Set(forYou.ok ? forYou.data.data.map((row) => row.opportunity.id) : []);
+  const newest = latest.ok ? latest.data.data.filter((row) => !shown.has(row.id)).slice(0, 3) : [];
+  const chosen = profile?.categories ?? [];
+  const categories = chosen.length > 0 ? chosen : allCategories;
   const alertLine = !alert
     ? "Unavailable right now."
     : alert.enabled
@@ -48,7 +59,7 @@ export default async function DashboardPage() {
         <section aria-labelledby="dash-foryou">
           <div className="flex items-baseline justify-between gap-3">
             <h2 id="dash-foryou" className="text-title font-strong">
-              Recommended for you
+              {matched || !forYou.ok ? "Recommended for you" : "Latest opportunities"}
             </h2>
             <Link href="/for-you" className="text-ctl text-accent underline">
               See all
@@ -64,13 +75,13 @@ export default async function DashboardPage() {
             </EmptyState>
           ) : (
             <>
-              {forYou.data.meta.mode === "newest" ? (
-                <p className="mt-1 text-small text-muted">
-                  Showing the newest open opportunities.{" "}
+              {!matched ? (
+                <p className="mt-1 text-small text-muted" data-testid="personalise">
+                  Showing the newest open opportunities, because no preferences are saved yet.{" "}
                   <Link href="/profile" className="text-accent underline">
-                    Add your preferences
+                    Personalise your feed
                   </Link>{" "}
-                  for matches.
+                  to see matches and why they were chosen.
                 </p>
               ) : null}
               <div className="mt-2 border-t border-line" data-testid="dash-foryou">
@@ -108,6 +119,57 @@ export default async function DashboardPage() {
           )}
         </section>
 
+        {matched && newest.length > 0 ? (
+          <section aria-labelledby="dash-latest">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 id="dash-latest" className="text-title font-strong">
+                Latest opportunities
+              </h2>
+              <Link href="/opportunities" className="text-ctl text-accent underline">
+                See all
+              </Link>
+            </div>
+            <div className="mt-2 border-t border-line" data-testid="dash-latest">
+              {newest.map((row) => (
+                <OpportunityRow
+                  key={row.id}
+                  row={row}
+                  save={{ signedIn: true, saved: row.is_saved === true, returnTo: "/dashboard" }}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {categories.length > 0 ? (
+          <section aria-labelledby="dash-categories">
+            <h2 id="dash-categories" className="text-title font-strong">
+              {chosen.length > 0 ? "Your categories" : "Browse by category"}
+            </h2>
+            <ul className="m-0 mt-2 flex list-none flex-wrap gap-2 p-0" data-testid="dash-categories">
+              {categories.map((category) => (
+                <li key={category.code}>
+                  <Link
+                    href={`/opportunities?category=${encodeURIComponent(category.code)}`}
+                    className="inline-flex min-h-[36px] items-center rounded-control border border-control-border bg-surface px-3 text-ctl text-ink hover:bg-row-hover"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {chosen.length === 0 ? (
+              <p className="m-0 mt-1 text-small text-muted">
+                Choose the categories you care about in{" "}
+                <Link href="/profile" className="text-accent underline">
+                  your profile
+                </Link>
+                .
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Panel role="region" aria-labelledby="dash-profile">
             <h2 id="dash-profile" className="text-title font-strong">
@@ -122,7 +184,9 @@ export default async function DashboardPage() {
             </p>
             <p className="mt-2">
               <Link href="/profile" className="text-ctl text-accent underline">
-                Edit profile
+                {profile && profile.fields_filled > 0 && profile.fields_filled >= profile.fields_total
+                  ? "Edit profile"
+                  : "Complete your profile"}
               </Link>
             </p>
           </Panel>

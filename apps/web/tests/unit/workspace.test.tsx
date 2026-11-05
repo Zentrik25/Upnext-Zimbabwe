@@ -159,9 +159,9 @@ describe("workspace plumbing", () => {
     expect(safeNext("/workspace/records/claims?status=pending")).toBe(
       "/workspace/records/claims?status=pending",
     );
-    expect(safeNext("/workspace/a/b/c/d/e")).toBe("/account");
-    expect(safeNext("/workspace/..%2f..")).toBe("/account");
-    expect(safeNext("//evil.example/workspace")).toBe("/account");
+    expect(safeNext("/workspace/a/b/c/d/e")).toBe("/dashboard");
+    expect(safeNext("/workspace/..%2f..")).toBe("/dashboard");
+    expect(safeNext("//evil.example/workspace")).toBe("/dashboard");
   });
 
   it("keeps the workspace out of search indexes", () => {

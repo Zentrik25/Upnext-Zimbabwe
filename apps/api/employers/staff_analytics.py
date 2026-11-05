@@ -310,6 +310,33 @@ def opportunity_rows(
     }
 
 
+def window_totals(scope: QuerySet[Opportunity] | None, window: Window) -> dict[str, int]:
+    """Views and apply clicks of one window (the daily counters for all time, the hourly ones otherwise)."""
+    if window.source == "daily":
+        row = _daily(scope).aggregate(v=Sum("views"), a=Sum("apply_clicks"))
+    else:
+        row = _hourly(scope, window).aggregate(v=Sum("views"), a=Sum("apply_clicks"))
+    return {"views": int(row["v"] or 0), "apply_clicks": int(row["a"] or 0)}
+
+
+def per_listing(ids: list[Any], window: Window) -> dict[str, dict[str, int]]:
+    """Views and apply clicks in a window for a page of listings (one grouped query)."""
+    rows: QuerySet[Any]
+    if window.source == "daily":
+        rows = ListingDailyStat.objects.filter(opportunity_id__in=ids)
+    else:
+        rows = ListingHourlyStat.objects.filter(opportunity_id__in=ids)
+        if window.lo is not None:
+            rows = rows.filter(hour__gte=window.lo)
+        if window.hi is not None:
+            rows = rows.filter(hour__lt=window.hi)
+    grouped = rows.values("opportunity_id").annotate(v=Sum("views"), a=Sum("apply_clicks"))
+    return {
+        str(r["opportunity_id"]): {"views": int(r["v"] or 0), "apply_clicks": int(r["a"] or 0)}
+        for r in grouped
+    }
+
+
 def job_stats(opportunity_id: Any, now: datetime) -> dict[str, Any]:
     """One listing: all-time, 24-hour, 7-day and 30-day views and apply clicks, and its saves."""
     only = Opportunity.objects.filter(pk=opportunity_id)

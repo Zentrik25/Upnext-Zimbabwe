@@ -332,12 +332,17 @@ def test_only_files_with_no_library_row_are_swept_after_a_day(world: World, peop
     assert default_storage.exists(unattached)
 
 
-def test_employers_cannot_set_images(world: World, people: dict[str, User]) -> None:
+def test_employers_may_set_pictures_but_still_not_the_address_or_search_text(
+    world: World, people: dict[str, User]
+) -> None:
+    """D-70: pictures are the employer's own and are reviewed with the revision; the rest stays with staff."""
     for key in ("featured_image", "featured_image_alt", "social_image"):
+        check_content(None, {}, {key: "x"})  # no longer refused
+    for key in ("slug", "seo_title", "seo_description", "og_title", "og_description"):
         with pytest.raises(PermissionDeniedError) as exc:
             check_content(None, {}, {key: "x"})
         assert exc.value.code == "staff_only_field"
-    assert {"featured_image", "social_image"} <= content_mod.STAFF_ONLY_KEYS
+    assert not {"featured_image", "social_image"} & content_mod.STAFF_ONLY_KEYS
 
 
 def test_images_belong_to_the_revision_and_change_its_hash(world: World, people: dict[str, User]) -> None:

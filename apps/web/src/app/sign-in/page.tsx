@@ -4,7 +4,7 @@ import { SignInForm } from "@/components/account/sign-in-form";
 import { AuthPage } from "@/components/account/auth-parts";
 import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { CreateAccountPrompt, GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
-import { safeNext } from "@/lib/safe-next";
+import { explicitNext, landing } from "@/lib/safe-next";
 import { getAuthProviders, getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +16,9 @@ export default async function SignInPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = await searchParams;
-  const next = safeNext(query.next);
-  if (await getCurrentUser()) redirect(next);
+  const next = explicitNext(query.next);
+  const user = await getCurrentUser();
+  if (user) redirect(landing(next, user.home_path)); // already signed in: straight to the right dashboard
   const providers = await getAuthProviders();
   return (
     <AuthPage title="Sign in to your account">

@@ -100,6 +100,23 @@ urlpatterns = [
         name="employer-listings",
     ),
     path(
+        "employer/organisations/<uuid:organisation_id>/dashboard",
+        employer_views.DashboardView.as_view(),
+        name="employer-dashboard",
+    ),
+    path("employer/categories", employer_views.CategoryListView.as_view(), name="employer-categories"),
+    path("employer/images", employer_views.ImageUploadView.as_view(), name="employer-image-upload"),
+    path(
+        "employer/listings/<uuid:opportunity_id>/preview",
+        employer_views.PreviewListingView.as_view(),
+        name="employer-listing-preview",
+    ),
+    path(
+        "employer/listings/<uuid:opportunity_id>/duplicate",
+        employer_views.DuplicateListingView.as_view(),
+        name="employer-listing-duplicate",
+    ),
+    path(
         "employer/organisations/<uuid:organisation_id>/analytics",
         employer_views.AnalyticsView.as_view(),
         name="employer-analytics",

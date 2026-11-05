@@ -106,12 +106,36 @@ test("2. registration and confirmation lead to a private profile that is optiona
   await shot(page, "seeker-01-dashboard-empty");
   await axeClean(page, "dashboard (empty)");
   const nav = page.getByRole("navigation", { name: "Your UPNEXT" });
-  await expect(nav.getByRole("link")).toHaveText(["Overview", "For you", "Saved", "Profile", "Alerts"]);
+  await expect(nav.getByRole("link")).toHaveText([
+    "Dashboard",
+    "Recommended",
+    "Saved",
+    "Profile",
+    "Alerts",
+    "Settings",
+  ]);
+  await expect(page.getByTestId("personalise")).toContainText("Personalise your feed");
+  await expect(page.getByTestId("dash-categories").getByRole("link").first()).toBeVisible();
 
   await page.goto("/for-you");
   await expect(page.getByTestId("foryou-note")).toContainText("You have not chosen any preferences yet");
   await expect(page.getByTestId("why")).toHaveCount(0); // no reasons are invented
   await shot(page, "seeker-02-foryou-empty");
+});
+
+test("2b. signing in with no return address lands on the jobseeker dashboard, never the Account page", async ({
+  page,
+}) => {
+  await signIn(page, EMAIL); // no ?next=
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto("/sign-in");
+  await expect(page).toHaveURL(/\/dashboard$/); // already signed in: no sign-in page, no loop
+  await page.goto("/employer/analytics");
+  await expect(page).toHaveURL(/\/employer/); // the employer pages need an organisation; the API says 404 or empty
+  await page.goto("/workspace");
+  await expect(page).toHaveURL(/\/dashboard$/); // staff pages send a jobseeker to their own dashboard
+  await page.goto("/account");
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
 });
 
 test("3. the profile is filled in step by step and saved; the dashboard reflects it", async ({ page }) => {

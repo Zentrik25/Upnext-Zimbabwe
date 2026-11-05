@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ListingActions } from "@/components/employer/listing-actions";
-import { ListingForm } from "@/components/employer/listing-form";
-import { EmployerHeading, StatusTag } from "@/components/employer/parts";
-import { Container } from "@/components/layout";
+import { OpportunityForm } from "@/components/employer/opportunity-form";
+import { StatusTag } from "@/components/employer/parts";
 import { Callout } from "@/components/ui";
-import { listLocations } from "@/lib/catalog";
+import { listLocations, listSectors } from "@/lib/catalog";
+import { getEmployerContext } from "@/lib/employer-context";
 import type { EmployerListingDetail } from "@/lib/employer-types";
-import { authedJson, getCurrentUser } from "@/lib/session";
+import { authedJson } from "@/lib/session";
+import type { StaffCategory } from "@/lib/staff-types";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Your listing", robots: { index: false } };
+export const metadata: Metadata = { title: "Opportunity", robots: { index: false } };
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -26,42 +27,53 @@ const WHAT_NEXT: Record<string, string> = {
 
 export default async function EmployerListingPage({ params }: Props) {
   const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) redirect(`/sign-in?next=${encodeURIComponent(`/employer/listings/${id}`)}`);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const context = await getEmployerContext();
+  if (!context) redirect(`/sign-in?next=${encodeURIComponent(`/employer/listings/${id}`)}`);
   const result = await authedJson<EmployerListingDetail>(`employer/listings/${encodeURIComponent(id)}`);
   if (!result.ok) {
-    if (result.status === 404) notFound();
+    if (result.status === 404) notFound(); // someone else's listing is indistinguishable from a missing one
     return (
-      <Container className="py-10" role="alert">
+      <div role="alert" className="py-10">
         The listing could not be loaded. Try again shortly.
-      </Container>
+      </div>
     );
   }
   const listing = result.data;
   const editable = listing.next_actions.includes("edit");
-  const locations = editable ? await listLocations() : [];
+  const [categories, locations, sectors] = editable
+    ? await Promise.all([
+        authedJson<{ data: StaffCategory[] }>("employer/categories"),
+        listLocations(),
+        listSectors(),
+      ])
+    : [null, [], []];
   return (
-    <Container className="pt-6 pb-[65px]">
-      <p className="text-ctl">
-        <Link href="/employer" className="text-accent underline">
-          ← Employer dashboard
+    <div className="grid gap-4 [&>*]:min-w-0">
+      <p className="m-0 text-ctl">
+        <Link href="/employer/opportunities" className="text-accent underline">
+          ← Opportunities
         </Link>
       </p>
-      <div className="mt-3">
-        <EmployerHeading title={listing.content.title || "Untitled draft"}>
-          <StatusTag status={listing.status} />
-        </EmployerHeading>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="m-0 text-title font-strong tracking-title">
+          {listing.content.title || "Untitled draft"}
+        </h2>
+        <StatusTag status={listing.status} />
+        <Link href={`/employer/listings/${listing.id}/preview`} className="text-ctl text-accent underline">
+          Preview
+        </Link>
       </div>
-      <p className="mt-1 text-base text-muted">
+      <p className="m-0 -mt-2 text-base text-muted">
         {listing.organisation.name} · {listing.category.name} · version {listing.version_no}
       </p>
       {listing.decision ? (
-        <div role="status" className="mt-4 border border-urgent p-3 text-base" data-testid="decision">
+        <div role="status" className="border border-urgent p-3 text-base" data-testid="decision">
           <strong>An editor sent this back.</strong> Reason: {listing.decision.reason}
         </div>
       ) : null}
       {!editable ? (
-        <Callout className="mt-4" data-testid="listing-readonly">
+        <Callout data-testid="listing-readonly">
           <p className="text-base">{WHAT_NEXT[listing.status] ?? WHAT_NEXT[listing.version_state] ?? ""}</p>
           {listing.public_path && listing.status === "published" ? (
             <p className="mt-2 text-base">
@@ -72,29 +84,27 @@ export default async function EmployerListingPage({ params }: Props) {
           ) : null}
         </Callout>
       ) : null}
-      <div className="mt-4">
-        <ListingActions listing={listing} />
-      </div>
-      {editable ? (
-        <div className="mt-5 max-w-[640px]">
-          <ListingForm
-            organisationId={listing.organisation.id}
-            locations={locations.map((l) => ({ id: l.id, name: l.name }))}
-            listing={listing}
-          />
-        </div>
+      <ListingActions listing={listing} />
+      {editable && categories?.ok ? (
+        <OpportunityForm
+          organisation={listing.organisation}
+          categories={categories.data.data}
+          locations={locations}
+          sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}
+          listing={listing}
+        />
       ) : (
-        <dl className="mt-5 grid max-w-[720px] gap-2 text-base">
+        <dl className="m-0 grid max-w-[720px] gap-2 text-base">
           <div>
-            <dt className="text-small text-muted">Summary</dt>
-            <dd className="ml-0">{listing.content.summary}</dd>
+            <dt className="text-small text-muted">Overview</dt>
+            <dd className="ml-0">{listing.content.summary || "Not stated"}</dd>
           </div>
           <div>
-            <dt className="text-small text-muted">Description</dt>
+            <dt className="text-small text-muted">Key responsibilities</dt>
             <dd className="ml-0 whitespace-pre-line">{listing.content.description_md}</dd>
           </div>
         </dl>
       )}
-    </Container>
+    </div>
   );
 }

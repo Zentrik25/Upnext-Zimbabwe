@@ -196,9 +196,15 @@ paths:
     get:
       tags: [employer]
       operationId: listEmployerListings
-      summary: 'The organisation listings'
+      summary: 'The organisation listings, filtered and paged (D-70)'
+      description: 'Filters: `q` (title), `status` (all, active, draft, review, changes, expired, withdrawn), `period` for the views and apply-click columns, `page`, `page_size` (at most 50).'
       parameters:
         - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 80 } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [all, active, draft, review, changes, expired, withdrawn] } }
+        - { name: period, in: query, required: false, schema: { type: string, enum: ['24h', '7d', '30d', '90d', all] } }
+        - { name: page, in: query, required: false, schema: { type: integer, minimum: 1 } }
+        - { name: page_size, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50 } }
       security: [{ cookieAuth: [] }]
       responses:
         '200': { description: 'Listings with status, the reasons editors gave, and next actions', content: { application/json: { schema: { type: object } } } }
@@ -218,6 +224,48 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /employer/organisations/{organisation_id}/dashboard:
+    get:
+      tags: [employer]
+      operationId: getEmployerDashboard
+      summary: 'Counts, views chart and totals of the organisation (D-70)'
+      description: 'Only the caller own organisation. Views are page views per browser tab session; apply clicks are clicks on the apply button or link, never applications; unique visitors are not measured.'
+      parameters:
+        - { name: organisation_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: period, in: query, required: false, schema: { type: string, enum: ['24h', '7d', '30d', '90d', all], default: 7d } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'Counts (total, active, drafts, expired and the states between), views and apply-click totals with the previous period, zero-filled chart points, most viewed', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/categories:
+    get:
+      tags: [employer]
+      operationId: listEmployerCategories
+      summary: 'The categories an employer may post in, with the fields of their detail schema (D-70)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /employer/images:
+    post:
+      tags: [employer]
+      operationId: uploadEmployerImage
+      summary: 'Upload a listing picture (JPEG, PNG or WebP, up to 5 MB); members of a verified organisation only (D-70)'
+      description: 'Same validation and re-encoding as the staff upload. The answer names the stored picture only; attaching it is the ordinary draft save.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } } } }
+      responses:
+        '200': { description: 'The same picture was already stored', content: { application/json: { schema: { type: object } } } }
+        '201': { description: 'The stored picture', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { description: '`file_too_large`', content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '429': { $ref: '#/components/responses/RateLimited' }
   /employer/organisations/{organisation_id}/analytics:
     get:
       tags: [employer]
@@ -305,6 +353,33 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /employer/listings/{opportunity_id}/preview:
+    get:
+      tags: [employer]
+      operationId: previewEmployerListing
+      summary: 'The revision being worked on, in the public listing shape (D-70)'
+      description: 'Read only; only for a listing of an organisation the caller acts for. Anything else is a 404.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'The public shape of the revision', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /employer/listings/{opportunity_id}/duplicate:
+    post:
+      tags: [employer]
+      operationId: duplicateEmployerListing
+      summary: 'Copy a listing of the organisation into a new draft (D-70)'
+      description: 'The copy is a separate listing that goes through the whole review. The closing date, reference number and address are not copied.'
+      parameters:
+        - { name: opportunity_id, in: path, required: true, schema: { type: string, format: uuid } }
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '201': { description: 'The new draft', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /employer/listings/{opportunity_id}/amend:
     post:
       tags: [employer]
@@ -1893,6 +1968,7 @@ components:
         deletion_requested_at: { type: [string, 'null'], format: date-time, description: 'Set while an account-deletion request is pending (OQ-09). Added in Phase 3; additive.' }
         deletion_scheduled_for: { type: [string, 'null'], format: date-time, description: 'When a pending deletion will be carried out (request plus the cooling-off period). Added in Phase 4; additive.' }
         email_change_available: { type: boolean, description: 'True when change of e-mail address can be used: delivery has been verified (P5-07) and the account holds no staff role. Added in Phase 5; additive.' }
+        home_path: { type: string, enum: [/workspace, /employer, /dashboard], description: 'The dashboard this account lands on after signing in, chosen by the server from current authority (staff, then employer, then jobseeker). Added in D-70; additive.' }
     AdminUser:
       allOf:
         - $ref: '#/components/schemas/User'

@@ -34,7 +34,7 @@ async function signIn(page: Page, email: string, password: string, next?: string
 
 /**
  * Signing out is asynchronous: the button posts to /auth/logout and only then redirects to "/". The session stays
- * valid until that finishes, and /sign-in sends a signed-in person on to /account, so navigating straight after
+ * valid until that finishes, and /sign-in sends a signed-in person on to their dashboard, so navigating straight after
  * the click races the request (CI run 40659263462). Wait for the signed-out header before doing anything else.
  */
 async function signOut(page: Page) {
@@ -115,7 +115,9 @@ test("3. the e-mailed link confirms the address (explicit click, token removed f
   await expect(page.getByRole("alert").filter({ hasText: "Error:" })).toContainText("invalid or has expired");
 
   await signIn(page, EMAIL, PASSWORD);
-  await expect(page).toHaveURL(/\/account$/);
+  // A jobseeker lands on their own dashboard, never on the Account page (D-70); Account is one click away.
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto("/account");
   await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Saved" })).toBeVisible();
   await shot(page, "acct-07-account");
@@ -162,9 +164,9 @@ test("4. a signed-in person can save and unsave from the list, the detail page a
 
 test("5. account settings: name, password, sessions, deletion request", async ({ page, browser }) => {
   await signIn(page, EMAIL, PASSWORD);
-  // The sign-in request must finish (it ends in the redirect to /account) before navigating on, or the
+  // The sign-in request must finish (it ends in the redirect to /dashboard) before navigating on, or the
   // navigation cancels it and the next page opens signed out.
-  await expect(page).toHaveURL(/\/account$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/account/personal");
   await page.getByLabel("Name").fill("Tendai M. Moyo");
   await page.getByRole("button", { name: "Save name" }).click();
@@ -174,7 +176,7 @@ test("5. account settings: name, password, sessions, deletion request", async ({
   const other = await browser.newContext();
   const second = await other.newPage();
   await signIn(second, EMAIL, PASSWORD);
-  await expect(second).toHaveURL(/\/account$/);
+  await expect(second).toHaveURL(/\/dashboard$/);
 
   await page.goto("/account/sessions");
   // earlier tests of this journey left their own sessions signed in, so there are several

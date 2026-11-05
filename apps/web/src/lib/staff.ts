@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { landing } from "./safe-next";
 import { authedJson, getCurrentUser } from "./session";
 import type { StaffSession } from "./staff-types";
 
@@ -13,7 +14,7 @@ const session = cache(() => authedJson<StaffSession>("staff/session"));
 
 /**
  * The signed-in, two-step-verified staff member, or a redirect: visitors go to sign-in, seekers and employers
- * to the home page, staff who have not passed the second step to the two-step page. The API re-checks every
+ * to their own dashboard, staff who have not passed the second step to the two-step page. The API re-checks every
  * request; this only picks the right page.
  */
 export async function requireStaff(next: string): Promise<StaffSession> {
@@ -22,7 +23,7 @@ export async function requireStaff(next: string): Promise<StaffSession> {
     if (result.status === 0 || result.status === 401 || result.status === 403) {
       const user = await getCurrentUser();
       if (!user) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
-      if (result.status !== 0) redirect("/");
+      if (result.status !== 0) redirect(landing(undefined, user.home_path)); // not staff: their own dashboard
     }
     throw new Error("The staff service could not be reached.");
   }
@@ -38,7 +39,7 @@ export async function requireStaffAccount(): Promise<StaffSession> {
   if (!result.ok) {
     const user = await getCurrentUser();
     if (!user) redirect("/sign-in?next=%2Fworkspace");
-    if (result.status !== 0) redirect("/");
+    if (result.status !== 0) redirect(landing(undefined, user.home_path));
     throw new Error("The staff service could not be reached.");
   }
   return result.data;

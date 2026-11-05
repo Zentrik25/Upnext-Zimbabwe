@@ -105,6 +105,9 @@ SINGLE_LINE = {
     "featured_image_alt": 125,
 }
 # Staff-only content: an employer's draft never carries a chosen address or search/sharing text (D-56).
+# Pictures are not in this set since D-70: an employer may upload a featured and a sharing picture, which are
+# part of the revision and so reviewed with it (nothing is public before an independent editor approves the
+# exact revision).
 STAFF_ONLY_KEYS = frozenset(
     {
         "slug",
@@ -112,9 +115,6 @@ STAFF_ONLY_KEYS = frozenset(
         "seo_description",
         "og_title",
         "og_description",
-        "featured_image",
-        "featured_image_alt",
-        "social_image",
     }
 )
 MULTI_LINE = {"description_md": 20000, "requirements_md": 10000, "application_instructions": 2000}

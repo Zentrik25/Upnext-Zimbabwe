@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui";
 import { apiFetch, describeFailure } from "@/lib/client-api";
-import { safeNext } from "@/lib/safe-next";
+import { landing } from "@/lib/safe-next";
 import { AuthField } from "./auth-parts";
 import { FormError } from "./parts";
 import { TrustDeviceCheckbox } from "./trusted-devices-panel";
@@ -23,13 +23,12 @@ export function SignInTwoStepForm({ next }: { next?: string }) {
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setFailure(null);
-    const outcome = await apiFetch<{ roles?: string[] }>("POST", "auth/login/two-step", {
+    const outcome = await apiFetch<{ home_path?: string }>("POST", "auth/login/two-step", {
       code: String(form.get("code") ?? "").trim(),
       trust_device: trust,
     });
     if (outcome.ok) {
-      const staff = (outcome.data?.roles?.length ?? 0) > 0;
-      router.replace(safeNext(next, staff ? "/workspace" : "/account"));
+      router.replace(landing(next, outcome.data?.home_path));
       router.refresh();
       return;
     }
