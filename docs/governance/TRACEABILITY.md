@@ -68,6 +68,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-58 | Trusted devices (D-59): after a verified code a person may trust a browser for 30 days; the server keeps only a hash of an HttpOnly cookie value; a correct password then skips the code unless the device is new, expired, revoked, used from a different kind of browser, doubted after failed attempts, or (staff) its last proved code is older than 24 hours; a password or two-step change, an Administrator's revocation, suspension, removal and role change revoke every device; trusted devices are managed in Account → Security; staff keep the second-step gate and fresh code every 24 hours | D-59; P3-07; D-54; OQ-16 | SC-12, SC-13 | listTrustedDevices, revokeAllTrustedDevices, revokeTrustedDevice | TRUST-01…TRUST-06 | OQ-16 |
 | R-62 | Simpler publishing (D-62): duplicates judged by organisation, normalised title and listing details (one confirmation for a true duplicate, no id or explanation); no source fields; central Media Library (choose or upload, reuse across listings, unlinking never deletes the file); one Verify/Unverify switch enforced on the server and shown on the public page; six-part job form | D-62; D-58; D-56; D-46 | SC-12 | listStaffMedia, uploadStaffMedia, setStaffVerification | MEDIA-01, MEDIA-02, DUP-01, DUP-02, VERIFY-01, VERIFY-02 | OQ-34 |
 | R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
+| R-64 | Search-engine hardening and organic discovery (D-68): a page whose data could not be loaded is a server error, never 200 with noindex; metadata in <head> for every client; one canonical address per listing; the full JobPosting description; a sitemap with real lastmod values, company profiles and no shortened file on failure; six fact-defined landing pages, indexable only from three open listings; the Google Indexing API for JobPosting pages only, off by default, idempotent, quota-aware, retried with back-off, its key mounted in the worker only | D-68; D-51; D-28; P4-02 | SC-01, SC-02, SC-03 | listOpportunities, getSitemapEntries, getOpportunity | SEO-10, SEO-11, SEO-12, SEO-13, IDX-01, IDX-02, IDX-03 | OQ-20 |
 
 ## 2. Screen register
 
@@ -96,8 +97,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | Operation | Method path | Tag | Requirements |
 |---|---|---|---|
 | `getApiRoot` | GET `/` | health | R-24 |
-| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26 |
-| `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29 |
+| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-64 |
+| `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29, R-64 |
 | `getEmployerOverview` | GET `/employer/overview` | employer | R-42 |
 | `searchOrganisationsToClaim` | GET `/employer/organisations/search` | employer | R-42 |
 | `submitOrganisationClaim` | POST `/employer/claims` | employer | R-42 |
@@ -118,7 +119,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |
 | `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `createListingReport` | POST `/opportunities/{slug}/reports` | public | R-50 |
-| `getSitemapEntries` | GET `/sitemap` | public | R-29 |
+| `getSitemapEntries` | GET `/sitemap` | public | R-29, R-64 |
 | `listCategories` | GET `/categories` | public | R-01 |
 | `listLocations` | GET `/locations` | public | R-01 |
 | `listSectors` | GET `/sectors` | public | R-01 |
@@ -223,7 +224,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 
 ## 4. Test catalogue (planned)
 
-Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migration; **API** API contract; **AUTH** Authentication; **E2E** Playwright end to end; **A11Y** Accessibility; **VIS** Visual comparison to reference; **SEC** Security / authorisation; **WF** Workflow state machine; **SOD** Separation of duties; **VER** Verification & provenance; **VAL** Validation; **AUD** Audit; **MAIL** Email outbox; **PRE** Production preflight and database privileges; **BAK** Backup and restore; **MON** Monitoring and alerting; **EDT** Editorial launch tooling; **ACC** Account completion; **PRV** Privacy documentation; **ADM** Administration; **PRIV** Privacy; **OPS** Operations; **PERF** Performance; **JOB** Scheduled jobs; **SEO** SEO/indexing; **SCOPE** Scope guard; **PRF** Seeker profile; **FY** For You engine; **ALR** Job alerts; **SKR** Jobseeker browser journey.
+Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migration; **API** API contract; **AUTH** Authentication; **E2E** Playwright end to end; **A11Y** Accessibility; **VIS** Visual comparison to reference; **SEC** Security / authorisation; **IDX** Google Indexing API; **WF** Workflow state machine; **SOD** Separation of duties; **VER** Verification & provenance; **VAL** Validation; **AUD** Audit; **MAIL** Email outbox; **PRE** Production preflight and database privileges; **BAK** Backup and restore; **MON** Monitoring and alerting; **EDT** Editorial launch tooling; **ACC** Account completion; **PRV** Privacy documentation; **ADM** Administration; **PRIV** Privacy; **OPS** Operations; **PERF** Performance; **JOB** Scheduled jobs; **SEO** SEO/indexing; **SCOPE** Scope guard; **PRF** Seeker profile; **FY** For You engine; **ALR** Job alerts; **SKR** Jobseeker browser journey.
 
 | Test id | Intent |
 |---|---|
@@ -406,6 +407,13 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-07 | JobPosting: none after the deadline, a place is required, remote needs an applicant country, pay needs a period and an ISO currency, identifier as PropertyValue; Article only for the guides |
 | SEO-08 | Sitemap, robots.txt, canonical and noindex agree: sitemap addresses are crawlable, indexable and self-canonical; no rule hides a linked noindex page; every non-public page is noindex or disallowed; one canonical domain |
 | SEO-09 | Editorial guides: one H1, no skipped heading level, visible dates equal the Article dates, every internal link resolves to a route |
+| SEO-10 | A listing, company profile, indexable list, landing page or sitemap whose data could not be loaded (unreachable, 429, unexpected answer) is a server error, never 200 with noindex; a missing listing stays 404; metadata is in <head> for every user agent |
+| SEO-11 | One canonical listing address (any other spelling is a permanent redirect); the JobPosting description is the full visible description and requirements as HTML, never cut short |
+| SEO-12 | Sitemap from one feed: real lastmod for listings, category lists, landing pages, guides and company profiles, none for static pages; categories only with an open listing, landing pages only from the threshold |
+| SEO-13 | Landing pages: collections defined by recorded facts, employment categories only, never a closed listing or a repeated row, cursor bound to the collection; indexable only from three open listings, later pages noindex and self-canonical, unknown slugs 404, real listings and related links server-rendered |
+| IDX-01 | Indexing API queue: only pages that carry JobPosting; URL_UPDATED on publication, one URL_DELETED when a job closes in any way; one row per event; newer events supersede unsent ones; a rolled-back decision queues nothing; a queue failure never blocks a decision |
+| IDX-02 | Indexing API sending: a verified RS256 service-account assertion with the indexing scope only; quota per Pacific day never exceeded; 429 defers to the next day; 401, 5xx and network errors retried with growing back-off; other 4xx dead with an alert; stale claims recovered; the current listing state wins |
+| IDX-03 | Indexing API configuration: off by default and in the base Compose file; key only in the worker through the optional overlay, read-only; preflight refuses a key others can read; credentials never exposed by an API or a log |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -673,6 +681,13 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-07 | `apps/web/tests/unit/seo.test.tsx (JobPosting, pay, places, deadline, Article)` | executed |
 | SEO-08 | `apps/web/tests/unit/seo-readiness.test.tsx (robots, sitemap, consistency, private-route guard, one domain); apps/web/tests/e2e/seo.spec.ts` | unit executed; browser test run by CI |
 | SEO-09 | `apps/web/tests/unit/seo-readiness.test.tsx (guides, internal link integrity)` | executed |
+| SEO-10 | `apps/web/tests/unit/seo-hardening.test.tsx; apps/web/tests/unit/seo-readiness.test.tsx; production build against the real API with the API stopped (docs/engineering/SEO_AUDIT_2026-11.md section 5)` | executed |
+| SEO-11 | `apps/web/tests/unit/seo-hardening.test.tsx; apps/web/tests/unit/seo.test.tsx` | executed (Google's Rich Results Test was not run: no external access) |
+| SEO-12 | `apps/web/tests/unit/seo-readiness.test.tsx (sitemap.xml source); apps/api/tests/test_collections.py; apps/api/tests/test_sitemap.py` | executed |
+| SEO-13 | `apps/api/tests/test_collections.py; apps/web/tests/unit/seo-hardening.test.tsx (organic landing pages)` | executed |
+| IDX-01 | `apps/api/tests/test_indexing.py (what is queued)` | executed with mocked Google answers; nothing was sent to Google |
+| IDX-02 | `apps/api/tests/test_indexing.py (sending, credentials and tokens)` | executed with mocked Google answers; nothing was sent to Google |
+| IDX-03 | `apps/api/tests/test_indexing.py (configuration checks); apps/api/tests/test_production_compose.py::test_indexing_is_off_without_its_overlay_and_the_key_reaches_only_the_worker` | executed |
 | PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
 | PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |
 | PRIV-05 | `apps/api/tests/test_deletion.py (retention tests)` | executed against the provisional windows P4-06 |

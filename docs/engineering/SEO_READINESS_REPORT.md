@@ -120,6 +120,9 @@ Local build output, observed (mock API):
 
 ## 7. Evaluations (not implemented, with reasons)
 
+> Update 2026-11-05 (D-68): the Google Indexing API is now implemented for job pages, off by default
+> (`GOOGLE_INDEXING_API.md`), and a follow-up audit is in `SEO_AUDIT_2026-11.md`. IndexNow and `llms.txt` remain as below.
+
 - **Google Indexing API:** limited to job posting (and livestream) pages, needs a Google Cloud service account added as an owner in Search Console, has a default daily quota, and needs publish, update and expire events sent from the editorial workflow. Not implemented: credentials, quota and lifecycle wiring are not in place and the sitemap already reflects publication. Revisit after launch if freshness lags.
 - **IndexNow (Bing and others):** needs a key file at the site root and a call at each publish, update and removal, with outbound network access from the worker. Not implemented; Bing reads the sitemap. Revisit with the same lifecycle hook.
 - **`llms.txt`:** not a Google or Bing indexing mechanism and no major system documents it as a requirement; no operational value shown. Not added.
