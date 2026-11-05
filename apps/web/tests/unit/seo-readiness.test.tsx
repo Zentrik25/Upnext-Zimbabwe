@@ -120,6 +120,8 @@ const FEED = {
     { slug: "harare", count: LANDING_MIN_LISTINGS, updated_at: "2026-10-22T08:00:00Z" },
     { slug: "bulawayo", count: LANDING_MIN_LISTINGS - 1, updated_at: "2026-10-22T08:00:00Z" },
     { slug: "not-a-landing-page", count: 50, updated_at: "2026-10-22T08:00:00Z" },
+    // Enough listings, but exactly the jobs list again: not indexed, not listed (D-68).
+    { slug: "engineering", count: 9, updated_at: "2026-10-22T08:00:00Z", duplicate_of: "category:jobs" },
   ],
   employers: [{ slug: "example-power", updated_at: "2026-10-19T08:00:00Z" }],
 };
@@ -180,6 +182,7 @@ describe("sitemap.xml source", () => {
     expect(urls).not.toContain(`${ORIGIN}/opportunities?category=tenders`);
     expect(urls).toContain(`${ORIGIN}/jobs/harare`);
     expect(urls).not.toContain(`${ORIGIN}/jobs/bulawayo`);
+    expect(urls).not.toContain(`${ORIGIN}/jobs/engineering`);
   });
   it("answers with a server error, not a shortened file, when the API is down (SEO-B03)", async () => {
     catalog.getSitemapEntries.mockResolvedValue({ ok: false, reason: "unreachable" });

@@ -156,9 +156,15 @@ class OpportunityDetailSerializer(OpportunitySummarySerializer):
     updated_at = serializers.DateTimeField()
 
 
+class CollectionInfoSerializer(serializers.Serializer[None]):
+    slug = serializers.CharField()
+    duplicate_of = serializers.CharField(allow_null=True)
+
+
 class OpportunityListSerializer(serializers.Serializer[None]):
     data = OpportunitySummarySerializer(many=True)  # type: ignore[assignment]
     page = PageInfoSerializer()
+    collection = CollectionInfoSerializer(required=False)  # first page of a `collection` query only
 
 
 class SitemapEntrySerializer(serializers.Serializer[None]):
@@ -173,6 +179,7 @@ class SitemapListSerializer(serializers.Serializer[None]):
     slug = serializers.CharField(required=False)
     count = serializers.IntegerField()
     updated_at = serializers.DateTimeField(allow_null=True)
+    duplicate_of = serializers.CharField(allow_null=True, required=False)  # collections only (D-68)
 
 
 class SitemapSerializer(serializers.Serializer[None]):

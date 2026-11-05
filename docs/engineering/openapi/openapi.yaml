@@ -87,6 +87,7 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/OpportunitySummary' } }
                   page: { $ref: '#/components/schemas/PageInfo' }
+                  collection: { type: object, description: 'first page of a `collection` query only (D-68)', required: [slug, duplicate_of], properties: { slug: { type: string }, duplicate_of: { type: [string, 'null'] } } }
         '400': { $ref: '#/components/responses/BadRequest' }
         '429': { $ref: '#/components/responses/RateLimited' }
   /opportunities/{slug}:
@@ -393,7 +394,7 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/SitemapEntry' } }
                   categories: { type: array, items: { type: object, required: [code, count, updated_at], properties: { code: { type: string }, count: { type: integer }, updated_at: { type: [string, 'null'], format: date-time } } } }
-                  collections: { type: array, items: { type: object, required: [slug, count, updated_at], properties: { slug: { type: string }, count: { type: integer }, updated_at: { type: [string, 'null'], format: date-time } } } }
+                  collections: { type: array, items: { type: object, required: [slug, count, updated_at, duplicate_of], properties: { slug: { type: string }, count: { type: integer }, updated_at: { type: [string, 'null'], format: date-time }, duplicate_of: { type: [string, 'null'], description: '"all" or "category:<code>" when the open listings are exactly the same set as the plain list or one category list (D-68), else null' } } } }
                   employers: { type: array, items: { $ref: '#/components/schemas/SitemapEntry' } }
         '429': { $ref: '#/components/responses/RateLimited' }
   /categories:

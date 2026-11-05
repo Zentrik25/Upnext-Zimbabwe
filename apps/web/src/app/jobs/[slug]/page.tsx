@@ -10,7 +10,13 @@ import { socialFor } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { listOpportunities } from "@/lib/catalog";
 import { GUIDES } from "@/lib/guides";
-import { LANDING_MIN_LISTINGS, LANDING_PAGES, landingPage, landingPath } from "@/lib/landing-pages";
+import {
+  LANDING_PAGES,
+  landingIndexable,
+  landingMinListings,
+  landingPage,
+  landingPath,
+} from "@/lib/landing-pages";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor } from "@/lib/structured-data";
@@ -51,7 +57,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const total = result.ok ? (result.data.page.total ?? result.data.data.length) : 0;
   const path = landingPath(slug);
   const canonical = cursor ? `${path}?cursor=${encodeURIComponent(cursor)}` : path;
-  const index = !cursor && total >= LANDING_MIN_LISTINGS;
+  const index = !cursor && result.ok && landingIndexable(total, result.data.collection?.duplicate_of);
   return {
     title: page.title,
     description: page.description,
@@ -162,7 +168,7 @@ export default async function LandingPage({ params, searchParams }: Props) {
                   ) : null}
                 </nav>
               ) : null}
-              {rows.length > 0 && total < LANDING_MIN_LISTINGS ? (
+              {rows.length > 0 && total < landingMinListings() ? (
                 <p className="mt-4 text-base">
                   <Link href={page.broader.href} className="text-accent underline">
                     {page.broader.label}

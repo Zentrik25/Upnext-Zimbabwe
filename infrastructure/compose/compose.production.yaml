@@ -166,6 +166,7 @@ services:
       UPNEXT_HSTS_SECONDS: "31536000"
       NEXT_TELEMETRY_DISABLED: "1"
       UPNEXT_LEGAL_APPROVED: ${UPNEXT_LEGAL_APPROVED:-false} # owner-controlled publication gate for /privacy and /terms (D-44)
+      UPNEXT_LANDING_MIN_LISTINGS: ${UPNEXT_LANDING_MIN_LISTINGS:-3} # open listings before a /jobs/* landing page is indexed (D-68)
       # Advertising is OFF while these are blank (docs/engineering/ADSENSE_SITE_VERIFICATION.md). The owner sets them; none is invented.
       UPNEXT_ADSENSE_CLIENT: ${UPNEXT_ADSENSE_CLIENT:-}
       UPNEXT_ADSENSE_MODE: ${UPNEXT_ADSENSE_MODE:-} # off (blank) | verify (ownership snippet, no ads) | live (ads after consent)

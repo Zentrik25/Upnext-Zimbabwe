@@ -4,12 +4,26 @@
  * listings it holds and how they were chosen, and nothing the data does not back: no counts, salaries, employers or
  * "best" claims are written here; the listings below the text are the real, open ones.
  *
- * Indexing (SEO-B10): a landing page is offered to search engines only while it holds at least
- * `LANDING_MIN_LISTINGS` open listings. With fewer it is still useful to a visitor who arrives by a link, but it is
- * `noindex, follow` and left out of the sitemap, so search engines never receive an almost empty page (no doorway or
- * thin pages). Later pages (`?cursor=`) are noindex, follow and canonical to themselves, like the main list.
+ * Indexing (SEO-B10, D-68 as approved by the owner on 2026-11-05): a landing page is offered to search engines only
+ * while (1) it holds at least `landingMinListings()` open listings, and (2) those listings are not exactly the same
+ * set as another indexable list (the API reports `duplicate_of`), so every indexed landing page holds something of
+ * its own. Otherwise it is still useful to a visitor who arrives by a link, but it is `noindex, follow` and left out
+ * of the sitemap: search engines never receive an almost empty or repeated page (no doorway or thin pages). Its copy
+ * is unique (tested) and its canonical is itself. Later pages (`?cursor=`) are noindex, follow and self-canonical.
  */
 export const LANDING_MIN_LISTINGS = 3;
+
+/** The threshold in force: `UPNEXT_LANDING_MIN_LISTINGS` (a whole number from 1), else `LANDING_MIN_LISTINGS`. */
+export function landingMinListings(): number {
+  const raw = process.env.UPNEXT_LANDING_MIN_LISTINGS;
+  const value = raw && /^\d{1,4}$/.test(raw.trim()) ? Number(raw.trim()) : NaN;
+  return Number.isInteger(value) && value >= 1 ? value : LANDING_MIN_LISTINGS;
+}
+
+/** Whether a landing page may be indexed (and listed in the sitemap): the one rule both places apply. */
+export function landingIndexable(count: number, duplicateOf: string | null | undefined): boolean {
+  return count >= landingMinListings() && !duplicateOf;
+}
 
 export type LandingPage = {
   slug: string;

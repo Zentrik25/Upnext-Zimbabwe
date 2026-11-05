@@ -142,7 +142,31 @@ def test_the_sitemap_feed_reports_open_counts_and_the_newest_publication(
     harare = next(c for c in body["collections"] if c["slug"] == "harare")
     assert harare["count"] == 2
     ngo = next(c for c in body["collections"] if c["slug"] == "ngo")
-    assert ngo == {"slug": "ngo", "count": 0, "updated_at": None}
+    assert ngo == {"slug": "ngo", "count": 0, "updated_at": None, "duplicate_of": None}
     assert {c["slug"] for c in body["collections"]} == set(COLLECTIONS)
     assert one.slug in {e["slug"] for e in body["data"]}
     assert body["employers"] == []  # no approved profile of a verified organisation exists here
+
+
+def test_a_collection_that_only_repeats_another_list_says_so(world: World, people: dict[str, User]) -> None:
+    """D-68: a landing page must hold something of its own; the web app does not index one that repeats a list."""
+
+    def duplicate(collection: str) -> str | None:
+        body = APIClient().get(LIST, {"collection": collection}).json()
+        feed = next(c for c in APIClient().get(SITEMAP).json()["collections"] if c["slug"] == collection)
+        assert body["collection"]["duplicate_of"] == feed["duplicate_of"]  # the page and the sitemap agree
+        value: str | None = feed["duplicate_of"]
+        return value
+
+    assert duplicate("harare") is None  # empty: repeats nothing
+    live(world, people, "jobs-1", "only", locations=at(world, "harare"))
+    assert duplicate("harare") == "all"  # the only open listing anywhere
+    live(world, people, "tenders-1", "elsewhere", locations=at(world, "gweru"))
+    assert duplicate("harare") == "category:jobs"  # the same set as the jobs list
+    live(world, people, "internships-1", "intern", locations=at(world, "harare"))
+    assert duplicate("harare") is None  # a job and an internship: no single list holds exactly these
+    cursor_page = APIClient().get(LIST, {"collection": "harare", "limit": "1"}).json()
+    later = APIClient().get(
+        LIST, {"collection": "harare", "limit": "1", "cursor": cursor_page["page"]["next_cursor"]}
+    )
+    assert "collection" not in later.json()  # only the first page reports it

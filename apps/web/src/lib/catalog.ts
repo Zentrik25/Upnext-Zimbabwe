@@ -81,7 +81,7 @@ export type SitemapFeed = {
   data: Dated[];
   /** Open listings per category and per landing-page collection, with the newest publication among them. */
   categories?: (Counted & { code: string })[];
-  collections?: (Counted & { slug: string })[];
+  collections?: (Counted & { slug: string; duplicate_of?: string | null })[];
   /** Public company profiles, with the approval of their live revision. */
   employers?: Dated[];
 };
@@ -95,7 +95,12 @@ export function getSitemapEntries() {
 }
 
 export function listOpportunities(params: URLSearchParams) {
-  return json<{ data: OpportunitySummary[]; page: Page }>("opportunities", params);
+  return json<{
+    data: OpportunitySummary[];
+    page: Page;
+    /** First page of a `collection` query only: whether it repeats another list exactly (D-68). */
+    collection?: { slug: string; duplicate_of: string | null };
+  }>("opportunities", params);
 }
 
 /** `null` data means the listing is not public (404); other failures keep their reason. */

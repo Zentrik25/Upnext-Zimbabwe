@@ -37,7 +37,14 @@ import { generateMetadata as employerMeta } from "@/app/employers/[slug]/page";
 import LandingPage, { generateMetadata as landingMeta } from "@/app/jobs/[slug]/page";
 import JobsIndex from "@/app/jobs/page";
 import type { OpportunityDetail } from "@/lib/catalog-types";
-import { LANDING_MIN_LISTINGS, LANDING_PAGES, LANDING_SLUGS } from "@/lib/landing-pages";
+import {
+  LANDING_MIN_LISTINGS,
+  LANDING_PAGES,
+  LANDING_SLUGS,
+  landingIndexable,
+  landingMinListings,
+} from "@/lib/landing-pages";
+import { CATEGORY_SEO } from "@/lib/category-seo";
 import { jobDescription, jobPostingFor } from "@/lib/structured-data";
 import { ContentUnavailableError } from "@/lib/unavailable";
 
@@ -175,6 +182,40 @@ describe("organic landing pages (SEO-B10, D-68)", () => {
     expect((await landingMeta(props("bulawayo"))).robots).toEqual({ index: false, follow: true });
     catalog.listOpportunities.mockResolvedValue(listed(0));
     expect((await landingMeta(props("ngo"))).robots).toEqual({ index: false, follow: true });
+  });
+  it("uses a configurable threshold (UPNEXT_LANDING_MIN_LISTINGS), defaulting to 3", async () => {
+    expect(landingMinListings()).toBe(3);
+    process.env.UPNEXT_LANDING_MIN_LISTINGS = "5";
+    try {
+      expect(landingMinListings()).toBe(5);
+      catalog.listOpportunities.mockResolvedValue(listed(4));
+      expect((await landingMeta(props("harare"))).robots).toEqual({ index: false, follow: true });
+      catalog.listOpportunities.mockResolvedValue(listed(5));
+      expect((await landingMeta(props("harare"))).robots).toBeUndefined();
+      for (const bad of ["0", "-2", "three", "2.5", ""]) {
+        process.env.UPNEXT_LANDING_MIN_LISTINGS = bad;
+        expect(landingMinListings(), bad).toBe(3);
+      }
+    } finally {
+      delete process.env.UPNEXT_LANDING_MIN_LISTINGS;
+    }
+  });
+  it("is not indexed when its listings only repeat another list, however many there are", async () => {
+    catalog.listOpportunities.mockResolvedValue({
+      ...listed(10),
+      data: { ...listed(10).data, collection: { slug: "harare", duplicate_of: "category:jobs" } },
+    });
+    expect((await landingMeta(props("harare"))).robots).toEqual({ index: false, follow: true });
+    expect(landingIndexable(10, "all")).toBe(false);
+    expect(landingIndexable(10, null)).toBe(true);
+  });
+  it("has copy distinct from every category page", () => {
+    const category = Object.values(CATEGORY_SEO);
+    for (const page of Object.values(LANDING_PAGES)) {
+      expect(category.map((c) => c.title)).not.toContain(page.title);
+      expect(category.map((c) => c.heading.toLowerCase())).not.toContain(page.heading.toLowerCase());
+      expect(category.map((c) => c.description)).not.toContain(page.description);
+    }
   });
   it("makes later pages noindex, follow and canonical to themselves", async () => {
     catalog.listOpportunities.mockResolvedValue(listed(10));

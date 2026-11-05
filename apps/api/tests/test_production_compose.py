@@ -230,12 +230,18 @@ def test_indexing_is_off_without_its_overlay_and_the_key_reaches_only_the_worker
         assert "UPNEXT_INDEXING_CREDENTIALS_FILE" not in service.get("environment", {}), name
         assert service.get("environment", {}).get("UPNEXT_INDEXING_MODE", "off") == "off", name
     assert compose(REQUIRED, "config", "-q", files=(FILE, INDEXING)).returncode != 0  # key path is required
-    env = {**REQUIRED, "UPNEXT_INDEXING_KEY_HOST_PATH": "/etc/upnext/google-indexing.json"}
+    # The overlay is record-only (D-68): an environment that asks for live sending is ignored.
+    env = {
+        **REQUIRED,
+        "UPNEXT_INDEXING_KEY_HOST_PATH": "/etc/upnext/google-indexing.json",
+        "UPNEXT_INDEXING_MODE": "live",
+    }
     result = compose(env, "config", "--format", "json", files=(FILE, INDEXING))
     assert result.returncode == 0, result.stderr
     services = json.loads(result.stdout)["services"]
     assert services["api"]["environment"]["UPNEXT_INDEXING_MODE"] == "record"  # queue only until set to live
     worker = services["worker"]
+    assert worker["environment"]["UPNEXT_INDEXING_MODE"] == "record"
     assert worker["environment"]["UPNEXT_INDEXING_CREDENTIALS_FILE"] == "/run/upnext/google-indexing.json"
     key = next(v for v in worker["volumes"] if v["target"] == "/run/upnext/google-indexing.json")
     assert key["read_only"] is True

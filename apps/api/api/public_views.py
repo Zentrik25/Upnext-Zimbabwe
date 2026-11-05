@@ -236,17 +236,22 @@ class OpportunityListView(PublicView):
         except public.InvalidQuery as exc:
             return _query_error(exc)
         now = timezone.now()
-        return Response(
-            {
-                "data": [summary_of(v, now) for v in page.items],
-                "page": {
-                    "limit": query.limit,
-                    "has_more": page.has_more,
-                    "next_cursor": page.next_cursor,
-                    "total": page.total,
-                },
+        body: dict[str, Any] = {
+            "data": [summary_of(v, now) for v in page.items],
+            "page": {
+                "limit": query.limit,
+                "has_more": page.has_more,
+                "next_cursor": page.next_cursor,
+                "total": page.total,
+            },
+        }
+        if query.collection and not query.cursor:
+            # The first page of a landing page says whether it only repeats another list (D-68).
+            body["collection"] = {
+                "slug": query.collection,
+                "duplicate_of": public.collection_duplicate_of(query.collection, now),
             }
-        )
+        return Response(body)
 
 
 class OpportunityDetailView(PublicView):
@@ -305,7 +310,12 @@ class SitemapView(PublicView):
                     for c in lists["categories"]
                 ],
                 "collections": [
-                    {"slug": c["slug"], "count": c["count"], "updated_at": _iso(c["latest"])}
+                    {
+                        "slug": c["slug"],
+                        "count": c["count"],
+                        "updated_at": _iso(c["latest"]),
+                        "duplicate_of": c["duplicate_of"],
+                    }
                     for c in lists["collections"]
                 ],
                 "employers": _sitemap_profiles(),

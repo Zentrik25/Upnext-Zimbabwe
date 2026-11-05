@@ -204,6 +204,31 @@ def _open(now: datetime) -> QuerySet[OpportunityVersion]:
     return visible_versions().filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
 
 
+def collection_duplicate_of(slug: str, now: datetime) -> str | None:
+    """The indexable list a collection repeats exactly, or None (D-68: a landing page must hold something of
+    its own). Returns "category:<code>" or "all" when its open listings are the same set as one category list
+    or the plain list; an empty collection repeats nothing."""
+    ids = set(_open(now).filter(COLLECTIONS[slug].condition()).values_list("opportunity_id", flat=True))
+    if not ids:
+        return None
+    if set(_open(now).values_list("opportunity_id", flat=True)) == ids:
+        return "all"
+    sizes = (
+        _open(now)
+        .values("opportunity__category__code")
+        .annotate(n=Count("opportunity", distinct=True))
+        .filter(n=len(ids))
+    )
+    for row in sizes:
+        code = row["opportunity__category__code"]
+        same = set(
+            _open(now).filter(opportunity__category__code=code).values_list("opportunity_id", flat=True)
+        )
+        if same == ids:
+            return f"category:{code}"
+    return None
+
+
 def sitemap_lists(now: datetime) -> dict[str, list[dict[str, Any]]]:
     """Open-listing counts and the latest publication time per category and per collection.
 
@@ -223,7 +248,14 @@ def sitemap_lists(now: datetime) -> dict[str, list[dict[str, Any]]]:
             .filter(collection.condition())
             .aggregate(n=Count("opportunity", distinct=True), latest=Max("opportunity__last_published_at"))
         )
-        collections.append({"slug": slug, "count": row["n"], "latest": row["latest"]})
+        collections.append(
+            {
+                "slug": slug,
+                "count": row["n"],
+                "latest": row["latest"],
+                "duplicate_of": collection_duplicate_of(slug, now),
+            }
+        )
     return {
         "categories": [
             {"code": r["opportunity__category__code"], "count": r["n"], "latest": r["latest"]}

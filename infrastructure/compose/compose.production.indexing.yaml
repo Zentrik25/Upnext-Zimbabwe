@@ -5,17 +5,21 @@
 #
 # UPNEXT_INDEXING_KEY_HOST_PATH  the service-account key on the server, OUTSIDE the repository and every image,
 #                                owned by uid 10001 and chmod 600 (the worker refuses a key others can read).
-# UPNEXT_INDEXING_MODE           record (default here: queue only, nothing sent, to inspect first) | live (send).
+#
+# RECORD MODE ONLY (owner decision D-68, 2026-11-05): notifications are queued for inspection and never sent. The
+# mode is fixed here on purpose and is not read from the environment, so no environment file can switch sending
+# on. Changing `record` to `live` below is a reviewed code change that needs the owner's explicit written
+# authorisation after production readiness is verified (docs/engineering/GOOGLE_INDEXING_API.md section 4).
 #
 # Both the api (staff decisions) and the worker (scheduled expiry) queue notifications, so both get the mode. Only
 # the worker sends, so only the worker gets the key, read-only; the web container never sees it.
 services:
   api:
     environment:
-      UPNEXT_INDEXING_MODE: ${UPNEXT_INDEXING_MODE:-record}
+      UPNEXT_INDEXING_MODE: record
   worker:
     environment:
-      UPNEXT_INDEXING_MODE: ${UPNEXT_INDEXING_MODE:-record}
+      UPNEXT_INDEXING_MODE: record
       UPNEXT_INDEXING_CREDENTIALS_FILE: /run/upnext/google-indexing.json
       UPNEXT_INDEXING_DAILY_QUOTA: ${UPNEXT_INDEXING_DAILY_QUOTA:-200}
     volumes:

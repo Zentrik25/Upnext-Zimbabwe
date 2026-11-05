@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getSitemapEntries } from "@/lib/catalog";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { GUIDES } from "@/lib/guides";
-import { LANDING_MIN_LISTINGS, landingPage, landingPath } from "@/lib/landing-pages";
+import { landingIndexable, landingPage, landingPath } from "@/lib/landing-pages";
 import { absolute, STATIC_PATHS } from "@/lib/site";
 import { unavailable } from "@/lib/unavailable";
 import { legalPublished } from "@/content/legal/operator";
@@ -17,7 +17,7 @@ const date = (iso: string | null | undefined) => (iso ? new Date(iso) : undefine
  *  - the static pages (no date: they have no recorded change time, and a made-up one would mislead), the guides (the
  *    date their text last changed);
  *  - one list per catalogue category while it holds an open listing (the newest publication in it);
- *  - each landing page while it holds at least `LANDING_MIN_LISTINGS` open listings (the same rule as its `robots`);
+ *  - each landing page while `landingIndexable` holds (threshold and no repeated list: the same rule as its `robots`);
  *  - every open published listing (its last publication: first publication or the last material change);
  *  - every public company profile (the approval of its live revision).
  * Closed, withdrawn and archived listings, search, filter, sort and page addresses, empty lists and almost empty
@@ -40,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((c) => Object.hasOwn(CATEGORY_SEO, c.code) && c.count > 0)
     .map((c) => ({ url: absolute(`/opportunities?category=${c.code}`), lastModified: date(c.updated_at) }));
   const landings = collections
-    .filter((c) => landingPage(c.slug) && c.count >= LANDING_MIN_LISTINGS)
+    .filter((c) => landingPage(c.slug) && landingIndexable(c.count, c.duplicate_of))
     .map((c) => ({ url: absolute(landingPath(c.slug)), lastModified: date(c.updated_at) }));
   const listings = data.map((entry) => ({
     url: absolute(`/opportunities/${entry.slug}`),
