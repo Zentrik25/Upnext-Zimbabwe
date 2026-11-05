@@ -166,8 +166,20 @@ class SitemapEntrySerializer(serializers.Serializer[None]):
     updated_at = serializers.DateTimeField()
 
 
+class SitemapListSerializer(serializers.Serializer[None]):
+    """One category list or landing-page collection: open listings and the newest publication among them."""
+
+    code = serializers.CharField(required=False)
+    slug = serializers.CharField(required=False)
+    count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField(allow_null=True)
+
+
 class SitemapSerializer(serializers.Serializer[None]):
     data = SitemapEntrySerializer(many=True)  # type: ignore[assignment]
+    categories = SitemapListSerializer(many=True)
+    collections = SitemapListSerializer(many=True)
+    employers = SitemapEntrySerializer(many=True)
 
 
 class CategoryListSerializer(serializers.Serializer[None]):

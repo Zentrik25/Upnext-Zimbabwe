@@ -52,7 +52,9 @@ def test_closed_withdrawn_and_archived_listings_are_left_out(world: World, peopl
 
 def test_sitemap_needs_no_session_and_is_not_cached_by_the_api() -> None:
     response = APIClient().get(URL)
-    assert response.status_code == 200 and response.json() == {"data": []}
+    body = response.json()
+    assert response.status_code == 200 and body["data"] == [] and body["employers"] == []
+    assert body["categories"] == [] and all(c["count"] == 0 for c in body["collections"])
     assert "no-store" in response["Cache-Control"] or "no-cache" in response["Cache-Control"]
 
 

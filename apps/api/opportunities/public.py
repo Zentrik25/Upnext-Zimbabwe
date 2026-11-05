@@ -19,7 +19,7 @@ from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core import signing
-from django.db.models import F, FloatField, Q, QuerySet
+from django.db.models import Count, F, FloatField, Max, Q, QuerySet
 from django.db.models.functions import Cast
 from django.http import QueryDict
 from django.utils import timezone
@@ -28,6 +28,7 @@ from catalog import markdown
 from catalog.models import Category, Location
 from catalog.text import TextError, clean_single_line
 
+from .collections import COLLECTIONS
 from .models import (
     EmploymentType,
     ExperienceLevel,
@@ -45,7 +46,7 @@ DEADLINE_STATES = ("open", "closing_soon", "unknown", "expired")
 KNOWN_PARAMS = frozenset(
     {
         "q", "category", "location", "work_mode", "employment_type", "experience_level", "deadline_state",
-        "organisation_id", "posted_within_days", "include_expired", "sort", "limit", "cursor",
+        "organisation_id", "posted_within_days", "include_expired", "sort", "limit", "cursor", "collection",
     }
 )  # fmt: skip
 _CURSOR_SALT = "upnext.cursor.v1"
@@ -72,6 +73,7 @@ class Query:
     posted_within_days: int | None = None
     include_expired: bool = False
     sort: str = "newest"
+    collection: str | None = None
     limit: int = DEFAULT_LIMIT
     cursor: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
@@ -81,6 +83,7 @@ class Query:
         data = {k: getattr(self, k) for k in (
             "q", "categories", "locations", "work_modes", "employment_types", "experience_levels",
             "deadline_states", "organisation_id", "posted_within_days", "include_expired", "sort",
+            "collection",
         )}  # fmt: skip
         return hashlib.sha256(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
@@ -149,6 +152,9 @@ def parse_query(params: QueryDict) -> Query:
         if not re.fullmatch(r"\d{1,3}", raw_limit) or not 1 <= int(raw_limit) <= MAX_LIMIT:
             raise InvalidQuery("limit", f"Use a whole number from 1 to {MAX_LIMIT}.")
         limit = int(raw_limit)
+    collection = params.get("collection")
+    if collection is not None and collection not in COLLECTIONS:
+        raise InvalidQuery("collection", "Unknown collection.")
     cursor = params.get("cursor")
     if cursor is not None and not 1 <= len(cursor) <= 512:
         raise InvalidQuery("cursor", "Invalid cursor.", "invalid_cursor")
@@ -159,7 +165,7 @@ def parse_query(params: QueryDict) -> Query:
         experience_levels=_csv(params, "experience_level", set(ExperienceLevel.values)),
         deadline_states=_csv(params, "deadline_state", set(DEADLINE_STATES)),
         organisation_id=organisation_id, posted_within_days=posted, include_expired=include_expired,
-        sort=sort, limit=limit, cursor=cursor,
+        sort=sort, limit=limit, cursor=cursor, collection=collection,
     )  # fmt: skip
 
 
@@ -194,6 +200,39 @@ def sitemap_entries(now: datetime) -> list[tuple[str, datetime]]:
     return [(slug, stamp) for slug, stamp in rows if slug and stamp]
 
 
+def _open(now: datetime) -> QuerySet[OpportunityVersion]:
+    return visible_versions().filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
+
+
+def sitemap_lists(now: datetime) -> dict[str, list[dict[str, Any]]]:
+    """Open-listing counts and the latest publication time per category and per collection.
+
+    The web app decides from the counts which list and landing pages are indexable (and so listed), and uses
+    the time as their `lastmod`: when the newest listing on the page was published or materially changed, a
+    real date rather than the time the file was generated."""
+    by_category = (
+        _open(now)
+        .values("opportunity__category__code")
+        .annotate(n=Count("opportunity", distinct=True), latest=Max("opportunity__last_published_at"))
+        .order_by("opportunity__category__code")
+    )
+    collections = []
+    for slug, collection in COLLECTIONS.items():
+        row = (
+            _open(now)
+            .filter(collection.condition())
+            .aggregate(n=Count("opportunity", distinct=True), latest=Max("opportunity__last_published_at"))
+        )
+        collections.append({"slug": slug, "count": row["n"], "latest": row["latest"]})
+    return {
+        "categories": [
+            {"code": r["opportunity__category__code"], "count": r["n"], "latest": r["latest"]}
+            for r in by_category
+        ],
+        "collections": collections,
+    }
+
+
 def derive_deadline_state(deadline_at: datetime | None, now: datetime) -> str:
     if deadline_at is None:
         return "unknown"
@@ -210,6 +249,9 @@ def _filtered(query: Query, now: datetime) -> QuerySet[OpportunityVersion]:
     if not include_expired:
         # A listing whose deadline passed is not "live" for browsing even if the expiry job has not run.
         qs = qs.filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
+    if query.collection:
+        # Joins on places and sectors can repeat a revision; `distinct` keeps one row per listing.
+        qs = qs.filter(COLLECTIONS[query.collection].condition()).distinct()
     if query.categories:
         qs = qs.filter(opportunity__category__code__in=query.categories)
     if query.locations:

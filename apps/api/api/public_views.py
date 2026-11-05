@@ -268,6 +268,21 @@ class OpportunityDetailView(PublicView):
         return Response(detail_of(version, timezone.now()))
 
 
+def _sitemap_profiles() -> list[dict[str, Any]]:
+    """Every company profile the public page would show (the rule of `PublicProfileView`: an approved live
+    revision of an organisation whose verification stands), with the time that revision was approved."""
+    rows = (
+        EmployerProfile.objects.filter(
+            live_revision__isnull=False,
+            organisation__verifications__revoked_at__isnull=True,
+        )
+        .distinct()
+        .order_by("slug")
+        .values_list("slug", "live_revision__decided_at", "live_revision__submitted_at")
+    )
+    return [{"slug": slug, "updated_at": _iso(decided or submitted)} for slug, decided, submitted in rows]
+
+
 class SitemapView(PublicView):
     """Slugs of the listings that belong in the XML sitemap (the web app renders the file)."""
 
@@ -280,8 +295,21 @@ class SitemapView(PublicView):
         ttl = settings.UPNEXT_SITEMAP_API_CACHE_SECONDS
         payload = caches["local"].get("sitemap-feed") if ttl else None
         if payload is None:
-            entries = public.sitemap_entries(timezone.now())
-            payload = {"data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries]}
+            now = timezone.now()
+            entries = public.sitemap_entries(now)
+            lists = public.sitemap_lists(now)
+            payload = {
+                "data": [{"slug": slug, "updated_at": _iso(stamp)} for slug, stamp in entries],
+                "categories": [
+                    {"code": c["code"], "count": c["count"], "updated_at": _iso(c["latest"])}
+                    for c in lists["categories"]
+                ],
+                "collections": [
+                    {"slug": c["slug"], "count": c["count"], "updated_at": _iso(c["latest"])}
+                    for c in lists["collections"]
+                ],
+                "employers": _sitemap_profiles(),
+            }
             if ttl:
                 caches["local"].set(
                     "sitemap-feed", payload, ttl
