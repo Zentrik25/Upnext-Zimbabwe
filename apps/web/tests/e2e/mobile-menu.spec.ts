@@ -43,7 +43,7 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     await expect(page.getByRole("dialog")).toBeHidden();
     await page.getByTestId("menu-button").click();
     await page.getByRole("dialog").getByRole("link", { name: "Jobs" }).click();
-    await expect(page).toHaveURL(/\/opportunities$/);
+    await expect(page).toHaveURL(/\/opportunities\?category=jobs$/); // "Latest jobs" (D-69)
     await expect(page.getByRole("dialog")).toBeHidden();
   });
 

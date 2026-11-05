@@ -96,14 +96,22 @@ describe("robots.txt", () => {
   });
   it("blocks private areas, but not the public employer pages", () => {
     const d = rules[0]!.disallow;
-    for (const path of ["/workspace", "/api/", "/account", "/sign-in", "/employer/"])
+    for (const path of ["/workspace", "/api/", "/account", "/employer/", "/reset-password", "/verify-email"])
       expect(d).toContain(path);
     expect(d).not.toContain("/employer"); // would also match /employers
     expect(d).not.toContain("/employers");
   });
   it("never hides a noindex: pages linked from public pages that say noindex are crawlable", () => {
     const d = rules[0]!.disallow;
-    for (const path of ["/employers/register", "/opportunities/*/report"]) expect(d).not.toContain(path);
+    // D-69: the public sign-in, registration and password-help forms are linked everywhere and say noindex.
+    for (const path of [
+      "/employers/register",
+      "/opportunities/*/report",
+      "/sign-in",
+      "/register",
+      "/forgot-password",
+    ])
+      expect(d).not.toContain(path);
     expect(d.some((rule) => /[?*]/.test(rule.replace("/opportunities/*", "")))).toBe(false);
     expect(d.some((rule) => /(sort|cursor|limit)=/.test(rule))).toBe(false);
   });
@@ -248,13 +256,13 @@ describe("list page metadata", () => {
     catalog.listOpportunities.mockResolvedValue(results(2));
     const plain = await metaFor({});
     const internships = await metaFor({ category: "internships" });
-    expect(plain.title).toBe("Latest Jobs & Opportunities in Zimbabwe");
+    expect(plain.title).toBe("Jobs & Opportunities in Zimbabwe");
     expect(plain.robots).toBeUndefined();
-    expect(internships.title).toBe("Internships in Zimbabwe");
+    expect(internships.title).toBe("Internships & Attachments in Zimbabwe");
     expect(internships.alternates?.canonical).toBe("/opportunities?category=internships");
     expect(internships.robots).toBeUndefined();
     expect(internships.description).not.toBe(plain.description);
-    expect(internships.twitter).toMatchObject({ title: "Internships in Zimbabwe" });
+    expect(internships.twitter).toMatchObject({ title: "Internships & Attachments in Zimbabwe" });
     expect(catalog.listOpportunities.mock.calls.at(-1)![0].toString()).toBe("category=internships");
   });
   it("keeps an empty category list out of the index", async () => {
@@ -461,7 +469,14 @@ describe("sitemap, robots.txt, canonical and noindex agree", () => {
     for (const [path, load] of pages) {
       const { metadata } = await load();
       expect(metadata.robots, path).toBeUndefined();
-      expect(metadata.alternates?.canonical, path).toBe(path);
+      if (path === "/") {
+        // The home page writes its own canonical, the origin with a trailing slash (D-69; Next.js metadata would
+        // drop the slash), so metadata must not add a second one.
+        expect(metadata.alternates?.canonical, path).toBeUndefined();
+        expect(readFileSync(join(appDir, "page.tsx"), "utf8")).toContain(
+          '<link rel="canonical" href={`${siteUrl()}/`} />',
+        );
+      } else expect(metadata.alternates?.canonical, path).toBe(path);
     }
   });
   it("addresses the sitemap never lists are blocked or noindex, never both left open", () => {

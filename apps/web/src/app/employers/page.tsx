@@ -7,10 +7,10 @@ import { ButtonLink } from "@/components/ui";
 const DESCRIPTION =
   "Post jobs, internships and graduate programmes on UPNEXT Careers. Organisations are verified and every listing is reviewed by an editor before it is public.";
 export const metadata: Metadata = {
-  title: "For employers",
+  title: "For Employers", // priority destination 7 (D-69); the page heading stays in sentence case
   description: DESCRIPTION,
   alternates: { canonical: "/employers" },
-  ...socialFor("/employers", { title: "For employers", description: DESCRIPTION }),
+  ...socialFor("/employers", { title: "For Employers", description: DESCRIPTION }),
 };
 
 export default function EmployersPage() {

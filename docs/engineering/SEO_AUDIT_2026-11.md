@@ -72,7 +72,7 @@ closed listing can appear:
 | Page | Holds |
 |---|---|
 | `/jobs/harare`, `/jobs/bulawayo` | placed in the city or a place in it, or at the level of its metropolitan province |
-| `/jobs/graduate-trainee` | graduate programmes, and jobs whose stated experience level is entry |
+| ~~`/jobs/graduate-trainee`~~ | consolidated on 2026-11-05 (D-69): 308 to `/opportunities?category=graduate-programmes` |
 | `/jobs/engineering` | Engineering sector, or a title with the whole word engineer/engineers/engineering |
 | `/jobs/finance-and-accounting` | Finance and banking sector, or a title with accounts/accountant/accountancy/accounting |
 | `/jobs/ngo` | NGO and development sector |

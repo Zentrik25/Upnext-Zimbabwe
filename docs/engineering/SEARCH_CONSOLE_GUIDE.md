@@ -75,7 +75,11 @@ change; if a screen differs, follow Google's and Microsoft's current help pages.
 | 6 | Social previews: Facebook Sharing Debugger, LinkedIn Post Inspector, a WhatsApp message, an X post preview | correct title, description and image; no private data |
 | 7 | The Granite Post | unchanged (deployment plan V-11) |
 
-## 7. Google Indexing API and the seven-day plan (D-68)
+## 7. Branded search and sitelinks (D-69)
+
+The eight priority destinations, their addresses and a Search Console checklist are in `SITELINKS.md`. Google decides whether sitelinks appear.
+
+## 8. Google Indexing API and the seven-day plan (D-68)
 
 Set up the API only after the property is verified: `GOOGLE_INDEXING_API.md` section 4 (Cloud project, service account added as **Owner** in Search Console, key installed on the server outside the repository, `record` mode first, then `live`). The day-by-day monitoring for the first week is in `SEO_AUDIT_2026-11.md` section 9.
 

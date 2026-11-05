@@ -21,20 +21,14 @@ test.describe("robots and sitemap (SEO-02, SEO-03)", () => {
     expect(response.status()).toBe(200);
     const text = await response.text();
     expect(text).toMatch(/User-Agent: \*/i);
-    for (const path of [
-      "/workspace",
-      "/api/",
-      "/account",
-      "/saved",
-      "/sign-in",
-      "/register",
-      "/reset-password",
-      "/employer/",
-    ])
+    for (const path of ["/workspace", "/api/", "/account", "/saved", "/reset-password", "/employer/"])
       expect(text).toContain(`Disallow: ${path}`);
     // a crawler must be able to fetch a page to see its noindex: these are linked publicly and say noindex themselves
+    // (sign-in, registration and password help since D-69)
     for (const path of ["/employers/register", "/opportunities/*/report", "?*cursor=", "?*sort="])
       expect(text).not.toContain(path);
+    for (const path of ["/sign-in", "/register", "/forgot-password"])
+      expect(text).not.toMatch(new RegExp(`^Disallow: ${path}$`, "m"));
     expect(text).not.toMatch(/Disallow: \/$/m);
     expect(text).toMatch(/Sitemap: https?:\/\/[^\s]+\/sitemap\.xml/);
   });
@@ -77,7 +71,7 @@ test.describe("indexing rules (SEO-01, SEO-03)", () => {
     await page.goto("/opportunities?category=internships&utm_source=newsletter");
     expect(await robotsMeta(page)).toBeNull();
     expect(await canonical(page)).toMatch(/\/opportunities\?category=internships$/);
-    await expect(page).toHaveTitle(/^Internships in Zimbabwe \| UPNEXT Careers$/);
+    await expect(page).toHaveTitle(/^Internships & Attachments in Zimbabwe \| UPNEXT Careers$/);
     for (const query of ["?q=engineer", "?sort=closing_soon", "?limit=2"]) {
       await page.goto(`/opportunities${query}`);
       expect(await robotsMeta(page), query).toContain("noindex");
@@ -163,7 +157,9 @@ test.describe("structured data (SEO-01)", () => {
     await page.goto("/");
     const blocks = await jsonLd(page);
     expect(blocks.map((b) => b["@type"])).toEqual(expect.arrayContaining(["WebSite", "Organization"]));
-    expect(await canonical(page)).toMatch(/^https?:\/\/[^/]+\/?$/);
+    // Exactly one canonical, the origin with its trailing slash (D-69).
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
+    expect(await canonical(page)).toMatch(/^https?:\/\/[^/]+\/$/);
   });
 });
 

@@ -12,10 +12,16 @@ import { Button, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
 import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
 import { SkeletonTabs } from "@/components/ui/skeleton";
 import { listCategories, listLocations } from "@/lib/catalog";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absolute } from "@/lib/site";
+import { breadcrumbFor } from "@/lib/structured-data";
 
 export const dynamic = "force-dynamic";
 const BASE_DESCRIPTION =
-  "Search jobs, internships, graduate programmes, scholarships, tenders and grants in Zimbabwe.";
+  "Search the latest jobs, tenders, internships, graduate trainee programmes, scholarships and grants in Zimbabwe, each shown with a clear verification label.";
+/** The plain list is priority destination 1, "Jobs & opportunities in Zimbabwe" (D-69). */
+const PLAIN_TITLE = "Jobs & Opportunities in Zimbabwe";
+const PLAIN_HEADING = "Jobs and opportunities in Zimbabwe";
 
 /**
  * Indexing rules (see `classifyList`): the plain list and the list of one known category are indexed, each with its own
@@ -39,8 +45,7 @@ export async function generateMetadata({
     if (!found.ok && found.reason !== "invalid-query") unavailable(found.reason);
     index = found.ok && found.data.data.length > 0;
   }
-  const title =
-    copy?.title ?? (view.kind === "plain" ? "Latest Jobs & Opportunities in Zimbabwe" : "Opportunities");
+  const title = copy?.title ?? (view.kind === "plain" ? PLAIN_TITLE : "Opportunities");
   const description = copy?.description ?? BASE_DESCRIPTION;
   return {
     title,
@@ -76,16 +81,28 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     if (value !== undefined && value !== "") params.set(key, value);
   }
   const active = params.get("category");
-  const headingCategory = classifyList(raw).kind === "category" ? active : null;
+  const view = classifyList(raw);
+  const headingCategory = view.kind === "category" ? active : null;
+  const copy = headingCategory ? CATEGORY_SEO[headingCategory] : undefined;
 
   return (
     <>
+      {copy && headingCategory ? (
+        <JsonLd
+          data={breadcrumbFor([
+            { name: "Opportunities", url: absolute("/opportunities") },
+            { name: copy.heading, url: absolute(`/opportunities?category=${headingCategory}`) },
+          ])}
+        />
+      ) : null}
       <section aria-labelledby="results-title" className="border-b border-line py-[22px]">
         <Container>
           <h1 id="results-title" className="text-section font-strong tracking-section">
-            {headingCategory ? CATEGORY_SEO[headingCategory]!.heading : "Opportunities"}
+            {copy ? copy.heading : view.kind === "plain" ? PLAIN_HEADING : "Opportunities"}
           </h1>
-          <p className="mt-1 mb-[14px] text-base text-muted">
+          {/* Indexable lists say what they hold (their own text, not just metadata); every list says how to apply. */}
+          <p className="mt-1 mb-[14px] max-w-[760px] text-base text-muted">
+            {copy ? `${copy.description} ` : view.kind === "plain" ? `${BASE_DESCRIPTION} ` : ""}
             Applications happen on the issuer&apos;s own channel.
           </p>
           <Suspense fallback={<SearchSkeleton />}>

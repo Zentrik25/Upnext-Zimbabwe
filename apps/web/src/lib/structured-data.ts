@@ -164,7 +164,7 @@ export function websiteFor(origin: string): Json[] {
       "@type": "WebSite",
       name: BRAND.name,
       alternateName: BRAND.short,
-      url: origin,
+      url: `${origin}/`, // the home page's canonical address, trailing slash included (D-69)
       inLanguage: "en",
       potentialAction: {
         "@type": "SearchAction",
@@ -177,7 +177,7 @@ export function websiteFor(origin: string): Json[] {
       "@type": "Organization",
       name: BRAND.name,
       alternateName: BRAND.short,
-      url: origin,
+      url: `${origin}/`,
       logo: `${origin}${BRAND.assets.icon512}`,
       email: BRAND.email,
     },
