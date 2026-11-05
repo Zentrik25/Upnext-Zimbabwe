@@ -32,7 +32,7 @@ Observed on a production build reading the real API with demo data, behind the p
 | 5 | Graduate trainee programmes | `/opportunities?category=graduate-programmes` | Graduate Trainee Programmes in Zimbabwe | Graduate trainee programmes in Zimbabwe | same |
 | 6 | Scholarships & fellowships | `/opportunities?category=scholarships` | Scholarships & Fellowships | Scholarships and fellowships | same |
 | 7 | For employers | `/employers` | For Employers | For employers | yes / yes |
-| 8 | Sign in | `/sign-in` | Sign in | Sign in to your account | **no** (`noindex`, disallowed in robots.txt, not in the sitemap) |
+| 8 | Sign in | `/sign-in` | Sign in | Sign in to your account | **no**: navigation only (`noindex`, not in the sitemap, crawlable so the `noindex` is read) |
 
 The home page (`/`, title "UPNEXT Careers | Jobs & Opportunities in Zimbabwe") links all eight with plain HTML links in
 its footer; the footer is on every public page. The desktop header links destinations 1, 7 and 8; the phone menu
@@ -57,16 +57,54 @@ postdoctoral, so "fellowships" means study and research fellowships.
    hiding the unwanted one (use `noindex` only for pages that must never appear).
 7. Performance report → Queries containing "upnext": branded impressions and clicks per destination.
 
-## 4. Risks and owner decisions
+## 4. Corrections before merge (owner instruction, 2026-11-05)
 
-- **Sign In cannot be a sitelink while it is `noindex`.** Google only shows indexed pages as sitelinks. Because
-  robots.txt also blocks `/sign-in`, Google may still list the bare address without a description if others link it,
-  but it will not show the page's content. Keeping it private is the owner's rule (P4-02, D-69); making it eligible
-  would mean removing the `robots.txt` rule and the `noindex` (an owner decision, not recommended for an account page).
-- **Graduate pages overlap.** `/opportunities?category=graduate-programmes` ("Graduate Trainee Programmes") and the
-  landing page `/jobs/graduate-trainee` ("Graduate Trainee Jobs": programmes plus entry-level jobs) target similar
-  searches. They hold different sets, and the landing page is never indexed when it repeats the category list
-  exactly (D-68), but Google may pick either.
+**Graduate overlap resolved by consolidation.** `/jobs/graduate-trainee` ("Graduate Trainee Jobs": graduate programmes
+plus jobs at entry level) and `/opportunities?category=graduate-programmes` ("Graduate Trainee Programmes") answered the
+same search: in Zimbabwe a graduate trainee programme *is* the graduate trainee job, and on the demo data the landing
+page held the category's two programmes plus one entry-level job. Two indexable pages for one intent compete with each
+other, so the landing page now answers **308** straight to the category list (one hop, the target is final and
+self-canonical, any query such as an old cursor is dropped). It is gone from the sitemap, the landing-page links and
+the API collections; entry-level jobs stay on the jobs list. Five landing pages remain (Harare, Bulawayo, engineering,
+finance and accounting, NGO); none repeats a category: their sets differ and a page that would repeat a list exactly is
+never indexed (D-68).
+
+**Category URLs.** The five category destinations are ordinary `<a href>` links (category tabs, footer, phone menu);
+the first HTML response already holds the listings, so no script is needed. Each has its own title, description, H1,
+visible introduction and BreadcrumbList, and a canonical that keeps its `?category=` parameter. Any other parameter
+(tracking, search, filters, page size) is `noindex, follow` and canonical to the category; later pages are
+self-canonical (D-51). An empty category is `noindex` and left out of the sitemap. No `/jobs`, `/tenders` or other new
+routes were added: the existing addresses are already crawlable, canonical and linked, and moving them would need
+redirects for every indexed URL without a demonstrated gain.
+
+**Sign In and robots.txt.** `/sign-in`, `/register` and `/forgot-password` are linked from public pages and carry
+`noindex`. They are **no longer disallowed** in robots.txt: a crawler barred from a page cannot read its `noindex` and
+may list the bare address ("Indexed, though blocked by robots.txt"); allowed, it reads the tag and keeps the page out.
+They stay out of the sitemap. Account, saved, dashboard, profile, alerts, staff, employer tools, API and the
+one-time-link pages (`/reset-password`, `/verify-email`) stay disallowed: they are private or carry tokens and are not
+reached by a signed-out crawler.
+
+## 5. Final canonical mapping
+
+| Address | Answer | Canonical | Sitemap |
+|---|---|---|---|
+| `/` | 200 | `https://upnext.co.zw/` | yes |
+| `/opportunities` | 200 | itself | yes |
+| `/opportunities?category={jobs,tenders,internships,graduate-programmes,scholarships}` | 200 | itself, with the parameter | while it holds an open listing |
+| `/opportunities?category=…&utm_source=…` (or any search, filter, sort, size) | 200, `noindex, follow` | the category list | no |
+| `/employers` | 200 | itself | yes |
+| `/jobs/graduate-trainee` (and with any query) | **308** → `/opportunities?category=graduate-programmes` | — | no |
+| `/jobs/{harare,bulawayo,engineering,finance-and-accounting,ngo}` | 200 | itself | from 3 open listings, and not a repeat of another list |
+| `/sign-in`, `/register`, `/forgot-password` | 200, `noindex` | — | no |
+| `/opportunities/<unknown>`, `/<unknown>` | 404 | — | no |
+| Public pages while the API is unavailable | 503, `Retry-After: 120` | — | sitemap 503 too |
+
+## 6. Remaining risks
+
+- **Sign In cannot be a sitelink while it is `noindex`** (Google only shows indexed pages); it stays a navigation link
+  by the owner's rule.
+- **Old links to `/jobs/graduate-trainee`** keep working through the permanent redirect; Google drops the old URL
+  after recrawling it.
 - **Category lists leave the index when empty** (D-51): a destination with no open listing is `noindex` and not in the
   sitemap until a listing is published.
 - Sitelinks usually need sustained branded searches and crawling history; a new domain may show none for months.
