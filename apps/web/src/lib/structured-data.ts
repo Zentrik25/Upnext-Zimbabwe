@@ -33,6 +33,25 @@ export function isOpen(listing: Pick<OpportunityDetail, "status" | "deadline">):
   return listing.status === "published" && listing.deadline.state !== "expired";
 }
 
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * The JobPosting `description`: the full text the page shows, as HTML (Google asks for the complete description in
+ * HTML, not an excerpt). It is the API's sanitised description and requirements under the same two headings the
+ * job page prints for these categories, so the markup says exactly what a visitor reads (SEO-B06). It is not cut
+ * short: the editor's own length limits bound it. A listing with no description falls back to its summary.
+ */
+export function jobDescription(
+  listing: Pick<OpportunityDetail, "description_html" | "requirements_html" | "summary">,
+): string {
+  const parts: string[] = [];
+  if (listing.description_html.trim()) parts.push(`<h2>Key responsibilities</h2>${listing.description_html}`);
+  if (listing.requirements_html?.trim())
+    parts.push(`<h2>Qualifications &amp; experience</h2>${listing.requirements_html}`);
+  return parts.length ? parts.join("") : `<p>${escapeHtml(listing.summary)}</p>`;
+}
+
 /**
  * schema.org JobPosting for the categories it describes (Google's job posting guidelines). Only facts the listing
  * actually states are emitted: an unknown deadline, salary or employment type is simply absent, and "permanent" or
@@ -53,7 +72,7 @@ export function jobPostingFor(listing: OpportunityDetail, pageUrl: string): Json
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: listing.title,
-    description: plainText(listing.description_html) || listing.summary,
+    description: jobDescription(listing),
     datePosted: listing.published_at,
     url: pageUrl,
     hiringOrganization: { "@type": "Organization", name: listing.organisation.name },

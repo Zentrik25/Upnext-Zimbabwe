@@ -1,7 +1,8 @@
 /**
  * The three editorial guides (DRAFT until the owner approves the wording, D-51). One list feeds the pages, the
  * sitemap, the footer and the related-links block, so an address cannot be linked without being listed. Dates are the
- * dates the text was written and last changed; change `dateModified` only when the text meaningfully changes.
+ * dates the text was written and last changed (the D-67 wording changes of 2026-11-03 are the latest); change
+ * `dateModified` only when the text meaningfully changes. The sitemap uses `dateModified` as the guide's `lastmod`.
  */
 export const GUIDES = [
   {
@@ -10,7 +11,7 @@ export const GUIDES = [
     description:
       "How to search UPNEXT Careers by category, keyword and location, read a listing, and save opportunities to come back to.",
     datePublished: "2026-10-30",
-    dateModified: "2026-10-30",
+    dateModified: "2026-11-03",
   },
   {
     path: "/guides/apply-safely-and-avoid-scams",
@@ -18,15 +19,15 @@ export const GUIDES = [
     description:
       "Warning signs of a fake vacancy, how to check an opportunity with the issuer, and what to do if something looks wrong.",
     datePublished: "2026-10-30",
-    dateModified: "2026-10-30",
+    dateModified: "2026-11-03",
   },
   {
     path: "/guides/how-listings-are-verified",
     title: "How UPNEXT Careers checks and verifies listings",
     description:
-      "Where listings come from, how they are reviewed before they are public, what each verification label means, and how to report or correct a listing.",
+      "How listings are reviewed before they are public, what each verification label means, and how to report or correct a listing.",
     datePublished: "2026-10-30",
-    dateModified: "2026-10-30",
+    dateModified: "2026-11-03",
   },
 ] as const;
 

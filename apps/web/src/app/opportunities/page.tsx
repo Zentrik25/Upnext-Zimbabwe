@@ -4,6 +4,7 @@ import { cache, Suspense } from "react";
 import { socialFor } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { classifyList, LIST_KEYS } from "@/lib/list-seo";
+import { unavailable } from "@/lib/unavailable";
 import Link from "next/link";
 import { Container } from "@/components/layout";
 import { fetchList, listHref, ResultsLoader } from "@/components/opportunities/results";
@@ -29,11 +30,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const view = classifyList(await searchParams);
   const copy = view.kind === "category" ? CATEGORY_SEO[view.category] : undefined;
-  // An address that would be indexed must hold genuine opportunities: an empty list, or one that could not be
-  // loaded, is not offered to search engines (the page itself says so to visitors).
+  // An address that would be indexed must hold genuine opportunities: an empty list is `noindex, follow`. A list
+  // that could not be loaded is a server error instead (lib/unavailable.ts): it is not indexed either, but a crawler
+  // keeps the copy it already has rather than being told to drop a live page because of a passing fault.
   let index: boolean = view.index;
   if (view.index) {
     const found = await fetchList(view.kind === "category" ? `category=${view.category}` : "");
+    if (!found.ok && found.reason !== "invalid-query") unavailable(found.reason);
     index = found.ok && found.data.data.length > 0;
   }
   const title =

@@ -97,11 +97,12 @@ describe("failure states keep a valid heading order (A-01)", () => {
     });
   }
 
-  it("the listing page's unavailable state is the page's h1 (it has no other heading)", async () => {
+  it("a listing that could not be loaded is a server error with the shared error view, not a page of its own", async () => {
+    // The error view (app/error.tsx) has the page's only h1; see tests for ErrorView.
     m.getOpportunity.mockResolvedValue({ ok: false, reason: "unreachable" });
-    const { container } = render(await OpportunityPage({ params: Promise.resolve({ slug: "any" }) }));
-    expect(levels(container)).toEqual([1]);
-    expect(await headingOrderViolations(container)).toEqual([]);
+    await expect(OpportunityPage({ params: Promise.resolve({ slug: "any" }) })).rejects.toThrow(
+      "content unavailable",
+    );
   });
 });
 
