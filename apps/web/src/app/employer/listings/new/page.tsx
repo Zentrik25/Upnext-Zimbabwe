@@ -1,39 +1,40 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ListingForm } from "@/components/employer/listing-form";
-import { EmployerHeading } from "@/components/employer/parts";
-import { Container } from "@/components/layout";
-import { listLocations } from "@/lib/catalog";
-import { getCurrentUser } from "@/lib/session";
+import { OpportunityForm } from "@/components/employer/opportunity-form";
+import { Callout } from "@/components/ui";
+import { listLocations, listSectors } from "@/lib/catalog";
+import { getEmployerContext } from "@/lib/employer-context";
+import { authedJson } from "@/lib/session";
+import type { StaffCategory } from "@/lib/staff-types";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Post a listing", robots: { index: false } };
+export const metadata: Metadata = { title: "Create Opportunity", robots: { index: false } };
 
-type Props = { searchParams: Promise<{ org?: string }> };
-
-export default async function NewListingPage({ searchParams }: Props) {
-  const { org } = await searchParams;
-  const user = await getCurrentUser();
-  if (!user) redirect("/sign-in?next=%2Femployer");
-  if (!org || !/^[0-9a-f-]{36}$/i.test(org)) redirect("/employer");
-  const locations = await listLocations();
+export default async function NewListingPage() {
+  const context = await getEmployerContext();
+  if (!context) redirect("/sign-in?next=%2Femployer%2Flistings%2Fnew");
+  // The organisation is the one the member is working for, taken from their own memberships (never from the URL).
+  if (context === "unreachable" || !context.active) redirect("/employer");
+  const { active } = context;
+  if (!active.verified)
+    return (
+      <Callout role="status">
+        The verification of {active.name} was withdrawn, so you cannot create new opportunities. Contact
+        UPNEXT if you think this is a mistake.
+      </Callout>
+    );
+  const [categories, locations, sectors] = await Promise.all([
+    authedJson<{ data: StaffCategory[] }>("employer/categories"),
+    listLocations(),
+    listSectors(),
+  ]);
+  if (!categories.ok) throw new Error("Categories could not be loaded.");
   return (
-    <Container className="pt-6 pb-[65px]">
-      <p className="text-ctl">
-        <Link href="/employer" className="text-accent underline">
-          ← Employer dashboard
-        </Link>
-      </p>
-      <div className="mt-3">
-        <EmployerHeading title="Post a listing" />
-      </div>
-      <p className="mt-1 text-base text-muted">
-        Save a draft at any time. When you submit, editors review it before it is public.
-      </p>
-      <div className="mt-5 max-w-[640px]">
-        <ListingForm organisationId={org} locations={locations.map((l) => ({ id: l.id, name: l.name }))} />
-      </div>
-    </Container>
+    <OpportunityForm
+      organisation={{ id: active.id, name: active.name }}
+      categories={categories.data.data}
+      locations={locations}
+      sectors={sectors.map((s) => ({ id: s.id, name: s.name }))}
+    />
   );
 }

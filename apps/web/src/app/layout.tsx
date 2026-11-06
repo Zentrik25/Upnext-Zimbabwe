@@ -4,6 +4,8 @@ import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { AuthFooter, SiteFooter, SiteHeader, SkipLink } from "@/components/layout";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { homeOf } from "@/lib/safe-next";
+import { getCurrentUser } from "@/lib/session";
 import { adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
@@ -75,9 +77,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   // The staff workspace (D-49) has its own shell: no public header, footer or skip link from the site.
-  const workspace = (requestHeaders.get("x-pathname") ?? "").startsWith("/workspace");
   const pathname = requestHeaders.get("x-pathname") ?? "";
+  // The employer dashboard (D-70) has its own shell too. `/employers/...` (public company pages) is not it.
+  const workspace =
+    pathname.startsWith("/workspace") || pathname === "/employer" || pathname.startsWith("/employer/");
   const auth = AUTH_PATHS.includes(pathname);
+  // Signed-in people reach their own dashboard from the Home tab; the public front page stays one tap away in the menu.
+  const signedIn = workspace || auth ? null : await getCurrentUser();
+  // Only a jobseeker's dashboard shares the public frame; staff and employers reach theirs from the header.
+  const home = signedIn && homeOf(signedIn.home_path) === "/dashboard" ? "/dashboard" : "/";
   // AdSense site-verification snippet: only in `verify` mode (owner-set UPNEXT_ADSENSE_MODE), on public pages only
   // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
   // after the visitor agrees, by the ad slot (components/ads).
@@ -111,7 +119,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <SiteHeader />
             <main id="main">{children}</main>
             <SiteFooter />
-            <BottomNav />
+            <BottomNav home={home} />
           </>
         )}
       </body>

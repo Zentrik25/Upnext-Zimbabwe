@@ -6,7 +6,7 @@ import { lazy, Suspense, useState, type FormEvent, type ReactNode } from "react"
 import { Button } from "@/components/ui";
 import { AuthField } from "./auth-parts";
 import { apiFetch, describeFailure } from "@/lib/client-api";
-import { safeNext } from "@/lib/safe-next";
+import { landing, safeNext } from "@/lib/safe-next";
 import { FormError } from "./parts";
 
 // Only shown after a "confirm your e-mail first" answer, so it loads on demand and stays out of the first script.
@@ -39,20 +39,24 @@ export function SignInForm({
     setBusy(true);
     setFailure(null);
     setUnverifiedEmail(null);
-    const outcome = await apiFetch<{ roles?: string[]; two_step_required?: boolean }>("POST", "auth/login", {
-      email,
-      password: String(form.get("password") ?? ""),
-      remember: form.get("remember") === "on",
-    });
+    const outcome = await apiFetch<{ home_path?: string; two_step_required?: boolean }>(
+      "POST",
+      "auth/login",
+      {
+        email,
+        password: String(form.get("password") ?? ""),
+        remember: form.get("remember") === "on",
+      },
+    );
     if (outcome.ok && outcome.data?.two_step_required) {
       // Correct password, no session yet: the code comes next (D-54).
-      router.replace(`/sign-in/two-step?next=${encodeURIComponent(safeNext(next, "/account"))}`);
+      const keep = next ? safeNext(next, "") : "";
+      router.replace(keep ? `/sign-in/two-step?next=${encodeURIComponent(keep)}` : "/sign-in/two-step");
       return;
     }
     if (outcome.ok) {
-      // Staff go straight to the workspace (and its second step) unless they were sent here from somewhere.
-      const staff = (outcome.data?.roles?.length ?? 0) > 0;
-      router.replace(safeNext(next, staff ? "/workspace" : "/account"));
+      // The API names the dashboard (D-70); a safe return address the account may use wins over it.
+      router.replace(landing(next, outcome.data?.home_path));
       router.refresh();
       return;
     }

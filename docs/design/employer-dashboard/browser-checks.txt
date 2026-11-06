@@ -1,0 +1,61 @@
+PASS  employer sign-in lands on http://127.0.0.1:8080/employer
+PASS  stat cards show real counts: Total Opportunities 12 Active 8 Drafts 2 Expired 2
+PASS  axe /employer desktop
+PASS  30d total views: 3,196
+PASS  24h total views: 0
+PASS  signed-in /sign-in -> http://127.0.0.1:8080/employer
+PASS  hostile next ignored -> http://127.0.0.1:8080/employer
+PASS  staff-only next not honoured for an employer -> http://127.0.0.1:8080/employer
+PASS  /workspace as an employer -> http://127.0.0.1:8080/employer
+PASS  account page still reachable -> http://127.0.0.1:8080/account
+PASS  axe /employer/opportunities
+PASS  first page has 10 rows: 10
+PASS  draft filter shows 2: 2
+PASS  expired filter shows 2: 2
+PASS  search 'driver' shows 1: 1
+PASS  page 2 shows the other 2: 2
+PASS  published row menu: View | Edit | (start | an | amendment) | Preview | Duplicate | Withdraw
+PASS  organisation fixed, no picker
+PASS  no organisation input on the form
+PASS  axe /employer/listings/new
+PASS  featured image uploaded and previewed
+PASS  draft created -> http://127.0.0.1:8080/employer/listings/0607d538-6b69-4029-bd86-92b03ddb6881
+PASS  listing page reloaded with the picture
+PASS  axe /employer/listings/:id/preview
+PASS  submitted: now in review (frozen, no form)
+PASS  form is gone while in review
+PASS  duplicate opened a new draft -> http://127.0.0.1:8080/employer/listings/83d8a65b-43ee-4330-8630-335b90adf38d
+PASS  axe /employer/analytics
+PASS  axe /employer/settings
+PASS  axe company profile
+PASS  unknown organisation dashboard -> 404
+PASS  employer on the staff API -> 403
+PASS  no horizontal scroll employer dashboard @390 (0)
+PASS  axe /employer @390
+PASS  mobile: sidebar hidden until opened
+PASS  mobile: drawer opens
+PASS  mobile: organisation name visible at the bottom of the drawer (y=785)
+PASS  mobile: page is exactly viewport wide
+PASS  axe drawer open @390
+PASS  mobile: Escape closes the drawer
+PASS  no horizontal scroll opportunities @390 (the table scrolls inside its own box) (0)
+PASS  no horizontal scroll create @390 (0)
+PASS  axe create @390
+PASS  seeker sign-in lands on http://127.0.0.1:8080/dashboard
+PASS  axe /dashboard desktop
+PASS  seeker nav: Dashboard, Recommended, Saved, Profile, Alerts, Settings
+PASS  seeker on employer analytics -> http://127.0.0.1:8080/employer
+PASS  seeker on /workspace -> http://127.0.0.1:8080/dashboard
+PASS  no horizontal scroll seeker dashboard @390 (0)
+PASS  axe /dashboard @390
+PASS  bottom nav Home -> /dashboard
+PASS  visitor bottom nav Home -> /
+PASS  staff sign-in goes to the second step first -> http://127.0.0.1:8080/workspace/two-step?next=%2Fworkspace
+PASS  typing a staff URL does not bypass the second step -> http://127.0.0.1:8080/workspace/two-step?next=%2Fworkspace
+PASS  after the code the editor lands on http://127.0.0.1:8080/workspace
+PASS  signed-in staff /sign-in -> http://127.0.0.1:8080/workspace
+PASS  visitor /employer -> /sign-in?next=%2Femployer
+PASS  visitor /employer/analytics -> /sign-in?next=%2Femployer%2Fanalytics
+PASS  visitor /employer/listings/new -> /sign-in?next=%2Femployer%2Flistings%2Fnew
+PASS  visitor /dashboard -> /sign-in?next=%2Fdashboard
+PASS  visitor /workspace -> /sign-in?next=%2Fworkspace

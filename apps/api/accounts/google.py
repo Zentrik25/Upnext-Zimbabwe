@@ -65,7 +65,8 @@ def redirect_uri() -> str:
 
 
 def safe_next(value: str | None) -> str:
-    """Only a path on this site: starts with one slash, no scheme, no backslash, no control characters."""
+    """Only a path on this site: one leading slash, no scheme, no backslash, no control characters. Anything
+    else (or nothing) is "", which the callback turns into the person's own dashboard (accounts.home)."""
     if (
         value
         and value.startswith("/")
@@ -74,7 +75,7 @@ def safe_next(value: str | None) -> str:
         and value.isprintable()
     ):
         return value[:300]
-    return "/"
+    return ""
 
 
 def _b64(data: bytes) -> str:

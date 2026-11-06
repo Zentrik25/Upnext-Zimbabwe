@@ -173,7 +173,7 @@ def test_the_next_address_must_be_a_path_on_this_site(
         fake_google(
             monkeypatch, query, sub=f"s-{abs(hash(hostile))}", email=f"{abs(hash(hostile))}@example.org"
         )
-        assert callback(fresh, query)["Location"] == "/"
+        assert callback(fresh, query)["Location"] == "/dashboard"  # a refused address becomes the dashboard
 
 
 @override_settings(**GOOGLE)
@@ -228,7 +228,7 @@ def test_an_existing_password_account_is_linked_through_the_verified_address(
     existing = make_user(email="person@example.org")
     query, _ = start(client)
     fake_google(monkeypatch, query)
-    assert callback(client, query)["Location"] == "/"
+    assert callback(client, query)["Location"] == "/dashboard"
     existing.refresh_from_db()
     assert existing.google_subject == "google-sub-1" and existing.has_usable_password()
     assert AuditEvent.objects.filter(action="account.google_linked", object_id=existing.pk).exists()
@@ -244,7 +244,7 @@ def test_linking_an_unconfirmed_account_removes_the_password_set_by_whoever_regi
     owner = APIClient(enforce_csrf_checks=True)
     query, _ = start(owner)
     fake_google(monkeypatch, query)
-    assert callback(owner, query)["Location"] == "/"
+    assert callback(owner, query)["Location"] == "/dashboard"
     squatter.refresh_from_db()
     assert squatter.status == AccountStatus.ACTIVE and not squatter.has_usable_password()
     # the squatter's password no longer works
@@ -266,7 +266,7 @@ def test_a_returning_google_person_is_found_by_subject_even_after_changing_their
     user.save()
     query, _ = start(client)
     fake_google(monkeypatch, query, email="changed@example.org")
-    assert callback(client, query)["Location"] == "/"
+    assert callback(client, query)["Location"] == "/dashboard"
     assert client.get("/api/v1/me").json()["email"] == "original@example.org"
     assert not User.objects.filter(email="changed@example.org").exists()
 

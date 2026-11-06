@@ -6,7 +6,7 @@ import { Icon, type IconName } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
-  { href: "/", label: "Home", icon: "home", match: (p) => p === "/" },
+  { href: "/", label: "Home", icon: "home", match: (p) => p === "/" || p === "/dashboard" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
   { href: "/opportunities", label: "Categories", icon: "grid", match: () => false },
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
@@ -14,14 +14,14 @@ const TABS: { href: string; label: string; icon: IconName; match: (path: string)
     href: "/account",
     label: "Account",
     icon: "user",
-    match: (p) => ["/account", "/dashboard", "/profile", "/alerts", "/for-you"].some((x) => p.startsWith(x)),
+    match: (p) => ["/account", "/profile", "/alerts", "/for-you"].some((x) => p.startsWith(x)),
   },
 ];
 
 /** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
  *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
  *  would multiply API load (and trip the per-address read limit in the browser suite). */
-export function BottomNav() {
+export function BottomNav({ home = "/" }: { home?: string }) {
   const pathname = usePathname();
   return (
     <>
@@ -35,7 +35,7 @@ export function BottomNav() {
             return (
               <li key={tab.label}>
                 <Link
-                  href={tab.href}
+                  href={tab.label === "Home" ? home : tab.href}
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(

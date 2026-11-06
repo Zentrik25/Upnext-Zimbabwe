@@ -22,6 +22,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts import google, login_challenge, mfa, services, trusted_devices
+from accounts.home import dashboard_path
 from accounts.models import AccountStatus, User
 from accounts.sessions import client_ip
 from audit import services as audit
@@ -314,7 +315,10 @@ class GoogleCallbackView(APIView):
         device = trusted_devices.recognise(request._request, user) if mfa.is_enrolled(user) else None
         if login_challenge.required_for(user) and device is None:
             login_challenge.begin(request._request, user, remember=True, method="google")
-            return HttpResponseRedirect(f"/sign-in/two-step?next={quote(next_path, safe='')}")
+            # Only an explicit return address travels; otherwise the dashboard is chosen after the code.
+            return HttpResponseRedirect(
+                f"/sign-in/two-step?next={quote(next_path, safe='')}" if next_path else "/sign-in/two-step"
+            )
         login(request._request, user, backend="django.contrib.auth.backends.ModelBackend")
         if device is not None and user.active_roles():
             mark_trusted(request._request, device.last_mfa_at.timestamp())
@@ -329,4 +333,4 @@ class GoogleCallbackView(APIView):
                 "ip_hash": hash_key(client_ip(request._request) or "-"),
             },
         )
-        return HttpResponseRedirect(next_path)
+        return HttpResponseRedirect(next_path or dashboard_path(user))

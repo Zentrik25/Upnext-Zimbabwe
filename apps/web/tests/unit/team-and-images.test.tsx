@@ -455,10 +455,7 @@ describe("accepting an invitation", () => {
       token: "tok.en",
       password: "a long unguessable phrase 12",
     });
-    expect(screen.getByRole("link", { name: "Go to sign in" })).toHaveAttribute(
-      "href",
-      "/sign-in?next=%2Fworkspace",
-    );
+    expect(screen.getByRole("link", { name: "Go to sign in" })).toHaveAttribute("href", "/sign-in");
   });
 
   it("treats a rejected link as invalid", async () => {

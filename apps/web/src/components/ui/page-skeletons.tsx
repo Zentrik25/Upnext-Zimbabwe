@@ -313,44 +313,38 @@ export function MediaLibraryLoading() {
   );
 }
 
-/** The employer dashboard: title, the organisation's figures, then its submitted opportunities. */
+/** The employer dashboard inside its shell (D-70): four figures, the views panel, then the opportunities table. */
 export function EmployerDashboardLoading() {
   return (
-    <Container className="pt-6 pb-[65px]">
-      <LoadingRegion label="the employer portal">
-        <SkeletonPageHeader action />
-        <div className="mt-2 grid gap-5">
-          <SkeletonMetricGrid count={3} />
-          <div>
-            <SkeletonHeading size="section" className="mb-2" />
-            <div className="border-b border-line">
-              <SkeletonTable rows={5} columns={4} />
-            </div>
+    <LoadingRegion label="the employer dashboard">
+      <div className="grid gap-5">
+        <SkeletonMetricGrid count={4} />
+        <SkeletonCard lines={4} />
+        <div>
+          <SkeletonHeading size="section" className="mb-2" />
+          <div className="border-b border-line">
+            <SkeletonTable rows={5} columns={5} />
           </div>
         </div>
-      </LoadingRegion>
-    </Container>
+      </div>
+    </LoadingRegion>
   );
 }
 
-/** An employer form or detail page: back link, title, and a card of fields. */
+/** An employer form or detail page inside the shell: a card of fields. */
 export function EmployerFormLoading({ label }: { label: string }) {
   return (
-    <Container className="pt-6 pb-[65px]">
-      <LoadingRegion label={label}>
-        <SkeletonLine className="mb-3 w-[120px]" />
-        <SkeletonPageHeader />
-        <div className="grid max-w-[760px] gap-4">
-          <SkeletonCard>
-            <SkeletonHeading size="title" />
-            <SkeletonInput />
-            <SkeletonInput />
-            <SkeletonText lines={4} />
-          </SkeletonCard>
-          <SkeletonCard lines={3} />
-        </div>
-      </LoadingRegion>
-    </Container>
+    <LoadingRegion label={label}>
+      <div className="grid max-w-[760px] gap-4">
+        <SkeletonCard>
+          <SkeletonHeading size="title" />
+          <SkeletonInput />
+          <SkeletonInput />
+          <SkeletonText lines={4} />
+        </SkeletonCard>
+        <SkeletonCard lines={3} />
+      </div>
+    </LoadingRegion>
   );
 }
 

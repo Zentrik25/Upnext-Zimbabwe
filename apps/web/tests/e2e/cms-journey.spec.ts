@@ -314,3 +314,26 @@ test("8. administrators see the audit trail; mobile layout of the staff pages", 
     ),
   ).toBeLessThanOrEqual(0); // no sideways scrolling of the page
 });
+
+test("9. staff who sign in with no return address land in the workspace, only after the second step", async ({
+  browser,
+}) => {
+  for (const who of ["editor", "admin"] as const) {
+    const context = await browser.newContext({ baseURL: BASE });
+    contexts.push(context);
+    const page = await context.newPage();
+    await page.goto("/sign-in"); // no ?next=
+    await page.locator("#email").fill(accounts[who]);
+    await page.locator("#password").fill(PASSWORD);
+    await page.locator("button[type=submit]").click();
+    await expect(page).toHaveURL(/\/workspace\/two-step/); // the dashboard is named only after the code
+    await page.goto("/workspace/opportunities"); // typing a staff URL does not bypass the second step
+    await expect(page).toHaveURL(/\/workspace\/two-step/);
+    await page.locator("#code").fill(demoCode(accounts[who]));
+    await page.getByRole("button", { name: "Verify" }).click();
+    await expect(page).toHaveURL(/\/workspace$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+    await page.goto("/sign-in");
+    await expect(page).toHaveURL(/\/workspace$/); // already signed in: back to the dashboard, no loop
+  }
+});

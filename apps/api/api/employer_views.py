@@ -18,15 +18,18 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from access.registry import EMPLOYER_CATEGORIES
 from accounts.models import User
+from catalog.categories import category_payload
 from catalog.models import Organisation, Sector
 from catalog.text import TextError, clean_single_line
-from employers import analytics, listings, services
+from employers import analytics, dashboard, listings, services
 from employers.models import (
     EmployerListing,
     EmployerMembership,
@@ -37,12 +40,13 @@ from employers.models import (
     ProfileState,
     SizeBand,
 )
+from opportunities import images, media
 from opportunities.errors import FieldErrors, WorkflowError
 from opportunities.models import ListingStatus, Opportunity, OpportunityVersion
 
 from .errors import error_response
-from .public_views import PublicView, _iso
-from .throttles import IpRateThrottle, UserWriteThrottle
+from .public_views import PublicView, _iso, detail_of
+from .throttles import IpRateThrottle, StaffUploadThrottle, UserWriteThrottle
 
 MAX_EVENT_BODY = 512
 
@@ -150,11 +154,16 @@ def _content(version: OpportunityVersion) -> dict[str, Any]:
         "requirements_md": version.requirements_md,
         "locations": _locations(version),
         "location_text": version.location_text,
+        "geographic_eligibility": version.geographic_eligibility,
         "work_mode": version.work_mode,
         "employment_type": version.employment_type,
         "experience_level": version.experience_level,
         "salary": _money(
             version.salary_min, version.salary_max, version.salary_currency, version.salary_period
+        ),
+        "salary_text": version.salary_text,
+        "funding": _money(
+            version.funding_min, version.funding_max, version.funding_currency, version.funding_period
         ),
         "deadline_at": _iso(version.deadline_at),
         "deadline_timezone": version.deadline_timezone,
@@ -162,26 +171,47 @@ def _content(version: OpportunityVersion) -> dict[str, Any]:
         "application_method": version.application_method,
         "application_url": version.application_url,
         "application_email": version.application_email,
+        "application_email_subject": version.application_email_subject,
         "application_instructions": version.application_instructions,
         "reference_number": version.reference_number,
+        "contact_details": version.contact_details,
+        "skills": [
+            {"skill_id": str(r.skill_id), "name": r.skill.name, "is_required": r.is_required}
+            for r in version.skills.select_related("skill")
+        ],
+        "sector_ids": [str(r.sector_id) for r in version.sectors.all()],
         "detail": version.detail,
+        # Pictures are the employer's own (D-70); the address and the search and sharing text are staff's.
+        "featured_image": version.featured_image,
+        "featured_image_alt": version.featured_image_alt,
+        "social_image": version.social_image,
     }
 
 
 def _listing_row(user: User, opportunity: Opportunity) -> dict[str, Any]:
     version = opportunity.pending_version or opportunity.live_version
     assert version is not None
+    shown = version.location_text or ", ".join(
+        r.location.name
+        for r in sorted(version.locations.all(), key=lambda r: (not r.is_primary, r.location.name))
+    )
     return {
         "id": str(opportunity.pk),
         "title": version.title or "Untitled draft",
         "category": {"code": opportunity.category.code, "name": opportunity.category.name},
+        "employment_type": version.employment_type,
+        "location": shown or None,
         "status": opportunity.status,
         "version_state": version.state,
         "row_version": opportunity.row_version,
         "slug": opportunity.slug,
         "updated_at": _iso(opportunity.updated_at),
+        "published_at": _iso(opportunity.first_published_at),
+        "deadline_at": _iso(version.deadline_at),
         "decision": listings.latest_decision(opportunity.pending_version),
         "next_actions": listings.next_actions(user, opportunity),
+        "can_duplicate": listings.can_duplicate(opportunity),
+        "public_path": f"/opportunities/{opportunity.slug}" if opportunity.slug else None,
     }
 
 
@@ -241,6 +271,8 @@ class OverviewView(EmployerView):
                     "profile_slug": profile.slug if profile and profile.live_revision_id else None,
                     "profile_pending": pending is not None,
                     "listing_count": EmployerListing.objects.filter(organisation=m.organisation).count(),
+                    # What needs the member's attention (real states, D-70); the shell's bell shows it.
+                    "counts": dashboard.counts(dashboard.scope_of(m.organisation_id), timezone.now()),
                 }
             )
         return Response(
@@ -401,16 +433,46 @@ class OrganisationListingsView(EmployerView):
         membership = self.membership(request, organisation_id)
         if membership is None:
             return _not_found()
-        rows = (
-            Opportunity.objects.filter(employer_binding__organisation_id=organisation_id)
-            .select_related("category", "pending_version", "live_version")
-            .order_by("-updated_at")[:200]
+        params = request.query_params
+        now = timezone.now()
+        state = params.get("status", "all")
+        period = params.get("period", "all")
+        if state not in dashboard.STATUS_FILTERS or period not in dashboard.PERIODS:
+            return error_response("validation_failed", "Unknown filter.", 400)
+        try:
+            page = max(1, int(params.get("page", 1)))
+            size = min(50, max(1, int(params.get("page_size", 10))))
+        except ValueError:
+            page, size = 1, 10
+        scope = dashboard.scope_of(organisation_id)
+        selected = dashboard.search(dashboard.filter_status(scope, state, now), params.get("q", ""))
+        total = selected.count()
+        rows = list(
+            selected.select_related("category", "pending_version", "live_version")
+            .prefetch_related(
+                "pending_version__locations__location",
+                "live_version__locations__location",
+            )
+            .order_by("-updated_at", "-pk")[(page - 1) * size : page * size]
         )
+        stats = dashboard.page_stats([o.pk for o in rows], period, now)
+        user = self.user_of(request)
+        data = []
+        for o in rows:
+            shown = stats.get(str(o.pk), {"views": 0, "apply_clicks": 0})
+            data.append({**_listing_row(user, o), **shown})
         return Response(
             {
                 "organisation": {"id": str(organisation_id), "name": membership.organisation.name},
                 "verified": services.is_verified(organisation_id),
-                "data": [_listing_row(self.user_of(request), o) for o in rows],
+                "period": period,
+                "data": data,
+                "page": {
+                    "page": page,
+                    "page_size": size,
+                    "total": total,
+                    "pages": max(1, -(-total // size)),
+                },
             }
         )
 
@@ -582,6 +644,154 @@ class CloseListingView(EmployerView):
         opportunity = _own_listing(user, opportunity_id)
         assert opportunity is not None
         return Response(_listing_detail(user, opportunity))
+
+
+class PreviewListingView(EmployerView):
+    """The revision the member is working on, in the public API's own shape (so the preview is the public
+    page). Read only; a listing of an organisation the caller does not act for is a 404."""
+
+    @extend_schema(
+        operation_id="previewEmployerListing",
+        tags=["employer"],
+        responses={200: OpenApiResponse(description="The public shape of the revision"), 404: None},
+    )
+    def get(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        opportunity = _own_listing(self.user_of(request), opportunity_id)
+        version = (opportunity.pending_version or opportunity.live_version) if opportunity else None
+        if version is None:
+            return _not_found()
+        return Response(detail_of(version, timezone.now(), preview=True))
+
+
+class CategoryListView(EmployerView):
+    @extend_schema(
+        operation_id="listEmployerCategories",
+        tags=["employer"],
+        responses=OpenApiResponse(
+            description="The categories an employer may post in, with their detail fields"
+        ),
+    )
+    def get(self, request: Request) -> Response:
+        return Response({"data": category_payload(EMPLOYER_CATEGORIES)})
+
+
+class DashboardView(EmployerView):
+    @extend_schema(
+        operation_id="getEmployerDashboard",
+        tags=["employer"],
+        parameters=[OpenApiParameter("period", str, required=False)],
+        responses={
+            200: OpenApiResponse(description="Counts, views chart and totals of the organisation"),
+            404: None,
+        },
+    )
+    def get(self, request: Request, organisation_id: uuid.UUID) -> Response:
+        membership = self.membership(request, organisation_id)
+        if membership is None:
+            return _not_found()
+        period = request.query_params.get("period", dashboard.DEFAULT_PERIOD)
+        if period not in dashboard.PERIODS:
+            return error_response("validation_failed", "Unknown period.", 400)
+        return Response(
+            {
+                "organisation": {
+                    "id": str(organisation_id),
+                    "name": membership.organisation.name,
+                    "verified": services.is_verified(organisation_id),
+                },
+                **dashboard.overview(organisation_id, period),
+            }
+        )
+
+
+class DuplicateListingView(EmployerView):
+    @extend_schema(
+        operation_id="duplicateEmployerListing",
+        tags=["employer"],
+        request=None,
+        responses={201: OpenApiResponse(description="The new draft"), 403: None, 404: None},
+    )
+    def post(self, request: Request, opportunity_id: uuid.UUID) -> Response:
+        user = self.user_of(request)
+        try:
+            copy = listings.duplicate(user, opportunity_id)
+        except WorkflowError as exc:
+            return _refused(exc)
+        full = _own_listing(user, copy.pk)
+        assert full is not None
+        return Response(_listing_detail(user, full), status=status.HTTP_201_CREATED)
+
+
+MAX_UPLOAD_BODY = images.MAX_BYTES + 64 * 1024
+
+
+class ImageUploadView(EmployerView):
+    """Upload a listing picture (D-70). The file is validated, re-encoded and stored exactly as a staff
+    upload is (`opportunities.media.add`); attaching it to a listing is the ordinary draft save, which
+    re-checks membership, verification, the row version and the review rules. Only members of a verified
+    organisation may upload, and the answer says nothing about who uploaded a picture already stored."""
+
+    parser_classes = [MultiPartParser, JSONParser]  # JSON is never used; it lets auth and CSRF answer first
+    throttle_classes = [StaffUploadThrottle]
+
+    @extend_schema(
+        operation_id="uploadEmployerImage",
+        tags=["employer"],
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}},
+            }
+        },
+        responses={
+            200: OpenApiResponse(description="The same picture was already stored"),
+            201: OpenApiResponse(description="The stored picture"),
+            400: None,
+            403: None,
+            413: None,
+            429: None,
+        },
+    )
+    def post(self, request: Request) -> Response:
+        user = self.user_of(request)
+        if not any(services.is_verified(m.organisation_id) for m in listings.memberships_of(user)):
+            return error_response(
+                "permission_denied",
+                "Only members of a verified organisation can upload listing images.",
+                status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            length = int(request.META.get("CONTENT_LENGTH") or 0)
+        except ValueError:
+            length = 0
+        if length > MAX_UPLOAD_BODY:
+            return error_response(
+                "file_too_large", "The image is larger than 5 MB.", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+            )
+        upload: Any = request.FILES.get("file")
+        if upload is None:
+            return error_response("validation_failed", "Choose an image to upload.", 400)
+        if upload.size > images.MAX_BYTES:
+            return error_response(
+                "file_too_large", "The image is larger than 5 MB.", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+            )
+        try:
+            asset, reused = media.add(
+                upload.read(images.MAX_BYTES + 1), uploader=user, original_filename=str(upload.name or "")
+            )
+        except images.ImageRejected as exc:
+            return error_response(exc.code, exc.message, 400)
+        return Response(
+            {
+                "name": asset.name,
+                "url": images.url_of(asset.name),
+                "width": asset.width,
+                "height": asset.height,
+                "bytes": asset.byte_size,
+                "reused": reused,
+            },
+            status=status.HTTP_200_OK if reused else status.HTTP_201_CREATED,
+        )
 
 
 class AnalyticsView(EmployerView):

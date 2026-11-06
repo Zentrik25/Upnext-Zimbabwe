@@ -41,6 +41,7 @@ class UserSerializer(serializers.ModelSerializer[User]):
     roles = serializers.SerializerMethodField()
     deletion_scheduled_for = serializers.SerializerMethodField()
     email_change_available = serializers.SerializerMethodField()
+    home_path = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -55,8 +56,16 @@ class UserSerializer(serializers.ModelSerializer[User]):
             "deletion_requested_at",
             "deletion_scheduled_for",
             "email_change_available",
+            "home_path",
         ]
         read_only_fields = fields
+
+    @extend_schema_field(serializers.CharField())
+    def get_home_path(self, obj: User) -> str:
+        """The dashboard this account lands on after sign-in (accounts.home); the browser never chooses it."""
+        from accounts.home import dashboard_path
+
+        return dashboard_path(obj)
 
     @extend_schema_field(serializers.DateTimeField(allow_null=True))
     def get_deletion_scheduled_for(self, obj: User) -> datetime | None:

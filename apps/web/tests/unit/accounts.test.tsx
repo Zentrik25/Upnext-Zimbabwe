@@ -14,7 +14,7 @@ import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-
 import { SignInForm } from "@/components/account/sign-in-form";
 import { VerifyEmailPanel } from "@/components/account/verify-email-panel";
 import { apiFetch, describeFailure, readCsrfCookie } from "@/lib/client-api";
-import { safeNext } from "@/lib/safe-next";
+import { explicitNext, homeOf, landing, safeNext } from "@/lib/safe-next";
 
 type Reply = { status?: number; body?: unknown; headers?: Record<string, string> };
 
@@ -52,7 +52,7 @@ describe("safeNext", () => {
   it("accepts known same-origin routes and keeps their query", () => {
     expect(safeNext("/saved")).toBe("/saved");
     for (const path of ["/dashboard", "/for-you", "/profile", "/alerts"]) expect(safeNext(path)).toBe(path);
-    expect(safeNext("/alerts/unsubscribe?token=x")).toBe("/account");
+    expect(safeNext("/alerts/unsubscribe?token=x")).toBe("/dashboard");
     expect(safeNext("/opportunities?category=jobs")).toBe("/opportunities?category=jobs");
     expect(safeNext("/opportunities/graduate-engineer-abc123")).toBe(
       "/opportunities/graduate-engineer-abc123",
@@ -64,17 +64,23 @@ describe("safeNext", () => {
     for (const ok of [
       "/employer",
       "/employer/claim",
+      "/employer/opportunities?status=draft",
+      "/employer/analytics",
+      "/employer/settings",
+      "/employer/listings/new",
       `/employer/listings/${id}`,
+      `/employer/listings/${id}/preview`,
       `/employer/organisations/${id}/profile`,
     ])
       expect(safeNext(ok)).toBe(ok);
     for (const bad of [
-      "/employer/listings/new",
+      "/employer/listings/new/x",
+      "/employer/listings/not-an-id",
       "/employer/../staff/",
       "/employer/claim/x",
       "/employers/register",
     ])
-      expect(safeNext(bad)).toBe("/account");
+      expect(safeNext(bad)).toBe("/dashboard");
   });
   it.each([
     "https://evil.example/",
@@ -87,11 +93,43 @@ describe("safeNext", () => {
     "",
     "/" + "a".repeat(400),
   ])("falls back for %s", (value) => {
-    expect(safeNext(value)).toBe("/account");
+    expect(safeNext(value)).toBe("/dashboard");
   });
   it("falls back for missing values and honours a given fallback", () => {
-    expect(safeNext(undefined)).toBe("/account");
+    expect(safeNext(undefined)).toBe("/dashboard");
     expect(safeNext(null, "/")).toBe("/");
+  });
+});
+
+describe("landing (D-70)", () => {
+  it("accepts only the three dashboards the API can name", () => {
+    expect(homeOf("/workspace")).toBe("/workspace");
+    expect(homeOf("/employer")).toBe("/employer");
+    for (const bad of [undefined, null, "", "/account", "https://evil.example/", "/workspace/team", 3])
+      expect(homeOf(bad)).toBe("/dashboard");
+  });
+  it("lands on the dashboard when there is no usable return address", () => {
+    for (const home of ["/workspace", "/employer", "/dashboard"]) {
+      expect(landing(undefined, home)).toBe(home);
+      expect(landing("//evil.example", home)).toBe(home);
+      expect(landing("/sign-in", home)).toBe(home); // no loop back to the sign-in page
+    }
+  });
+  it("keeps a return address only in an area the account can use", () => {
+    expect(landing("/workspace/opportunities", "/workspace")).toBe("/workspace/opportunities");
+    expect(landing("/workspace/opportunities", "/dashboard")).toBe("/dashboard");
+    expect(landing("/workspace", "/employer")).toBe("/employer");
+    expect(landing("/employer/analytics", "/dashboard")).toBe("/dashboard");
+    expect(landing("/employer/analytics", "/employer")).toBe("/employer/analytics");
+    expect(landing("/employer", "/dashboard")).toBe("/employer"); // the dashboard and claim pages are open to every account
+    expect(landing("/employer/claim", "/dashboard")).toBe("/employer/claim");
+    expect(landing("/saved", "/dashboard")).toBe("/saved");
+  });
+  it("reads a return address only when it is safe", () => {
+    expect(explicitNext("/saved")).toBe("/saved");
+    expect(explicitNext(["/saved", "/x"])).toBe("/saved");
+    for (const bad of [undefined, "", "https://evil.example/", "/api/v1/me"])
+      expect(explicitNext(bad)).toBeUndefined();
   });
 });
 
@@ -232,8 +270,47 @@ describe("SignInForm", () => {
     type("E-mail address", "a@example.org");
     type("Password", "pw");
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/account"));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/dashboard"));
     expect(router.refresh).toHaveBeenCalled();
+  });
+  it.each([
+    ["/workspace", undefined, "/workspace"],
+    ["/employer", undefined, "/employer"],
+    ["/dashboard", undefined, "/dashboard"],
+    ["/workspace", "/saved", "/saved"],
+    ["/employer", "/employer/analytics", "/employer/analytics"],
+  ])("lands an account whose dashboard is %s (return address %s) on %s", async (home, next, expected) => {
+    script({ status: 200, body: { id: "u", home_path: home } });
+    render(<SignInForm next={next} />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith(expected));
+  });
+  it("never sends a person to the Account page just because they signed in", async () => {
+    script({ status: 200, body: { id: "u", home_path: "/dashboard" } });
+    render(<SignInForm />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalled());
+    expect(router.replace).not.toHaveBeenCalledWith("/account");
+  });
+  it("keeps the return address through the second step, and drops an unsafe one", async () => {
+    script({ status: 200, body: { two_step_required: true } });
+    const { unmount } = render(<SignInForm next="/saved" />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/sign-in/two-step?next=%2Fsaved"));
+    unmount();
+    vi.clearAllMocks();
+    script({ status: 200, body: { two_step_required: true } });
+    render(<SignInForm next="https://evil.example/" />);
+    type("E-mail address", "a@example.org");
+    type("Password", "pw");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/sign-in/two-step"));
   });
   it("sends the Remember me choice: off until ticked", async () => {
     const calls = script({ status: 200, body: { id: "u" } });

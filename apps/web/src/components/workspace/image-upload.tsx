@@ -35,13 +35,14 @@ export async function uploadImage(
   file: File,
   onProgress: (percent: number) => void,
   signal?: AbortSignal,
+  endpoint = "staff/media",
 ): Promise<{ ok: true; image: UploadResult } | { ok: false; message: string }> {
   const token = await csrfToken();
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     const body = new FormData();
     body.append("file", file);
-    xhr.open("POST", "/api/v1/staff/media");
+    xhr.open("POST", `/api/v1/${endpoint}`);
     xhr.setRequestHeader("X-CSRFToken", token);
     xhr.setRequestHeader("Accept", "application/json");
     xhr.withCredentials = true;
@@ -92,6 +93,7 @@ export function ImageUpload({
   error,
   library = false,
   libraryLabel = "Choose from Library",
+  endpoint,
 }: {
   id: string;
   /** The stored name ("" for none). */
@@ -107,6 +109,8 @@ export function ImageUpload({
   /** Offer the Media Library beside the upload. */
   library?: boolean;
   libraryLabel?: string;
+  /** The upload address under /api/v1 (staff: the Media Library; the employer dashboard passes its own). */
+  endpoint?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -135,7 +139,7 @@ export function ImageUpload({
     setLocal(URL.createObjectURL(file));
     setProgress(0);
     abort.current = new AbortController();
-    const result = await uploadImage(file, setProgress, abort.current.signal);
+    const result = await uploadImage(file, setProgress, abort.current.signal, endpoint);
     setProgress(null);
     if (result.ok) {
       if (result.image.reused)

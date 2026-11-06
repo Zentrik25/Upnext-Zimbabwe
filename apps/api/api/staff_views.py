@@ -31,8 +31,8 @@ from access.registry import DEFAULT_REGISTRY, Permission, Role
 from accounts import mfa, trusted_devices
 from accounts.models import User
 from audit import services as audit
-from catalog.models import Category, Organisation
-from catalog.schemas import load_schema
+from catalog.categories import category_payload
+from catalog.models import Organisation
 from core import staff_dashboard
 from core.staff_mfa import is_fresh, mark_verified
 from employers import staff_analytics
@@ -919,30 +919,7 @@ class CategoryListView(StaffView):
         responses=OpenApiResponse(description="Categories with their active detail schema"),
     )
     def get(self, request: Request) -> Response:
-        out = []
-        for cat in Category.objects.filter(active=True).order_by("sort_order", "code"):
-            schema = cat.detail_schemas.filter(status="active").first()
-            fields: list[dict[str, Any]] = []
-            required: list[str] = []
-            if schema is not None:
-                loaded = load_schema(cat.code, schema.version)
-                required = list(loaded.get("required", []))
-                for key, prop in loaded.get("properties", {}).items():
-                    items = prop.get("items", {})
-                    fields.append(
-                        {
-                            "name": key,
-                            "type": prop.get("type"),
-                            "format": prop.get("format"),
-                            "enum": prop.get("enum"),
-                            "item_enum": items.get("enum"),
-                            "item_type": items.get("type"),
-                            "max_length": prop.get("maxLength"),
-                            "required": key in required,
-                        }
-                    )
-            out.append({"code": cat.code, "name": cat.name, "detail_fields": fields})
-        return Response({"data": out})
+        return Response({"data": category_payload()})
 
 
 class OrganisationListView(StaffView):

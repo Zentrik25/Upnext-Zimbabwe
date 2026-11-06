@@ -58,20 +58,20 @@ function closingDay(): string {
 }
 
 async function fillListing(page: Page, title: string, extra = "") {
-  await page.getByLabel("Title").fill(title);
+  await page.getByLabel("Job title").fill(title);
   await page
-    .getByLabel("Short summary")
+    .getByLabel("Job overview")
     .fill("Plan and supervise underground works at a fictional mine near Kwekwe.");
   await page
-    .getByLabel("Description")
+    .getByLabel("Key responsibilities")
     .fill(
       `This is a fictional vacancy used only in browser tests. ${extra} The engineer plans and supervises work.`,
     );
-  await page.getByLabel("Location", { exact: true }).selectOption({ label: "Harare" });
-  await page.getByLabel("Employment type").selectOption("permanent");
-  await page.getByLabel("Closing date (optional)").fill(closingDay());
+  await page.getByLabel("Location", { exact: true }).fill("Harare");
+  await page.getByLabel("Job type").selectOption("permanent");
+  await page.getByLabel(/^Closing date/).fill(closingDay());
   await page
-    .getByLabel("Web address")
+    .getByLabel("Application website")
     .fill(`https://careers.example.org/${STAMP}/${title.split(" ")[0]!.toLowerCase()}`);
 }
 
@@ -104,7 +104,9 @@ test("2. an employer registers, confirms the address and signs in to an empty da
   await expect(page.getByText("E-mail address confirmed")).toBeVisible();
   await signIn(page, "/employer");
   await expect(page).toHaveURL(/\/employer$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Employer dashboard" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Employer Dashboard", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("You do not act for an organisation yet")).toBeVisible();
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
@@ -125,13 +127,13 @@ test("3. a claim grants nothing until staff verify the organisation", async ({ p
   await expect(page).toHaveURL(/\/employer$/);
   await expect(page.getByTestId("claims")).toContainText(ORG);
   await expect(page.getByTestId("claims")).toContainText("Waiting for review");
-  await expect(page.getByRole("link", { name: "Post a listing" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Create Opportunity" })).toHaveCount(0);
   // staff verify it (the demo editor, through the real service)
   manage(`demo_employer_review --approve-claim ${EMAIL}`);
   await page.reload();
-  const org = page.getByTestId("organisation").filter({ hasText: ORG });
-  await expect(org).toContainText("Verified organisation");
-  await expect(org.getByRole("link", { name: "Post a listing" })).toBeVisible();
+  await expect(page.getByTestId("active-organisation")).toContainText(ORG);
+  await expect(page.getByRole("link", { name: "Create Opportunity" }).first()).toBeVisible();
+  await expect(page.getByTestId("stat-total")).toHaveText("0"); // real counts, nothing invented
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
     await noOverflow(page, `dashboard with organisation @${width}`);
@@ -140,7 +142,10 @@ test("3. a claim grants nothing until staff verify the organisation", async ({ p
 
 test("4. a company profile is public only after an editor approves it", async ({ page }) => {
   await signIn(page, "/employer");
-  await page.getByRole("link", { name: /Company profile/ }).click();
+  await page
+    .getByRole("link", { name: /Company profile/i })
+    .first()
+    .click();
   await expect(page.getByText("There is no public profile yet.")).toBeVisible();
   await page.getByLabel("Tagline (optional)").fill("Digging responsibly");
   await page
@@ -166,6 +171,28 @@ test("4. a company profile is public only after an editor approves it", async ({
   }
 });
 
+test("4b. signing in with no return address lands on the employer dashboard, never the Account page", async ({
+  page,
+}) => {
+  await signIn(page); // no ?next=
+  await expect(page).toHaveURL(/\/employer$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Employer Dashboard", exact: true }),
+  ).toBeVisible();
+  // already signed in: the sign-in page sends them straight back, with no loop
+  await page.goto("/sign-in");
+  await expect(page).toHaveURL(/\/employer$/);
+  // the Account page stays reachable for profile and settings
+  await page.goto("/account");
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
+  // an open redirect is refused: the hostile address is ignored and the dashboard is used
+  await page.goto("/sign-in?next=https%3A%2F%2Fevil.example%2F");
+  await expect(page).toHaveURL(/\/employer$/);
+  // a staff-only return address is not honoured for an employer
+  await page.goto("/sign-in?next=%2Fworkspace");
+  await expect(page).toHaveURL(/\/employer$/);
+});
+
 const READER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
@@ -174,15 +201,16 @@ test("5. a listing goes through editors before the public sees it, and counters 
   browser,
 }) => {
   await signIn(page, "/employer");
-  await page.getByRole("link", { name: "Post a listing" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Post a listing" })).toBeVisible();
+  await page.getByRole("link", { name: "Create Opportunity" }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: "Create Opportunity" })).toBeVisible();
+  await expect(page.getByTestId("organisation-fixed")).toContainText(ORG); // no organisation field to fill
   await fillListing(page, TITLE);
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page).toHaveURL(/\/employer\/listings\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("heading", { level: 1, name: TITLE })).toBeVisible();
+  await expect(page.getByRole("heading", { name: TITLE })).toBeVisible();
   await expect(page.getByText("In review").first()).toBeVisible();
   await expect(page.getByTestId("listing-readonly")).toContainText("Waiting for an editor");
-  await expect(page.getByTestId("listing-form")).toHaveCount(0); // frozen while in review
+  await expect(page.getByTestId("opportunity-form")).toHaveCount(0); // frozen while in review
   const listingUrl = page.url();
 
   // not public yet. Views from automated browsers are deliberately not counted (D-65), so the readers in this
@@ -196,7 +224,7 @@ test("5. a listing goes through editors before the public sees it, and counters 
   manage(`demo_employer_review --publish-listing "${TITLE}"`);
   await page.goto("/employer");
   const row = page.getByTestId("employer-listing").filter({ hasText: TITLE });
-  await expect(row).toContainText("Published");
+  await expect(row).toContainText("Active");
 
   // the public page shows the employer's profile link; viewing it is counted, nothing identifies the visitor
   await page.goto(listingUrl);
@@ -211,17 +239,19 @@ test("5. a listing goes through editors before the public sees it, and counters 
 
   await expect(async () => {
     await page.goto("/employer");
-    const stats = page.getByTestId("employer-listing").filter({ hasText: TITLE }).getByTestId("stats");
-    await expect(stats).toContainText(/Views, last 7 days: [1-9]/);
+    // the Views column of the listing's own row (type, location, status, then views and apply clicks)
+    const views = page.getByTestId("employer-listing").filter({ hasText: TITLE }).locator("td").nth(3);
+    await expect(views).toHaveText(/^[1-9]/);
+    await expect(page.getByTestId("total-views")).toHaveText(/^[1-9]/);
   }).toPass({ timeout: 15000 });
-  await expect(page.getByText(/Counts are approximate/)).toBeVisible();
+  await expect(page.getByTestId("tracking-note")).toContainText("never receives applications");
 });
 
 test("6. a returned listing shows the editor's reason and can be reopened and resubmitted", async ({
   page,
 }) => {
   await signIn(page, "/employer");
-  await page.getByRole("link", { name: "Post a listing" }).click();
+  await page.getByRole("link", { name: "Create Opportunity" }).first().click();
   await fillListing(page, SECOND_TITLE, "A second fictional vacancy.");
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByText("In review").first()).toBeVisible();
@@ -229,7 +259,7 @@ test("6. a returned listing shows the editor's reason and can be reopened and re
   await page.reload();
   await expect(page.getByTestId("decision")).toContainText("the closing date needs to be clearer");
   await page.getByTestId("action-reopen").click();
-  await expect(page.getByTestId("listing-form")).toBeVisible();
+  await expect(page.getByTestId("opportunity-form")).toBeVisible();
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByText("In review").first()).toBeVisible();
 });
@@ -243,5 +273,5 @@ test("7. an employer cannot reach staff pages or other people's pages", async ({
   await page.goto("/employer/organisations/00000000-0000-4000-8000-000000000000/profile");
   await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
   await page.goto("/workspace");
-  await expect(page).toHaveURL(/\/$|\/account/); // not staff: sent away, never shown a staff page
+  await expect(page).toHaveURL(/\/employer$/); // not staff: sent to their own dashboard, never shown a staff page
 });

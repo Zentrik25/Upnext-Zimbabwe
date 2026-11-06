@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProfileForm } from "@/components/employer/profile-form";
-import { EmployerHeading } from "@/components/employer/parts";
-import { Container } from "@/components/layout";
 import { Callout } from "@/components/ui";
 import type { ProfileState } from "@/lib/employer-types";
 import { authedJson, getCurrentUser } from "@/lib/session";
@@ -23,22 +20,15 @@ export default async function ProfilePage({ params }: Props) {
   if (!result.ok) {
     if (result.status === 404) notFound();
     return (
-      <Container className="py-10" role="alert">
+      <div className="py-10" role="alert">
         The profile could not be loaded. Try again shortly.
-      </Container>
+      </div>
     );
   }
   const state = result.data;
   return (
-    <Container className="pt-6 pb-[65px]">
-      <p className="text-ctl">
-        <Link href="/employer" className="text-accent underline">
-          ← Employer dashboard
-        </Link>
-      </p>
-      <div className="mt-3">
-        <EmployerHeading title={`Company profile: ${state.organisation.name}`} />
-      </div>
+    <div>
+      <h2 className="m-0 text-title font-strong tracking-title">{state.organisation.name}</h2>
       <p className="mt-1 text-base text-muted">
         The profile is shown to the public only after an editor approves it, and only while the organisation
         is verified.
@@ -50,9 +40,9 @@ export default async function ProfilePage({ params }: Props) {
           <p className="mt-1 whitespace-pre-line text-base">{state.live.about}</p>
           {state.slug ? (
             <p className="mt-2 text-base">
-              <Link href={`/employers/${state.slug}`} className="text-accent underline">
+              <a href={`/employers/${state.slug}`} className="text-accent underline">
                 View the public page
-              </Link>
+              </a>
             </p>
           ) : null}
         </Callout>
@@ -67,6 +57,6 @@ export default async function ProfilePage({ params }: Props) {
       <div className="mt-5 max-w-[640px]">
         <ProfileForm organisationId={orgId} state={state} />
       </div>
-    </Container>
+    </div>
   );
 }

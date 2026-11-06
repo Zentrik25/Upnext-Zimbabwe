@@ -70,6 +70,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-63 | Staff analytics (D-65): hourly and daily view counters without any visitor identifier, crawlers and prefetches excluded, rolling 24-hour, 7-day, 30-day and all-time figures in Harare time, chart, per-listing ranking with click-through rate of the same window, a Views column and per-listing statistics, a compact dashboard without a hero image, enforced analytics.read scope | D-65; D-36; D-49 | SC-12 | getStaffAnalytics, listStaffAnalyticsOpportunities | ANLY-01, ANLY-02, ANLY-03, ANLY-04 | OQ-34 |
 | R-64 | Search-engine hardening and organic discovery (D-68): a page whose data could not be loaded is a server error, never 200 with noindex; metadata in <head> for every client; one canonical address per listing; the full JobPosting description; a sitemap with real lastmod values, company profiles and no shortened file on failure; six fact-defined landing pages, indexable only from three open listings; the Google Indexing API for JobPosting pages only, off by default, idempotent, quota-aware, retried with back-off, its key mounted in the worker only | D-68; D-51; D-28; P4-02 | SC-01, SC-02, SC-03 | listOpportunities, getSitemapEntries, getOpportunity | SEO-10, SEO-11, SEO-12, SEO-13, IDX-01, IDX-02, IDX-03 | OQ-20 |
 | R-65 | Branded search (D-69): eight priority destinations linked from every public page with descriptive crawlable links; the seven public ones with unique titles, descriptions, headings and visible text, self-canonical, in the sitemap when they hold listings; Sign In linked but noindex and unlisted, crawlable so its noindex is read; the duplicate graduate landing page consolidated by one permanent redirect; home title, description and trailing-slash canonical as the owner specified; BreadcrumbList on category lists | D-69; D-68; D-51; P4-02 | SC-01, SC-02 | listOpportunities, getSitemapEntries | SEO-14 | OQ-20 |
+| R-70 | Role-based landing (server-named dashboard) and the employer dashboard: own-organisation counts and analytics, filtered list, duplicate, preview, picture upload (D-70). Tests: test_role_landing.py, test_employer_dashboard.py, employer.test.tsx, accounts.test.tsx | D-70 | — | getEmployerDashboard, uploadEmployerImage, duplicateEmployerListing, previewEmployerListing, listEmployerCategories | — | — |
 
 ## 2. Screen register
 
@@ -109,12 +110,17 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `withdrawEmployerProfileRevision` | DELETE `/employer/organisations/{organisation_id}/profile/revisions/{revision_id}` | employer | R-44 |
 | `listEmployerListings` | GET `/employer/organisations/{organisation_id}/listings` | employer | R-45 |
 | `createEmployerListing` | POST `/employer/organisations/{organisation_id}/listings` | employer | R-45 |
+| `getEmployerDashboard` | GET `/employer/organisations/{organisation_id}/dashboard` | employer | R-70 |
+| `listEmployerCategories` | GET `/employer/categories` | employer | R-70 |
+| `uploadEmployerImage` | POST `/employer/images` | employer | R-70 |
 | `getEmployerAnalytics` | GET `/employer/organisations/{organisation_id}/analytics` | employer | R-46 |
 | `getEmployerListing` | GET `/employer/listings/{opportunity_id}` | employer | R-45 |
 | `saveEmployerListing` | PATCH `/employer/listings/{opportunity_id}` | employer | R-45 |
 | `submitEmployerListing` | POST `/employer/listings/{opportunity_id}/submit` | employer | R-45 |
 | `discardEmployerListing` | POST `/employer/listings/{opportunity_id}/discard` | employer | R-45 |
 | `reopenEmployerListing` | POST `/employer/listings/{opportunity_id}/reopen` | employer | R-45 |
+| `previewEmployerListing` | GET `/employer/listings/{opportunity_id}/preview` | employer | R-70 |
+| `duplicateEmployerListing` | POST `/employer/listings/{opportunity_id}/duplicate` | employer | R-70 |
 | `amendEmployerListing` | POST `/employer/listings/{opportunity_id}/amend` | employer | R-45 |
 | `closeEmployerListing` | POST `/employer/listings/{opportunity_id}/close` | employer | R-45 |
 | `getEmployerProfilePublic` | GET `/employers/{slug}` | public | R-44 |

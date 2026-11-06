@@ -43,7 +43,7 @@ export function AcceptInvitationForm({ token }: { token: string | null }) {
           </p>
         </FormSuccess>
         <AuthSwitch>
-          <Link href="/sign-in?next=%2Fworkspace">Go to sign in</Link>
+          <Link href="/sign-in">Go to sign in</Link>
         </AuthSwitch>
       </div>
     );

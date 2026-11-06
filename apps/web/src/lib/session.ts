@@ -16,6 +16,8 @@ export type CurrentUser = {
   deletion_requested_at: string | null;
   deletion_scheduled_for: string | null;
   email_change_available?: boolean;
+  /** The dashboard the API chose for this account (accounts.home): "/workspace", "/employer" or "/dashboard". */
+  home_path?: string;
 };
 
 export type SavedItem = {
