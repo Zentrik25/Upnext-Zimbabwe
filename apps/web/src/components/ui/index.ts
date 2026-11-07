@@ -23,7 +23,6 @@ export { ListingRow, type ListingRowProps } from "./listing-row";
 export { Logo } from "./logo";
 export { Notice } from "./notice";
 export { Callout, Panel } from "./panel";
-export { RichTextEditor } from "./rich-text-editor";
 export { SaveButton } from "./save-button";
 export { SearchGroup } from "./search-group";
 export { Tabs, type TabItem } from "./tabs";

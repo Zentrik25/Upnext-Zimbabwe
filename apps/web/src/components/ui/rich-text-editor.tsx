@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Icon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { htmlToMarkdown, markdownToHtml, normaliseLinkUrl } from "@/lib/rich-text";
 
@@ -17,6 +16,35 @@ import { htmlToMarkdown, markdownToHtml, normaliseLinkUrl } from "@/lib/rich-tex
  * Phones: 44px buttons; the toolbar and the link box are lifted above the on-screen keyboard (visualViewport) so
  * they stay in reach while typing; every part wraps, so the page never scrolls sideways.
  */
+
+/** The toolbar's own icons (kept here, not in the shared icon set, so pages without the editor do not carry them). */
+const GLYPHS = {
+  listBullet: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
+  listNumber: "M10 6h10M10 12h10M10 18h10M4 4.5 5.5 4v5M4 9h3M4 14h3l-3 4h3",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
+  unlink:
+    "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1M3 3l18 18",
+  undo: "M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3",
+  redo: "m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3",
+} as const;
+
+function Icon({ name }: { name: keyof typeof GLYPHS }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className="h-5 w-5"
+    >
+      <path d={GLYPHS[name]} />
+    </svg>
+  );
+}
 
 type Marks = { bold: boolean; italic: boolean; underline: boolean; ul: boolean; ol: boolean; link: boolean };
 const NO_MARKS: Marks = { bold: false, italic: false, underline: false, ul: false, ol: false, link: false };

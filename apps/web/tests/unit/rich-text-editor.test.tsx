@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RichTextEditor } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 const exec = vi.fn((...args: [string, boolean?, string?]) => args.length > 0);
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
-import { Button, RichTextEditor, Select, TextInput } from "@/components/ui";
+import { Button, Select, TextInput } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { APPLY_METHODS, type ApplyMethod, type EditorState } from "@/lib/job-editor";
 

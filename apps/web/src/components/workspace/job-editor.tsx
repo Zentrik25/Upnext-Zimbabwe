@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
-import { Button, Checkbox, RichTextEditor, Select, TextInput, Textarea } from "@/components/ui";
+import { Button, Checkbox, Select, TextInput, Textarea } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { Location } from "@/lib/catalog-types";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import {

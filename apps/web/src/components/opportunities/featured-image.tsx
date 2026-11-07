@@ -1,7 +1,24 @@
 "use client";
 
 import { useRef } from "react";
-import { Icon } from "@/components/ui/icons";
+
+function Glyph({ d }: { d: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className="h-4 w-4"
+    >
+      <path d={d} />
+    </svg>
+  );
+}
 
 /**
  * The listing's featured picture, compact: 160px high on a phone and 200px from the tablet width up, in the
@@ -35,7 +52,7 @@ export function FeaturedImage({ src, alt }: { src: string; alt: string | null })
           aria-hidden="true"
           className="absolute right-1 bottom-1 grid h-7 w-7 place-items-center rounded-control border border-line bg-surface text-ink"
         >
-          <Icon name="expand" className="h-4 w-4" />
+          <Glyph d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5" />
         </span>
       </button>
       <dialog
@@ -55,7 +72,7 @@ export function FeaturedImage({ src, alt }: { src: string; alt: string | null })
             onClick={() => dialog.current?.close()}
             className="absolute top-2 right-2 grid h-11 w-11 cursor-pointer place-items-center rounded-control border border-line bg-surface text-ink hover:bg-surface-pale"
           >
-            <Icon name="close" className="h-5 w-5" />
+            <Glyph d="M6 6l12 12M18 6 6 18" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element -- the same picture, shown whole */}
           <img

@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { FormError, FormSuccess } from "@/components/account/parts";
-import { Button, Checkbox, RichTextEditor, Select, Textarea, TextInput } from "@/components/ui";
+import { Button, Checkbox, Select, Textarea, TextInput } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { DetailInput } from "@/components/workspace/detail-input";
 import { ImageUpload } from "@/components/workspace/image-upload";
 import { ApplyFields, Row } from "@/components/workspace/job-editor-parts";
