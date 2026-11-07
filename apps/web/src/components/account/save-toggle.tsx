@@ -45,7 +45,7 @@ export function SaveToggle({
   const [message, setMessage] = useState("");
 
   const iconClass =
-    "inline-grid min-h-[48px] w-12 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10";
+    "inline-grid min-h-field w-10 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10";
 
   if (!signedIn && icon) {
     return (
@@ -55,7 +55,7 @@ export function SaveToggle({
         title="Save (sign in to save this opportunity)"
         className={cn(iconClass, className)}
       >
-        <Icon name="bookmark" className="h-5 w-5" />
+        <Icon name="bookmark" className="h-4 w-4" />
       </a>
     );
   }
@@ -106,7 +106,7 @@ export function SaveToggle({
           title={saved ? "Saved (select to remove)" : "Save"}
           className={cn(iconClass, "disabled:cursor-not-allowed disabled:opacity-60", className)}
         >
-          <Icon name="bookmark" className={cn("h-5 w-5", saved && "fill-current text-accent")} />
+          <Icon name="bookmark" className={cn("h-4 w-4", saved && "fill-current text-accent")} />
         </button>
         <span
           role="status"

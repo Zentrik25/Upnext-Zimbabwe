@@ -136,12 +136,12 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
   );
 }
 
-/** Holds the save control's place (a 48px square) and announces nothing: it is one small control, not a region. */
+/** Holds the save control's place (a 40px square) and announces nothing: it is one small control, not a region. */
 function SaveSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="min-h-[48px] w-12 shrink-0 self-stretch rounded-control border border-line bg-surface-pale skeleton-pulse"
+      className="min-h-field w-10 shrink-0 self-stretch rounded-control border border-line bg-surface-pale skeleton-pulse"
     />
   );
 }

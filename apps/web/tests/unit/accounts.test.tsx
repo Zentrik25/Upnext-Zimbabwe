@@ -464,8 +464,8 @@ describe("SaveToggle as an icon button (the listing page's action row)", () => {
     expect(button).toHaveAttribute("aria-pressed", "false");
     expect(button).toHaveAttribute("title", "Save");
     expect(button.textContent).toBe("");
-    expect(button.className).toMatch(/w-12/);
-    expect(button.className).toMatch(/min-h-\[48px\]/);
+    expect(button.className).toMatch(/w-10/);
+    expect(button.className).toMatch(/min-h-field/);
     fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
     expect(screen.getByRole("button", { name: "Save Engineer" })).toHaveAttribute(

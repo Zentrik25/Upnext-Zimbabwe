@@ -55,7 +55,7 @@ function destinations(listing: OpportunityDetail) {
 function applyButtons(listing: OpportunityDetail): { primary: ReactNode; others: ReactNode[] } {
   const { application } = listing;
   const { web, mail, instructions: instructionsOnly } = destinations(listing);
-  const big = "min-h-[48px] min-w-0 gap-2 text-base";
+  const big = "min-h-field min-w-0 gap-2 text-ctl";
   const buttons: ReactNode[] = [];
   if (web)
     buttons.push(
@@ -67,7 +67,7 @@ function applyButtons(listing: OpportunityDetail): { primary: ReactNode; others:
         target="_blank"
         className={`${big} flex-1`}
       >
-        <Icon name="external" className="h-5 w-5 shrink-0" />
+        <Icon name="external" className="h-4 w-4 shrink-0" />
         Apply Now
         <span className="sr-only">
           {" "}
@@ -84,14 +84,14 @@ function applyButtons(listing: OpportunityDetail): { primary: ReactNode; others:
         variant={web ? "secondary" : "primary"}
         className={`${big} flex-1`}
       >
-        <Icon name="mail" className="h-5 w-5 shrink-0" />
+        <Icon name="mail" className="h-4 w-4 shrink-0" />
         Apply via Email
       </ButtonLink>,
     );
   if (instructionsOnly)
     buttons.push(
       <ButtonLink key="instructions" href="#how-to-apply" className={`${big} flex-1`}>
-        <Icon name="external" className="h-5 w-5 shrink-0" />
+        <Icon name="external" className="h-4 w-4 shrink-0" />
         View Application Instructions
       </ButtonLink>,
     );
@@ -392,8 +392,8 @@ export function JobView({
                   {showReference ? <p className="m-0">Reference: {listing.reference_number}</p> : null}
                   {showContact ? <p className="m-0 text-muted">Contact: {listing.contact_details}</p> : null}
                 </div>
-                <p className="m-0 mt-3 flex items-start gap-2 rounded-card bg-match-bg p-3 text-ctl text-ink">
-                  <Icon name="info" className="mt-px h-5 w-5 shrink-0 text-accent" />
+                <p className="m-0 mt-3 flex items-start gap-2 rounded-card bg-match-bg px-3 py-2 text-small text-ink">
+                  <Icon name="info" className="mt-px h-4 w-4 shrink-0 text-accent" />
                   <span>
                     Never pay to apply. Read{" "}
                     <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">

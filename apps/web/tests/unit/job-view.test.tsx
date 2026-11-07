@@ -549,10 +549,10 @@ describe("Apply Now, Save and Share on one line", () => {
     const share = screen.getByRole("button", { name: "Share this opportunity" });
     expect(share.textContent).toBe(""); // no visible text
     expect(share).toHaveAttribute("title", "Share");
-    expect(share.className).toMatch(/w-12/);
+    expect(share.className).toMatch(/w-10/);
     expect(share.className).toMatch(/self-stretch/); // as tall as Apply Now, whatever its height
-    expect(share.className).toMatch(/min-h-\[48px\]/); // a 48px touch target
-    expect(screen.getByRole("link", { name: /Apply Now/ }).className).toMatch(/min-h-\[48px\]/);
+    expect(share.className).toMatch(/min-h-field/); // a 40px target
+    expect(screen.getByRole("link", { name: /Apply Now/ }).className).toMatch(/min-h-field/);
     expect(share.querySelector("svg")).not.toBeNull();
   });
 

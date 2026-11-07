@@ -55,9 +55,9 @@ export function ShareButton({
           onClick={share}
           aria-label="Share this opportunity"
           title="Share"
-          className="inline-grid min-h-[48px] w-12 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10"
+          className="inline-grid min-h-field w-10 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10"
         >
-          <Icon name="share" className="h-5 w-5" />
+          <Icon name="share" className="h-4 w-4" />
         </button>
         <span
           role="status"
