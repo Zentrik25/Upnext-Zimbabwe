@@ -8,6 +8,7 @@ import { EmailChangePanel } from "@/components/account/account-panels";
 import { ForgotPasswordForm } from "@/components/account/forgot-password-form";
 import { RegisterForm } from "@/components/account/register-form";
 import { ResetPasswordForm } from "@/components/account/reset-password-form";
+import { SaveIconToggle } from "@/components/account/save-icon-toggle";
 import { SaveToggle } from "@/components/account/save-toggle";
 import { GoogleButton } from "@/components/account/google-button";
 import { GoogleFailedNotice, SignInOptions } from "@/components/account/sign-in-parts";
@@ -447,7 +448,7 @@ describe("EmailChangePanel", () => {
   });
 });
 
-describe("SaveToggle as an icon button (the listing page's action row)", () => {
+describe("SaveIconToggle (the listing page's action row)", () => {
   it("has no visible text, a stable name and tooltip, and reports the state with aria-pressed", async () => {
     vi.stubGlobal(
       "fetch",
@@ -457,9 +458,7 @@ describe("SaveToggle as an icon button (the listing page's action row)", () => {
           : new Response("{}", { status: 200 }),
       ),
     );
-    render(
-      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" icon />,
-    );
+    render(<SaveIconToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" />);
     const button = screen.getByRole("button", { name: "Save Engineer" });
     expect(button).toHaveAttribute("aria-pressed", "false");
     expect(button).toHaveAttribute("title", "Save");
@@ -485,9 +484,7 @@ describe("SaveToggle as an icon button (the listing page's action row)", () => {
             }),
       ),
     );
-    render(
-      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" icon />,
-    );
+    render(<SaveIconToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" />);
     fireEvent.click(screen.getByRole("button", { name: "Save Engineer" }));
     const note = await screen.findByText(/no longer open/);
     expect(note.className).toMatch(/absolute/);
@@ -496,13 +493,12 @@ describe("SaveToggle as an icon button (the listing page's action row)", () => {
 
   it("sends a visitor to sign in and back", () => {
     render(
-      <SaveToggle
+      <SaveIconToggle
         opportunityId="o1"
         title="Engineer"
         initialSaved={false}
         signedIn={false}
         returnTo="/opportunities/x"
-        icon
       />,
     );
     const link = screen.getByRole("link", { name: /Save Engineer \(sign in to save\)/ });

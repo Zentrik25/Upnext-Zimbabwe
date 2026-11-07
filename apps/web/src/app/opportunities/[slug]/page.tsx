@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache, Suspense } from "react";
-import { SaveToggle } from "@/components/account/save-toggle";
+import { SaveIconToggle } from "@/components/account/save-icon-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { JobView } from "@/components/opportunities/job-view";
@@ -125,13 +125,12 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
   const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
   if (listing.status !== "published" && !isSaved) return null;
   return (
-    <SaveToggle
+    <SaveIconToggle
       opportunityId={listing.id}
       title={listing.title}
       initialSaved={isSaved}
       signedIn={Boolean(user)}
       returnTo={`/opportunities/${listing.slug}`}
-      icon
     />
   );
 }

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SaveButton } from "@/components/ui";
-import { Icon } from "@/components/ui/icons";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { cn } from "@/lib/cn";
 
@@ -19,7 +18,6 @@ export function SaveToggle({
   signedIn,
   returnTo,
   showLabel = false,
-  icon = false,
   refreshOnChange = false,
   className,
 }: {
@@ -29,12 +27,6 @@ export function SaveToggle({
   signedIn: boolean;
   returnTo: string;
   showLabel?: boolean;
-  /**
-   * An icon-only square button (bookmark, no visible text) for the one-line action row. Its name and tooltip say
-   * what it does; the state is `aria-pressed`; a failure is written as a note under the row (against the nearest
-   * `relative` ancestor).
-   */
-  icon?: boolean;
   /** Re-render the server page after a change (the saved list drops what was removed). */
   refreshOnChange?: boolean;
   className?: string;
@@ -43,22 +35,6 @@ export function SaveToggle({
   const [saved, setSaved] = useState(initialSaved);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-
-  const iconClass =
-    "inline-grid min-h-field w-10 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10";
-
-  if (!signedIn && icon) {
-    return (
-      <a
-        href={`/sign-in?next=${encodeURIComponent(returnTo)}`}
-        aria-label={`Save ${title} (sign in to save)`}
-        title="Save (sign in to save this opportunity)"
-        className={cn(iconClass, className)}
-      >
-        <Icon name="bookmark" className="h-4 w-4" />
-      </a>
-    );
-  }
 
   if (!signedIn) {
     return (
@@ -93,34 +69,6 @@ export function SaveToggle({
     else if (outcome.status === 401) setMessage("Your session ended. Sign in again to save.");
     else setMessage(describeFailure(outcome));
   }
-
-  if (icon)
-    return (
-      <>
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={busy}
-          aria-pressed={saved}
-          aria-label={`Save ${title}`}
-          title={saved ? "Saved (select to remove)" : "Save"}
-          className={cn(iconClass, "disabled:cursor-not-allowed disabled:opacity-60", className)}
-        >
-          <Icon name="bookmark" className={cn("h-4 w-4", saved && "fill-current text-accent")} />
-        </button>
-        <span
-          role="status"
-          aria-live="polite"
-          className={
-            message && !message.startsWith("Saved") && !message.startsWith("Removed")
-              ? "absolute inset-x-0 top-full z-10 mt-1 rounded-control border border-danger/50 bg-surface px-3 py-2 text-small text-danger [overflow-wrap:anywhere]"
-              : "sr-only"
-          }
-        >
-          {message}
-        </span>
-      </>
-    );
 
   return (
     <span className={cn("inline-flex items-center gap-1", className)}>
