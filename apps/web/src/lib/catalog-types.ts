@@ -64,6 +64,8 @@ export type OpportunityDetail = OpportunitySummary & {
     email: string | null;
     email_subject?: string | null;
     instructions: string | null;
+    /** The instructions rendered from the Markdown subset (bold, lists, links); absent from an older API. */
+    instructions_html?: string | null;
   };
   /** Staff-set search and sharing text; null parts mean "derive from the title and summary". */
   seo?: {

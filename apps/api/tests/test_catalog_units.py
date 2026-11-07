@@ -157,6 +157,20 @@ def test_markdown_renders_the_allowed_subset() -> None:
     assert "<p>line1<br>line2</p>" in html
 
 
+def test_markdown_underline_is_a_bare_u_tag_and_composes_with_other_marks() -> None:
+    assert markdown.render("++under++") == "<p><u>under</u></p>"
+    assert markdown.render("**++both++**") == "<p><strong><u>both</u></strong></p>"
+    assert markdown.render("[++link++](https://example.org/a)").count("<u>link</u>") == 1
+    # Plain text that merely contains plus signs is left alone.
+    assert markdown.render("C++ and C++ again") == "<p>C++ and C++ again</p>"
+    assert markdown.render("1 ++ 2") == "<p>1 ++ 2</p>"
+
+
+def test_plain_text_instructions_render_with_their_lines_kept() -> None:
+    html = markdown.render("Send your CV to the Director.\nBox 1760, Harare")
+    assert html == "<p>Send your CV to the Director.<br>Box 1760, Harare</p>"
+
+
 XSS_CORPUS = [
     "<script>alert(1)</script>",
     '<img src=x onerror="alert(1)">',
@@ -170,6 +184,8 @@ XSS_CORPUS = [
     "**<b onclick=x>y</b>**",
     "&lt;script&gt;",
     "`<script>`",
+    "++<script>alert(1)</script>++",
+    "++x onclick=alert(1)++",
 ]
 
 
@@ -179,7 +195,7 @@ def test_markdown_output_never_contains_active_html(payload: str) -> None:
     lowered = html.lower()
     # Only these tags may ever appear, and only <a> may carry attributes (href/rel/target).
     tags = re.findall(r"<(/?)([a-z0-9]+)([^>]*)>", lowered)
-    allowed = {"p", "br", "h3", "h4", "h5", "ul", "ol", "li", "strong", "em", "code", "a", "blockquote"}
+    allowed = {"p", "br", "h3", "h4", "h5", "ul", "ol", "li", "strong", "em", "u", "code", "a", "blockquote"}
     assert {name for _, name, _ in tags} <= allowed
     for closing, name, attrs in tags:
         if name != "a" or closing:

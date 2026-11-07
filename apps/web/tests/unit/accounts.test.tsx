@@ -447,8 +447,8 @@ describe("EmailChangePanel", () => {
   });
 });
 
-describe("SaveToggle as a block button (the listing page)", () => {
-  it("keeps one stable name, shows Save or Saved, and reports the state with aria-pressed", async () => {
+describe("SaveToggle as an icon button (the listing page's action row)", () => {
+  it("has no visible text, a stable name and tooltip, and reports the state with aria-pressed", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) =>
@@ -458,14 +458,40 @@ describe("SaveToggle as a block button (the listing page)", () => {
       ),
     );
     render(
-      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" block />,
+      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" icon />,
     );
     const button = screen.getByRole("button", { name: "Save Engineer" });
     expect(button).toHaveAttribute("aria-pressed", "false");
-    expect(button).toHaveTextContent("Save");
+    expect(button).toHaveAttribute("title", "Save");
+    expect(button.textContent).toBe("");
+    expect(button.className).toMatch(/w-12/);
+    expect(button.className).toMatch(/min-h-\[48px\]/);
     fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
-    expect(screen.getByRole("button", { name: "Save Engineer" })).toHaveTextContent("Saved");
+    expect(screen.getByRole("button", { name: "Save Engineer" })).toHaveAttribute(
+      "title",
+      expect.stringMatching(/Saved/),
+    );
+  });
+
+  it("says why a save failed in a note under the row, not inside the square", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("/auth/csrf")
+          ? new Response(JSON.stringify({ csrf_token: "t" }), { status: 200 })
+          : new Response(JSON.stringify({ error: { code: "listing_not_saveable", message: "x" } }), {
+              status: 409,
+            }),
+      ),
+    );
+    render(
+      <SaveToggle opportunityId="o1" title="Engineer" initialSaved={false} signedIn returnTo="/" icon />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save Engineer" }));
+    const note = await screen.findByText(/no longer open/);
+    expect(note.className).toMatch(/absolute/);
+    expect(screen.getByRole("button", { name: "Save Engineer" }).textContent).toBe("");
   });
 
   it("sends a visitor to sign in and back", () => {
@@ -476,11 +502,13 @@ describe("SaveToggle as a block button (the listing page)", () => {
         initialSaved={false}
         signedIn={false}
         returnTo="/opportunities/x"
-        block
+        icon
       />,
     );
-    const link = screen.getByRole("link", { name: /Sign in to save Engineer/ });
+    const link = screen.getByRole("link", { name: /Save Engineer \(sign in to save\)/ });
     expect(link).toHaveAttribute("href", "/sign-in?next=%2Fopportunities%2Fx");
+    expect(link).toHaveAttribute("title", expect.stringMatching(/sign in/i));
+    expect(link.textContent).toBe("");
   });
 });
 

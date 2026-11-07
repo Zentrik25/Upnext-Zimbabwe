@@ -2,9 +2,9 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
-import { Button, Select, Textarea, TextInput } from "@/components/ui";
+import { Button, RichTextEditor, Select, TextInput } from "@/components/ui";
 import { apiFetch, describeFailure } from "@/lib/client-api";
-import { APPLY_METHODS, toggleBullets, type ApplyMethod, type EditorState } from "@/lib/job-editor";
+import { APPLY_METHODS, type ApplyMethod, type EditorState } from "@/lib/job-editor";
 
 const label = "text-ctl font-medium text-check-text";
 const error = "m-0 text-small text-danger";
@@ -43,65 +43,6 @@ export function Row({
         {optional ? <span className="font-light text-muted"> (optional)</span> : null}
       </label>
       {children}
-      {hint && !message ? (
-        <p id={`${id}-hint`} className="m-0 text-small text-muted">
-          {hint}
-        </p>
-      ) : null}
-      <FieldError id={`${id}-error`} message={message} />
-    </div>
-  );
-}
-
-/** A multiline editor with a one-click bulleted list (stored as simple Markdown, which the page renders as a list). */
-export function BulletTextarea({
-  id,
-  title,
-  hint,
-  value,
-  onChange,
-  error: message,
-  rows = 6,
-  optional,
-}: {
-  id: string;
-  title: string;
-  hint?: string;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  rows?: number;
-  optional?: boolean;
-}) {
-  function bullets() {
-    const el = document.getElementById(id) as HTMLTextAreaElement | null;
-    if (!el) return;
-    const next = toggleBullets(value, el.selectionStart, el.selectionEnd);
-    onChange(next.text);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(next.start, next.end);
-    });
-  }
-  return (
-    <div className="grid gap-1">
-      <div className="flex items-end justify-between gap-2">
-        <label htmlFor={id} className={label}>
-          {title}
-          {optional ? <span className="font-light text-muted"> (optional)</span> : null}
-        </label>
-        <Button variant="secondary" onClick={bullets} className="min-h-[28px] px-2 py-0 text-small">
-          • List<span className="sr-only"> (turn the selected lines into a bulleted list, or back)</span>
-        </Button>
-      </div>
-      <Textarea
-        id={id}
-        rows={rows}
-        value={value}
-        invalid={Boolean(message)}
-        aria-describedby={message ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        onChange={(e) => onChange(e.target.value)}
-      />
       {hint && !message ? (
         <p id={`${id}-hint`} className="m-0 text-small text-muted">
           {hint}
@@ -380,7 +321,7 @@ export function ApplyFields({
           </Row>
         </div>
       ) : null}
-      <Row
+      <RichTextEditor
         id={`${id}-instructions`}
         title={m === "instructions" ? "Application instructions" : "Short instructions"}
         optional={m !== "instructions"}
@@ -389,20 +330,11 @@ export function ApplyFields({
             ? "Say how to apply, as the source does. No application destination is shown."
             : "For example the reference to quote, or documents to attach."
         }
+        value={state.applyInstructions}
+        onChange={(applyInstructions) => set({ applyInstructions })}
         error={errors.application_instructions}
-      >
-        <Textarea
-          id={`${id}-instructions`}
-          rows={3}
-          maxLength={2000}
-          value={state.applyInstructions}
-          invalid={Boolean(errors.application_instructions)}
-          aria-describedby={
-            errors.application_instructions ? `${id}-instructions-error` : `${id}-instructions-hint`
-          }
-          onChange={(e) => set({ applyInstructions: e.target.value })}
-        />
-      </Row>
+        minHeight={96}
+      />
     </div>
   );
 }

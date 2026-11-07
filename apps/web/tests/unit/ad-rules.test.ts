@@ -81,7 +81,7 @@ describe("where advertisements may appear (allow-list)", () => {
       expect(i, needle).toBeGreaterThan(-1);
       return i;
     };
-    const apply = at('data-testid="apply"');
+    const apply = at('data-testid={canApply ? "apply"');
     const share = at("<ShareButton");
     const description = at("listing.description_html ?");
     const ad = at("{!preview ? ad : null}");

@@ -236,6 +236,10 @@ class PublicCatalogTests(TestCase):
         assert body["application"]["method"] == "external_url" and body["application"]["url"].startswith(
             "https://"
         )
+        # The instructions also come rendered (escape-first Markdown); nothing is invented when there are none.
+        application = body["application"]
+        assert "instructions_html" in application
+        assert (application["instructions"] is None) == (application["instructions_html"] is None)
         unknown = self.get(f"{LIST}/{self.live['jobs-2'].slug}").json()
         assert unknown["salary"] is None and unknown["funding"] is None
         assert unknown["deadline"] == {

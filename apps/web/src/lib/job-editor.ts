@@ -404,25 +404,5 @@ export function buildContent(
   return { content, errors };
 }
 
-/** Prefix each selected line with "- " (or remove it when every line already has one): the bullet-list helper. */
-export function toggleBullets(
-  text: string,
-  start: number,
-  end: number,
-): { text: string; start: number; end: number } {
-  const lineStart = text.lastIndexOf("\n", start - 1) + 1;
-  const nextBreak = text.indexOf("\n", end);
-  const lineEnd = nextBreak === -1 ? text.length : nextBreak;
-  const lines = text.slice(lineStart, lineEnd).split("\n");
-  const all = lines.every((l) => l.trim() === "" || /^\s*[-*]\s/.test(l));
-  const changed = lines
-    .map((l) =>
-      l.trim() === "" ? l : all ? l.replace(/^(\s*)[-*]\s/, "$1") : `- ${l.replace(/^\s*[-*]\s/, "")}`,
-    )
-    .join("\n");
-  const next = text.slice(0, lineStart) + changed + text.slice(lineEnd);
-  return { text: next, start: lineStart, end: lineStart + changed.length };
-}
-
 /** Whether the editor has enough to create a draft: a category, an organisation and a title. */
 export const canCreate = (s: EditorState): boolean => Boolean(s.category && s.organisation && s.title.trim());

@@ -123,6 +123,7 @@ class ApplicationSerializer(serializers.Serializer[None]):
     email = serializers.EmailField(allow_null=True)
     email_subject = serializers.CharField(allow_null=True)
     instructions = serializers.CharField(allow_null=True)
+    instructions_html = serializers.CharField(allow_null=True)
 
 
 class SeoSerializer(serializers.Serializer[None]):

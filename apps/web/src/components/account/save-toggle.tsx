@@ -19,7 +19,7 @@ export function SaveToggle({
   signedIn,
   returnTo,
   showLabel = false,
-  block = false,
+  icon = false,
   refreshOnChange = false,
   className,
 }: {
@@ -29,8 +29,12 @@ export function SaveToggle({
   signedIn: boolean;
   returnTo: string;
   showLabel?: boolean;
-  /** A full-width light-purple button (the phone layout), matching Share. */
-  block?: boolean;
+  /**
+   * An icon-only square button (bookmark, no visible text) for the one-line action row. Its name and tooltip say
+   * what it does; the state is `aria-pressed`; a failure is written as a note under the row (against the nearest
+   * `relative` ancestor).
+   */
+  icon?: boolean;
   /** Re-render the server page after a change (the saved list drops what was removed). */
   refreshOnChange?: boolean;
   className?: string;
@@ -40,14 +44,18 @@ export function SaveToggle({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const blockClass =
-    "inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-border-interest bg-match-bg text-base font-medium text-ink hover:bg-accent/10";
+  const iconClass =
+    "inline-grid min-h-[48px] w-12 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10";
 
-  if (!signedIn && block) {
+  if (!signedIn && icon) {
     return (
-      <a href={`/sign-in?next=${encodeURIComponent(returnTo)}`} className={cn(blockClass, className)}>
+      <a
+        href={`/sign-in?next=${encodeURIComponent(returnTo)}`}
+        aria-label={`Save ${title} (sign in to save)`}
+        title="Save (sign in to save this opportunity)"
+        className={cn(iconClass, className)}
+      >
         <Icon name="bookmark" className="h-5 w-5" />
-        Save<span className="sr-only"> (Sign in to save {title})</span>
       </a>
     );
   }
@@ -86,32 +94,32 @@ export function SaveToggle({
     else setMessage(describeFailure(outcome));
   }
 
-  if (block)
+  if (icon)
     return (
-      <span className={cn("grid", className)}>
+      <>
         <button
           type="button"
           onClick={toggle}
           disabled={busy}
           aria-pressed={saved}
           aria-label={`Save ${title}`}
-          className={cn(blockClass, "disabled:cursor-not-allowed disabled:opacity-60")}
+          title={saved ? "Saved (select to remove)" : "Save"}
+          className={cn(iconClass, "disabled:cursor-not-allowed disabled:opacity-60", className)}
         >
           <Icon name="bookmark" className={cn("h-5 w-5", saved && "fill-current text-accent")} />
-          <span aria-hidden="true">{saved ? "Saved" : "Save"}</span>
         </button>
         <span
           role="status"
           aria-live="polite"
           className={
-            message.startsWith("Saved") || message.startsWith("Removed")
-              ? "sr-only"
-              : "mt-1 text-small text-danger empty:hidden"
+            message && !message.startsWith("Saved") && !message.startsWith("Removed")
+              ? "absolute inset-x-0 top-full z-10 mt-1 rounded-control border border-danger/50 bg-surface px-3 py-2 text-small text-danger [overflow-wrap:anywhere]"
+              : "sr-only"
           }
         >
           {message}
         </span>
-      </span>
+      </>
     );
 
   return (

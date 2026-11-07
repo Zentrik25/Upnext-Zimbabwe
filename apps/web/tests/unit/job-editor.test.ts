@@ -10,7 +10,6 @@ import {
   matchPlaces,
   moreDetailFields,
   stateFromDraft,
-  toggleBullets,
 } from "@/lib/job-editor";
 import type { DraftContent, StaffCategory } from "@/lib/staff-types";
 
@@ -406,15 +405,6 @@ describe("helpers", () => {
     expect(matchPlaces("Hararexyz", places)).toEqual([]);
     expect(matchPlaces("Nationwide, or remote", places)).toEqual(["z", "r"]);
     expect(matchPlaces("Remote, then Harare", places)).toEqual(["r", "h"]);
-  });
-
-  it("toggles bullets on the selected lines only, and back", () => {
-    const text = "One\nTwo\nThree";
-    const on = toggleBullets(text, 4, 7);
-    expect(on.text).toBe("One\n- Two\nThree");
-    const off = toggleBullets(on.text, on.start, on.end);
-    expect(off.text).toBe(text);
-    expect(toggleBullets("A\n\nB", 0, 4).text).toBe("- A\n\n- B");
   });
 
   it("knows the day of a Harare deadline", () => {

@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { FormError, FormSuccess } from "@/components/account/parts";
-import { Button, Checkbox, Select, Textarea, TextInput } from "@/components/ui";
+import { Button, Checkbox, RichTextEditor, Select, Textarea, TextInput } from "@/components/ui";
 import { DetailInput } from "@/components/workspace/detail-input";
 import { ImageUpload } from "@/components/workspace/image-upload";
-import { ApplyFields, BulletTextarea, Row } from "@/components/workspace/job-editor-parts";
+import { ApplyFields, Row } from "@/components/workspace/job-editor-parts";
 import type { Location } from "@/lib/catalog-types";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import { STATUS_LABEL, type EmployerListingDetail, type ListingContent } from "@/lib/employer-types";
@@ -128,7 +128,7 @@ function Collapsed({
 
 /**
  * The employer's Create / Edit Opportunity form. It uses the staff editor's field set, state mapping
- * (`lib/job-editor`) and parts (`Row`, `BulletTextarea`, `ApplyFields`, `DetailInput`, `ImageUpload`) so both
+ * (`lib/job-editor`) and parts (`Row`, `RichTextEditor`, `ApplyFields`, `DetailInput`, `ImageUpload`) so both
  * forms carry the same simplified fields. What differs is who decides: there is no organisation field (the
  * server uses the organisation the member acts for), no address or search text (staff write those), no
  * sources (recorded automatically) and no verification or approval control. Saving is explicit; the API
@@ -453,23 +453,23 @@ export function OpportunityForm({
             onChange={(ev) => set({ summary: ev.target.value })}
           />
         </Row>
-        <BulletTextarea
+        <RichTextEditor
           id="responsibilities"
           title={pays ? "Key responsibilities" : "Description"}
-          hint="Use • List to turn lines into bullets. Applicants must never be asked to pay."
+          hint="Use the toolbar for bold, lists and links. Applicants must never be asked to pay."
           value={state.responsibilities}
           onChange={(responsibilities) => set({ responsibilities })}
           error={e("description_md")}
-          rows={7}
+          minHeight={170}
         />
-        <BulletTextarea
+        <RichTextEditor
           id="qualifications"
           title={pays ? "Qualifications & experience" : "Eligibility & requirements"}
           value={state.qualifications}
           onChange={(qualifications) => set({ qualifications })}
           error={e("requirements_md")}
           optional
-          rows={5}
+          minHeight={130}
         />
       </Block>
 

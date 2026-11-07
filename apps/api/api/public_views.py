@@ -154,6 +154,9 @@ def detail_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fal
                 "email": version.application_email,
                 "email_subject": version.application_email_subject,
                 "instructions": version.application_instructions,
+                # The same text in the Markdown subset, rendered (escape-first). Older plain-text instructions
+                # read the same: their lines stay lines.
+                "instructions_html": public.render_html(version.application_instructions),
             },
             "sources": [
                 {
