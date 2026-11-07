@@ -397,9 +397,9 @@ django-stubs-ext==6.1.2 \
     --hash=sha256:2142da7fffbbe897ccecf9b4c97e09ea1a2e9291760b0a824b4c402b375ce6f9 \
     --hash=sha256:7334e687ab6dc78a6c3da90ab1ccb0e412efd827ea11de8d3f85adbad948abb1
     # via django-stubs
-djangorestframework-stubs==3.18.1 \
-    --hash=sha256:65ed4a9ea094616759a2cba4fe0ad85efe25b471b28281b790bfefb46704c64a \
-    --hash=sha256:a2021f45f7759b493504c2a721f112ec4fd677753590c1ba346f4ebfb49a7f03
+djangorestframework-stubs==3.18.2 \
+    --hash=sha256:a8e009eee5e7c78c0a0a28cc69875bd1a44bde5499de085e52461479dc9522b1 \
+    --hash=sha256:fb4bffc3037063535390fd2cfde11f81c182e05949220d4742ffc0485218972c
     # via -r dev.in
 idna==3.20 \
     --hash=sha256:a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44 \
