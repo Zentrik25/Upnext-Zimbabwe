@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { FormError } from "@/components/account/parts";
 import { Button, Checkbox, Select, TextInput, Textarea } from "@/components/ui";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { Location } from "@/lib/catalog-types";
 import { apiFetch, describeFailure } from "@/lib/client-api";
 import {
@@ -23,7 +24,7 @@ import { ActionPanel } from "./action-panel";
 import { StatusBadge } from "./badges";
 import { DetailInput } from "./detail-input";
 import { ImageUpload, mediaUrl } from "./image-upload";
-import { ApplyFields, BulletTextarea, OrganisationPicker, Row } from "./job-editor-parts";
+import { ApplyFields, OrganisationPicker, Row } from "./job-editor-parts";
 import { VerifyToggle } from "./verify-toggle";
 
 type Option = { id: string; name: string };
@@ -632,23 +633,23 @@ export function JobEditor({
               onChange={(ev) => set({ summary: ev.target.value })}
             />
           </Row>
-          <BulletTextarea
+          <RichTextEditor
             id="responsibilities"
-            title={pays ? "Responsibilities" : "Description"}
-            hint="Use • List to turn lines into bullets."
+            title={pays ? "Key responsibilities" : "Description"}
+            hint="Use the toolbar for bold, lists and links."
             value={state.responsibilities}
             onChange={(responsibilities) => set({ responsibilities })}
             error={e("description_md")}
-            rows={7}
+            minHeight={170}
           />
-          <BulletTextarea
+          <RichTextEditor
             id="qualifications"
             title={pays ? "Qualifications & experience" : "Eligibility & requirements"}
             value={state.qualifications}
             onChange={(qualifications) => set({ qualifications })}
             error={e("requirements_md")}
             optional
-            rows={5}
+            minHeight={130}
           />
         </FormSection>
 

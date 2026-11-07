@@ -17,6 +17,9 @@ if settings.UPNEXT_SERVE_MEDIA:
     # Development and tests only; production nginx serves the media volume directly (compose.production.yaml).
     urlpatterns.append(
         re_path(
-            r"^media/(?P<path>listings/[0-9a-f]{32}\.jpg)$", serve, {"document_root": settings.MEDIA_ROOT}
+            # A picture and its thumbnail (the Media Library grid shows the thumbnails).
+            r"^media/(?P<path>listings/(?:thumbs/)?[0-9a-f]{32}\.jpg)$",
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
         )
     )

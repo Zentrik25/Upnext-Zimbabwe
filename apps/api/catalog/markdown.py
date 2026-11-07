@@ -2,8 +2,9 @@
 
 Every piece of text is HTML-escaped *before* any markup is added, and only the tags below are ever
 emitted, so author input cannot introduce HTML, attributes, scripts or event handlers. Allowed:
-paragraphs, line breaks, headings h3-h5, bold, italic, ordered/unordered lists, blockquote, https
-links and inline code. Raw HTML, images and tables are rejected at validation time (`check`).
+paragraphs, line breaks, headings h3-h5, bold, italic, underline (`++text++`), ordered/unordered lists,
+blockquote, https links and inline code. Raw HTML, images and tables are rejected at validation time
+(`check`).
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ _TABLE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$", re.MUL
 _LINK = re.compile(r"\[([^\]\n]{1,200})\]\(([^\s)]{1,2048})\)")
 _CODE = re.compile(r"`([^`\n]+)`")
 _BOLD = re.compile(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1")
+_UNDERLINE = re.compile(r"\+\+(?=\S)(.+?)(?<=\S)\+\+")
 _ITALIC = re.compile(
     r"(?<![\w*])\*(?=\S)([^*]+?)(?<=\S)\*(?![\w*])|(?<![\w_])_(?=\S)([^_]+?)(?<=\S)_(?![\w_])"
 )
@@ -50,6 +52,7 @@ def check(source: str) -> None:
 
 def _emphasis(escaped: str) -> str:
     escaped = _BOLD.sub(lambda m: f"<strong>{m.group(2)}</strong>", escaped)
+    escaped = _UNDERLINE.sub(lambda m: f"<u>{m.group(1)}</u>", escaped)
     return _ITALIC.sub(lambda m: f"<em>{m.group(1) or m.group(2)}</em>", escaped)
 
 

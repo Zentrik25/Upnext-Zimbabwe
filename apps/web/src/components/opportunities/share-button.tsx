@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icons";
 
 /**
@@ -10,14 +10,23 @@ import { Icon } from "@/components/ui/icons";
 export function ShareButton({
   title,
   path,
-  block = false,
+  icon = false,
 }: {
   title: string;
   path: string;
-  /** A full-width button that matches Save, for the phone layout; the outcome is said under the pair. */
-  block?: boolean;
+  /**
+   * An icon-only square button for the one-line action row (Apply, Save, Share). It has a name and a tooltip, and the
+   * outcome appears as a small note under the row (positioned against the nearest `relative` ancestor), then clears.
+   */
+  icon?: boolean;
 }) {
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!icon || !message) return;
+    const timer = window.setTimeout(() => setMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [icon, message]);
 
   async function share() {
     const url = `${window.location.origin}${path}`;
@@ -38,26 +47,44 @@ export function ShareButton({
     }
   }
 
+  if (icon)
+    return (
+      <>
+        <button
+          type="button"
+          onClick={share}
+          aria-label="Share this opportunity"
+          title="Share"
+          className="inline-grid min-h-field w-10 shrink-0 cursor-pointer place-items-center self-stretch rounded-control border border-border-interest bg-match-bg text-ink hover:bg-accent/10"
+        >
+          <Icon name="share" className="h-4 w-4" />
+        </button>
+        <span
+          role="status"
+          aria-live="polite"
+          className={
+            message
+              ? "absolute inset-x-0 top-full z-10 mt-1 rounded-control border border-line bg-surface px-3 py-2 text-small text-ink [overflow-wrap:anywhere]"
+              : "sr-only"
+          }
+        >
+          {message}
+        </span>
+      </>
+    );
+
   return (
-    <span className={block ? "grid" : "inline-flex items-center gap-2"}>
+    <span className="inline-flex items-center gap-2">
       <button
         type="button"
         onClick={share}
-        className={
-          block
-            ? "inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-control border border-border-interest bg-match-bg text-base font-medium text-ink hover:bg-accent/10"
-            : "inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-control px-2 text-ctl text-accent hover:bg-accent/5"
-        }
+        className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-control px-2 text-ctl text-accent hover:bg-accent/5"
       >
-        <Icon name="share" className={block ? "h-5 w-5" : "h-4 w-4"} />
+        <Icon name="share" className="h-4 w-4" />
         Share
         <span className="sr-only"> this opportunity</span>
       </button>
-      <span
-        role="status"
-        aria-live="polite"
-        className={block ? "col-span-2 mt-1 text-small text-muted empty:hidden" : "text-small text-muted"}
-      >
+      <span role="status" aria-live="polite" className="text-small text-muted">
         {message}
       </span>
     </span>

@@ -508,9 +508,10 @@ describe("staff pages have no hero image, and public ones keep theirs", () => {
 
   it("the public home page still has its illustration and listing pages their featured image and share image", () => {
     expect(readRepoFile("apps/web/src/components/brand/job-seeker-art.tsx")).toContain("job-seeker.webp");
-    expect(readRepoFile("apps/web/src/components/opportunities/job-view.tsx")).toContain(
+    expect(readRepoFile("apps/web/src/components/opportunities/featured-image.tsx")).toContain(
       'data-testid="featured-image"',
     );
+    expect(readRepoFile("apps/web/src/components/opportunities/job-view.tsx")).toContain("<FeaturedImage");
     expect(readRepoFile("apps/web/src/app/opportunities/[slug]/page.tsx")).toMatch(/shareImage|socialFor/);
   });
 

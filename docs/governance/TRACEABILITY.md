@@ -541,6 +541,8 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | PERF-04 | Mobile budgets (LCP, CLS, transfer, script) on a throttled profile for four pages |
 | PERF-05 | Load ladder and soak at 24,012 listings: latency and error rate per scenario |
 | VIS-05 | Visual-regression baseline is the reference; the allow-list contains only the documented accessibility deviations |
+| UI-71-01 | Opportunity page (D-71, DRAFT): compact featured image with a full-size viewer; Apply Now, Save and Share on one line with equal heights; section order with How to apply after Qualifications; empty optional facts hidden |
+| UI-71-02 | Visual editor (D-71, DRAFT): bold, italic, underline, lists, links (add, edit, remove), undo and redo, shortcuts, touch targets, plain-text paste, round trip with the stored Markdown subset, sanitising, keyboard docking; published links blue and underlined |
 
 ## 5. Rules for maintaining this file
 
@@ -834,3 +836,5 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | PERF-04 | `apps/web/tests/e2e/mobile-budget.spec.ts` | executed locally on a throttled desktop Chromium; not a real phone |
 | PERF-05 | `tools/perf/load.py, soak.sh; results in docs/phase5/acceptance/` | executed locally on resource-limited containers; not representative of the VPS |
 | E2E-10 | `apps/web/tests/e2e/a11y.spec.ts (all public and account pages at four widths)` | executed |
+| UI-71-01 | `apps/web/tests/unit/job-view.test.tsx; apps/web/tests/unit/accounts.test.tsx (SaveToggle icon); apps/web/tests/unit/ad-rules.test.ts` | executed; layout also measured in Chromium at 320, 360, 390, 430, 768 and 1280 px (one line, equal heights, no horizontal overflow) |
+| UI-71-02 | `apps/web/tests/unit/rich-text.test.ts; apps/web/tests/unit/rich-text-editor.test.tsx; apps/api/tests/test_catalog_units.py (underline, XSS corpus)` | executed; the editor was also driven in Chromium on desktop and with touch emulation; a real phone keyboard was not available (the keyboard lift was tested with a simulated visual viewport) |

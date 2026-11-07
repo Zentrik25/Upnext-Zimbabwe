@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -78,7 +78,7 @@ const text = () => document.body.textContent ?? "";
 
 describe("the order of the page", () => {
   it("runs title, organisation and status, facts, apply, overview, responsibilities, qualifications, how to apply, report link", () => {
-    render(<JobView listing={listing()} />);
+    render(<JobView listing={listing({ detail: { vacancies: 2, contract_duration_months: 12 } })} />);
     const order = [
       screen.getByRole("heading", { level: 1, name: "Senior Accountant" }),
       screen.getByRole("link", { name: /Apply Now/ }),
@@ -87,6 +87,7 @@ describe("the order of the page", () => {
       screen.getByRole("heading", { name: "Key responsibilities" }),
       screen.getByRole("heading", { name: "Qualifications & experience" }),
       screen.getByRole("heading", { name: "How to apply" }),
+      screen.getByRole("heading", { name: "More details" }),
       screen.getByRole("link", { name: "Report this opportunity" }),
     ];
     for (let i = 1; i < order.length; i++)
@@ -132,12 +133,12 @@ describe("the order of the page", () => {
     expect(screen.queryByRole("heading", { name: "Qualifications & experience" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "More details" })).toBeNull();
     expect(text()).not.toMatch(/undefined|\bnull\b|vacanc/i);
-    expect(text()).toContain("Deadline not stated");
+    expect(text()).not.toMatch(/Deadline not stated|Not stated|TBA/);
   });
 
-  it("shows Pay: TBA when no pay was typed, for a category that has pay, and nothing for one that has none", () => {
+  it("never prints a pay placeholder: no pay typed means no pay chip, in any category", () => {
     const { unmount } = render(<JobView listing={listing({ salary_text: null })} />);
-    expect(text()).toContain("Pay: TBA");
+    expect(text()).not.toMatch(/Pay:|TBA/);
     unmount();
     render(
       <JobView listing={listing({ salary_text: null, category: { code: "tenders", name: "Tenders" } })} />,
@@ -372,6 +373,25 @@ describe("share", () => {
   });
 });
 
+describe("share as an icon", () => {
+  it("is icon-only with a name and tooltip, and says the outcome in a note that then clears", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(<ShareButton title="T" path="/opportunities/x" icon />);
+    const button = screen.getByRole("button", { name: "Share this opportunity" });
+    expect(button.textContent).toBe("");
+    expect(button).toHaveAttribute("title", "Share");
+    fireEvent.click(button);
+    expect(await screen.findByText("Link copied.")).toBeInTheDocument();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5200);
+    });
+    expect(screen.getByRole("status").textContent).toBe("");
+    vi.useRealTimers();
+  });
+});
+
 describe("the mobile layout (owner reference, D-63)", () => {
   const instructionsOnly = (over: Partial<OpportunityDetail> = {}) =>
     listing({
@@ -476,13 +496,6 @@ describe("the mobile layout (owner reference, D-63)", () => {
     expect(screen.getByText("Run the ledger")).toBeInTheDocument();
   });
 
-  it("puts Save and Share side by side as one pair, and Share is a block button", () => {
-    render(<JobView listing={listing()} personal={<button>Save</button>} />);
-    const share = screen.getByRole("button", { name: /Share/ });
-    expect(share.className).toContain("w-full");
-    expect(share.parentElement!.parentElement!.className).toContain("grid-cols-2");
-  });
-
   it("marks the page so the phone header can turn navy, and keeps the report link", () => {
     const { container } = render(<JobView listing={listing()} />);
     expect(container.querySelector("[data-job-page]")).not.toBeNull();
@@ -509,5 +522,335 @@ describe("related opportunity cards", () => {
     expect(link).toHaveAttribute("href", `/opportunities/${row.slug}`);
     for (const t of ["Delta Beverages", "Harare", "Permanent", "DB"]) expect(link.textContent).toContain(t);
     expect(link.textContent).toMatch(/Closes/);
+  });
+});
+
+describe("Apply Now, Save and Share on one line", () => {
+  const SaveStub = () => (
+    <button type="button" aria-label="Save Senior Accountant">
+      s
+    </button>
+  );
+
+  it("puts the three controls in one non-wrapping row: Apply Now first, then Save, then Share", () => {
+    render(<JobView listing={listing()} personal={<SaveStub />} />);
+    const row = screen.getByTestId("action-row");
+    expect(row.className).toContain("flex");
+    expect(row.className).not.toMatch(/flex-wrap|grid/);
+    const [apply, save, share] = Array.from(row.children) as [HTMLElement, HTMLElement, HTMLElement];
+    expect(apply).toHaveTextContent("Apply Now");
+    expect(save).toHaveAttribute("aria-label", "Save Senior Accountant");
+    expect(share).toHaveAttribute("aria-label", "Share this opportunity");
+    expect(apply.className).toContain("flex-1"); // it takes the remaining width
+  });
+
+  it("makes Save and Share icon-only squares with names and tooltips, and the same height as Apply", () => {
+    render(<JobView listing={listing()} personal={<SaveStub />} />);
+    const share = screen.getByRole("button", { name: "Share this opportunity" });
+    expect(share.textContent).toBe(""); // no visible text
+    expect(share).toHaveAttribute("title", "Share");
+    expect(share.className).toMatch(/w-10/);
+    expect(share.className).toMatch(/self-stretch/); // as tall as Apply Now, whatever its height
+    expect(share.className).toMatch(/min-h-field/); // a 40px target
+    expect(screen.getByRole("link", { name: /Apply Now/ }).className).toMatch(/min-h-field/);
+    expect(share.querySelector("svg")).not.toBeNull();
+  });
+
+  it("keeps the second destination on its own line beneath, so nothing is lost", () => {
+    render(
+      <JobView
+        listing={listing({
+          application: {
+            method: "both",
+            url: "https://water.example.org/apply",
+            email: "jobs@water.example.org",
+            email_subject: null,
+            instructions: null,
+          },
+        })}
+      />,
+    );
+    const row = screen.getByTestId("action-row");
+    expect(within(row).getByRole("link", { name: /Apply Now/ })).toBeInTheDocument();
+    expect(within(row).queryByRole("link", { name: "Apply via Email" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Apply via Email" })).toHaveAttribute(
+      "href",
+      "mailto:jobs@water.example.org",
+    );
+  });
+
+  it("an e-mail-only listing puts Apply via Email in the row", () => {
+    render(
+      <JobView
+        listing={listing({
+          application: {
+            method: "email",
+            url: null,
+            email: "jobs@water.example.org",
+            email_subject: null,
+            instructions: null,
+          },
+        })}
+      />,
+    );
+    expect(
+      within(screen.getByTestId("action-row")).getByRole("link", { name: "Apply via Email" }),
+    ).toBeVisible();
+  });
+
+  it("a closed listing offers Save and Share, and no Apply", () => {
+    render(<JobView listing={listing({ status: "expired" })} personal={<SaveStub />} />);
+    const row = screen.getByTestId("action-row");
+    expect(within(row).queryByRole("link")).toBeNull();
+    expect(within(row).getAllByRole("button")).toHaveLength(2);
+  });
+
+  it("a preview offers Apply alone: no Save, no Share", () => {
+    render(<JobView listing={listing()} preview />);
+    const row = screen.getByTestId("action-row");
+    expect(row.children).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Share/ })).toBeNull();
+  });
+});
+
+describe("the order of sections", () => {
+  it("puts How to apply straight after Qualifications & experience, then More details", () => {
+    render(<JobView listing={listing({ detail: { vacancies: 2, contract_duration_months: 12 } })} />);
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual([
+      "Overview",
+      "Key responsibilities",
+      "Qualifications & experience",
+      "How to apply",
+      "More details",
+    ]);
+  });
+
+  it("keeps the order when a section is absent: How to apply still follows the last body section", () => {
+    render(
+      <JobView listing={listing({ requirements_html: null, detail: { contract_duration_months: 12 } })} />,
+    );
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual(["Overview", "Key responsibilities", "How to apply", "More details"]);
+  });
+
+  it("leaves the application link and the page's content as they were", () => {
+    render(<JobView listing={listing()} />);
+    const how = document.getElementById("how-to-apply")!;
+    expect(how.textContent).toContain("Never pay to apply");
+    expect(screen.getByRole("link", { name: /Apply Now/ })).toHaveAttribute(
+      "href",
+      "https://water.example.org/apply",
+    );
+  });
+});
+
+describe("the featured image", () => {
+  const image = { featured: "https://upnext.co.zw/media/listings/x.jpg", social: null, alt: "Our office" };
+
+  it("is a compact box: 160px high on a phone, 200px from the tablet width, in the picture's proportions", () => {
+    render(<JobView listing={listing({ image })} />);
+    const open = screen.getByRole("button", { name: /View full image/ });
+    expect(open.className).toMatch(/h-\[160px\]/);
+    expect(open.className).toMatch(/sm:h-\[200px\]/);
+    expect(open.className).toMatch(/aspect-video/); // 16:9, so a 16:9 picture fills it exactly
+    const shown = within(open).getByRole("img", { name: "Our office" });
+    expect(shown.className).toMatch(/object-contain/); // never stretched, never cropped
+    expect(shown.className).not.toMatch(/object-cover/);
+    expect(shown).toHaveAttribute("src", image.featured);
+  });
+
+  it("opens the whole picture in a modal viewer when tapped, and closes it", () => {
+    const showModal = vi.fn();
+    const close = vi.fn();
+    HTMLDialogElement.prototype.showModal = showModal;
+    HTMLDialogElement.prototype.close = close;
+    render(<JobView listing={listing({ image })} />);
+    fireEvent.click(screen.getByRole("button", { name: /View full image/ }));
+    expect(showModal).toHaveBeenCalledTimes(1);
+    const viewer = screen.getByTestId("image-viewer");
+    expect(viewer.tagName).toBe("DIALOG");
+    expect(viewer.querySelector("img")).toHaveAttribute("src", image.featured);
+    fireEvent.click(viewer.querySelector("button[aria-label='Close image']")!);
+    expect(close).toHaveBeenCalled();
+    fireEvent.click(viewer); // the backdrop
+    expect(close).toHaveBeenCalledTimes(2);
+  });
+
+  it("draws nothing without a picture", () => {
+    render(<JobView listing={listing({ image: null })} />);
+    expect(screen.queryByTestId("featured-image")).toBeNull();
+  });
+});
+
+describe("optional details that were not entered are not shown", () => {
+  const bare = () =>
+    listing({
+      salary_text: null,
+      salary: null,
+      funding: null,
+      deadline: { at: null, timezone: null, is_date_only: false, state: "unknown" },
+      reference_number: " ",
+      contact_details: "",
+      work_mode: null,
+      employment_type: null,
+      locations: [],
+      location_text: null,
+      summary: "",
+      skills: [],
+      detail: {
+        vacancies: 0,
+        notes: "",
+        languages: [],
+        extra: null,
+        nested: { a: "", b: null },
+        empty_text: "   ",
+      },
+      application: {
+        method: "external_url",
+        url: "https://water.example.org/apply",
+        email: null,
+        email_subject: null,
+        instructions: "  ",
+      },
+    });
+
+  it("hides every empty label, badge and placeholder", () => {
+    const { container } = render(<JobView listing={bare()} />);
+    expect(container.querySelectorAll("article > ul")).toHaveLength(0); // not even an empty row of chips
+    expect(screen.queryByRole("heading", { name: "More details" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Overview" })).toBeNull();
+    expect(text()).not.toMatch(
+      /Pay:|TBA|Not stated|Deadline|Closes|vacanc|Reference|Contact|undefined|\bnull\b|Funding/i,
+    );
+    expect(document.getElementById("how-to-apply")!.textContent).not.toMatch(/Reference|Contact/);
+  });
+
+  it("shows each optional detail as soon as it has a value", () => {
+    render(
+      <JobView
+        listing={listing({
+          salary_text: "US$450 per month",
+          reference_number: "REF-12",
+          contact_details: "Ms Moyo, 0242 000 000",
+          work_mode: "hybrid",
+          detail: { vacancies: 3, shift: "Night" },
+          application: {
+            method: "instructions",
+            url: null,
+            email: null,
+            email_subject: null,
+            instructions: "Hand deliver your CV.",
+          },
+        })}
+      />,
+    );
+    for (const shown of [
+      "US$450 per month",
+      "3 vacancies",
+      "Hybrid",
+      "Closes ",
+      "Reference: REF-12",
+      "Contact: Ms Moyo",
+      "Night",
+    ])
+      expect(text()).toContain(shown);
+  });
+
+  it("lists only the filled entries of a nested detail", () => {
+    render(<JobView listing={listing({ detail: { vacancies: 1, contacts: { phone: "0242", fax: "" } } })} />);
+    const details = screen.getByTestId("category-details");
+    expect(details).toHaveTextContent("Phone");
+    expect(details).not.toHaveTextContent("Fax");
+  });
+});
+
+describe("the instructions keep their formatting", () => {
+  const instructions = {
+    method: "instructions" as const,
+    url: null,
+    email: null,
+    email_subject: null,
+    instructions: "Apply at our site",
+    instructions_html:
+      '<p>Apply at <a href="https://careers.example.org/apply" rel="noopener noreferrer nofollow ugc" target="_blank">our <u>site</u></a>:</p><ol><li><strong>CV</strong></li><li>Letter</li></ol>',
+  };
+
+  it("renders bold, underline, lists and links from the API's HTML", () => {
+    render(<JobView listing={listing({ application: instructions })} />);
+    const how = within(screen.getByTestId("instructions"));
+    expect(how.getByRole("link", { name: "our site" })).toHaveAttribute(
+      "href",
+      "https://careers.example.org/apply",
+    );
+    expect(how.getByRole("list").tagName).toBe("OL");
+    expect(how.getByText("CV").tagName).toBe("STRONG");
+    expect(document.querySelector("#how-to-apply u")).not.toBeNull();
+  });
+
+  it("shows a published link in blue and underlined, opening in a new tab", () => {
+    render(<JobView listing={listing({ application: instructions })} />);
+    const link = screen.getByRole("link", { name: "our site" });
+    expect(link.className).toContain("text-link");
+    expect(link.className).toContain("underline");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toMatch(/noopener/);
+  });
+
+  it("falls back to the plain text, line breaks kept, for an older listing or API", () => {
+    render(
+      <JobView
+        listing={listing({
+          application: { ...instructions, instructions: "Line one\nLine two", instructions_html: undefined },
+        })}
+      />,
+    );
+    expect(screen.getByText(/Line one/).className).toContain("whitespace-pre-line");
+  });
+
+  it("never turns a non-https or script link into a link", () => {
+    render(
+      <JobView
+        listing={listing({
+          description_html:
+            '<p><a href="javascript:alert(1)">bad</a> <a href="http://example.org">http</a> <script>alert(1)</script></p>',
+        })}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: "bad" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "http" })).toBeNull();
+    expect(document.querySelector("script")).toBeNull();
+  });
+});
+
+describe("title size and the desktop side column", () => {
+  it("sets the title at the size of the section headings, not larger", () => {
+    render(<JobView listing={listing()} />);
+    const title = screen.getByRole("heading", { level: 1 });
+    const section = screen.getByRole("heading", { name: "Overview" });
+    const size = (el: HTMLElement) => el.className.match(/text-(?:title|sub|\[\d+px\]|section)/)?.[0];
+    expect(size(title)).toBe("text-title");
+    expect(size(title)).toBe(size(section));
+    expect(title.className).not.toMatch(/text-\[30px\]|text-sub|font-headline/);
+  });
+
+  it("puts the related opportunities in a column beside the listing from the desktop width", () => {
+    render(<JobView listing={listing()} related={<section aria-label="Related">related</section>} />);
+    const page = document.querySelector("[data-job-page]")!;
+    expect(page.className).toMatch(/md:grid/);
+    expect(page.className).toMatch(/md:grid-cols-\[minmax\(0,1fr\)_320px\]/);
+    const main = screen.getByTestId("job-main");
+    const aside = screen.getByTestId("job-aside");
+    expect(main.parentElement).toBe(page);
+    expect(aside.parentElement).toBe(page);
+    expect(aside).toHaveTextContent("related");
+    expect(main.contains(aside)).toBe(false);
+    // Phones and tablets: the column stacks, related after the listing.
+    expect(main.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("draws no side column without related listings", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.queryByTestId("job-aside")).toBeNull();
   });
 });

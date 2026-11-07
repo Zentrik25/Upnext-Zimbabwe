@@ -9,7 +9,7 @@ import { Fragment, type ReactNode } from "react";
  * than `href` are ignored.
  */
 const BLOCK = new Set(["p", "h3", "h4", "h5", "ul", "ol", "li", "blockquote"]);
-const INLINE = new Set(["strong", "em", "code", "a", "br"]);
+const INLINE = new Set(["strong", "em", "u", "code", "a", "br"]);
 const ENTITIES: Record<string, string> = {
   "&amp;": "&",
   "&lt;": "<",
@@ -145,6 +145,8 @@ function render(nodes: Node[]): ReactNode[] {
         return <strong key={i}>{children}</strong>;
       case "em":
         return <em key={i}>{children}</em>;
+      case "u":
+        return <u key={i}>{children}</u>;
       case "code":
         return <code key={i}>{children}</code>;
       case "a":
@@ -154,7 +156,7 @@ function render(nodes: Node[]): ReactNode[] {
             href={node.href}
             rel="noopener noreferrer nofollow ugc"
             target="_blank"
-            className="text-accent underline"
+            className="text-link underline"
           >
             {children}
           </a>

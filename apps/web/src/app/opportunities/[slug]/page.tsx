@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache, Suspense } from "react";
-import { SaveToggle } from "@/components/account/save-toggle";
+import { SaveIconToggle } from "@/components/account/save-icon-toggle";
 import { JsonLd } from "@/components/seo/json-ld";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { JobView } from "@/components/opportunities/job-view";
@@ -125,23 +125,22 @@ async function ListingSave({ listing }: { listing: OpportunityDetail }) {
   const isSaved = user ? (await getSavedIds([listing.id])).has(listing.id) : false;
   if (listing.status !== "published" && !isSaved) return null;
   return (
-    <SaveToggle
+    <SaveIconToggle
       opportunityId={listing.id}
       title={listing.title}
       initialSaved={isSaved}
       signedIn={Boolean(user)}
       returnTo={`/opportunities/${listing.slug}`}
-      block
     />
   );
 }
 
-/** Holds the save control's place (44px) and announces nothing: it is one small control, not a region. */
+/** Holds the save control's place (a 40px square) and announces nothing: it is one small control, not a region. */
 function SaveSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="min-h-[48px] rounded-control border border-line bg-surface-pale skeleton-pulse"
+      className="min-h-field w-10 shrink-0 self-stretch rounded-control border border-line bg-surface-pale skeleton-pulse"
     />
   );
 }
@@ -156,7 +155,7 @@ async function Related({ listing }: { listing: OpportunityDetail }) {
     .slice(0, 3);
   if (!rows.length) return null;
   return (
-    <section aria-labelledby="related-title" className="mt-6">
+    <section aria-labelledby="related-title" className="mt-6 md:mt-0">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <h2 id="related-title" className="m-0 text-title font-strong text-ink">
           Related opportunities
@@ -180,7 +179,7 @@ async function Related({ listing }: { listing: OpportunityDetail }) {
 
 function RelatedSkeleton() {
   return (
-    <div aria-hidden="true" className="mt-8 skeleton-pulse">
+    <div aria-hidden="true" className="mt-8 skeleton-pulse md:mt-0">
       <SkeletonLine className="h-[22px] w-[240px]" />
       <SkeletonListingRows count={2} />
     </div>

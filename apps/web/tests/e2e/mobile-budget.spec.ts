@@ -31,7 +31,8 @@ const SCRIPT_KIB: Record<string, number> = { "/": 151, "/opportunities": 151, "/
 // The listing page also carries the advertising block (consent prompt and Google loader, off by default but shipped with
 // the page because Next sends every client component a page can reach). Home, search and sign-in carry none of it: the
 // choice control lives in the block, not the site footer. The CI runner measured 152.6 KiB with the block, so 153 KiB.
-SCRIPT_KIB.DETAIL = 153;
+// The listing page also carries the featured-image viewer (D-71, a small client component), so 154 KiB.
+SCRIPT_KIB.DETAIL = 154;
 
 for (const path of [...PAGES, "DETAIL"]) {
   test(`budget on ${path}`, async ({ page, request }, info) => {

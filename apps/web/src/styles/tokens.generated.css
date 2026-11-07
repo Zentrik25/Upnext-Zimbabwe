@@ -23,6 +23,7 @@
   --color-line: #e5edf5;
   --color-accent: #533afd;
   --color-accent-hover: #4434d4;
+  --color-link: #0b57d0;
   --color-accent-solid: #533afd;
   --color-accent-solid-hover: #4434d4;
   --color-good: #0d7a35;
@@ -135,6 +136,7 @@
   --color-line: #262743;
   --color-accent: #b9b9f9;
   --color-accent-hover: #d6d9fc;
+  --color-link: #8ab4ff;
   --color-accent-solid: #665efd;
   --color-accent-solid-hover: #5a51f5;
   --color-good: #4cdf80;

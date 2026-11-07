@@ -97,6 +97,13 @@ const PLACES = [
 const typeInto = (label: string | RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
+/** The visual editor is a text box, not a field: its words are typed into it and it reports an input event. */
+const typeIntoEditor = (label: string | RegExp, text: string) => {
+  const box = screen.getByRole("textbox", { name: label });
+  box.textContent = text;
+  fireEvent.input(box);
+};
+
 describe("opportunity form (D-70)", () => {
   const renderForm = () =>
     render(<OpportunityForm organisation={ORG} categories={CATEGORIES} locations={PLACES} sectors={[]} />);
@@ -170,7 +177,7 @@ describe("opportunity form (D-70)", () => {
     typeInto(/^Location/, "Harare and Bulawayo");
     typeInto(/Number of vacancies/, "3");
     typeInto(/Salary/, "US$450 per month");
-    typeInto(/Key responsibilities/, "- Count stock");
+    typeIntoEditor(/Key responsibilities/, "- Count stock");
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith("/employer/listings/opp-1"));
     expect(calls[0]!.url).toBe("/api/v1/employer/organisations/org-1/listings");
