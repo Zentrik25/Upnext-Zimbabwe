@@ -146,7 +146,8 @@ test("4. a signed-in person can save and unsave from the list, the detail page a
 
   await page.getByTestId("results").getByRole("link", { name: title }).first().click();
   await expect(page.getByRole("button", { name: `Save ${title}` })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("#main").getByText("Saved", { exact: true })).toBeVisible();
+  // The detail page's Save is an icon-only button: the saved state is its pressed state and its tooltip.
+  await expect(page.getByRole("button", { name: `Save ${title}` })).toHaveAttribute("title", /Saved/);
   await shot(page, "acct-09-detail-saved");
 
   await page.goto("/saved");

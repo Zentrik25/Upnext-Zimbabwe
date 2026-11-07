@@ -126,15 +126,16 @@ test.describe("detail page", () => {
     const apply = page.getByTestId("apply");
     await expect(apply).toContainText("You will leave UPNEXT");
     await expect(apply).toContainText("does not receive or track applications");
-    const link = apply.getByRole("link");
+    const link = apply.locator("a[data-listing-apply]");
     await expect(link).toHaveAttribute("href", /^https:\/\//);
     await expect(link).toHaveAttribute("rel", /noopener/);
     await expect(link).toHaveAttribute("target", "_blank");
   });
 
-  test("unknown pay and deadline are shown as not stated", async ({ page }) => {
+  test("unknown pay and deadline are not shown at all", async ({ page }) => {
     await openFirst(page, "Public Health Programme Assistant");
-    await expect(page.getByText("Deadline not stated").first()).toBeVisible();
+    const listing = page.locator('article[aria-labelledby="listing-title"]');
+    await expect(listing).not.toContainText(/Deadline not stated|Not stated|Pay: TBA/);
     // The listing itself states no pay. (Related listings below it are other listings and may state theirs.)
     await expect(page.locator('article[aria-labelledby="listing-title"]')).not.toContainText("USD");
   });
