@@ -156,7 +156,7 @@ async function Related({ listing }: { listing: OpportunityDetail }) {
     .slice(0, 3);
   if (!rows.length) return null;
   return (
-    <section aria-labelledby="related-title" className="mt-6">
+    <section aria-labelledby="related-title" className="mt-6 md:mt-0">
       <div className="mb-2 flex items-baseline justify-between gap-3">
         <h2 id="related-title" className="m-0 text-title font-strong text-ink">
           Related opportunities
@@ -180,7 +180,7 @@ async function Related({ listing }: { listing: OpportunityDetail }) {
 
 function RelatedSkeleton() {
   return (
-    <div aria-hidden="true" className="mt-8 skeleton-pulse">
+    <div aria-hidden="true" className="mt-8 skeleton-pulse md:mt-0">
       <SkeletonLine className="h-[22px] w-[240px]" />
       <SkeletonListingRows count={2} />
     </div>

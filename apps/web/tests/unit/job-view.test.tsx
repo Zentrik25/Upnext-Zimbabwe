@@ -822,3 +822,35 @@ describe("the instructions keep their formatting", () => {
     expect(document.querySelector("script")).toBeNull();
   });
 });
+
+describe("title size and the desktop side column", () => {
+  it("sets the title at the size of the section headings, not larger", () => {
+    render(<JobView listing={listing()} />);
+    const title = screen.getByRole("heading", { level: 1 });
+    const section = screen.getByRole("heading", { name: "Overview" });
+    const size = (el: HTMLElement) => el.className.match(/text-(?:title|sub|\[\d+px\]|section)/)?.[0];
+    expect(size(title)).toBe("text-title");
+    expect(size(title)).toBe(size(section));
+    expect(title.className).not.toMatch(/text-\[30px\]|text-sub|font-headline/);
+  });
+
+  it("puts the related opportunities in a column beside the listing from the desktop width", () => {
+    render(<JobView listing={listing()} related={<section aria-label="Related">related</section>} />);
+    const page = document.querySelector("[data-job-page]")!;
+    expect(page.className).toMatch(/md:grid/);
+    expect(page.className).toMatch(/md:grid-cols-\[minmax\(0,1fr\)_320px\]/);
+    const main = screen.getByTestId("job-main");
+    const aside = screen.getByTestId("job-aside");
+    expect(main.parentElement).toBe(page);
+    expect(aside.parentElement).toBe(page);
+    expect(aside).toHaveTextContent("related");
+    expect(main.contains(aside)).toBe(false);
+    // Phones and tablets: the column stacks, related after the listing.
+    expect(main.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("draws no side column without related listings", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.queryByTestId("job-aside")).toBeNull();
+  });
+});

@@ -47,6 +47,9 @@ def test_an_upload_lands_in_the_library_with_a_thumbnail_and_a_readable_title(
     asset = MediaAsset.objects.get(name=body["name"])
     assert asset.thumb_name.startswith("listings/thumbs/") and default_storage.exists(asset.thumb_name)
     assert body["thumb"] == asset.thumb_name and (asset.width, asset.height) == (1200, 675)
+    # The library grid shows the thumbnail at /media/<thumb>: it must be served, or the grid shows broken pictures.
+    served = APIClient().get(f"/media/{asset.thumb_name}")
+    assert served.status_code == 200 and served["Content-Type"] == "image/jpeg"
     assert len(asset.content_hash) == 64
 
 

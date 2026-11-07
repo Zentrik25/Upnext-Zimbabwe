@@ -40,9 +40,9 @@ server {
         proxy_pass http://api:8000;
     }
 
-    # Uploaded listing images (D-58): only generated names, read-only from the persistent media volume, never
+    # Uploaded listing images and their thumbnails (D-58): only generated names, read-only from the persistent media volume, never
     # executed or sniffed, cached for a long time because a name is never reused for different content.
-    location ~ "^/media/listings/[0-9a-f]{32}\.jpg$" {
+    location ~ "^/media/listings/(thumbs/)?[0-9a-f]{32}\.jpg$" {
         root /srv;
         add_header Cache-Control "public, max-age=2592000, immutable" always;
         add_header X-Content-Type-Options "nosniff" always;
