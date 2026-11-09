@@ -157,6 +157,11 @@ export function breadcrumbFor(items: { name: string; url: string }[]): Json {
   };
 }
 
+/**
+ * No `SearchAction` (sitelinks search box): Google retired that feature in 2024, and its `{search_term_string}`
+ * placeholder is read by crawlers as a real address (`/opportunities?q={search_term_string}`). The visible search
+ * forms are unchanged.
+ */
 export function websiteFor(origin: string): Json[] {
   return [
     {
@@ -166,11 +171,6 @@ export function websiteFor(origin: string): Json[] {
       alternateName: BRAND.short,
       url: `${origin}/`, // the home page's canonical address, trailing slash included (D-69)
       inLanguage: "en",
-      potentialAction: {
-        "@type": "SearchAction",
-        target: { "@type": "EntryPoint", urlTemplate: `${origin}/opportunities?q={search_term_string}` },
-        "query-input": "required name=search_term_string",
-      },
     },
     {
       "@context": "https://schema.org",
