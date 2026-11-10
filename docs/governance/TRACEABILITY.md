@@ -71,6 +71,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-64 | Search-engine hardening and organic discovery (D-68): a page whose data could not be loaded is a server error, never 200 with noindex; metadata in <head> for every client; one canonical address per listing; the full JobPosting description; a sitemap with real lastmod values, company profiles and no shortened file on failure; six fact-defined landing pages, indexable only from three open listings; the Google Indexing API for JobPosting pages only, off by default, idempotent, quota-aware, retried with back-off, its key mounted in the worker only | D-68; D-51; D-28; P4-02 | SC-01, SC-02, SC-03 | listOpportunities, getSitemapEntries, getOpportunity | SEO-10, SEO-11, SEO-12, SEO-13, IDX-01, IDX-02, IDX-03 | OQ-20 |
 | R-65 | Branded search (D-69): eight priority destinations linked from every public page with descriptive crawlable links; the seven public ones with unique titles, descriptions, headings and visible text, self-canonical, in the sitemap when they hold listings; Sign In linked but noindex and unlisted, crawlable so its noindex is read; the duplicate graduate landing page consolidated by one permanent redirect; home title, description and trailing-slash canonical as the owner specified; BreadcrumbList on category lists | D-69; D-68; D-51; P4-02 | SC-01, SC-02 | listOpportunities, getSitemapEntries | SEO-14 | OQ-20 |
 | R-70 | Role-based landing (server-named dashboard) and the employer dashboard: own-organisation counts and analytics, filtered list, duplicate, preview, picture upload (D-70). Tests: test_role_landing.py, test_employer_dashboard.py, employer.test.tsx, accounts.test.tsx | D-70 | — | getEmployerDashboard, uploadEmployerImage, duplicateEmployerListing, previewEmployerListing, listEmployerCategories | — | — |
+| R-72 | SEO monitoring and Indexing API hygiene (D-72, DRAFT): an Administrator-only page (/workspace/seo) with the Indexing API queue, quota, last run and last accepted submission, open and JobPosting-eligible jobs, jobs in the sitemap and structured-data findings, never presenting a notification as indexing; audited retry of failed or dead notifications, refused when superseded; no second URL_UPDATED for a republication that changes nothing visible; three editorial guides; an AdSense readiness audit | D-72; D-68; D-51 | — | getStaffSeo, listStaffSeoNotifications, retryStaffSeoNotification, retryStaffSeoDeadNotifications | IDX-04, IDX-05, SEO-15 | D-67 source attribution; Search Console API |
 
 ## 2. Screen register
 
@@ -222,6 +223,10 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffRecord` | GET `/staff/records/{kind}/{recordId}` | staff | R-55 |
 | `runStaffRecordAction` | POST `/staff/records/{kind}/{recordId}/actions/{action}` | staff | R-55 |
 | `getStaffContentHealth` | GET `/staff/content-health` | staff | R-55 |
+| `getStaffSeo` | GET `/staff/seo` | staff | R-72 |
+| `listStaffSeoNotifications` | GET `/staff/seo/notifications` | staff | R-72 |
+| `retryStaffSeoDeadNotifications` | POST `/staff/seo/notifications/retry-dead` | staff | R-72 |
+| `retryStaffSeoNotification` | POST `/staff/seo/notifications/{notification_id}/retry` | staff | R-72 |
 | `listStaffCatalogKinds` | GET `/staff/catalog` | staff | R-55 |
 | `listStaffCatalog` | GET `/staff/catalog/{kind}` | staff | R-55 |
 | `createStaffCatalogRecord` | POST `/staff/catalog/{kind}` | staff | R-55 |
@@ -419,9 +424,12 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | SEO-12 | Sitemap from one feed: real lastmod for listings, category lists, landing pages, guides and company profiles, none for static pages; categories only with an open listing, landing pages only from the threshold |
 | SEO-13 | Landing pages: collections defined by recorded facts, employment categories only, never a closed listing or a repeated row, cursor bound to the collection; indexable only from a configurable threshold (3) and only when its listings do not repeat another list exactly, copy unique, later pages noindex and self-canonical, unknown slugs 404, real listings and related links server-rendered |
 | SEO-14 | Priority destinations: all eight linked from the footer under their names and at distinct addresses; seven public pages 200, one H1, self-canonical in <head>, unique titles and descriptions, visible introduction, BreadcrumbList on category lists, no JobPosting on lists; Sign In, registration and password help noindex, not disallowed and not in the sitemap; /jobs/graduate-trainee one 308 to the graduate programmes list and unlisted; category lists reachable by plain links with listings in the first response; footer accessible and without horizontal scroll on a phone |
+| SEO-15 | Guides (D-72): every listed guide has a page, one h1, no skipped heading level, Article and BreadcrumbList data with dates equal to the visible dates, self-canonical, indexable, in the sitemap; no FAQ markup |
 | IDX-01 | Indexing API queue: only pages that carry JobPosting; URL_UPDATED on publication, one URL_DELETED when a job closes in any way; one row per event; newer events supersede unsent ones; a rolled-back decision queues nothing; a queue failure never blocks a decision |
 | IDX-02 | Indexing API sending: a verified RS256 service-account assertion with the indexing scope only; quota per Pacific day never exceeded; 429 defers to the next day; 401, 5xx and network errors retried with growing back-off; other 4xx dead with an alert; stale claims recovered; the current listing state wins |
 | IDX-03 | Indexing API configuration: off by default and in the base Compose file; the optional overlay is record-only whatever the environment says (owner decision); key only in the worker, read-only; preflight refuses a key others can read; credentials never exposed by an API or a log |
+| IDX-04 | SEO monitoring (D-72): Administrators only (contributors, editors, seekers and anonymous refused before anything is read); figures for open and eligible jobs, sitemap and queue; structured-data errors first; no credential in any answer; audited retry of dead or failed rows, 409 for sent or superseded rows, 404 for unknown; retry-all skips superseded addresses |
+| IDX-05 | Indexing API deduplication (D-72): an amendment republished with no visible change queues no second URL_UPDATED; a material change does, with a different content hash |
 | CAT-01 | Every category schema is a valid JSON Schema 2020-12 document |
 | CAT-02 | Every example detail validates against its category schema |
 | CAT-03 | Every example validates against the OpenAPI createDraft request body |
@@ -696,9 +704,12 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | SEO-12 | `apps/web/tests/unit/seo-readiness.test.tsx (sitemap.xml source); apps/api/tests/test_collections.py; apps/api/tests/test_sitemap.py` | executed |
 | SEO-13 | `apps/api/tests/test_collections.py; apps/web/tests/unit/seo-hardening.test.tsx (organic landing pages)` | executed |
 | SEO-14 | `apps/web/tests/unit/sitelinks.test.tsx; apps/web/tests/unit/seo-hardening.test.tsx; apps/web/tests/e2e/sitelinks.spec.ts; apps/web/tests/e2e/landing-pages.spec.ts` | executed |
+| SEO-15 | `apps/web/tests/unit/seo-readiness.test.tsx (editorial guides, static sitemap pages); axe and overflow run on the three new guides at 320, 390 and 1280 px` | executed; the axe run used a local production build, not CI |
 | IDX-01 | `apps/api/tests/test_indexing.py (what is queued)` | executed with mocked Google answers; nothing was sent to Google |
 | IDX-02 | `apps/api/tests/test_indexing.py (sending, credentials and tokens)` | executed with mocked Google answers; nothing was sent to Google |
 | IDX-03 | `apps/api/tests/test_indexing.py (configuration checks); apps/api/tests/test_production_compose.py::test_indexing_is_off_without_its_overlay_and_the_key_reaches_only_the_worker` | executed |
+| IDX-04 | `apps/api/tests/test_seo_monitoring.py; apps/web/tests/unit/seo-monitoring.test.tsx` | executed with mocked Google answers; nothing was sent to Google |
+| IDX-05 | `apps/api/tests/test_seo_monitoring.py (deduplication tests)` | executed with mocked Google answers |
 | PRIV-02 | `apps/api/tests/test_deletion.py::test_execution_removes_personal_data_everywhere` | executed (profile tables do not exist yet) |
 | PRIV-04 | `apps/web/tests/e2e/seo.spec.ts (Privacy and Terms exist, are linked from the footer, marked as drafts)` | executed for the draft pages; their content is not approved (B-02) |
 | PRIV-05 | `apps/api/tests/test_deletion.py (retention tests)` | executed against the provisional windows P4-06 |
