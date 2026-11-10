@@ -57,7 +57,7 @@ async function axeClean(page: Page) {
 test("1. a visitor sees sign-in prompts, and private pages send them to sign in", async ({ page }) => {
   await page.goto("/opportunities");
   await expect(page.getByRole("banner").getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Register" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Sign in to save/ }).first()).toHaveAttribute(
     "href",
     /\/sign-in\?next=/,

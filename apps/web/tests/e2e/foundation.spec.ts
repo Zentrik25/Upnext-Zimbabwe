@@ -20,9 +20,7 @@ test.describe("gate 1/2/4 — the stack renders and talks to the API", () => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/UPNEXT Careers/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Find your next opportunity in Zimbabwe.",
-    );
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Find your next opportunity.");
     for (const name of ["banner", "main", "contentinfo"] as const)
       await expect(page.getByRole(name)).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Quick links" })).toBeVisible();
@@ -142,7 +140,7 @@ test.describe("accessibility (A11Y-01…A11Y-05)", () => {
         offset: cs.outlineOffset,
       };
     });
-    expect(ring).toEqual({ style: "solid", width: "2px", color: refRgb("focus"), offset: "2px" });
+    expect(ring).toEqual({ style: "solid", width: "2px", color: rgb("#0071e3"), offset: "2px" }); // D-73: the public focus ring is the interactive blue
   });
 
   test("every control on the design-system page has an accessible name", async ({ page }) => {
@@ -164,17 +162,17 @@ test.describe("accessibility (A11Y-01…A11Y-05)", () => {
 test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
   const SHADOWS = [
     "none",
-    "rgba(23, 23, 23, 0.06) 0px 3px 6px 0px",
-    "rgba(23, 23, 23, 0.08) 0px 15px 35px 0px",
-    "rgba(50, 50, 93, 0.25) 0px 30px 45px -30px, rgba(0, 0, 0, 0.1) 0px 18px 36px -18px",
-    "rgba(3, 3, 39, 0.25) 0px 14px 21px -14px, rgba(0, 0, 0, 0.1) 0px 8px 17px -8px",
+    // D-73 public shadow levels (tokens.json "public"): subtle is none; ambient, elevated, deep are soft and neutral.
+    "rgba(0, 0, 0, 0.08) 0px 4px 20px 0px",
+    "rgba(0, 0, 0, 0.12) 0px 8px 30px 0px",
+    "rgba(0, 0, 0, 0.16) 0px 12px 40px 0px",
   ];
   for (const path of PAGES) {
     test(`radii, shadows and gradients stay inside the design system on ${path}`, async ({ page }) => {
       await page.goto(path);
       const offenders = await page.evaluate((shadows) => {
         const bad: string[] = [];
-        const allowed = ["0px", "1px", "4px", "5px", "6px", "8px"];
+        const allowed = ["0px", "2px", "8px", "12px", "980px"]; // D-73: 8px controls and cards, 12px dialogs, pills
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
           const radii = [
@@ -183,10 +181,7 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
             cs.borderBottomLeftRadius,
             cs.borderBottomRightRadius,
           ];
-          // The one exception (D-61): the fully rounded quick-link chips of the home page, nothing else.
-          const pill = el.closest('nav[aria-label="Quick links"]') !== null;
-          if (radii.some((r) => !allowed.includes(r) && !(pill && r === "999px")))
-            bad.push(`radius ${el.tagName}.${el.className}`);
+          if (radii.some((r) => !allowed.includes(r))) bad.push(`radius ${el.tagName}.${el.className}`);
           // Tailwind prefixes shadow utilities with fully transparent ring layers; only the visible layer counts.
           const visible =
             cs.boxShadow.replace(/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px(, )?/g, "").replace(/, $/, "") || "none";
@@ -204,68 +199,51 @@ test.describe("design system (gate 9: VIS-04, A11Y-08, D-39, D-42)", () => {
     });
   }
 
-  test("body typography follows the design system (Inter 300, 16px, line-height 1.4, deep navy on white)", async ({
+  test("body typography follows the design system (system font, 400, 16px, line-height 1.47, near-black on white)", async ({
     page,
   }) => {
     await page.goto("/");
     const body = page.locator("body");
     await expect(body).toHaveCSS("font-size", "16px");
-    await expect(body).toHaveCSS("font-weight", "300");
-    await expect(body).toHaveCSS("line-height", "22.4px");
-    await expect(body).toHaveCSS("color", rgb("#061b31"));
+    await expect(body).toHaveCSS("font-weight", "400");
+    await expect(body).toHaveCSS("line-height", "23.52px");
+    await expect(body).toHaveCSS("color", rgb("#1d1d1f"));
     await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
   });
 
-  test("primary buttons use Stripe Purple and the 4px control radius", async ({ page }) => {
+  test("primary buttons use the interactive blue and the 8px control radius", async ({ page }) => {
     await page.goto("/design-system");
     const primary = page.getByTestId("btn-primary");
-    await expect(primary).toHaveCSS("background-color", rgb("#533afd"));
-    await expect(primary).toHaveCSS("border-top-left-radius", "4px");
+    await expect(primary).toHaveCSS("background-color", rgb("#0071e3"));
+    await expect(primary).toHaveCSS("border-top-left-radius", "8px");
     await primary.hover();
-    await expect(primary).toHaveCSS("background-color", rgb("#4434d4"));
+    await expect(primary).toHaveCSS("background-color", rgb("#0077ed"));
   });
 
   test("form controls use the corrected DEV-04 border", async ({ page }) => {
     await page.goto("/design-system");
-    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#64748d"));
+    await expect(page.getByTestId("field-input")).toHaveCSS("border-top-color", rgb("#86868b"));
     await expect(page.getByTestId("field-input")).toHaveCSS("min-height", "40px");
   });
 
-  test.describe("dark theme (D-40; light is the default, owner 2026-10-29)", () => {
-    // A dark device setting must NOT turn the site dark: only an explicit choice does.
+  test.describe("public pages are light only (D-73, replacing the dark theme of D-40 for these pages)", () => {
+    // Neither a dark device nor a remembered Dark choice (set earlier, or by the staff workspace) darkens the public site.
     test.use({ colorScheme: "dark" });
 
-    test("the default is light even on a dark device; Dark is explicit and remembered; Light returns", async ({
+    test("a dark device or a stored Dark choice leaves the page light and no theme control is offered", async ({
       page,
     }) => {
+      await page.addInitScript(() => window.localStorage.setItem("upnext-theme", "dark"));
       await page.goto("/");
       const body = page.locator("body");
-      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
       await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
-      await expect(body).toHaveCSS("color", rgb("#061b31"));
-      await page.getByRole("button", { name: "Dark" }).click();
-      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
-      await expect(body).toHaveCSS("color", rgb("#e8ecf0"));
-      await page.reload();
-      await expect(body).toHaveCSS("background-color", rgb("#0e0f2e"));
-      await page.getByRole("button", { name: "Light" }).click();
-      await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
-      await expect(body).toHaveCSS("background-color", rgb("#ffffff"));
+      await expect(body).toHaveCSS("color", rgb("#1d1d1f"));
+      await expect(page.getByRole("button", { name: "Dark" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Light" })).toHaveCount(0);
     });
 
-    test("the primary button stays purple in dark with white text", async ({ page }) => {
-      await page.goto("/design-system");
-      await page.getByRole("button", { name: "Dark" }).first().click();
-      const primary = page.getByTestId("btn-primary");
-      await expect(primary).toHaveCSS("background-color", rgb("#665efd"));
-      await expect(primary).toHaveCSS("color", rgb("#ffffff"));
-    });
-
-    test("no serious or critical accessibility violations on the home page in dark", async ({ page }) => {
+    test("no serious or critical accessibility violations on the home page", async ({ page }) => {
       await page.goto("/");
-      await page.getByRole("button", { name: "Dark" }).click();
-      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
         .analyze();

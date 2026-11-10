@@ -20,6 +20,9 @@ const inter = localFont({
   ],
   variable: "--font-inter",
   display: "swap",
+  // Only the staff workspace and the employer dashboard use Inter now (the public surface uses the system font stack,
+  // D-73): without a preload no public page fetches it.
+  preload: false,
 });
 // The home page headline weight (700, owner instruction 2026-10-29, D-47): its own font, never preloaded, so the
 // other pages do not pay for it.
@@ -103,7 +106,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <script async nonce={nonce} src={adsenseScriptSrc(adsense)} crossOrigin="anonymous" />
         ) : null}
       </head>
-      <body>
+      <body {...(workspace ? {} : { "data-surface": "public" })}>
         {workspace ? (
           children
         ) : auth ? (
@@ -119,7 +122,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <SiteHeader />
             <main id="main">{children}</main>
             <SiteFooter />
-            <BottomNav home={home} />
+            <BottomNav home={home} signedIn={Boolean(signedIn)} />
           </>
         )}
       </body>

@@ -386,7 +386,10 @@ describe("private routes cannot be indexed by accident", () => {
     /^\/employers\/\[slug\]$/,
     /^\/privacy$/,
     /^\/terms$/,
+    /^\/guides$/,
     /^\/guides\/[a-z-]+$/,
+    /^\/categories$/,
+    /^\/locations$/, // noindex while the catalogue holds no place (generateMetadata)
     /^\/jobs\/\[slug\]$/, // landing pages (D-68); their own indexing rules are tested in seo-hardening
     /^\/jobs$/, // a permanent redirect to the jobs category list
   ];

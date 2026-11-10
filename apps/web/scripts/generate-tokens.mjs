@@ -60,6 +60,19 @@ const darkVars = [
   "  color-scheme: dark;",
 ];
 lines.push(':root[data-theme="dark"] {', ...darkVars, "}", "");
+// Public and seeker surface (D-73): light only, redefining every colour, so staff and employer pages are untouched.
+const pub = tokens.public;
+const publicVars = [
+  ...Object.entries(pub.colors).map(([name, v]) => `  --color-${name}: ${v};`),
+  `  --font-sans: ${pub.fontFamily};`,
+  ...Object.entries(pub.fontWeights).map(([k, v]) => `  --font-weight-${k}: ${v};`),
+  ...Object.entries(pub.tracking).map(([k, v]) => `  --tracking-${k}: ${v};`),
+  ...Object.entries(pub.leading).map(([k, v]) => `  --leading-${k}: ${v};`),
+  ...Object.entries(pub.radii).map(([k, v]) => `  --radius-${k}: ${v};`),
+  ...Object.entries(pub.shadows).map(([k, v]) => `  --shadow-${k}: ${v};`),
+  "  color-scheme: light;",
+];
+lines.push('body[data-surface="public"] {', ...publicVars, "}", "");
 const css = lines.join("\n");
 
 if (process.argv.includes("--check")) {

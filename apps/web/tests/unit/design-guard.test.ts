@@ -37,7 +37,9 @@ describe("design system guard (VIS-04, D-39, D-45)", () => {
     expect(css).not.toMatch(/gradient\(/);
     for (const m of css.matchAll(/border-radius:\s*([^;]+);/g))
       expect(m[1]?.trim()).toBe("var(--radius-control)");
-    expect(css).not.toMatch(/box-shadow:/);
+    // Shadows come only from the token variables (the public surface applies them, D-73), never a raw value.
+    for (const m of css.matchAll(/box-shadow:\s*([^;]+);/g))
+      expect(m[1]?.trim()).toMatch(/^var\(--shadow-(?:subtle|ambient|elevated|deep)\)$/);
   });
 
   it("keeps in-page targets clear of the sticky header (SC 2.4.11)", () => {

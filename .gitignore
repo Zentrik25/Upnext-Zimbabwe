@@ -37,3 +37,4 @@ infrastructure/tls/.certs/
 
 # Uploaded listing images in local development (D-58)
 apps/api/media/
+.next-after/

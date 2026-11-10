@@ -164,33 +164,44 @@ dd a {
   font-variant-numeric: tabular-nums;
 }
 
-/* The listing page on a phone (owner reference, D-63): a navy header with a white logo and the search, alerts and
-   menu icons, and bold headings on this page only. The weight-300 heading rule above stays for every other page. */
+/* Public surface (D-73): semibold headings, one light header on every page (the navy phone header of D-63 is retired). */
+body[data-surface="public"] :is(h1, h2, h3, h4) {
+  font-weight: var(--font-weight-semi);
+  letter-spacing: var(--tracking-title);
+}
 [data-job-page] :is(h1, h2) {
   font-weight: 700;
 }
 [data-job-page] [data-bold] {
   font-weight: 700;
 }
-@media (max-width: 650px) {
-  body:has([data-job-page]) .site-header {
-    background: #061b31; /* the reference's deep navy, in both themes (the ink token turns light in dark) */
-    border-color: #061b31;
-    color: var(--color-on-accent);
-    backdrop-filter: none;
-  }
-  body:has([data-job-page]) .site-header .text-logo {
-    color: var(--color-on-accent);
-  }
-  body:has([data-job-page]) .site-header .job-header-icons {
-    display: flex;
-  }
-  body:has([data-job-page]) .site-header button[aria-controls="mobile-menu"] {
-    background: transparent;
-    color: var(--color-on-accent);
-  }
-  body:has([data-job-page]) .site-header a:focus-visible,
-  body:has([data-job-page]) .site-header button:focus-visible {
-    outline-color: var(--color-on-accent);
-  }
+
+/* Public surface: the home headline font is the system semibold, so the Inter Bold file is never requested (D-73). */
+body[data-surface="public"] .font-headline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+/* Public surface: links inside running text are underlined, so they never rely on colour alone (WCAG 1.4.1). The
+   navigation, cards and buttons are not running text and stay plain. */
+body[data-surface="public"] :is(p, dd) a:not([class*="rounded-"]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Tailwind writes shadow values into the utility at build time, so the public shadow levels are applied here from
+   their tokens (D-73). Staff and employer pages keep the compiled Stripe values. */
+body[data-surface="public"] .shadow-subtle {
+  box-shadow: var(--shadow-subtle);
+}
+body[data-surface="public"] .shadow-ambient,
+body[data-surface="public"] .hover\:shadow-ambient:hover {
+  box-shadow: var(--shadow-ambient);
+}
+body[data-surface="public"] .shadow-elevated {
+  box-shadow: var(--shadow-elevated);
+}
+body[data-surface="public"] .shadow-deep {
+  box-shadow: var(--shadow-deep);
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// D-29: buttons, inputs, selects and textareas share a 4px radius; their sizes are unchanged.
+// D-73: buttons, inputs, selects and textareas share the 8px radius (a pill, 980px, for the main call-to-action buttons).
 const WIDTHS = [320, 390, 768, 1440];
 
 for (const width of WIDTHS) {
@@ -8,8 +8,8 @@ for (const width of WIDTHS) {
     test.use({ viewport: { width, height: 900 } });
 
     for (const path of ["/", "/opportunities", "/sign-in", "/register"]) {
-      test(`4px radius on every control of ${path}`, async ({ page }) => {
-        await page.goto(path);
+      test(`8px radius on every control of ${path}`, async ({ page }) => {
+        await page.goto(path, { waitUntil: "networkidle" }); // the home search streams in after the shell
         const result = await page.evaluate(() => {
           const sel =
             "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control";
@@ -34,10 +34,11 @@ for (const width of WIDTHS) {
         });
         expect(result.length).toBeGreaterThan(0);
         for (const row of result) {
-          // Joined search group (>= 651px) keeps its inner edges square; every control has a 4px outer corner.
-          if (!(row.joinedMiddle && width > 650)) expect(row.radii.some((v) => v === "4px")).toBe(true);
-          expect(row.radii.every((v) => v === "4px" || v === "0px")).toBe(true);
-          if (width <= 650) expect(row.radii).toEqual(["4px", "4px", "4px", "4px"]);
+          // Joined search group (>= 651px) keeps its inner edges square; every control has an 8px (or pill) outer corner.
+          const round = (v: string) => v === "8px" || v === "980px";
+          if (!(row.joinedMiddle && width > 650)) expect(row.radii.some(round)).toBe(true);
+          expect(row.radii.every((v) => round(v) || v === "0px")).toBe(true);
+          if (width <= 650) expect(new Set(row.radii).size).toBe(1);
           expect(row.height).toBeGreaterThanOrEqual(33);
         }
       });

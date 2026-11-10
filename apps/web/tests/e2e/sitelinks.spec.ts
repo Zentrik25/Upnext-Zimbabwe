@@ -62,7 +62,8 @@ test.describe("priority destinations (D-69)", () => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/");
     const footer = page.getByRole("navigation", { name: "Footer" });
-    for (const [label] of DESTINATIONS) await expect(footer.getByRole("link", { name: label })).toBeVisible();
+    for (const [label] of DESTINATIONS)
+      await expect(footer.getByRole("link", { name: label, exact: true })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .include("footer")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

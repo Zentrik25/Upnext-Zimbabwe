@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { JobSeekerArt } from "@/components/brand/job-seeker-art";
 import { Container } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion, SkeletonInput, SkeletonLine } from "@/components/ui/skeleton";
@@ -65,40 +64,20 @@ function FilterSelect({
   );
 }
 
-/** Hero frame: eyebrow, three-line headline with the middle word in the accent colour, the illustration beside it,
- *  and a slot for the search. It holds no data, so it is sent at once; only the search below it can be pending. */
+/** Hero frame: headline, one line of supporting text and a slot for the search, on a light-gray field. No
+ *  illustration, no decoration and no figures: it holds no data, so it is sent at once and only the search can
+ *  be pending. */
 export function HeroFrame({ children }: { children: ReactNode }) {
   return (
-    <section aria-labelledby="home-title" className="relative isolate overflow-hidden bg-surface">
-      {/* The system's ruby-to-magenta accent as hard-edged diagonal bands behind the illustration (decorative). */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -right-24 -z-10 h-[460px] w-[150px] rotate-[28deg] bg-linear-to-b from-magenta to-ruby opacity-25 md:right-[8%] md:w-[230px] md:opacity-30"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-6 -z-10 h-[420px] w-[70px] rotate-[28deg] bg-linear-to-b from-ruby to-magenta opacity-20 md:right-[2%] md:w-[110px] md:opacity-25"
-      />
-      <Container className="pt-5 pb-5 md:pt-10 md:pb-10">
-        <div className="grid items-center">
-          <div className="relative z-10 col-start-1 row-start-1">
-            <h1 id="home-title" className="text-[clamp(30px,8.4vw,56px)] leading-hero tracking-hero text-ink">
-              <span className="block whitespace-nowrap">Find your next </span>
-              <span className="block text-accent">opportunity </span>
-              <span className="block">in Zimbabwe.</span>
-            </h1>
-            <p className="mt-3 max-w-[min(240px,56vw)] text-ctl leading-snug text-muted md:max-w-none md:text-lead">
-              Jobs, internships and opportunities to move you forward.
-            </p>
-          </div>
-          {/* Behind the text, as in the mockup: it takes the right 46% and may touch the end of the headline. */}
-          <div className="col-start-1 row-start-1 -mr-[3%] w-[46%] max-w-[420px] justify-self-end">
-            <JobSeekerArt priority />
-          </div>
-        </div>
-
-        {/* One lavender panel holds the search (or its skeleton) and the quick links under it. */}
-        <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 rounded-feature bg-match-bg p-3 max-sm:p-2.5 md:max-w-[640px] md:p-4">
+    <section aria-labelledby="home-title" className="bg-surface-pale">
+      <Container className="py-14 max-sm:py-8">
+        <h1 id="home-title" className="m-0 max-w-[18ch] text-hero font-semi text-ink">
+          Find your next opportunity.
+        </h1>
+        <p className="mt-4 max-w-[56ch] text-lead text-muted max-sm:mt-3 max-sm:text-base">
+          Discover jobs, internships, graduate programmes and career opportunities across Zimbabwe.
+        </p>
+        <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-4 max-sm:mt-6 md:max-w-[880px]">
           {children}
           <QuickLinks />
         </div>
@@ -108,31 +87,26 @@ export function HeroFrame({ children }: { children: ReactNode }) {
 }
 
 /** The four shortcuts under the search: white chips with an icon. Static, so they are sent with the headline. */
-// `hidden` completes a short visible label for screen readers and crawlers ("More" alone says nothing about where it
-// leads); the visible chip is unchanged (D-61).
-const QUICK_LINKS: readonly { label: string; href: string; icon: IconName; hidden?: string }[] = [
-  { label: "Jobs", href: "/opportunities?category=jobs", icon: "briefcase" },
-  { label: "Tenders", href: "/opportunities?category=tenders", icon: "doc" },
-  { label: "Scholarships", href: "/opportunities?category=scholarships", icon: "cap" },
-  { label: "More", href: "/opportunities", icon: "grid", hidden: " opportunities" },
+const QUICK_LINKS: readonly { label: string; href: string }[] = [
+  { label: "Jobs", href: "/opportunities?category=jobs" },
+  { label: "Internships", href: "/opportunities?category=internships" },
+  { label: "Graduate programmes", href: "/opportunities?category=graduate-programmes" },
+  { label: "Scholarships", href: "/opportunities?category=scholarships" },
+  { label: "Tenders", href: "/opportunities?category=tenders" },
 ];
 
 function QuickLinks() {
   return (
     <nav aria-label="Quick links">
-      <ul className="m-0 flex list-none justify-between gap-1.5 p-0 max-sm:gap-1">
+      <ul className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
+        <li className="text-ctl text-muted">Popular:</li>
         {QUICK_LINKS.map((link) => (
-          <li key={link.label} className="min-w-0">
+          <li key={link.label}>
             <Link
               href={link.href}
-              className="inline-flex min-h-control items-center gap-1.5 rounded-pill bg-surface px-3.5 text-ctl text-ink shadow-subtle hover:shadow-ambient max-sm:gap-1 max-sm:px-2 max-sm:text-[13px] max-[380px]:text-small"
+              className="inline-flex min-h-[44px] items-center rounded-pill border border-line bg-surface px-4 text-ctl text-ink hover:bg-surface-pale hover:text-accent"
             >
-              <Icon
-                name={link.icon}
-                className="h-[18px] w-[18px] shrink-0 text-ink max-sm:h-3.5 max-sm:w-3.5 max-[340px]:hidden"
-              />
               {link.label}
-              {link.hidden ? <span className="sr-only">{link.hidden}</span> : null}
             </Link>
           </li>
         ))}
@@ -154,24 +128,26 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
       action="/opportunities"
       method="get"
       aria-label="Search opportunities"
-      className="grid gap-2.5"
+      className="grid gap-3 rounded-feature border border-line bg-surface p-3"
     >
-      <label htmlFor="home-q" className="sr-only">
-        Search by title, organisation or keyword
-      </label>
-      <IconControl icon="search">
-        <input
-          id="home-q"
-          name="q"
-          type="search"
-          maxLength={100}
-          enterKeyHint="search"
-          autoComplete="off"
-          placeholder="Job title or keyword"
-          className={FIELD}
-        />
-      </IconControl>
-      <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+      <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] gap-3 max-md:grid-cols-1">
+        <div>
+          <label htmlFor="home-q" className="sr-only">
+            Search by title, organisation or keyword
+          </label>
+          <IconControl icon="search">
+            <input
+              id="home-q"
+              name="q"
+              type="search"
+              maxLength={100}
+              enterKeyHint="search"
+              autoComplete="off"
+              placeholder="Job title or keyword"
+              className={FIELD}
+            />
+          </IconControl>
+        </div>
         <FilterSelect
           id="home-location"
           name="location"
@@ -180,22 +156,25 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
           all="Location"
           options={places}
         />
-        <FilterSelect
-          id="home-category"
-          name="category"
-          label="Category"
-          icon="grid"
-          all="Category"
-          options={categories.map((c) => [c.code, c.name] as const)}
-        />
+        <Button type="submit" className="h-field w-full gap-2 rounded-pill px-6 text-ctl md:w-auto">
+          Search Jobs
+        </Button>
       </div>
       <details className="group">
-        <summary className="inline-flex min-h-[32px] cursor-pointer list-none items-center gap-2 text-ctl text-accent [&::-webkit-details-marker]:hidden">
+        <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-2 text-ctl text-link [&::-webkit-details-marker]:hidden">
           <Icon name="sliders" className="h-[18px] w-[18px]" />
           <span className="group-open:hidden">More filters</span>
           <span className="hidden group-open:inline">Fewer filters</span>
         </summary>
-        <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-3">
+        <div className="grid gap-3 pt-1 pb-1 sm:grid-cols-2 md:grid-cols-4">
+          <FilterSelect
+            id="home-category"
+            name="category"
+            label="Category"
+            icon="grid"
+            all="Category"
+            options={categories.map((c) => [c.code, c.name] as const)}
+          />
           <FilterSelect
             id="home-type"
             name="employment_type"
@@ -222,10 +201,6 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
           />
         </div>
       </details>
-      <Button type="submit" className="relative h-[44px] w-full gap-2 text-ctl">
-        Find opportunities
-        <Icon name="arrowRight" className="h-[18px] w-[18px]" />
-      </Button>
     </SearchForm>
   );
 }
@@ -233,16 +208,19 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
 /** What the search form looks like while its lists load: same boxes, same gaps, same button. */
 export function HeroSearchSkeleton() {
   return (
-    <LoadingRegion label="search" heading={false} className="grid gap-2.5">
-      <SkeletonInput label={false} field="h-field" />
-      <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
+    <LoadingRegion
+      label="search"
+      heading={false}
+      className="grid gap-3 rounded-feature border border-line bg-surface p-3"
+    >
+      <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] gap-3 max-md:grid-cols-1">
         <SkeletonInput label={false} field="h-field" />
         <SkeletonInput label={false} field="h-field" />
+        <div className="h-field w-[140px] rounded-pill bg-line max-md:w-full" />
       </div>
-      <div className="flex min-h-[32px] items-center">
+      <div className="flex min-h-[44px] items-center">
         <SkeletonLine className="h-[14px] w-[120px]" />
       </div>
-      <div className="h-[44px] w-full rounded-control bg-line" />
     </LoadingRegion>
   );
 }
@@ -250,7 +228,7 @@ export function HeroSearchSkeleton() {
 /** One reassurance card: a lavender icon tile, a bold heading, one short line (or the labels themselves). */
 function TrustCard({ icon, title, children }: { icon: IconName; title: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-3 rounded-card bg-surface p-3">
+    <div className="flex items-start gap-3 rounded-card border border-line bg-surface p-4">
       <span
         aria-hidden="true"
         className="grid h-10 w-10 shrink-0 place-items-center rounded-card bg-avatar-bg text-accent"
@@ -258,7 +236,7 @@ function TrustCard({ icon, title, children }: { icon: IconName; title: string; c
         <Icon name={icon} className="h-6 w-6" />
       </span>
       <div className="min-w-0">
-        <h3 className="font-headline text-base leading-title">{title}</h3>
+        <h3 className="text-base font-strong leading-title">{title}</h3>
         <div className="mt-1 text-ctl text-muted">{children}</div>
       </div>
     </div>
@@ -269,10 +247,10 @@ function TrustCard({ icon, title, children }: { icon: IconName; title: string; c
 export function TrustSection() {
   const levels = ["not_verified", "issuer_verified"] as const;
   return (
-    <section aria-labelledby="trust-title" className="pb-8">
+    <section aria-labelledby="trust-title" className="py-8 max-sm:py-6">
       <Container>
-        <div className="rounded-feature bg-surface-pale p-4 md:p-6">
-          <h2 id="trust-title" className="font-headline text-title tracking-title">
+        <div className="rounded-feature bg-surface-pale p-5 md:p-8">
+          <h2 id="trust-title" className="m-0 text-sub">
             How listings are checked
           </h2>
           <p className="mt-1 max-w-[640px] text-ctl text-muted">
@@ -297,14 +275,14 @@ export function TrustSection() {
           </div>
         </div>
         <Link
-          href="/opportunities"
-          className="mt-3 flex items-center gap-3 rounded-card bg-surface-pale p-3 hover:shadow-ambient"
+          href="/guides/apply-safely-and-avoid-scams"
+          className="mt-3 flex items-center gap-3 rounded-card border border-line bg-surface p-4 hover:bg-surface-pale"
         >
           <Icon name="flag" className="h-6 w-6 shrink-0 text-accent" />
           <span className="min-w-0 flex-1">
             <span className="block text-base leading-title">Seen something wrong?</span>
             <span className="block text-ctl text-muted">
-              Open the listing and choose Report this opportunity. Our team will review it.
+              Open the listing and choose Report this opportunity, or read how to spot a fake vacancy.
             </span>
           </span>
           <Icon name="chevronRight" className="h-5 w-5 shrink-0 text-accent" />

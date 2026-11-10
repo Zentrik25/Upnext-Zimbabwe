@@ -184,7 +184,7 @@ test("4. For you follows the preferences and explains every recommendation", asy
   await axeClean(page, "for you");
 
   // ordinary search is still there and still finds everything
-  await page.getByRole("link", { name: "Opportunities", exact: true }).click();
+  await page.getByRole("link", { name: "Find Jobs", exact: true }).click();
   await expect(page.getByTestId("results").getByRole("article").first()).toBeVisible();
 
   // change the preferences: only grants now

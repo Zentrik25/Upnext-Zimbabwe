@@ -389,7 +389,7 @@ describe("route wiring", () => {
 
   it("the slow sections of the public pages sit in their own Suspense boundaries", () => {
     const home = readFileSync(join(app, "page.tsx"), "utf8");
-    expect(home.match(/<Suspense/g)).toHaveLength(2); // the search and the latest list
+    expect(home.match(/<Suspense/g)).toHaveLength(4); // the search, the latest list, locations and entry-level
     expect(home).toContain("fallback={<HomeLatestSkeleton />}");
     const list = readFileSync(join(app, "opportunities/page.tsx"), "utf8");
     expect(list.match(/<Suspense/g)).toHaveLength(4);
@@ -416,11 +416,11 @@ describe("skeletons are the size of the real thing (measured against a running s
   it("the search skeletons use the 40px field height of the real search controls, not the old 44px", () => {
     const real = read("components/home/sections.tsx");
     expect(real).toMatch(/block min-h-field w-full/); // the real hero control
-    expect(real).toContain('className="relative h-[44px] w-full gap-2 text-ctl"'); // an explicit height: min-h-control would win
+    expect(real).toContain("h-field w-full gap-2 rounded-pill"); // the Search Jobs button is as tall as its fields
     const { container } = render(<HeroSearchSkeleton />);
     expect(container.innerHTML).not.toContain("h-search");
     expect(container.querySelectorAll(".h-field")).toHaveLength(3);
-    expect(container.querySelector(".h-\\[44px\\]")).not.toBeNull();
+    expect(container.querySelector(".h-field.rounded-pill")).not.toBeNull(); // the button's placeholder
     cleanup();
     const group = render(<SearchSkeleton />).container;
     expect(group.innerHTML).not.toContain("h-search");

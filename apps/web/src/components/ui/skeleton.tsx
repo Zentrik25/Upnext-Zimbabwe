@@ -316,7 +316,7 @@ export function SkeletonListingRows({ count = 6 }: { count?: number }) {
 export function SkeletonHomeRow() {
   return (
     <div
-      className="flex items-start gap-3 rounded-card border border-l-[3px] border-border-panel border-l-line bg-surface p-3"
+      className="flex items-start gap-3 rounded-card border border-border-panel bg-surface p-3"
       data-testid="skeleton-row"
     >
       <SkeletonAvatar className="h-11 w-11" />

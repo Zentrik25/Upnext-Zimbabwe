@@ -44,14 +44,14 @@ describe("MobileMenu (hamburger on phones)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("opens a modal menu with the header links, Register and Sign in, locks scrolling and focuses Close", () => {
+  it("opens a modal menu with the header links, Create account and Sign in, locks scrolling and focuses Close", () => {
     render(<MobileMenu groups={ITEMS} signedIn={false} />);
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(screen.getByRole("link", { name: "Jobs" }).getAttribute("href")).toBe("/opportunities");
     expect(screen.getByRole("link", { name: "For Employers" }).getAttribute("href")).toBe("/employers");
-    expect(screen.getByRole("link", { name: "Register" }).getAttribute("href")).toBe("/register");
+    expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe("/register");
     expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/sign-in");
     expect(document.documentElement.style.overflow).toBe("hidden");
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close menu" }));
@@ -90,7 +90,7 @@ describe("MobileMenu (hamburger on phones)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("signed in: shows the account destinations and a Sign out button instead of Register", () => {
+  it("signed in: shows the account destinations and a Sign out button instead of Create account", () => {
     render(
       <MobileMenu
         groups={[
@@ -107,6 +107,6 @@ describe("MobileMenu (hamburger on phones)", () => {
     expect(screen.getByRole("link", { name: "For you" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Saved" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Register" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Create account" })).toBeNull();
   });
 });

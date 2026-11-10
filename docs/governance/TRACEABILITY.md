@@ -72,6 +72,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-65 | Branded search (D-69): eight priority destinations linked from every public page with descriptive crawlable links; the seven public ones with unique titles, descriptions, headings and visible text, self-canonical, in the sitemap when they hold listings; Sign In linked but noindex and unlisted, crawlable so its noindex is read; the duplicate graduate landing page consolidated by one permanent redirect; home title, description and trailing-slash canonical as the owner specified; BreadcrumbList on category lists | D-69; D-68; D-51; P4-02 | SC-01, SC-02 | listOpportunities, getSitemapEntries | SEO-14 | OQ-20 |
 | R-70 | Role-based landing (server-named dashboard) and the employer dashboard: own-organisation counts and analytics, filtered list, duplicate, preview, picture upload (D-70). Tests: test_role_landing.py, test_employer_dashboard.py, employer.test.tsx, accounts.test.tsx | D-70 | — | getEmployerDashboard, uploadEmployerImage, duplicateEmployerListing, previewEmployerListing, listEmployerCategories | — | — |
 | R-72 | SEO monitoring and Indexing API hygiene (D-72, DRAFT): an Administrator-only page (/workspace/seo) with the Indexing API queue, quota, last run and last accepted submission, open and JobPosting-eligible jobs, jobs in the sitemap and structured-data findings, never presenting a notification as indexing; audited retry of failed or dead notifications, refused when superseded; no second URL_UPDATED for a republication that changes nothing visible; three editorial guides; an AdSense readiness audit | D-72; D-68; D-51 | — | getStaffSeo, listStaffSeoNotifications, retryStaffSeoNotification, retryStaffSeoDeadNotifications | IDX-04, IDX-05, SEO-15 | D-67 source attribution; Search Console API |
+| R-73 | Public and seeker surface redesign (D-73, DRAFT): scoped Apple-inspired light-only tokens; header with Find Jobs, Categories, Locations, Career Guides, For Employers; category, location and guide directories; home without illustration (keyword, location, Search Jobs, latest, categories, locations, entry-level, guides, employer call to action, trust); footer; bottom navigation without private tabs for visitors; staff and employer dashboards unchanged | D-73; D-45 | SC-01, SC-02 | listOpportunities, listLocations, listCategories | UI-73-01, UI-73-02 | D-73 remaining layout work |
 
 ## 2. Screen register
 
@@ -100,7 +101,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | Operation | Method path | Tag | Requirements |
 |---|---|---|---|
 | `getApiRoot` | GET `/` | health | R-24 |
-| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-65, R-64 |
+| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-73, R-65, R-64 |
 | `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29, R-64 |
 | `getEmployerOverview` | GET `/employer/overview` | employer | R-42 |
 | `searchOrganisationsToClaim` | GET `/employer/organisations/search` | employer | R-42 |
@@ -128,8 +129,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `recordListingEvent` | POST `/opportunities/{slug}/events` | public | R-46 |
 | `createListingReport` | POST `/opportunities/{slug}/reports` | public | R-50 |
 | `getSitemapEntries` | GET `/sitemap` | public | R-29, R-65, R-64 |
-| `listCategories` | GET `/categories` | public | R-01 |
-| `listLocations` | GET `/locations` | public | R-01 |
+| `listCategories` | GET `/categories` | public | R-01, R-73 |
+| `listLocations` | GET `/locations` | public | R-01, R-73 |
 | `listSectors` | GET `/sectors` | public | R-01 |
 | `searchSkills` | GET `/skills` | public | R-07 |
 | `getCsrfToken` | GET `/auth/csrf` | auth | R-04, R-17 |
@@ -551,6 +552,8 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | VIS-05 | Visual-regression baseline is the reference; the allow-list contains only the documented accessibility deviations |
 | UI-71-01 | Opportunity page (D-71, DRAFT): compact featured image with a full-size viewer; Apply Now, Save and Share on one line with equal heights; section order with How to apply after Qualifications; empty optional facts hidden |
 | UI-71-02 | Visual editor (D-71, DRAFT): bold, italic, underline, lists, links (add, edit, remove), undo and redo, shortcuts, touch targets, plain-text paste, round trip with the stored Markdown subset, sanitising, keyboard docking; published links blue and underlined |
+| UI-73-01 | Public design tokens (D-73): body[data-surface=public] redefines every colour, so a stored Dark choice leaves public pages light; workspace and employer pages keep the base tokens; body type, primary button, control border, radius and shadow levels follow the public set |
+| UI-73-02 | Public navigation (D-73): header and menu list Find Jobs, Categories, Locations, Career Guides, For Employers; visitors see no Saved or Account tab; /categories, /locations and /guides render; the home page has no illustration and offers keyword, location and Search Jobs; no axe violation at 320 to 1440 px |
 
 ## 5. Rules for maintaining this file
 
@@ -849,3 +852,5 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | E2E-10 | `apps/web/tests/e2e/a11y.spec.ts (all public and account pages at four widths)` | executed |
 | UI-71-01 | `apps/web/tests/unit/job-view.test.tsx; apps/web/tests/unit/accounts.test.tsx (SaveToggle icon); apps/web/tests/unit/ad-rules.test.ts` | executed; layout also measured in Chromium at 320, 360, 390, 430, 768 and 1280 px (one line, equal heights, no horizontal overflow) |
 | UI-71-02 | `apps/web/tests/unit/rich-text.test.ts; apps/web/tests/unit/rich-text-editor.test.tsx; apps/api/tests/test_catalog_units.py (underline, XSS corpus)` | executed; the editor was also driven in Chromium on desktop and with touch emulation; a real phone keyboard was not available (the keyboard lift was tested with a simulated visual viewport) |
+| UI-73-01 | `apps/web/tests/e2e/foundation.spec.ts; apps/web/tests/e2e/controls.spec.ts; apps/web/tests/unit/tokens.test.ts; apps/web/tests/unit/design-guard.test.ts` | executed against a local production build with the demo data; not CI |
+| UI-73-02 | `apps/web/tests/e2e/mobile-menu.spec.ts; apps/web/tests/e2e/a11y.spec.ts; apps/web/tests/e2e/sitelinks.spec.ts; apps/web/tests/e2e/seo.spec.ts; apps/web/tests/unit/mobile-menu.test.tsx` | executed against a local production build with the demo data; not CI |

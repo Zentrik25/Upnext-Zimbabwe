@@ -42,7 +42,7 @@ export function HomeListingRow({
   const where = locationLabel(row);
   const kind = labelFor(row.employment_type) ?? row.category.name;
   return (
-    <article className="flex items-start gap-3 rounded-card border border-l-[3px] border-border-panel border-l-accent bg-surface p-3 shadow-subtle hover:bg-row-hover">
+    <article className="flex items-start gap-3 rounded-card border border-border-panel bg-surface p-3 shadow-subtle hover:bg-row-hover">
       <div
         aria-hidden="true"
         className={`grid h-11 w-11 shrink-0 place-items-center rounded-card border text-base font-headline ${MARK[row.verification.level]}`}

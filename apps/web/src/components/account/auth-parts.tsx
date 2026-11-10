@@ -4,16 +4,11 @@ import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { Icon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
-/** Sign-in / registration page in the Stripe pattern (D-53): a pale canvas, one 400px card, a short title and the
- *  form, nothing else. No illustration or intro paragraph, so even the long registration form fits one screen. */
+/** Sign-in / registration page (D-53, D-73): a pale canvas, one 400px card, a short title and the form, nothing
+ *  else: no illustration and no decorative shape. No illustration or intro paragraph, so even the long registration form fits one screen. */
 export function AuthPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-82px)] justify-center overflow-hidden bg-surface-pale">
-      {/* The system's ruby-to-magenta accent as one soft diagonal band, wide screens only (decorative). */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 -left-24 -z-10 hidden h-64 w-[60%] -rotate-12 bg-linear-to-r from-ruby to-magenta opacity-80 md:block"
-      />
       <div className="w-full max-w-[404px] px-3 py-2 sm:px-4 sm:py-6 [&_a]:text-accent">
         <div className="rounded-feature border border-border-panel bg-surface p-3.5 shadow-ambient sm:p-6">
           <h1 className="mb-2.5 text-title tracking-title sm:mb-3">{title}</h1>

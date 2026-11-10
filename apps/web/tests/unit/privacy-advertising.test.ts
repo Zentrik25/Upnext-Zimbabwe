@@ -97,7 +97,9 @@ describe("Privacy Policy and Google AdSense", () => {
 
   it("the policy is linked from the site footer and the sign-in footer", () => {
     const root = resolve(__dirname, "../../src/components/layout");
-    expect(readFileSync(resolve(root, "site-footer.tsx"), "utf8")).toContain('["/privacy", "Privacy"]');
+    expect(readFileSync(resolve(root, "site-footer.tsx"), "utf8")).toContain(
+      '["/privacy", "Privacy Policy"]',
+    );
     expect(readFileSync(resolve(root, "auth-footer.tsx"), "utf8")).toContain('href="/privacy"');
   });
 
