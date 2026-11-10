@@ -347,3 +347,64 @@ export type AnalyticsTable = {
   window: string;
   tracking: TrackingInfo;
 };
+
+/** `GET /staff/seo` (Administrators only). A sent notification is Google accepting the request, not indexing. */
+export type SeoIssue = {
+  level: "error" | "warning";
+  code:
+    | "no_place"
+    | "remote_without_country"
+    | "no_description"
+    | "no_deadline"
+    | "no_employment_type"
+    | "no_salary";
+};
+export type SeoOverview = {
+  mode: "off" | "record" | "live";
+  listings: {
+    open_jobs: number;
+    eligible_for_job_posting: number;
+    jobs_in_sitemap: number;
+    listings_in_sitemap: number;
+  };
+  notifications: {
+    pending: number;
+    sending: number;
+    failed: number;
+    sent: number;
+    dead: number;
+    superseded: number;
+    waiting: number;
+    dead_last_24h: number;
+    oldest_waiting_seconds: number | null;
+    last_sent_at: string | null;
+  };
+  quota: { used_today: number; limit: number };
+  last_run: { status: string; finished_at: string | null; last_ok_at: string | null; detail: string } | null;
+  structured_data: {
+    errors: number;
+    warnings: number;
+    listings: {
+      opportunity_id: string;
+      title: string;
+      slug: string | null;
+      category: string;
+      issues: SeoIssue[];
+    }[];
+  };
+  search_console: { connected: boolean };
+};
+export type SeoNotification = {
+  id: string;
+  url: string;
+  action: "URL_UPDATED" | "URL_DELETED";
+  transition: string;
+  status: "pending" | "sending" | "failed" | "sent" | "dead" | "superseded";
+  attempts: number;
+  response_status: number | null;
+  last_error: string;
+  created_at: string;
+  next_attempt_at: string | null;
+  sent_at: string | null;
+  opportunity_id: string | null;
+};

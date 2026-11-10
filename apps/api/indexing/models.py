@@ -36,6 +36,9 @@ class IndexingNotification(models.Model):
     url = models.CharField(max_length=2048)  # the public listing address, absolute https
     action = models.CharField(max_length=12, choices=Action.choices)
     transition = models.CharField(max_length=8)  # the workflow transition that caused it (T07, T10, ...)
+    # For URL_UPDATED: a hash of what the job page shows (eligibility.page_fingerprint), so republishing an
+    # amendment that changes nothing Google can see does not send a second, identical update. Blank otherwise.
+    content_hash = models.CharField(max_length=64, blank=True, default="")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
     attempts = models.PositiveSmallIntegerField(default=0)
     next_attempt_at = models.DateTimeField(default=timezone.now)

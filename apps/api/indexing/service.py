@@ -10,6 +10,8 @@ Rules, in the order they apply:
   category, landing and guide pages are never sent.
 * **Off until configured.** `UPNEXT_INDEXING_MODE` is `off` by default: nothing is written. `record` writes
   the queue but sends nothing, so the owner can inspect it first; only `live` sends.
+* **Only when something changed.** An update records a hash of what the page shows; republishing an amendment
+  whose visible content is identical to the last update sent (or still waiting) queues nothing.
 * **Once per event.** Each row has the key `event:<publishing event id>`, so a repeated signal or retried
   transaction writes one row. A newer event for the same address supersedes an older one not yet sent (only
   the latest state matters to Google), and a removal is not repeated when the last one is still waiting or
@@ -45,7 +47,7 @@ from core.models import JobRun
 from opportunities.models import ListingStatus, Opportunity, OpportunityVersion, PublishingEvent
 
 from . import google
-from .eligibility import carries_job_posting, is_job_category
+from .eligibility import carries_job_posting, is_job_category, page_fingerprint
 from .models import WAITING, Action, IndexingNotification, IndexingQuotaDay, Status
 
 logger = logging.getLogger("upnext.indexing")
@@ -112,6 +114,16 @@ def enqueue(event: PublishingEvent, opportunity: Opportunity, version: Opportuni
     key = f"event:{event.pk}"
     if IndexingNotification.objects.filter(idempotency_key=key).exists():
         return 0
+    content_hash = page_fingerprint(version) if action == Action.UPDATED and version is not None else ""
+    if content_hash:
+        latest = _latest(url)
+        if latest is not None and latest.action == Action.UPDATED and latest.content_hash == content_hash:
+            # Republished without any change Google can see: the update already sent (or waiting) covers it.
+            logger.info(
+                "indexing notification skipped: unchanged",
+                extra={"event": "indexing.unchanged", "transition": event.transition},
+            )
+            return 0
     IndexingNotification.objects.filter(url=url, status__in=WAITING).update(status=Status.SUPERSEDED)
     try:
         with transaction.atomic():
@@ -121,6 +133,7 @@ def enqueue(event: PublishingEvent, opportunity: Opportunity, version: Opportuni
                 url=url,
                 action=action,
                 transition=event.transition,
+                content_hash=content_hash,
             )
     except IntegrityError:  # a concurrent call wrote the same event
         return 0
