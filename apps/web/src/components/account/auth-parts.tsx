@@ -29,7 +29,7 @@ export function AuthSwitch({ children }: { children: ReactNode }) {
 }
 
 /** Shared by every text control on the one-screen forms: 36px on phones (so registration fits a phone screen),
- *  40px from the small breakpoint up; 14px light text; a soft 2px focus halo as on Stripe's forms. */
+ *  40px from the small breakpoint up; 14px text; a soft 2px focus halo. */
 export const AUTH_CONTROL =
   "block min-h-[36px] w-full rounded-control border border-control-border bg-surface px-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/25 sm:min-h-field aria-[invalid=true]:border-danger aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger";
 

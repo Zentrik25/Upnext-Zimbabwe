@@ -125,7 +125,7 @@
   outline-color: #ffffff;
 }
 
-/* Stripe design system (D-45): weight 300 is the headline voice. Utility classes such as `font-strong` (weight 400,
+/* Staff workspace and employer dashboard (D-45): weight 300 is the headline voice; public pages override it (D-73). Utility classes such as `font-strong` (weight 400,
    for labels and links) must not thicken a heading, so this rule is deliberately outside the layers. */
 h1,
 h2,
@@ -151,13 +151,6 @@ dd a {
   font-weight: 400;
 }
 
-/* Home page headlines (owner instruction 2026-10-29, D-47): bold Inter. Outside the layers on purpose, like the
-   heading rule above, so it wins over the light-weight heading default. */
-.font-headline {
-  font-family: var(--font-inter-bold), var(--font-sans);
-  font-weight: 700;
-}
-
 /* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */
 .tnum {
   font-feature-settings: "tnum" 1;
@@ -176,12 +169,6 @@ body[data-surface="public"] :is(h1, h2, h3, h4) {
   font-weight: 700;
 }
 
-/* Public surface: the home headline font is the system semibold, so the Inter Bold file is never requested (D-73). */
-body[data-surface="public"] .font-headline {
-  font-family: var(--font-sans);
-  font-weight: 600;
-}
-
 /* Public surface: links inside running text are underlined, so they never rely on colour alone (WCAG 1.4.1). The
    navigation, cards and buttons are not running text and stay plain. */
 body[data-surface="public"] :is(p, dd) a:not([class*="rounded-"]) {
@@ -191,7 +178,7 @@ body[data-surface="public"] :is(p, dd) a:not([class*="rounded-"]) {
 }
 
 /* Tailwind writes shadow values into the utility at build time, so the public shadow levels are applied here from
-   their tokens (D-73). Staff and employer pages keep the compiled Stripe values. */
+   their tokens (D-73). Staff and employer pages keep their own compiled values. */
 body[data-surface="public"] .shadow-subtle {
   box-shadow: var(--shadow-subtle);
 }

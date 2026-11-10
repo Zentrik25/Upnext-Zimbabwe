@@ -9,7 +9,7 @@ import type { Category, Location } from "@/lib/catalog-types";
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VerificationTag } from "@/components/opportunities/parts";
 
-/** Every search control is one outlined box: 40px tall, 14px text, icon on the left (Stripe form scale, D-53). */
+/** Every search control is one outlined box: 40px tall, 14px text, icon on the left (D-53, D-73). */
 const FIELD =
   "block min-h-field w-full rounded-control border border-control-border bg-surface pl-10 pr-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/25";
 const SELECT = `${FIELD.replace("pr-3", "pr-9")} appearance-none truncate`;

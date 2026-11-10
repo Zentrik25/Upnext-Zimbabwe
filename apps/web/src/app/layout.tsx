@@ -12,7 +12,7 @@ import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
 
 // Inter (weights 300 and 400) and Source Code Pro, Latin subsets, served from this origin (no third-party font
-// request). Inter stands in for the Stripe system's commercial Söhne (D-45).
+// request). Used by the staff workspace and the employer dashboard only; public pages use the system font (D-73).
 const inter = localFont({
   src: [
     { path: "../fonts/inter-latin-300.woff2", weight: "300", style: "normal" },
@@ -24,14 +24,6 @@ const inter = localFont({
   // D-73): without a preload no public page fetches it.
   preload: false,
 });
-// The home page headline weight (700, owner instruction 2026-10-29, D-47): its own font, never preloaded, so the
-// other pages do not pay for it.
-const interBold = localFont({
-  src: [{ path: "../fonts/inter-latin-700.woff2", weight: "700", style: "normal" }],
-  variable: "--font-inter-bold",
-  display: "swap",
-  preload: false,
-});
 // One weight (500, the design system's code and label weight) and no preload: pages that show no mono label
 // never fetch it (mobile transfer budget, P5-08).
 const sourceCode = localFont({
@@ -41,7 +33,7 @@ const sourceCode = localFont({
   preload: false,
 });
 
-// Sign-in, registration and the password pages are one-screen forms with a logo-only bar (Stripe pattern, D-53).
+// Sign-in, registration and the password pages are one-screen forms with a logo-only bar (D-53).
 const AUTH_PATHS = ["/sign-in", "/register", "/forgot-password", "/reset-password"];
 
 // Applies a remembered Light or Dark choice before the first paint (no flash). Auto leaves the attribute off.
@@ -95,11 +87,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const adsense = workspace || auth || adsenseMode() !== "verify" ? undefined : adsenseClient();
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
-    <html
-      lang="en"
-      className={`${inter.variable} ${interBold.variable} ${sourceCode.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         {adsense ? (
