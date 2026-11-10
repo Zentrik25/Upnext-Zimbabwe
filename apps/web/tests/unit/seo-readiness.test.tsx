@@ -293,6 +293,15 @@ describe("editorial guides", () => {
     ["how-to-find-jobs-in-zimbabwe", () => import("@/app/guides/how-to-find-jobs-in-zimbabwe/page")],
     ["apply-safely-and-avoid-scams", () => import("@/app/guides/apply-safely-and-avoid-scams/page")],
     ["how-listings-are-verified", () => import("@/app/guides/how-listings-are-verified/page")],
+    [
+      "how-to-apply-for-graduate-trainee-programmes",
+      () => import("@/app/guides/how-to-apply-for-graduate-trainee-programmes/page"),
+    ],
+    ["how-to-prepare-a-cv", () => import("@/app/guides/how-to-prepare-a-cv/page")],
+    [
+      "finding-engineering-internships-and-attachments",
+      () => import("@/app/guides/finding-engineering-internships-and-attachments/page"),
+    ],
   ] as const;
   it("has one page per listed guide", () => {
     expect(GUIDES.map((g) => g.path.split("/").pop()).sort()).toEqual(pages.map(([n]) => n).sort());
@@ -459,6 +468,15 @@ describe("sitemap, robots.txt, canonical and noindex agree", () => {
         () => import("@/app/guides/apply-safely-and-avoid-scams/page"),
       ],
       ["/guides/how-listings-are-verified", () => import("@/app/guides/how-listings-are-verified/page")],
+      [
+        "/guides/how-to-apply-for-graduate-trainee-programmes",
+        () => import("@/app/guides/how-to-apply-for-graduate-trainee-programmes/page"),
+      ],
+      ["/guides/how-to-prepare-a-cv", () => import("@/app/guides/how-to-prepare-a-cv/page")],
+      [
+        "/guides/finding-engineering-internships-and-attachments",
+        () => import("@/app/guides/finding-engineering-internships-and-attachments/page"),
+      ],
     ];
     expect(
       pages

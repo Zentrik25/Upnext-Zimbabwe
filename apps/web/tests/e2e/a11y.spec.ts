@@ -27,6 +27,7 @@ const PUBLIC = [
   "/contact",
   "/guides/how-to-find-jobs-in-zimbabwe",
   "/guides/apply-safely-and-avoid-scams",
+  "/guides/how-to-prepare-a-cv",
   "/guides/how-listings-are-verified",
   "/privacy",
   "/terms",
