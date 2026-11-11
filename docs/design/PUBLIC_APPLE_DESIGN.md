@@ -34,6 +34,11 @@ Tailwind inlines shadow values at build time, so `globals.css` applies the publi
 - Phone bottom navigation never shows private seeker tabs to a visitor.
 - Tests: `apps/web/tests/e2e/foundation.spec.ts`, `controls.spec.ts`, `a11y.spec.ts`, `tests/unit/design-guard.test.ts`.
 
+## Listing page on a phone (2026-11-11)
+The filters sit behind one 44px "Filters" bar (a CSS-only checkbox toggle, no script; open when a filter is already applied,
+showing "(n applied)"); from 991px the panel is the sidebar. The title of an opportunity stays the size of its section headings
+(owner rule, `job-view.test.tsx`), so the detail page title was not enlarged.
+
 ## Not yet re-laid-out (inherit the tokens only)
-Filter sidebar and listing-card anatomy, the opportunity page layout, public employer profiles, category and location landing
-layouts, authentication layouts and the seeker pages.
+Listing-card anatomy, the opportunity page layout, public employer profiles (the demo data has none, so they could not be viewed),
+category and location landing layouts, authentication layouts and the seeker pages (not viewed signed in).

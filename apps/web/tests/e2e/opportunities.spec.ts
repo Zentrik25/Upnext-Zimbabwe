@@ -302,3 +302,31 @@ test.describe("home search", () => {
     }
   });
 });
+
+test.describe("filters on a phone (D-73)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the filters sit behind one Filters bar, open on tap or Space, and show how many are applied", async ({
+    page,
+  }) => {
+    await page.goto("/opportunities");
+    const filters = page.getByRole("checkbox", { name: /^Filters/ });
+    await expect(page.getByRole("group", { name: "Filters" })).toHaveCount(0);
+    await expect(page.getByLabel("Type of work")).toBeHidden();
+    await filters.focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("Type of work")).toBeVisible();
+    await page.getByLabel("Type of work").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(/employment_type=/);
+    await expect(page.getByLabel("Type of work")).toBeVisible(); // open again because a filter is applied
+    await expect(page.getByText("(1 applied)")).toBeVisible();
+  });
+
+  test("on a wide screen the filter panel is always shown and the bar is not", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/opportunities");
+    await expect(page.getByLabel("Type of work")).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /^Filters/ })).toBeHidden();
+  });
+});

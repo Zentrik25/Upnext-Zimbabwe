@@ -8,7 +8,7 @@ import { unavailable } from "@/lib/unavailable";
 import Link from "next/link";
 import { Container } from "@/components/layout";
 import { fetchList, listHref, ResultsLoader } from "@/components/opportunities/results";
-import { Button, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
+import { Button, Icon, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
 import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
 import { SkeletonTabs } from "@/components/ui/skeleton";
 import { listCategories, listLocations } from "@/lib/catalog";
@@ -82,6 +82,9 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   }
   const active = params.get("category");
   const view = classifyList(raw);
+  const activeFilters = ["location", "employment_type", "work_mode", "deadline_state", "sort"].filter((k) =>
+    params.get(k),
+  ).length;
   const headingCategory = view.kind === "category" ? active : null;
   const copy = headingCategory ? CATEGORY_SEO[headingCategory] : undefined;
 
@@ -116,11 +119,33 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
         </Suspense>
       </Container>
       <Container className="grid grid-cols-[230px_1fr] gap-6 pt-[18px] pb-[65px] max-md:grid-cols-1">
-        <Panel aria-label="Filters" className="max-md:order-first">
-          <Suspense fallback={<FiltersSkeleton />}>
-            <FilterForm params={params} />
-          </Suspense>
-        </Panel>
+        <div className="relative max-md:order-first">
+          {/* Phones: the filters sit behind one 44px "Filters" bar (a CSS-only toggle, no script), open when a filter
+              is already applied; from 991px the panel is always shown as a sidebar. */}
+          <input
+            id="filters-toggle"
+            type="checkbox"
+            defaultChecked={activeFilters > 0}
+            className="peer absolute top-0 left-0 z-10 m-0 h-[44px] w-full cursor-pointer opacity-0 md:hidden"
+          />
+          <label
+            htmlFor="filters-toggle"
+            className="flex min-h-[44px] cursor-pointer items-center justify-between rounded-card border border-line bg-surface px-4 text-ctl font-strong peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus md:hidden"
+          >
+            <span>
+              Filters
+              {activeFilters > 0 ? (
+                <span className="font-medium text-muted"> ({activeFilters} applied)</span>
+              ) : null}
+            </span>
+            <Icon name="sliders" className="h-5 w-5" />
+          </label>
+          <Panel aria-label="Filters" className="mt-2 max-md:hidden peer-checked:max-md:block md:mt-0">
+            <Suspense fallback={<FiltersSkeleton />}>
+              <FilterForm params={params} />
+            </Suspense>
+          </Panel>
+        </div>
         <section aria-labelledby="list-title" className="min-w-0">
           <h2 id="list-title" className="sr-only">
             Results
@@ -188,7 +213,7 @@ async function FilterForm({ params }: { params: URLSearchParams }) {
   const active = params.get("category");
   return (
     <form action="/opportunities" method="get" className="grid gap-3 max-md:grid-cols-2">
-      <h2 className="text-title font-strong max-md:col-span-2">Filters</h2>
+      <h2 className="text-title font-strong max-md:sr-only">Filters</h2>
       {params.get("q") ? <input type="hidden" name="q" value={params.get("q") ?? ""} /> : null}
       {active ? <input type="hidden" name="category" value={active} /> : null}
       {params.get("limit") ? <input type="hidden" name="limit" value={params.get("limit") ?? ""} /> : null}
