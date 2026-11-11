@@ -194,3 +194,16 @@ Every change is in application code on this branch, plus one table migration (`i
 Compose overlay. Turning the Indexing API off is `UPNEXT_INDEXING_MODE=off`. Reverting the web commit restores the earlier
 metadata, sitemap and pages; reverting the API commits removes the collection filter and the extra feed keys (the web reads
 them as optional). The `indexing` migration can stay or be reversed with `migrate indexing zero`.
+
+## Addendum 2026-11-09: Search Console "excluded by noindex" (30 URLs)
+
+Status: DRAFT. Based on the code only; the Search Console export was not available to the audit and no production data was read.
+
+| Finding | Cause | Change |
+|---|---|---|
+| `driver-salesperson-4q3mkv`, `stock-controllers-3-posts-grade-g-anfs6m` | By design (OQ-20): a listing that is not `published`, or whose deadline has passed (`deadline.state = expired`, derived per request), is answered `200` with `robots: noindex` and no JobPosting, and is out of the sitemap. Both were last crawled 30 Oct to 6 Nov; the likeliest cause is a passed deadline or a closed status. Confirm in the workspace (status, deadline) before treating it as a fault. | None. An open, published listing carries no robots tag (tested). |
+| `category=jobsJobs`, `category=tendersTenders` | No link, menu, metadata or structured data in the repository builds these. They are a category code and its display name run together (the form `<select>` options read as one string). The list page treated them as an unknown filter: `200`, noindex. | `repairedListAddress` (`lib/list-seo.ts`): a permanent redirect to the clean category list, other filters kept. |
+| `?q={search_term_string}` | The home page's `WebSite` `SearchAction` template; crawlers fetched the placeholder as an address. | `SearchAction` removed (Google retired the sitelinks search box in 2024); a request carrying the placeholder is redirected to the list without `q`. The search forms are unchanged. |
+| Clean category filters | All six launch categories (jobs, internships, graduate-programmes, scholarships, tenders, grants) already have their own title, heading, text, canonical and sitemap entry while they hold an open listing; an empty one is `noindex, follow`. Combinations with search, filters, sort or paging stay `noindex` and canonical to the nearest list. Decision: keep as is. | None (tests added). |
+| `/privacy`, `/terms` | Public (`200`), substantive, deliberately `noindex` and out of the sitemap until the owner sets `UPNEXT_LEGAL_APPROVED=true` after the legal review (B-02). | None: that gate is the owner's decision. Setting the flag makes both indexable and sitemap-listed. |
+| Private pages | Unchanged: sign-in, account, saved, dashboard, for-you, profile, alerts, employer and workspace are `noindex` and/or disallowed. | None. |

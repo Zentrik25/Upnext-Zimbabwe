@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { cache, Suspense } from "react";
 import { socialFor } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
-import { classifyList, LIST_KEYS } from "@/lib/list-seo";
+import { permanentRedirect } from "next/navigation";
+import { classifyList, LIST_KEYS, repairedListAddress } from "@/lib/list-seo";
 import { unavailable } from "@/lib/unavailable";
 import Link from "next/link";
 import { Container } from "@/components/layout";
@@ -34,7 +35,10 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<Search>;
 }): Promise<Metadata> {
-  const view = classifyList(await searchParams);
+  const raw = await searchParams;
+  const repaired = repairedListAddress(raw);
+  if (repaired) permanentRedirect(repaired);
+  const view = classifyList(raw);
   const copy = view.kind === "category" ? CATEGORY_SEO[view.category] : undefined;
   // An address that would be indexed must hold genuine opportunities: an empty list is `noindex, follow`. A list
   // that could not be loaded is a server error instead (lib/unavailable.ts): it is not indexed either, but a crawler
@@ -75,6 +79,8 @@ const categoriesOnce = cache(listCategories);
  */
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<Search> }) {
   const raw = await searchParams;
+  const repaired = repairedListAddress(raw);
+  if (repaired) permanentRedirect(repaired);
   const params = new URLSearchParams();
   for (const key of [...FILTER_KEYS, "cursor"]) {
     const value = first(raw[key]);

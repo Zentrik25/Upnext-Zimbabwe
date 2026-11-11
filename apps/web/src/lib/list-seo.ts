@@ -21,6 +21,58 @@ export type ListView =
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
+const squash = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * The known category a malformed `category` value was meant to be, or undefined. Crawlers have requested
+ * `category=jobsJobs` and `category=tendersTenders`: a category's code and its display name run together, as when a
+ * form's `<select>` options (value "jobs", text "Jobs") are read as one string. A value is repaired only when it is
+ * the code in another letter case, or the code twice (the code, then the name, which is the code in every
+ * launch category: spaces and hyphens ignored). Anything else stays an unknown filter.
+ */
+export function repairCategory(value: string): string | undefined {
+  const flat = squash(value);
+  return Object.keys(CATEGORY_SEO).find(
+    (code) => flat === squash(code) || flat === squash(code) + squash(code),
+  );
+}
+
+/** The literal template token of the schema.org search-action example; no visitor types it. */
+const TEMPLATE_TOKEN = /search_term_string/i;
+
+/**
+ * The clean address a request for the list page must be sent to with a permanent redirect, or null when the address
+ * is fine. Two kinds of bad address are repaired: a malformed category (`repairCategory`) and an unfilled search
+ * template (`q={search_term_string}`, whose search words are dropped). Parameters the page does not read are dropped
+ * too. A repaired address is never indexed itself: its 301 hands the crawler the clean list.
+ */
+export function repairedListAddress(raw: Raw): string | null {
+  const used = new Map<string, string>();
+  for (const key of [...LIST_KEYS, "cursor"]) {
+    const value = first(raw[key]);
+    if (value !== undefined && value !== "") used.set(key, value);
+  }
+  let changed = false;
+  const category = used.get("category");
+  if (category !== undefined && !Object.hasOwn(CATEGORY_SEO, category)) {
+    const code = repairCategory(category);
+    if (code) {
+      used.set("category", code);
+      changed = true;
+    }
+  }
+  const q = used.get("q");
+  if (q !== undefined && TEMPLATE_TOKEN.test(q)) {
+    used.delete("q");
+    changed = true;
+  }
+  if (!changed) return null;
+  const query = new URLSearchParams();
+  for (const key of [...LIST_KEYS, "cursor"]) if (used.has(key)) query.set(key, used.get(key)!);
+  const text = query.toString();
+  return text ? `/opportunities?${text}` : "/opportunities";
+}
+
 /**
  * How search engines should treat one address of the list page:
  *  - the plain list, and a list of exactly one known category, are indexable and canonical to themselves;

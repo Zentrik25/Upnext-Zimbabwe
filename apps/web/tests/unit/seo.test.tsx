@@ -129,7 +129,8 @@ describe("structured data", () => {
     expect(JSON.stringify(crumbs)).toContain('"position":2');
     const [site, org] = websiteFor("https://x");
     expect(site!["@type"]).toBe("WebSite");
-    expect(JSON.stringify(site)).toContain("https://x/opportunities?q={search_term_string}");
+    // No search-box template: crawlers read its placeholder as a real address.
+    expect(JSON.stringify([site, org])).not.toMatch(/search_term_string|SearchAction/);
     expect(org!["@type"]).toBe("Organization");
   });
   it("describes an editorial guide as an Article by the organisation, never as a job", () => {
