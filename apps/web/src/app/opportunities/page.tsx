@@ -103,11 +103,16 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <h1 id="results-title" className="text-section font-strong tracking-section">
             {copy ? copy.heading : view.kind === "plain" ? PLAIN_HEADING : "Opportunities"}
           </h1>
-          {/* Indexable lists say what they hold (their own text, not just metadata); every list says how to apply. */}
-          <p className="mt-1 mb-[14px] max-w-[760px] text-base text-muted">
-            {copy ? `${copy.description} ` : view.kind === "plain" ? `${BASE_DESCRIPTION} ` : ""}
-            Applications happen on the issuer&apos;s own channel.
-          </p>
+          {/* The plain list shows no intro text (owner, 2026-11-11); a category list says what it holds, and every
+              such list says how to apply. The plain list's description stays in the page metadata. */}
+          {view.kind === "plain" ? (
+            <div className="mb-[14px]" />
+          ) : (
+            <p className="mt-1 mb-[14px] max-w-[760px] text-base text-muted">
+              {copy ? `${copy.description} ` : ""}
+              Applications happen on the issuer&apos;s own channel.
+            </p>
+          )}
           <Suspense fallback={<SearchSkeleton />}>
             <SearchControls params={params} />
           </Suspense>

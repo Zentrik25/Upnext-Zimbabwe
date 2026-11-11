@@ -108,8 +108,11 @@ describe("the eight priority destinations (D-69)", () => {
       );
       const h1 = container.querySelector("h1")!.textContent!;
       headings.add(h1);
-      const intro = container.querySelector("h1 + p")!.textContent!;
-      expect(intro.length, d.href).toBeGreaterThan(60);
+      // The plain list shows no intro (owner instruction 2026-11-11, superseding D-69 for that one list); its text stays in the metadata.
+      const introEl = container.querySelector("h1 + p");
+      if (!query.category) expect(introEl, d.href).toBeNull();
+      const intro = introEl?.textContent ?? "";
+      if (query.category) expect(intro.length, d.href).toBeGreaterThan(60);
       const ld = [...container.querySelectorAll('script[type="application/ld+json"]')].map(
         (s) => s.textContent,
       );
