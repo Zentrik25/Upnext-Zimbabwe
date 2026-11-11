@@ -1672,6 +1672,52 @@ paths:
         '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/seo:
+    get:
+      tags: [staff]
+      operationId: getStaffSeo
+      summary: 'SEO monitoring (Administrators only): Indexing API queue, sitemap and JobPosting figures'
+      description: 'Counts of open job-category listings, those whose page carries valid JobPosting markup, those in the sitemap, the Indexing API queue by status, quota used today, the last run and last accepted submission, and structured-data errors and warnings per listing. A sent notification means Google accepted the request, not that the page is indexed. `search_console.connected` is false: no Search Console API integration exists. Added in D-72 (draft).'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/seo/notifications:
+    get:
+      tags: [staff]
+      operationId: listStaffSeoNotifications
+      summary: 'The latest 50 Indexing API notifications, optionally filtered by status (Administrators only)'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/seo/notifications/retry-dead:
+    post:
+      tags: [staff]
+      operationId: retryStaffSeoDeadNotifications
+      summary: 'Queue again every dead notification that is still the latest for its address (Administrators only, audited)'
+      security: [{ cookieAuth: [], csrf: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/seo/notifications/{notification_id}/retry:
+    post:
+      tags: [staff]
+      operationId: retryStaffSeoNotification
+      summary: 'Queue one failed or dead notification again with fresh attempts (Administrators only, audited)'
+      description: '409 `not_retryable` for any other status; 409 `superseded` when a newer notification for the same address exists. The sender re-reads the listing before sending.'
+      security: [{ cookieAuth: [], csrf: [] }]
+      parameters:
+        - { name: notification_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /staff/catalog:
     get:
       tags: [staff]

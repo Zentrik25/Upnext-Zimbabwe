@@ -4,16 +4,11 @@ import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { Icon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
-/** Sign-in / registration page in the Stripe pattern (D-53): a pale canvas, one 400px card, a short title and the
- *  form, nothing else. No illustration or intro paragraph, so even the long registration form fits one screen. */
+/** Sign-in / registration page (D-53, D-73): a pale canvas, one 400px card, a short title and the form, nothing
+ *  else: no illustration and no decorative shape. No illustration or intro paragraph, so even the long registration form fits one screen. */
 export function AuthPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="relative isolate flex min-h-[calc(100dvh-82px)] justify-center overflow-hidden bg-surface-pale">
-      {/* The system's ruby-to-magenta accent as one soft diagonal band, wide screens only (decorative). */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 -left-24 -z-10 hidden h-64 w-[60%] -rotate-12 bg-linear-to-r from-ruby to-magenta opacity-80 md:block"
-      />
       <div className="w-full max-w-[404px] px-3 py-2 sm:px-4 sm:py-6 [&_a]:text-accent">
         <div className="rounded-feature border border-border-panel bg-surface p-3.5 shadow-ambient sm:p-6">
           <h1 className="mb-2.5 text-title tracking-title sm:mb-3">{title}</h1>
@@ -34,7 +29,7 @@ export function AuthSwitch({ children }: { children: ReactNode }) {
 }
 
 /** Shared by every text control on the one-screen forms: 36px on phones (so registration fits a phone screen),
- *  40px from the small breakpoint up; 14px light text; a soft 2px focus halo as on Stripe's forms. */
+ *  40px from the small breakpoint up; 14px text; a soft 2px focus halo. */
 export const AUTH_CONTROL =
   "block min-h-[36px] w-full rounded-control border border-control-border bg-surface px-3 text-ctl font-light text-ink focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus/25 sm:min-h-field aria-[invalid=true]:border-danger aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger";
 

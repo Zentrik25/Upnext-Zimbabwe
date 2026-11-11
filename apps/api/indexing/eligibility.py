@@ -13,12 +13,14 @@ in step with it (both sides have tests for the same cases):
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import datetime
 
 from opportunities.models import ListingStatus, Opportunity, OpportunityVersion
 
 JOB_CATEGORIES = frozenset({"jobs", "internships", "graduate-programmes"})
-_NOT_A_PLACE = {"remote", "zimbabwe"}
+NOT_A_PLACE = frozenset({"remote", "zimbabwe"})
 
 
 def is_job_category(opportunity: Opportunity) -> bool:
@@ -36,4 +38,48 @@ def carries_job_posting(opportunity: Opportunity, version: OpportunityVersion | 
     countrywide = "zimbabwe" in slugs
     if version.work_mode == "remote":
         return countrywide
-    return bool(slugs - _NOT_A_PLACE) or countrywide
+    return bool(slugs - NOT_A_PLACE) or countrywide
+
+
+# What the public job page and its JobPosting are built from. Internal fields (notes, sources, review
+# metadata) are left out: changing them changes nothing Google can see, so it is no reason to notify Google.
+_PAGE_FIELDS = (
+    "title",
+    "summary",
+    "description_md",
+    "requirements_md",
+    "work_mode",
+    "employment_type",
+    "experience_level",
+    "location_text",
+    "geographic_eligibility",
+    "salary_min",
+    "salary_max",
+    "salary_currency",
+    "salary_period",
+    "salary_text",
+    "deadline_at",
+    "deadline_is_date_only",
+    "application_method",
+    "application_url",
+    "application_email",
+    "application_instructions",
+    "reference_number",
+    "seo_title",
+    "seo_description",
+    "og_title",
+    "og_description",
+    "featured_image",
+    "featured_image_alt",
+    "social_image",
+    "organisation_id",
+    "detail",
+)
+
+
+def page_fingerprint(version: OpportunityVersion) -> str:
+    """A stable hash of the publicly visible content of one revision, including its places."""
+    data = {name: getattr(version, name, None) for name in _PAGE_FIELDS}
+    data["locations"] = sorted(row.location.slug for row in version.locations.select_related("location"))
+    encoded = json.dumps(data, sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode()).hexdigest()

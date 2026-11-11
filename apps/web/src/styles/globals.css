@@ -125,7 +125,7 @@
   outline-color: #ffffff;
 }
 
-/* Stripe design system (D-45): weight 300 is the headline voice. Utility classes such as `font-strong` (weight 400,
+/* Staff workspace and employer dashboard (D-45): weight 300 is the headline voice; public pages override it (D-73). Utility classes such as `font-strong` (weight 400,
    for labels and links) must not thicken a heading, so this rule is deliberately outside the layers. */
 h1,
 h2,
@@ -151,46 +151,51 @@ dd a {
   font-weight: 400;
 }
 
-/* Home page headlines (owner instruction 2026-10-29, D-47): bold Inter. Outside the layers on purpose, like the
-   heading rule above, so it wins over the light-weight heading default. */
-.font-headline {
-  font-family: var(--font-inter-bold), var(--font-sans);
-  font-weight: 700;
-}
-
 /* Tabular numerals for counts, tables and figures (the system's second OpenType mode: "tnum", never with "ss01"). */
 .tnum {
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
 }
 
-/* The listing page on a phone (owner reference, D-63): a navy header with a white logo and the search, alerts and
-   menu icons, and bold headings on this page only. The weight-300 heading rule above stays for every other page. */
+/* Public surface (D-73): semibold headings, one light header on every page (the navy phone header of D-63 is retired). */
+body[data-surface="public"] :is(h1, h2, h3, h4) {
+  font-weight: var(--font-weight-semi);
+  letter-spacing: var(--tracking-title);
+}
 [data-job-page] :is(h1, h2) {
   font-weight: 700;
 }
 [data-job-page] [data-bold] {
   font-weight: 700;
 }
-@media (max-width: 650px) {
-  body:has([data-job-page]) .site-header {
-    background: #061b31; /* the reference's deep navy, in both themes (the ink token turns light in dark) */
-    border-color: #061b31;
-    color: var(--color-on-accent);
-    backdrop-filter: none;
-  }
-  body:has([data-job-page]) .site-header .text-logo {
-    color: var(--color-on-accent);
-  }
-  body:has([data-job-page]) .site-header .job-header-icons {
-    display: flex;
-  }
-  body:has([data-job-page]) .site-header button[aria-controls="mobile-menu"] {
-    background: transparent;
-    color: var(--color-on-accent);
-  }
-  body:has([data-job-page]) .site-header a:focus-visible,
-  body:has([data-job-page]) .site-header button:focus-visible {
-    outline-color: var(--color-on-accent);
-  }
+
+/* Public surface: links inside running text are underlined, so they never rely on colour alone (WCAG 1.4.1). The
+   navigation, cards and buttons are not running text and stay plain. */
+body[data-surface="public"] :is(p, dd) a:not([class*="rounded-"]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Tailwind writes shadow values into the utility at build time, so the public shadow levels are applied here from
+   their tokens (D-73). Staff and employer pages keep their own compiled values. */
+body[data-surface="public"] .shadow-subtle {
+  box-shadow: var(--shadow-subtle);
+}
+body[data-surface="public"] .shadow-ambient,
+body[data-surface="public"] .hover\:shadow-ambient:hover {
+  box-shadow: var(--shadow-ambient);
+}
+body[data-surface="public"] .shadow-elevated {
+  box-shadow: var(--shadow-elevated);
+}
+body[data-surface="public"] .shadow-deep {
+  box-shadow: var(--shadow-deep);
+}
+
+/* Public surface: the dashed "empty" and error boxes become a calm pale panel (D-73); staff and employer pages keep the dashed box. */
+body[data-surface="public"] .border-dashed {
+  border-style: solid;
+  border-color: var(--color-line);
+  background-color: var(--color-surface-pale);
 }

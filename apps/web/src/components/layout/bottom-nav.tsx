@@ -8,7 +8,10 @@ import { cn } from "@/lib/cn";
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
   { href: "/", label: "Home", icon: "home", match: (p) => p === "/" || p === "/dashboard" },
   { href: "/opportunities", label: "Jobs", icon: "briefcase", match: (p) => p.startsWith("/opportunities") },
-  { href: "/opportunities", label: "Categories", icon: "grid", match: () => false },
+  { href: "/categories", label: "Categories", icon: "grid", match: (p) => p.startsWith("/categories") },
+];
+// Private seeker tabs: only for a signed-in account. A visitor sees Guides and Sign in instead (D-73).
+const SEEKER_TABS: typeof TABS = [
   { href: "/saved", label: "Saved", icon: "bookmark", match: (p) => p.startsWith("/saved") },
   {
     href: "/account",
@@ -17,12 +20,17 @@ const TABS: { href: string; label: string; icon: IconName; match: (path: string)
     match: (p) => ["/account", "/profile", "/alerts", "/for-you"].some((x) => p.startsWith(x)),
   },
 ];
+const VISITOR_TABS: typeof TABS = [
+  { href: "/guides", label: "Guides", icon: "doc", match: (p) => p.startsWith("/guides") },
+  { href: "/sign-in", label: "Sign in", icon: "user", match: (p) => p === "/sign-in" },
+];
 
 /** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
  *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
  *  would multiply API load (and trip the per-address read limit in the browser suite). */
-export function BottomNav({ home = "/" }: { home?: string }) {
+export function BottomNav({ home = "/", signedIn = false }: { home?: string; signedIn?: boolean }) {
   const pathname = usePathname();
+  const tabs = [...TABS, ...(signedIn ? SEEKER_TABS : VISITOR_TABS)];
   return (
     <>
       <nav
@@ -30,7 +38,7 @@ export function BottomNav({ home = "/" }: { home?: string }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
       >
         <ul className="m-0 grid list-none grid-cols-5 p-0">
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const active = tab.match(pathname);
             return (
               <li key={tab.label}>

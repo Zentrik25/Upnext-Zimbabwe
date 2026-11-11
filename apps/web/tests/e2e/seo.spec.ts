@@ -166,9 +166,9 @@ test.describe("structured data (SEO-01)", () => {
 test.describe("home and static pages (SC-01, SC-14)", () => {
   test("home shows the quick links and the latest listings", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("navigation", { name: "Quick links" }).getByRole("link")).toHaveCount(4);
+    await expect(page.getByRole("navigation", { name: "Quick links" }).getByRole("link")).toHaveCount(5);
     await expect(page.getByTestId("latest").getByRole("article")).toHaveCount(6);
-    await expect(page.getByRole("navigation", { name: "Browse by category" })).toHaveCount(0); // the section is gone
+    await expect(page.getByRole("navigation", { name: "Browse by category" })).toHaveCount(0); // a section with its own heading, not a navigation landmark
     await page
       .getByRole("navigation", { name: "Quick links" })
       .getByRole("link", { name: "Scholarships" })

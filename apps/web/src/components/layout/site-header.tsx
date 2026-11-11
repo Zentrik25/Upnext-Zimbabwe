@@ -7,23 +7,32 @@ import { homeOf } from "@/lib/safe-next";
 import { getCurrentUser } from "@/lib/session";
 import { MobileMenu, type MenuItem } from "./mobile-menu";
 
+/** The five places the public navigation always offers (D-73). One list feeds the bar and the menu. */
+export const PUBLIC_NAV = [
+  { href: "/opportunities", label: "Find Jobs" },
+  { href: "/categories", label: "Categories" },
+  { href: "/locations", label: "Locations" },
+  { href: "/guides", label: "Career Guides" },
+  { href: "/employers", label: "For Employers" },
+] as const;
+
+const bar =
+  "inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text hover:text-accent";
+
 export async function SiteHeader() {
   const user = await getCurrentUser();
   // Where this account's own dashboard is (chosen by the API, D-70): the workspace, the employer dashboard or the jobseeker one.
   const dashboard = homeOf(user?.home_path);
-  // Phones: the places a visitor goes most, then the company pages; signed-in destinations come last.
   const menuGroups: MenuItem[][] = [
     [
       { href: "/", label: "Home", icon: "home" },
-      { href: "/opportunities", label: "All opportunities", icon: "grid" },
-      { href: "/opportunities?category=jobs", label: "Jobs", icon: "briefcase" },
-      { href: "/opportunities?category=internships", label: "Internships", icon: "users" },
-      { href: "/opportunities?category=graduate-programmes", label: "Graduate programmes", icon: "layers" },
-      { href: "/opportunities?category=scholarships", label: "Scholarships", icon: "cap" },
-      { href: "/opportunities?category=tenders", label: "Tenders", icon: "doc" },
+      { href: "/opportunities", label: "Find Jobs", icon: "briefcase" },
+      { href: "/categories", label: "Categories", icon: "grid" },
+      { href: "/locations", label: "Locations", icon: "pin" },
+      { href: "/guides", label: "Career Guides", icon: "doc" },
+      { href: "/employers", label: "For Employers", icon: "building" },
     ],
     [
-      { href: "/employers", label: "For Employers", icon: "building" },
       { href: "/about", label: "About Us", icon: "info" },
       { href: "/contact", label: "Contact Us", icon: "mail" },
     ],
@@ -41,98 +50,58 @@ export async function SiteHeader() {
       : []),
   ];
   return (
-    <header className="site-header sticky top-0 z-40 rounded-b-card border-b border-line bg-surface/90 backdrop-blur-md">
-      <Container className="flex min-h-[64px] items-center justify-between gap-x-4 max-sm:min-h-[56px]">
+    <header className="site-header sticky top-0 z-40 border-b border-line bg-surface/80 backdrop-blur-xl backdrop-saturate-150">
+      <Container className="flex min-h-[56px] items-center gap-x-6 max-md:justify-between">
         <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex min-h-[44px] items-center">
           <Logo />
         </Link>
-        {/* Phone icons: shown only on a listing page (see .job-header-icons in globals.css) */}
-        <div className="job-header-icons ml-auto hidden items-center sm:!hidden">
-          <Link
-            href="/opportunities"
-            aria-label="Search opportunities"
-            className="inline-flex h-[44px] w-9 items-center justify-center"
-          >
-            <Icon name="search" className="h-6 w-6" />
-          </Link>
-          <Link
-            href={user ? "/alerts" : "/sign-in?next=%2Falerts"}
-            aria-label="Job alerts"
-            className="inline-flex h-[44px] w-9 items-center justify-center"
-          >
-            <Icon name="bell" className="h-6 w-6" />
-          </Link>
-        </div>
-        {/* Staff and employers: their dashboard has its own frame, so this is a full page load (server-rendered). */}
-        {user && dashboard !== "/dashboard" ? (
-          <a
-            href={dashboard}
-            aria-label="Dashboard"
-            className="ml-auto inline-flex h-[44px] w-[44px] items-center justify-center text-accent sm:hidden"
-          >
-            <Icon name="grid" className="h-6 w-6" />
-          </a>
-        ) : null}
-        <MobileMenu groups={menuGroups} signedIn={Boolean(user)} />
-        <nav
-          aria-label="Primary"
-          className="flex flex-wrap items-center justify-end gap-x-[22px] max-sm:hidden"
-        >
-          <Link
-            href="/opportunities"
-            className="inline-flex min-h-[44px] items-center text-ctl text-nav-text hover:underline"
-          >
-            Opportunities
-          </Link>
-          <Link
-            href="/employers"
-            className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text hover:underline max-sm:hidden"
-          >
-            For employers
-          </Link>
+        <nav aria-label="Primary" className="flex flex-1 items-center gap-x-6 max-md:hidden">
+          {PUBLIC_NAV.map((item) => (
+            <Link key={item.href} href={item.href} className={bar}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex items-center gap-x-4 max-md:hidden">
           {user ? (
             <>
               {/* A full page load: the dashboards have their own frame, chosen once per page load (app/layout.tsx). */}
-              <a
-                href={dashboard}
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
-              >
+              <a href={dashboard} className={bar}>
                 Dashboard
               </a>
-              <Link
-                href="/for-you"
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
-              >
-                For you
-              </Link>
-              <Link
-                href="/saved"
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
-              >
+              <Link href="/saved" className={bar}>
                 Saved
               </Link>
-              <Link href="/account" className="inline-flex min-h-[44px] items-center text-ctl text-nav-text">
+              <Link href="/account" className={bar}>
                 <span className="sr-only">Account: </span>
                 {user.display_name}
               </Link>
             </>
           ) : (
             <>
-              <Link
-                href="/sign-in"
-                className="inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text"
-              >
+              <Link href="/sign-in" className={bar}>
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="inline-flex min-h-[36px] items-center whitespace-nowrap rounded-control border border-accent-solid bg-accent-solid px-3 text-ctl font-medium text-on-accent hover:border-accent-solid-hover hover:bg-accent-solid-hover"
+                className="inline-flex min-h-[36px] items-center whitespace-nowrap rounded-pill bg-accent-solid px-4 text-ctl text-on-accent hover:bg-accent-solid-hover"
               >
-                Register
+                Create account
               </Link>
             </>
           )}
-        </nav>
+        </div>
+        {/* Phones and tablets: search, then the menu. Search appears once, here. */}
+        <div className="flex items-center md:hidden">
+          <Link
+            href="/opportunities"
+            aria-label="Search opportunities"
+            className="inline-flex h-[44px] w-[44px] items-center justify-center text-ink"
+          >
+            <Icon name="search" className="h-6 w-6" />
+          </Link>
+          <MobileMenu groups={menuGroups} signedIn={Boolean(user)} />
+        </div>
       </Container>
     </header>
   );

@@ -12,9 +12,9 @@ import { cn } from "@/lib/cn";
 
 export type MenuItem = { href: string; label: string; icon: IconName };
 
-/** Below the `sm` breakpoint (650px) the header shows only the logo and a menu button; everything the header bar
+/** Below the `md` breakpoint (990px) the header shows only the logo and a menu button; everything the header bar
  * holds on a wider screen is inside the full-screen menu this opens. */
-const PHONE_QUERY = "(max-width: 650px)";
+const PHONE_QUERY = "(max-width: 990px)";
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -97,7 +97,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
         aria-expanded={open}
         aria-controls="mobile-menu"
         onClick={() => setOpenAt(pathname)}
-        className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-control bg-match-bg text-ink sm:hidden"
+        className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-control text-ink hover:bg-surface-pale md:hidden"
         data-testid="menu-button"
       >
         <MenuIcon open={false} />
@@ -110,7 +110,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
               role="dialog"
               aria-modal="true"
               aria-label="Menu"
-              className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-surface text-ink sm:hidden"
+              className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-surface text-ink md:hidden"
               data-testid="menu-panel"
             >
               <div className="flex min-h-[56px] items-center justify-between px-[16px] pt-2">
@@ -127,7 +127,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
                   data-menu-close
                   aria-label="Close menu"
                   onClick={() => close()}
-                  className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-control bg-match-bg text-ink"
+                  className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-control text-ink hover:bg-surface-pale"
                 >
                   <MenuIcon open />
                 </button>
@@ -175,15 +175,15 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
                       href="/register"
                       onClick={() => close(false)}
                       className={cn(
-                        "inline-flex min-h-[48px] items-center justify-center rounded-control border border-accent-solid bg-accent-solid px-3 text-ctl font-medium text-on-accent hover:border-accent-solid-hover hover:bg-accent-solid-hover",
+                        "inline-flex min-h-[48px] items-center justify-center rounded-pill border border-accent-solid bg-accent-solid px-3 text-ctl font-medium text-on-accent hover:border-accent-solid-hover hover:bg-accent-solid-hover",
                       )}
                     >
-                      Register
+                      Create account
                     </Link>
                     <Link
                       href="/sign-in"
                       onClick={() => close(false)}
-                      className="inline-flex min-h-[48px] items-center justify-center rounded-control border border-control-border bg-surface px-3 text-ctl font-medium text-ink hover:bg-row-hover"
+                      className="inline-flex min-h-[48px] items-center justify-center rounded-pill border border-control-border bg-surface px-3 text-ctl font-medium text-ink hover:bg-row-hover"
                     >
                       Sign in
                     </Link>

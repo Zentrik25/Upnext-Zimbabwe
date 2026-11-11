@@ -196,7 +196,10 @@ describe("ListingRow", () => {
       screen.getByRole("heading", { level: 3, name: "Graduate Electrical Engineer" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Graduate Electrical Engineer" })).toHaveAttribute("href", "/x");
-    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getAllByRole("listitem")).toHaveLength(4); // two facts, one tag, the View details link
+    expect(
+      screen.getByRole("link", { name: "View details for Graduate Electrical Engineer" }),
+    ).toHaveAttribute("href", "/x");
     expect(screen.getByRole("button", { name: "Save Graduate Electrical Engineer" })).toBeInTheDocument();
     expect(screen.getByText("Closes in 3 days").className).toContain("text-urgent");
   });

@@ -228,6 +228,12 @@ function groups(session: StaffSession): Group[] {
   }
   if (has("settings.manage")) {
     settings.push({
+      label: "SEO monitoring",
+      href: "/workspace/seo",
+      icon: "search",
+      active: startsWith("/workspace/seo"),
+    });
+    settings.push({
       label: "Outgoing e-mail",
       href: "/workspace/records/outbox",
       icon: "mail",

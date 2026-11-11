@@ -19,6 +19,8 @@ export const SITE_NAME = BRAND.name;
 export const STATIC_PATHS = [
   "/",
   "/opportunities",
+  "/categories",
+  "/guides",
   "/about",
   "/employers",
   "/contact",

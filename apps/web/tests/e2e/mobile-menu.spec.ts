@@ -13,7 +13,7 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     ).toBeLessThanOrEqual(0);
   });
 
-  test("the menu opens full screen with the bar's links and Register / Sign in, and Close returns to the page", async ({
+  test("the menu opens full screen with the bar's links and Create account / Sign in, and Close returns to the page", async ({
     page,
   }) => {
     await page.goto("/");
@@ -25,9 +25,9 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     expect(box.width).toBeGreaterThanOrEqual(389);
     expect(box.height).toBeGreaterThanOrEqual(843);
     const nav = panel.getByRole("navigation", { name: "Menu" });
-    await expect(nav.getByRole("link", { name: "Jobs" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Find Jobs" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "For Employers" })).toBeVisible();
-    await expect(panel.getByRole("link", { name: "Register" })).toBeVisible();
+    await expect(panel.getByRole("link", { name: "Create account" })).toBeVisible();
     await expect(panel.getByRole("link", { name: "Sign in" })).toBeVisible();
     // the page behind cannot scroll
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
@@ -42,8 +42,8 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toBeHidden();
     await page.getByTestId("menu-button").click();
-    await page.getByRole("dialog").getByRole("link", { name: "Jobs" }).click();
-    await expect(page).toHaveURL(/\/opportunities\?category=jobs$/); // "Latest jobs" (D-69)
+    await page.getByRole("dialog").getByRole("link", { name: "Find Jobs" }).click();
+    await expect(page).toHaveURL(/\/opportunities$/);
     await expect(page.getByRole("dialog")).toBeHidden();
   });
 
@@ -60,7 +60,7 @@ test.describe("phone header: logo and hamburger, everything else in the menu", (
   test("rotating to a wide screen closes the menu and shows the normal bar", async ({ page }) => {
     await page.goto("/");
     await page.getByTestId("menu-button").click();
-    await page.setViewportSize({ width: 900, height: 600 });
+    await page.setViewportSize({ width: 1100, height: 600 });
     await expect(page.getByRole("dialog")).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByTestId("menu-button")).toBeHidden();

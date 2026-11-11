@@ -108,7 +108,7 @@ export default async function LandingPage({ params, searchParams }: Props) {
           <nav aria-label="Breadcrumb" className="mb-2 text-small text-muted">
             {/* In a paragraph, so the link gets the inline-link weight (globals.css, axe link-in-text-block). */}
             <p className="m-0">
-              <Link href="/opportunities" className="text-accent underline">
+              <Link href="/opportunities" className="text-link">
                 Opportunities
               </Link>{" "}
               / <span aria-current="page">{page.heading}</span>
@@ -128,7 +128,7 @@ export default async function LandingPage({ params, searchParams }: Props) {
           </h2>
           {!result.ok ? (
             <EmptyState title="This page of results has expired">
-              <Link href={path} className="text-accent underline">
+              <Link href={path} className="text-link">
                 Start again from the first page
               </Link>
               .
@@ -143,7 +143,7 @@ export default async function LandingPage({ params, searchParams }: Props) {
               {rows.length === 0 ? (
                 <EmptyState title="No open listings here right now">
                   New listings are added as they are checked.{" "}
-                  <Link href={page.broader.href} className="text-accent underline">
+                  <Link href={page.broader.href} className="text-link">
                     {page.broader.label}
                   </Link>
                 </EmptyState>
@@ -179,7 +179,7 @@ export default async function LandingPage({ params, searchParams }: Props) {
               ) : null}
               {rows.length > 0 && total < landingMinListings() ? (
                 <p className="mt-4 text-base">
-                  <Link href={page.broader.href} className="text-accent underline">
+                  <Link href={page.broader.href} className="text-link">
                     {page.broader.label}
                   </Link>
                 </p>
@@ -189,40 +189,40 @@ export default async function LandingPage({ params, searchParams }: Props) {
           <Notice className="mt-6 rounded-card border border-border-notice">
             <p className="m-0">
               Verification labels describe what UPNEXT checked.{" "}
-              <Link href="/guides/apply-safely-and-avoid-scams" className="text-accent underline">
+              <Link href="/guides/apply-safely-and-avoid-scams" className="text-link">
                 How to apply safely
               </Link>
             </p>
           </Notice>
         </section>
-        <aside aria-labelledby="landing-related" className="text-base">
-          <h2 id="landing-related" className="text-title font-strong">
+        <aside aria-labelledby="landing-related" className="text-ctl">
+          <h2 id="landing-related" className="text-base font-strong">
             Related searches
           </h2>
           <ul className="mt-2 grid list-none gap-1.5 p-0">
             {others.map((p) => (
               <li key={p.slug}>
-                <Link href={landingPath(p.slug)} className="text-accent underline">
+                <Link href={landingPath(p.slug)} className="text-link">
                   {p.heading}
                 </Link>
               </li>
             ))}
           </ul>
-          <h2 className="mt-5 text-title font-strong">Browse by category</h2>
+          <h2 className="mt-6 text-base font-strong">Browse by category</h2>
           <ul className="mt-2 grid list-none gap-1.5 p-0">
             {Object.entries(CATEGORY_SEO).map(([code, copy]) => (
               <li key={code}>
-                <Link href={`/opportunities?category=${code}`} className="text-accent underline">
+                <Link href={`/opportunities?category=${code}`} className="text-link">
                   {copy.heading}
                 </Link>
               </li>
             ))}
           </ul>
-          <h2 className="mt-5 text-title font-strong">Guides</h2>
+          <h2 className="mt-6 text-base font-strong">Guides</h2>
           <ul className="mt-2 grid list-none gap-1.5 p-0">
             {GUIDES.map((g) => (
               <li key={g.path}>
-                <Link href={g.path} className="text-accent underline">
+                <Link href={g.path} className="text-link">
                   {g.title}
                 </Link>
               </li>

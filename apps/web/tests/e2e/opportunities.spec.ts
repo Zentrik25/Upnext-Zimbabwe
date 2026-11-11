@@ -209,7 +209,7 @@ test.describe("accessibility and design of the catalogue pages", () => {
           "button, select, textarea, input:not([type=checkbox], [type=radio], [type=hidden]), a.rounded-control, [role=search]";
         for (const el of document.querySelectorAll("*")) {
           const cs = getComputedStyle(el);
-          const allowed = ["0px", "4px", "6px", "8px"]; // D-39 radius scale
+          const allowed = ["0px", "2px", "8px", "12px", "980px"]; // D-73 radius scale
           void controlSel;
           if (
             [
@@ -256,7 +256,7 @@ test.describe("accessibility and design of the catalogue pages", () => {
 test.describe("home search", () => {
   test("the home page search goes to the results", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Search" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Search Jobs" })).toHaveCount(1); // the explicit button (D-73)
     await page.getByRole("searchbox").fill("grant");
     await page.getByRole("searchbox").press("Enter");
     await expect(page).toHaveURL(/\/opportunities\?q=grant/);
@@ -287,7 +287,7 @@ test.describe("home search", () => {
     await expect(page).not.toHaveURL(/q=/);
   });
 
-  test("the field has a magnifier, no button, the 4px radius and a visible focus ring", async ({ page }) => {
+  test("the field has a magnifier, no button, the 8px radius and a visible focus ring", async ({ page }) => {
     await page.goto("/opportunities");
     const box = page.getByRole("searchbox");
     await expect(page.getByRole("search").getByRole("button")).toHaveCount(0);
@@ -297,8 +297,36 @@ test.describe("home search", () => {
     expect(await box.evaluate((e) => getComputedStyle(e).outlineStyle)).not.toBe("none");
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 800 });
-      expect(await box.evaluate((e) => getComputedStyle(e).borderTopLeftRadius)).toBe("4px");
+      expect(await box.evaluate((e) => getComputedStyle(e).borderTopLeftRadius)).toBe("8px");
       expect(await box.evaluate((e) => e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(36);
     }
+  });
+});
+
+test.describe("filters on a phone (D-73)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the filters sit behind one Filters bar, open on tap or Space, and show how many are applied", async ({
+    page,
+  }) => {
+    await page.goto("/opportunities");
+    const filters = page.getByRole("checkbox", { name: /^Filters/ });
+    await expect(page.getByRole("group", { name: "Filters" })).toHaveCount(0);
+    await expect(page.getByLabel("Type of work")).toBeHidden();
+    await filters.focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("Type of work")).toBeVisible();
+    await page.getByLabel("Type of work").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Apply filters" }).click();
+    await expect(page).toHaveURL(/employment_type=/);
+    await expect(page.getByLabel("Type of work")).toBeVisible(); // open again because a filter is applied
+    await expect(page.getByText("(1 applied)")).toBeVisible();
+  });
+
+  test("on a wide screen the filter panel is always shown and the bar is not", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/opportunities");
+    await expect(page.getByLabel("Type of work")).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /^Filters/ })).toBeHidden();
   });
 });

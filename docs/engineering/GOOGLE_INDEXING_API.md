@@ -1,6 +1,6 @@
 # Google Indexing API for job listing pages — DRAFT
 
-Status: DRAFT (D-68). **Owner decision 2026-11-05: approved for record mode only.** Implemented and tested with mocked
+Status: DRAFT (D-68; monitoring and unchanged-content deduplication added by D-72, draft). **Owner decision 2026-11-05: approved for record mode only.** Implemented and tested with mocked
 Google answers; off by default; the production overlay fixes `record`; **live sending is not authorised**; no credential
 exists; nothing deployed. Using the API asks Google to crawl a URL sooner; it does not guarantee crawling, indexing,
 a Google for Jobs listing or any ranking.
@@ -27,6 +27,10 @@ pages reach Google through the sitemap.
   nothing; a queue problem can never undo or block an editorial decision.
 - **Idempotency**: one row per publishing event (`event:<id>`, unique). A newer event for an address supersedes an
   older unsent one: only the latest state matters to Google.
+- **Unchanged content is not re-sent** (D-72): each `URL_UPDATED` row stores a hash of what the job page shows
+  (title, texts, places, dates, pay, application route, SEO and image fields, organisation, details;
+  `eligibility.page_fingerprint`). Republishing an amendment whose hash equals the latest update sent or waiting for
+  that address queues nothing. A removal followed by a reopening always sends a new update.
 - **Current state wins**: just before sending, the listing is read again; an update for a listing that has since
   closed, or a removal for one that is open again, is marked `superseded`, not sent.
 - **Quota** `indexing_quota_day`: requests are counted atomically per Google quota day (quotas reset at midnight
@@ -81,6 +85,13 @@ pages reach Google through the sitemap.
     the Cloud console if it may have leaked. The sitemap keeps working either way.
 
 ## 5. Operations
+
+- **Workspace page `/workspace/seo`** (D-72, Administrators only, `settings.manage`): mode, queue counts, last
+  accepted submission, quota today, last run, oldest waiting, open job listings, JobPosting-eligible jobs, jobs in
+  the sitemap, structured-data errors and warnings per listing, the latest 50 notifications with a status filter,
+  and an audited **Retry** for `failed` or `dead` rows (refused when a newer notification for the address exists)
+  plus **Retry all dead**. "Sent" means Google accepted the notification (HTTP 200); the page never reports a URL as
+  indexed. Search Console figures are shown as "Not connected": no Search Console API integration exists.
 
 - `manage.py indexing_status` — mode, counts per status, quota used today, oldest waiting age, last five errors.
 - `manage.py process_indexing` — one sending pass now (only in `live`).

@@ -289,14 +289,12 @@ export function SkeletonListingRow() {
           <SkeletonLine className="h-[14px] w-1/4 max-sm:w-1/3" />
         </div>
       </div>
-      <div className="my-3 flex flex-wrap items-center gap-[10px]">
+      <div className="mt-3 flex flex-wrap items-center gap-x-[10px] gap-y-2">
         <SkeletonLine className="w-[84px]" />
         <SkeletonLine className="w-[72px]" />
         <SkeletonBadge />
         <SkeletonBadge className="w-[96px]" />
-      </div>
-      <div className="mt-[13px] flex items-center justify-end gap-2">
-        <SkeletonButton />
+        <SkeletonLine className="ml-auto w-[76px]" />
       </div>
     </div>
   );
@@ -316,7 +314,7 @@ export function SkeletonListingRows({ count = 6 }: { count?: number }) {
 export function SkeletonHomeRow() {
   return (
     <div
-      className="flex items-start gap-3 rounded-card border border-l-[3px] border-border-panel border-l-line bg-surface p-3"
+      className="flex items-start gap-3 rounded-card border border-border-panel bg-surface p-3"
       data-testid="skeleton-row"
     >
       <SkeletonAvatar className="h-11 w-11" />
