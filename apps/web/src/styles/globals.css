@@ -192,3 +192,10 @@ body[data-surface="public"] .shadow-elevated {
 body[data-surface="public"] .shadow-deep {
   box-shadow: var(--shadow-deep);
 }
+
+/* Public surface: the dashed "empty" and error boxes become a calm pale panel (D-73); staff and employer pages keep the dashed box. */
+body[data-surface="public"] .border-dashed {
+  border-style: solid;
+  border-color: var(--color-line);
+  background-color: var(--color-surface-pale);
+}

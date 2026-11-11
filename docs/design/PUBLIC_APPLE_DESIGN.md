@@ -39,6 +39,16 @@ The filters sit behind one 44px "Filters" bar (a CSS-only checkbox toggle, no sc
 showing "(n applied)"); from 991px the panel is the sidebar. The title of an opportunity stays the size of its section headings
 (owner rule, `job-view.test.tsx`), so the detail page title was not enlarged.
 
-## Not yet re-laid-out (inherit the tokens only)
-Listing-card anatomy, the opportunity page layout, public employer profiles (the demo data has none, so they could not be viewed),
-category and location landing layouts, authentication layouts and the seeker pages (not viewed signed in).
+## Pages re-laid-out (2026-11-11)
+- Listing row (used by the list, landing pages, saved, For you and the seeker dashboard): a 18px semibold title, organisation, one
+  line of facts and tags, and a "View details" text link at the end of that line (the separate button row is gone, so rows are
+  about 45px shorter); the loading skeleton matches.
+- Empty and error boxes on public pages are a calm pale panel (staff and employer pages keep the dashed box).
+- Reading pages (guides, About, Contact, legal): a 40px-class title, an 18px intro, section headings without rules, a 55% leading.
+- For employers: a hero, five step cards, a "What we do not do" panel. Landing pages: a quieter related-links column.
+- Verified at 320, 390, 768 and 1440 px with axe and an overflow check, signed out and signed in as a demo seeker (dashboard, For
+  you, Saved, Profile, Alerts, Account, Security).
+
+## Not changed beyond the tokens
+The opportunity (detail) page layout, the public employer profile (`/employers/[slug]`; the demo data has none, so it was not
+viewed) and the authentication forms keep their structure and take the new colours, fonts and corners.

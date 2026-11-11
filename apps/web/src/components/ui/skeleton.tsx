@@ -289,14 +289,12 @@ export function SkeletonListingRow() {
           <SkeletonLine className="h-[14px] w-1/4 max-sm:w-1/3" />
         </div>
       </div>
-      <div className="my-3 flex flex-wrap items-center gap-[10px]">
+      <div className="mt-3 flex flex-wrap items-center gap-x-[10px] gap-y-2">
         <SkeletonLine className="w-[84px]" />
         <SkeletonLine className="w-[72px]" />
         <SkeletonBadge />
         <SkeletonBadge className="w-[96px]" />
-      </div>
-      <div className="mt-[13px] flex items-center justify-end gap-2">
-        <SkeletonButton />
+        <SkeletonLine className="ml-auto w-[76px]" />
       </div>
     </div>
   );

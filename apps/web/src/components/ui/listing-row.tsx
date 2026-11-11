@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { ButtonLink } from "./button";
 import { SaveButton } from "./save-button";
 import { Tag, type TagTone } from "./tag";
 
@@ -52,7 +51,7 @@ export function ListingRow({
           {initials(organisation)}
         </div>
         <div className="min-w-0">
-          <h3 className="text-base font-strong leading-title">
+          <h3 className="text-lead font-strong leading-title tracking-title">
             <a href={href}>{title}</a>
           </h3>
           <p className="mt-[3px] text-ctl text-company">{organisation}</p>
@@ -74,7 +73,7 @@ export function ListingRow({
           <SaveButton title={title} saved={saved} className="ml-auto" />
         )}
       </div>
-      <ul className="m-0 my-3 flex list-none flex-wrap gap-[10px] p-0 text-small text-meta">
+      <ul className="m-0 mt-3 flex list-none flex-wrap items-center gap-x-[10px] gap-y-2 p-0 text-small text-meta">
         {facts.map((fact) => (
           <li key={fact}>{fact}</li>
         ))}
@@ -83,18 +82,17 @@ export function ListingRow({
             <Tag tone={tag.tone}>{tag.label}</Tag>
           </li>
         ))}
+        <li className="ml-auto">
+          <a
+            href={href}
+            aria-label={`View details for ${title}`}
+            className="inline-flex min-h-[24px] items-center whitespace-nowrap text-ctl text-link hover:underline"
+          >
+            View details
+          </a>
+        </li>
       </ul>
       {extra}
-      <div className="mt-[13px] flex items-center justify-end gap-2">
-        <ButtonLink
-          variant="secondary"
-          href={href}
-          aria-label={`View details for ${title}`}
-          className="whitespace-nowrap"
-        >
-          View details
-        </ButtonLink>
-      </div>
     </article>
   );
 }

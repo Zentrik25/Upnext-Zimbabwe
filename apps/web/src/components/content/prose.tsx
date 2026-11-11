@@ -16,10 +16,10 @@ export function ProsePage({
   children: ReactNode;
 }) {
   return (
-    <Container className="pt-8 pb-[65px]">
+    <Container className="pt-10 pb-[65px] max-sm:pt-6">
       <article className="max-w-[720px]">
-        <h1 className="text-section font-strong tracking-section">{title}</h1>
-        {intro ? <p className="mt-2 text-base text-muted">{intro}</p> : null}
+        <h1 className="text-display font-strong tracking-display">{title}</h1>
+        {intro ? <p className="mt-3 text-lead text-muted">{intro}</p> : null}
         {draft ? (
           <div
             role="note"
@@ -30,7 +30,7 @@ export function ProsePage({
             reviewed by a lawyer and is not legal advice. Items in [square brackets] are still to be decided.
           </div>
         ) : null}
-        <div className="mt-2 grid gap-1">{children}</div>
+        <div className="mt-4 grid gap-1">{children}</div>
       </article>
     </Container>
   );
@@ -46,9 +46,9 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cn("mt-5", className)}>
-      <h2 className="border-b border-line pb-1 text-title font-strong">{title}</h2>
-      <div className="mt-2 grid gap-2 text-base">{children}</div>
+    <section className={cn("mt-8", className)}>
+      <h2 className="text-sub font-strong tracking-sub">{title}</h2>
+      <div className="mt-3 grid gap-3 text-base leading-[1.55]">{children}</div>
     </section>
   );
 }
