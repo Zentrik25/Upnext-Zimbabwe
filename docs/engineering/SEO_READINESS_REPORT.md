@@ -70,7 +70,7 @@ keywords and no FAQ markup is used. The safety advice is general good practice, 
 
 | Type | Where | Rules |
 |---|---|---|
-| `WebSite` (+ `SearchAction`), `Organization` | `/` | Name, URL, logo, the one official e-mail. No `sameAs`, `contactPoint` or registration numbers: none are public and verified |
+| `WebSite` (no `SearchAction`, removed 2026-11-09), `Organization` | `/` | Name, URL, logo, the one official e-mail. No `sameAs`, `contactPoint` or registration numbers: none are public and verified |
 | `JobPosting` | Open listings in categories jobs, internships, graduate-programmes only | `title`, `description` (plain text of the visible description), `datePosted`, `validThrough` when a deadline is stated, `hiringOrganization`, `jobLocation` or `applicantLocationRequirements` + `jobLocationType`, `employmentType` only when unambiguous (contract, temporary, part time, internship), `baseSalary` only with stated figures, `identifier` as `PropertyValue`, `directApply: false` (applications are made on the issuer's channel, not on UPNEXT). None for scholarships, tenders, grants, closed, withdrawn, past-deadline or unplaced listings |
 | `BreadcrumbList` | Open listings, guides | Home or Opportunities > Category > Listing |
 | `Article` | Guides only | Organisation as author and publisher; dates equal the visible dates |
