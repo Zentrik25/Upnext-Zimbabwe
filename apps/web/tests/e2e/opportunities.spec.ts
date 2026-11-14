@@ -116,7 +116,7 @@ test.describe("detail page", () => {
     await expect(page.getByTestId("category-details")).not.toContainText("Benefits");
     // Verification is one switch (D-62): the page says Verified or Not verified, whichever the demo data has.
     await expect(page.getByText(/^(Verified|Not verified)$/).first()).toBeVisible();
-    // No sources block: the verification level is shown only as its label.
+    // No "Sources" block (D-67); the recorded source appears once, in About this listing (D-74).
     await expect(page.getByRole("heading", { name: "Where this came from" })).toHaveCount(0);
     await expect(page.getByLabel("Sources")).toHaveCount(0);
   });

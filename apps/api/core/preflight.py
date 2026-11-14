@@ -280,6 +280,16 @@ def database_findings(connection: Any, conf: Any) -> list[Finding]:
             cur.fetchone()[0] > 0,
             "no record: change of e-mail stays off and launch blocker B-01 is open",
         )
+        # Without places a written location ("Estlea, Harare") cannot be matched to a structured one, so no
+        # listing carries JobPosting, none is eligible for the Indexing API and the location lists stay empty
+        # (AdSense audit 2026-11-14, ADS-T01). `manage.py seed_taxonomies` loads the starter places and never
+        # overwrites.
+        cur.execute("SELECT count(*) FROM catalog_location WHERE active")
+        c.warn(
+            "the place catalogue holds active locations",
+            cur.fetchone()[0] > 0,
+            "no active location: run `manage.py seed_taxonomies`; until then no listing carries JobPosting",
+        )
         cur.execute("SHOW statement_timeout")
         c.check("statement timeout is set", cur.fetchone()[0] not in ("0", "0ms"), "no statement timeout")
     return c.items

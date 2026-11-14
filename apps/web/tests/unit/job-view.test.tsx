@@ -98,13 +98,18 @@ describe("the order of the page", () => {
     expect(screen.queryByRole("img")).toBeNull(); // no logo, no featured image, none made up
   });
 
-  it("states the verification level only as its label, with no sources block", () => {
+  it("shows the label beside the organisation and explains it once in About this listing (D-74)", () => {
     render(<JobView listing={listing()} />);
-    expect(screen.getAllByText("Source checked")).toHaveLength(1);
+    expect(screen.getAllByText("Source checked")).toHaveLength(1); // the tag; the record says "Source checked."
     expect(screen.queryByRole("heading", { name: "Where this came from" })).toBeNull();
     expect(screen.queryByLabelText("Sources")).toBeNull();
-    expect(text()).not.toMatch(/Last checked|not confirmation from the issuing organisation|\(primary\)/i);
-    expect(text()).not.toContain("herald.co.zw");
+    const record = screen.getByTestId("listing-verification");
+    expect(record).toHaveTextContent("not confirmation from the issuing organisation");
+    expect(within(record).getByRole("link", { name: "What the labels mean" })).toHaveAttribute(
+      "href",
+      "/guides/how-listings-are-verified",
+    );
+    expect(text()).not.toMatch(/\(primary\)/i);
   });
 
   it("shows each fact once and only the facts it has", () => {
@@ -265,6 +270,7 @@ describe("the apply actions", () => {
     render(
       <JobView
         listing={listing({
+          sources: [], // the recorded source link (D-74) is not an application destination
           application: {
             method: "instructions",
             url: null,
@@ -623,6 +629,7 @@ describe("the order of sections", () => {
       "Qualifications & experience",
       "How to apply",
       "More details",
+      "About this listing", // D-74: always last, before the report link
     ]);
   });
 
@@ -631,7 +638,13 @@ describe("the order of sections", () => {
       <JobView listing={listing({ requirements_html: null, detail: { contract_duration_months: 12 } })} />,
     );
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(["Overview", "Key responsibilities", "How to apply", "More details"]);
+    expect(headings).toEqual([
+      "Overview",
+      "Key responsibilities",
+      "How to apply",
+      "More details",
+      "About this listing",
+    ]);
   });
 
   it("leaves the application link and the page's content as they were", () => {
@@ -852,5 +865,104 @@ describe("title size and the desktop side column", () => {
   it("draws no side column without related listings", () => {
     render(<JobView listing={listing()} />);
     expect(screen.queryByTestId("job-aside")).toBeNull();
+  });
+});
+
+describe("About this listing (AdSense audit 2026-11-14, D-74)", () => {
+  it("shows the recorded original source with a safe link, once, after the details", () => {
+    render(<JobView listing={listing()} />);
+    const source = screen.getByTestId("listing-source");
+    const link = within(source).getByRole("link", { name: "herald.co.zw" });
+    expect(link).toHaveAttribute("href", "https://www.herald.co.zw/jobs/1");
+    expect(link).toHaveAttribute("rel", "noopener nofollow");
+    expect(source).toHaveTextContent("seen on 30 Oct 2026");
+    expect(screen.getAllByText("herald.co.zw")).toHaveLength(1);
+    const heading = screen.getByRole("heading", { name: "About this listing" });
+    const report = screen.getByRole("link", { name: "Report this opportunity" });
+    expect(heading.compareDocumentPosition(report) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("draws no source line when none is recorded, and never a non-https link", () => {
+    render(<JobView listing={listing({ sources: [] })} />);
+    expect(screen.queryByTestId("listing-source")).toBeNull();
+    expect(text()).not.toMatch(/Original source/);
+    cleanup();
+    render(
+      <JobView
+        listing={listing({
+          sources: [
+            {
+              kind: "other",
+              name: "Submitted by the employer through the UPNEXT employer portal",
+              url: "http://insecure.example/x",
+              citation: null,
+              observed_on: "2026-11-06",
+              is_primary: true,
+            },
+          ],
+        })}
+      />,
+    );
+    const source = screen.getByTestId("listing-source");
+    expect(source).toHaveTextContent("Submitted by the employer through the UPNEXT employer portal");
+    expect(within(source).queryByRole("link")).toBeNull();
+  });
+
+  it("states the publication date, and the update date only when it differs", () => {
+    render(<JobView listing={listing()} />);
+    const record = screen.getByTestId("listing-record");
+    expect(record).toHaveTextContent("Published on UPNEXT30 Oct 2026");
+    expect(record).not.toHaveTextContent("last updated");
+    cleanup();
+    render(<JobView listing={listing({ updated_at: "2026-11-07T10:00:00Z" })} />);
+    expect(screen.getByTestId("listing-record")).toHaveTextContent("30 Oct 2026 · last updated 7 Nov 2026");
+  });
+
+  it("gives the check date for a verified listing and advice for an unverified one", () => {
+    render(
+      <JobView
+        listing={listing({ verification: { level: "issuer_verified", checked_at: "2026-11-10T17:05:41Z" } })}
+      />,
+    );
+    expect(screen.getByTestId("listing-verification")).toHaveTextContent("Checked on 10 Nov 2026.");
+    cleanup();
+    render(<JobView listing={listing({ verification: { level: "not_verified", checked_at: null } })} />);
+    expect(screen.getByTestId("listing-verification")).toHaveTextContent(
+      "Check it with the organisation before you apply.",
+    );
+  });
+
+  it("notes a free webmail application address, and only then", () => {
+    render(
+      <JobView
+        listing={listing({
+          application: { method: "email", url: null, email: "Recruitment2026@Gmail.com", instructions: null },
+        })}
+      />,
+    );
+    expect(screen.getByTestId("webmail-note")).toHaveTextContent("go to a gmail.com address");
+    cleanup();
+    render(
+      <JobView
+        listing={listing({
+          application: { method: "email", url: null, email: "jobs@probfix.co.zw", instructions: null },
+        })}
+      />,
+    );
+    expect(screen.queryByTestId("webmail-note")).toBeNull();
+  });
+});
+
+describe("listing titles never repeat the brand", () => {
+  it("drops a trailing UPNEXT or UPNEXT Careers that the layout would add again", async () => {
+    const { withoutBrandSuffix } = await import("@/lib/brand");
+    expect(withoutBrandSuffix("Leading Hand – Delta Beverages Harare | UPNEXT Careers")).toBe(
+      "Leading Hand – Delta Beverages Harare",
+    );
+    expect(withoutBrandSuffix("PROBFIX Graduate Trainee Programme 2027/2028 | UPNEXT")).toBe(
+      "PROBFIX Graduate Trainee Programme 2027/2028",
+    );
+    expect(withoutBrandSuffix("Accountant at Chabveka Solicitors")).toBe("Accountant at Chabveka Solicitors");
+    expect(withoutBrandSuffix(null)).toBe("");
   });
 });

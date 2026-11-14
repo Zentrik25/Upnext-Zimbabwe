@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Container } from "@/components/layout";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { FeaturedImage } from "@/components/opportunities/featured-image";
+import { ListingRecord } from "@/components/opportunities/listing-record";
 import { ShareButton } from "@/components/opportunities/share-button";
 import { Block, Chip, OrgMark, withoutRepeatedHeadings } from "@/components/opportunities/job-parts";
 import { ButtonLink, Tag } from "@/components/ui";
@@ -245,7 +246,8 @@ export function JobView({
             </Link>
           </nav>
 
-          <article aria-labelledby="listing-title" className="mt-2">
+          {/* Long unbroken text (a pasted application address) wraps instead of widening the page on a phone. */}
+          <article aria-labelledby="listing-title" className="mt-2 [overflow-wrap:anywhere]">
             <h1
               id="listing-title"
               className="m-0 text-title font-strong leading-title text-ink [overflow-wrap:anywhere]"
@@ -430,6 +432,8 @@ export function JobView({
                 </dl>
               </Block>
             ) : null}
+
+            <ListingRecord listing={listing} />
 
             {!preview ? (
               <p className="m-0 mt-4 flex items-center gap-2 border-t border-line pt-3 text-small text-muted">
