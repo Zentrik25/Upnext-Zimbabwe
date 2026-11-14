@@ -1,0 +1,642 @@
+[
+ {
+  "vp": "m",
+  "p": "/",
+  "status": 200,
+  "words": 556,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities",
+  "status": 200,
+  "words": 325,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/categories",
+  "status": 200,
+  "words": 96,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides",
+  "status": 200,
+  "words": 226,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/about",
+  "status": 200,
+  "words": 219,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/employers",
+  "status": 200,
+  "words": 216,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/contact",
+  "status": 200,
+  "words": 78,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/how-to-find-jobs-in-zimbabwe",
+  "status": 200,
+  "words": 378,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/apply-safely-and-avoid-scams",
+  "status": 200,
+  "words": 386,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/how-listings-are-verified",
+  "status": 200,
+  "words": 356,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/how-to-apply-for-graduate-trainee-programmes",
+  "status": 200,
+  "words": 452,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/how-to-prepare-a-cv",
+  "status": 200,
+  "words": 437,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/guides/finding-engineering-internships-and-attachments",
+  "status": 200,
+  "words": 342,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?category=graduate-programmes",
+  "status": 200,
+  "words": 160,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?category=jobs",
+  "status": 200,
+  "words": 262,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/accountant-a3n4am",
+  "status": 200,
+  "words": 267,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/artisan-lines-kariba-3d2m36",
+  "status": 200,
+  "words": 331,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/communications-officer-graphic-design-social-media-49h3qe",
+  "status": 200,
+  "words": 498,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/graduate-trainee-civil-engineering-phduf3",
+  "status": 200,
+  "words": 221,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/junior-project-officer-f4e96z",
+  "status": 200,
+  "words": 333,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/leading-hand-grade-11-uj5bpr",
+  "status": 200,
+  "words": 277,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/merchandising-manager-rsd4r2",
+  "status": 200,
+  "words": 353,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/mutapa-gold-resources-graduate-trainees-2026",
+  "status": 200,
+  "words": 305,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/nurse-aides-9ndkgz",
+  "status": 200,
+  "words": 248,
+  "overflow": true,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/probfix-graduate-trainee-programme-2027-2028",
+  "status": 200,
+  "words": 503,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/procurement-officer-546b4e",
+  "status": 200,
+  "words": 405,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/school-administrator-project-coordinator-z7vxnt",
+  "status": 200,
+  "words": 272,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/senior-programmes-lawyer-1-post-skx7p4",
+  "status": 200,
+  "words": 572,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/software-developer-p5qjrp",
+  "status": 200,
+  "words": 378,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities/truck-assistant-grade-14-8medfu",
+  "status": 200,
+  "words": 247,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/locations",
+  "status": 200,
+  "words": 43,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/privacy",
+  "status": 200,
+  "words": 3826,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/terms",
+  "status": 200,
+  "words": 2060,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/jobs",
+  "status": 200,
+  "words": 262,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/sign-in",
+  "status": 200,
+  "words": 29,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/register",
+  "status": 200,
+  "words": 99,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?q=engineer",
+  "status": 200,
+  "words": 128,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?category=tenders",
+  "status": 200,
+  "words": 88,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?category=internships",
+  "status": 200,
+  "words": 84,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "m",
+  "p": "/opportunities?category=scholarships",
+  "status": 200,
+  "words": 86,
+  "overflow": false,
+  "axe": []
+ },
+ {
+  "vp": "d",
+  "p": "/",
+  "status": 200,
+  "words": 556,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities",
+  "status": 200,
+  "words": 369,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/categories",
+  "status": 200,
+  "words": 96,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides",
+  "status": 200,
+  "words": 226,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/about",
+  "status": 200,
+  "words": 219,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/employers",
+  "status": 200,
+  "words": 216,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/contact",
+  "status": 200,
+  "words": 78,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/how-to-find-jobs-in-zimbabwe",
+  "status": 200,
+  "words": 378,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/apply-safely-and-avoid-scams",
+  "status": 200,
+  "words": 386,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/how-listings-are-verified",
+  "status": 200,
+  "words": 356,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/how-to-apply-for-graduate-trainee-programmes",
+  "status": 200,
+  "words": 452,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/how-to-prepare-a-cv",
+  "status": 200,
+  "words": 437,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/guides/finding-engineering-internships-and-attachments",
+  "status": 200,
+  "words": 342,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?category=graduate-programmes",
+  "status": 200,
+  "words": 204,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?category=jobs",
+  "status": 200,
+  "words": 306,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/accountant-a3n4am",
+  "status": 200,
+  "words": 267,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/artisan-lines-kariba-3d2m36",
+  "status": 200,
+  "words": 331,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/communications-officer-graphic-design-social-media-49h3qe",
+  "status": 200,
+  "words": 498,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/graduate-trainee-civil-engineering-phduf3",
+  "status": 200,
+  "words": 221,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/junior-project-officer-f4e96z",
+  "status": 200,
+  "words": 333,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/leading-hand-grade-11-uj5bpr",
+  "status": 200,
+  "words": 277,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/merchandising-manager-rsd4r2",
+  "status": 200,
+  "words": 353,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/mutapa-gold-resources-graduate-trainees-2026",
+  "status": 200,
+  "words": 305,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/nurse-aides-9ndkgz",
+  "status": 200,
+  "words": 248,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/probfix-graduate-trainee-programme-2027-2028",
+  "status": 200,
+  "words": 503,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/procurement-officer-546b4e",
+  "status": 200,
+  "words": 405,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/school-administrator-project-coordinator-z7vxnt",
+  "status": 200,
+  "words": 272,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/senior-programmes-lawyer-1-post-skx7p4",
+  "status": 200,
+  "words": 572,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/software-developer-p5qjrp",
+  "status": 200,
+  "words": 378,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities/truck-assistant-grade-14-8medfu",
+  "status": 200,
+  "words": 247,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/locations",
+  "status": 200,
+  "words": 43,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/privacy",
+  "status": 200,
+  "words": 3908,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/terms",
+  "status": 200,
+  "words": 2184,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/jobs",
+  "status": 200,
+  "words": 306,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/sign-in",
+  "status": 200,
+  "words": 29,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/register",
+  "status": 200,
+  "words": 99,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?q=engineer",
+  "status": 200,
+  "words": 174,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?category=tenders",
+  "status": 200,
+  "words": 132,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?category=internships",
+  "status": 200,
+  "words": 128,
+  "overflow": false,
+  "axe": null
+ },
+ {
+  "vp": "d",
+  "p": "/opportunities?category=scholarships",
+  "status": 200,
+  "words": 130,
+  "overflow": false,
+  "axe": null
+ }
+]

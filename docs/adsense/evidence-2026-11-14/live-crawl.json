@@ -1,0 +1,596 @@
+[
+ {
+  "url": "/",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/",
+  "title": "UPNEXT Careers | Jobs & Opportunities in Zimbabwe",
+  "h1": "Find your next opportunity.",
+  "main_words": 311,
+  "ld": [
+   "Organization",
+   "WebSite"
+  ],
+  "n_internal": 34
+ },
+ {
+  "url": "/opportunities",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities",
+  "title": "Jobs & Opportunities in Zimbabwe | UPNEXT Careers",
+  "h1": "Jobs and opportunities in Zimbabwe",
+  "main_words": 16,
+  "ld": [],
+  "n_internal": 37
+ },
+ {
+  "url": "/categories",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/categories",
+  "title": "Browse opportunities by category | UPNEXT Careers",
+  "h1": "Browse opportunities by category",
+  "main_words": 96,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/guides",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides",
+  "title": "Career guides for Zimbabwe | UPNEXT Careers",
+  "h1": "Career guides for Zimbabwe",
+  "main_words": 226,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/about",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/about",
+  "title": "About | UPNEXT Careers",
+  "h1": "About UPNEXT Careers",
+  "main_words": 224,
+  "ld": [],
+  "n_internal": 25
+ },
+ {
+  "url": "/employers",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/employers",
+  "title": "For Employers | UPNEXT Careers",
+  "h1": "For employers",
+  "main_words": 216,
+  "ld": [],
+  "n_internal": 25
+ },
+ {
+  "url": "/contact",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/contact",
+  "title": "Contact | UPNEXT Careers",
+  "h1": "Contact",
+  "main_words": 81,
+  "ld": [],
+  "n_internal": 25
+ },
+ {
+  "url": "/guides/how-to-find-jobs-in-zimbabwe",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/how-to-find-jobs-in-zimbabwe",
+  "title": "How to find jobs in Zimbabwe | UPNEXT Careers",
+  "h1": "How to find jobs in Zimbabwe",
+  "main_words": 380,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/guides/apply-safely-and-avoid-scams",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/apply-safely-and-avoid-scams",
+  "title": "How to apply safely and avoid recruitment scams | UPNEXT Careers",
+  "h1": "How to apply safely and avoid recruitment scams",
+  "main_words": 388,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/guides/how-listings-are-verified",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/how-listings-are-verified",
+  "title": "How UPNEXT Careers checks and verifies listings | UPNEXT Careers",
+  "h1": "How UPNEXT Careers checks and verifies listings",
+  "main_words": 361,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/guides/how-to-apply-for-graduate-trainee-programmes",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/how-to-apply-for-graduate-trainee-programmes",
+  "title": "How to apply for graduate trainee programmes | UPNEXT Careers",
+  "h1": "How to apply for graduate trainee programmes",
+  "main_words": 454,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/guides/how-to-prepare-a-cv",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/how-to-prepare-a-cv",
+  "title": "How to prepare a CV for employers in Zimbabwe | UPNEXT Careers",
+  "h1": "How to prepare a CV for employers in Zimbabwe",
+  "main_words": 438,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/guides/finding-engineering-internships-and-attachments",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/guides/finding-engineering-internships-and-attachments",
+  "title": "Where to find engineering internships and attachments | UPNEXT Careers",
+  "h1": "Where to find engineering internships and attachments",
+  "main_words": 345,
+  "ld": [
+   "Article",
+   "BreadcrumbList",
+   "ListItem",
+   "Organization"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/opportunities?category=graduate-programmes",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities?category=graduate-programmes",
+  "title": "Graduate Trainee Programmes in Zimbabwe | UPNEXT Careers",
+  "h1": "Graduate trainee programmes in Zimbabwe",
+  "main_words": 45,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities?category=jobs",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities?category=jobs",
+  "title": "Latest Jobs in Zimbabwe | UPNEXT Careers",
+  "h1": "Latest jobs in Zimbabwe",
+  "main_words": 45,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 34
+ },
+ {
+  "url": "/opportunities/accountant-a3n4am",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/accountant-a3n4am",
+  "title": "Accountant at Chabveka Solicitors | UPNEXT Careers",
+  "h1": "Accountant",
+  "main_words": 191,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/artisan-lines-kariba-3d2m36",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/opportunities/artisan-lines-kariba-3d2m36",
+  "title": "Artisan \u2013 Lines (Kariba) at ZETDC | UPNEXT Careers",
+  "h1": "Artisan \u2013 Lines (Kariba)",
+  "main_words": 266,
+  "ld": [],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/communications-officer-graphic-design-social-media-49h3qe",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/communications-officer-graphic-design-social-media-49h3qe",
+  "title": "Communications Officer (Graphic Design & Social Media at United Nations Office for Project Services (UNOPS) | UPNEXT Careers",
+  "h1": "Communications Officer (Graphic Design & Social Media",
+  "main_words": 439,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/graduate-trainee-civil-engineering-phduf3",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/graduate-trainee-civil-engineering-phduf3",
+  "title": "Graduate Trainee \u2013 Civil Engineering at Mbire Rural District Council | UPNEXT Careers",
+  "h1": "Graduate Trainee \u2013 Civil Engineering",
+  "main_words": 182,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/junior-project-officer-f4e96z",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/opportunities/junior-project-officer-f4e96z",
+  "title": "Junior Project Officer at Hivos | UPNEXT Careers",
+  "h1": "Junior Project Officer",
+  "main_words": 268,
+  "ld": [],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/leading-hand-grade-11-uj5bpr",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/opportunities/leading-hand-grade-11-uj5bpr",
+  "title": "Leading Hand \u2013 Delta Beverages Harare | UPNEXT Careers | UPNEXT Careers",
+  "h1": "Leading Hand (Grade 11)",
+  "main_words": 212,
+  "ld": [],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/merchandising-manager-rsd4r2",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/merchandising-manager-rsd4r2",
+  "title": "Merchandising Manager at Confidential \u2013 Leading Harare FMCG Organisation | UPNEXT Careers",
+  "h1": "Merchandising Manager",
+  "main_words": 291,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/mutapa-gold-resources-graduate-trainees-2026",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/mutapa-gold-resources-graduate-trainees-2026",
+  "title": "Mutapa Gold Graduate Trainees 2026 \u2013 9 Disciplines | UPNEXT Careers | UPNEXT Careers",
+  "h1": "Graduate Trainees \u2013 9 Disciplines",
+  "main_words": 259,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/nurse-aides-9ndkgz",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/nurse-aides-9ndkgz",
+  "title": "Nurse Aides at Magaya Mining | UPNEXT Careers",
+  "h1": "Nurse Aides",
+  "main_words": 185,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/probfix-graduate-trainee-programme-2027-2028",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/probfix-graduate-trainee-programme-2027-2028",
+  "title": "PROBFIX Graduate Trainee Programme 2027/2028 | UPNEXT | UPNEXT Careers",
+  "h1": "Graduate Trainee Programme 2027/2028",
+  "main_words": 461,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/procurement-officer-546b4e",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/opportunities/procurement-officer-546b4e",
+  "title": "Procurement Officer at Nedbank | UPNEXT Careers",
+  "h1": "Procurement Officer",
+  "main_words": 340,
+  "ld": [],
+  "n_internal": 29
+ },
+ {
+  "url": "/opportunities/school-administrator-project-coordinator-z7vxnt",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/school-administrator-project-coordinator-z7vxnt",
+  "title": "School Administrator / Project Coordinator at Enrollin Classes | UPNEXT Careers",
+  "h1": "School Administrator / Project Coordinator",
+  "main_words": 200,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/senior-programmes-lawyer-1-post-skx7p4",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/senior-programmes-lawyer-1-post-skx7p4",
+  "title": "Senior Programmes Lawyer (1 Post) at National Human Rights Organisation | UPNEXT Careers",
+  "h1": "Senior Programmes Lawyer (1 Post)",
+  "main_words": 508,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/software-developer-p5qjrp",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities/software-developer-p5qjrp",
+  "title": "Software Developer at Zentrik Solutions | UPNEXT Careers",
+  "h1": "Software Developer",
+  "main_words": 314,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 30
+ },
+ {
+  "url": "/opportunities/truck-assistant-grade-14-8medfu",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/opportunities/truck-assistant-grade-14-8medfu",
+  "title": "Truck Assistant \u2013 Delta Beverages Harare | UPNEXT Careers | UPNEXT Careers",
+  "h1": "Truck Assistant (Grade 14)",
+  "main_words": 182,
+  "ld": [],
+  "n_internal": 29
+ },
+ {
+  "url": "/locations",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/locations",
+  "title": "Browse opportunities by location | UPNEXT Careers",
+  "h1": "Browse opportunities by location",
+  "main_words": 43,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 25
+ },
+ {
+  "url": "/privacy",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/privacy",
+  "title": "Privacy Policy | UPNEXT Careers",
+  "h1": "Privacy Policy",
+  "main_words": 4020,
+  "ld": [],
+  "n_internal": 26
+ },
+ {
+  "url": "/terms",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/terms",
+  "title": "Terms of Service | UPNEXT Careers",
+  "h1": "Terms of Service",
+  "main_words": 2329,
+  "ld": [],
+  "n_internal": 26
+ },
+ {
+  "url": "/jobs",
+  "code": 200,
+  "xrobots": null,
+  "robots": null,
+  "canonical": "https://upnext.co.zw/opportunities?category=jobs",
+  "title": "Latest Jobs in Zimbabwe | UPNEXT Careers",
+  "h1": "Latest jobs in Zimbabwe",
+  "main_words": 45,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 34
+ },
+ {
+  "url": "/sign-in",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": null,
+  "title": "Sign in | UPNEXT Careers",
+  "h1": "Sign in to your account",
+  "main_words": 29,
+  "ld": [],
+  "n_internal": 12
+ },
+ {
+  "url": "/register",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": "https://upnext.co.zw/register",
+  "title": "Create account | UPNEXT Careers",
+  "h1": "Create your account",
+  "main_words": 100,
+  "ld": [],
+  "n_internal": 11
+ },
+ {
+  "url": "/opportunities?q=engineer",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/opportunities",
+  "title": "Opportunities | UPNEXT Careers",
+  "h1": "Opportunities",
+  "main_words": 19,
+  "ld": [],
+  "n_internal": 36
+ },
+ {
+  "url": "/opportunities?category=tenders",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/opportunities?category=tenders",
+  "title": "Latest Tenders in Zimbabwe | UPNEXT Careers",
+  "h1": "Latest tenders and procurement notices",
+  "main_words": 47,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/opportunities?category=internships",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/opportunities?category=internships",
+  "title": "Internships & Attachments in Zimbabwe | UPNEXT Careers",
+  "h1": "Internships and attachments in Zimbabwe",
+  "main_words": 43,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/opportunities?category=scholarships",
+  "code": 200,
+  "xrobots": null,
+  "robots": "noindex, follow",
+  "canonical": "https://upnext.co.zw/opportunities?category=scholarships",
+  "title": "Scholarships & Fellowships | UPNEXT Careers",
+  "h1": "Scholarships and fellowships",
+  "main_words": 45,
+  "ld": [
+   "BreadcrumbList",
+   "ListItem"
+  ],
+  "n_internal": 26
+ },
+ {
+  "url": "/employers/does-not-exist",
+  "code": 404,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": null,
+  "title": "UPNEXT Careers",
+  "h1": "",
+  "main_words": 0,
+  "ld": [],
+  "n_internal": 0
+ },
+ {
+  "url": "/guides/nope",
+  "code": 404,
+  "xrobots": null,
+  "robots": "noindex",
+  "canonical": null,
+  "title": "UPNEXT Careers",
+  "h1": "Page not found",
+  "main_words": 17,
+  "ld": [],
+  "n_internal": 25
+ }
+]

@@ -1,0 +1,17 @@
+User-Agent: *
+Allow: /
+Disallow: /workspace
+Disallow: /api/
+Disallow: /health/
+Disallow: /django-admin/
+Disallow: /account
+Disallow: /saved
+Disallow: /dashboard
+Disallow: /for-you
+Disallow: /profile
+Disallow: /alerts
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /employer/
+
+Sitemap: https://upnext.co.zw/sitemap.xml
