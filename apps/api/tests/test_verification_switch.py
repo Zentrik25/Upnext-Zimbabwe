@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from accounts.models import User
 from audit.models import AuditEvent
 from opportunities.models import ListingStatus, Opportunity, VerificationLevel
-from tests.factories import CHECKLIST, World, new_draft, published
+from tests.factories import CHECKLIST, STANDARD, World, new_draft, published
 
 from .conftest import csrf
 from .test_staff_api import S, signed_in
@@ -30,7 +30,7 @@ def test_an_editor_verifies_and_unverifies_with_one_request_each(
 ) -> None:
     opp = published(world, people["author"], people["editor"])
     client = signed_in(people["editor2"])
-    on = put(client, opp, {"verified": True})
+    on = put(client, opp, {"verified": True, **STANDARD})
     assert on.status_code == 200
     row = on.json()
     assert row["verified"] is True and row["verification_label"] == "Verified" and row["can_verify"] is True
@@ -53,7 +53,7 @@ def test_the_listing_shows_the_saved_state_to_everyone_on_the_staff_list_and_det
     world: World, people: dict[str, User]
 ) -> None:
     opp = published(world, people["author"], people["editor"])
-    put(signed_in(people["admin"]), opp, {"verified": True})
+    put(signed_in(people["admin"]), opp, {"verified": True, **STANDARD})
     detail = signed_in(people["editor"]).get(f"{S}/opportunities/{opp.pk}").json()
     assert detail["verified"] is True and detail["verified_by"] == people["admin"].display_name
     rows = signed_in(people["editor"]).get(f"{S}/opportunities").json()["data"]
@@ -72,10 +72,10 @@ def test_permission_is_enforced_on_the_server_not_just_in_the_screen(
     # the Contributor can see their own work but is told they cannot verify it...
     assert shown.status_code == 200 and shown.json()["can_verify"] is False
     # ...and a direct request is refused whatever the screen showed
-    refused = put(contributor, opp, {"verified": True})
+    refused = put(contributor, opp, {"verified": True, **STANDARD})
     assert refused.status_code == 403 and refused.json()["error"]["code"] == "permission_denied"
-    assert put(signed_in(people["seeker"]), opp, {"verified": True}).status_code == 403
-    assert put(APIClient(), opp, {"verified": True}).status_code in (401, 403)
+    assert put(signed_in(people["seeker"]), opp, {"verified": True, **STANDARD}).status_code == 403
+    assert put(APIClient(), opp, {"verified": True, **STANDARD}).status_code in (401, 403)
     opp.refresh_from_db()
     assert opp.is_verified is False
     assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.verified.denied").exists()
@@ -89,7 +89,7 @@ def test_the_request_must_be_a_clear_yes_or_no(world: World, people: dict[str, U
     assert (
         client.put(
             f"{S}/opportunities/00000000-0000-0000-0000-000000000000/verification",
-            {"verified": True},
+            {"verified": True, **STANDARD},
             format="json",
             HTTP_X_CSRFTOKEN=csrf(client),
         ).status_code
@@ -102,7 +102,9 @@ def test_the_request_must_be_a_clear_yes_or_no(world: World, people: dict[str, U
 def test_without_the_csrf_token_nothing_changes(world: World, people: dict[str, User]) -> None:
     opp = published(world, people["author"], people["editor"])
     client = signed_in(people["editor"])
-    response = client.put(f"{S}/opportunities/{opp.pk}/verification", {"verified": True}, format="json")
+    response = client.put(
+        f"{S}/opportunities/{opp.pk}/verification", {"verified": True, **STANDARD}, format="json"
+    )
     assert response.status_code == 403
     opp.refresh_from_db()
     assert opp.is_verified is False
@@ -129,7 +131,7 @@ def test_a_draft_can_be_verified_by_an_authorised_admin_and_does_not_block_editi
 
     draft = new_draft(world, people["editor"])
     before = draft.row_version
-    assert put(signed_in(people["admin"]), draft, {"verified": True}).status_code == 200
+    assert put(signed_in(people["admin"]), draft, {"verified": True, **STANDARD}).status_code == 200
     draft.refresh_from_db()
     assert draft.row_version == before  # the open editor's next save is not refused as stale
     workflow.save_draft(
@@ -143,7 +145,7 @@ def test_the_public_page_shows_the_state_and_the_old_action_is_gone(
     opp = published(world, people["author"], people["editor"])
     public = APIClient()
     assert public.get(f"/api/v1/opportunities/{opp.slug}").json()["verification"]["level"] == "not_verified"
-    put(signed_in(people["editor2"]), opp, {"verified": True})
+    put(signed_in(people["editor2"]), opp, {"verified": True, **STANDARD})
     shown = public.get(f"/api/v1/opportunities/{opp.slug}").json()["verification"]
     assert shown["level"] == "issuer_verified" and shown["checked_at"]
     listed = public.get("/api/v1/opportunities").json()["data"]
@@ -151,7 +153,9 @@ def test_the_public_page_shows_the_state_and_the_old_action_is_gone(
     put(signed_in(people["editor2"]), opp, {"verified": False})
     assert public.get(f"/api/v1/opportunities/{opp.slug}").json()["verification"] == {
         "level": "not_verified",
+        "reverification_pending": False,
         "checked_at": None,
+        "method": None,
     }
     actions = signed_in(people["editor"]).get(f"{S}/opportunities/{opp.pk}").json()["actions"]
     assert "verify" not in {

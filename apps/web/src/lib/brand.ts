@@ -95,3 +95,8 @@ export function shareImage(
   if (!url || !url.startsWith("https://")) return null;
   return { url, alt: image?.alt || undefined };
 }
+
+/** "Leading Hand – Delta Beverages Harare | UPNEXT Careers" → "Leading Hand – Delta Beverages Harare". */
+export function withoutBrandSuffix(title: string | null | undefined): string {
+  return (title ?? "").replace(/\s*[|–—-]\s*UPNEXT(\s+Careers)?\s*$/i, "").trim();
+}

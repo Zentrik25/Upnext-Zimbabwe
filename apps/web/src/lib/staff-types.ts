@@ -59,6 +59,8 @@ export type ListingRow = {
   verification_label: string;
   verified_at: string | null;
   verified_by: string | null;
+  /** Verified before the verification standard (D-75): waits for an editor to check it again. */
+  reverification_required?: boolean;
   /** Whether this person holds the verification permission; the server checks it again on every change. */
   can_verify: boolean;
   /** All-time page views (D-65); only on the opportunities list, null without the analytics permission. */

@@ -25,14 +25,18 @@ TRANSFER_KIB.DETAIL = 252;
 // label); the CI runner measured 150.3 KiB, so these two get a 151 KiB allowance.
 // The staff Analytics work (D-65) shifted the shared chunks by about 0.2 KiB (the CI runner measured 152.2 KiB on the
 // sign-in page, which imports none of it), so the sign-in page gets a 153 KiB allowance.
-const SCRIPT_KIB: Record<string, number> = { "/": 151, "/opportunities": 151, "/sign-in": 153 };
+// O-12 (owner decision 2026-11-14, D-75) adds skeletons for client-side transitions to the discovery pages: a small
+// client module in every public page's navigation. Measured on the same local production build before and after
+// (454233d vs this change): home and search 150.37 -> 151.08 KiB, sign-in 151.90 -> 152.61, a listing 153.22 -> 153.93
+// (+0.71 KiB each). Each allowance grows by 1 KiB; LCP and transfer budgets are unchanged.
+const SCRIPT_KIB: Record<string, number> = { "/": 152, "/opportunities": 152, "/sign-in": 154 };
 // The listing page carries the Share control and the phone-only Apply bar (D-56), two small client components on top
 // of the save control, so a listing has the same 152 KiB script allowance (the CI runner measured 150.6 KiB).
 // The listing page also carries the advertising block (consent prompt and Google loader, off by default but shipped with
 // the page because Next sends every client component a page can reach). Home, search and sign-in carry none of it: the
 // choice control lives in the block, not the site footer. The CI runner measured 152.6 KiB with the block, so 153 KiB.
 // The listing page also carries the featured-image viewer (D-71, a small client component), so 154 KiB.
-SCRIPT_KIB.DETAIL = 154;
+SCRIPT_KIB.DETAIL = 155; // +1 KiB for the O-12 transition skeletons (see above)
 
 for (const path of [...PAGES, "DETAIL"]) {
   test(`budget on ${path}`, async ({ page, request }, info) => {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
+import { PendingSignal } from "@/components/navigation/pending-navigation";
 
 const TABS: { href: string; label: string; icon: IconName; match: (path: string) => boolean }[] = [
   { href: "/", label: "Home", icon: "home", match: (p) => p === "/" || p === "/dashboard" },
@@ -53,6 +54,7 @@ export function BottomNav({ home = "/", signedIn = false }: { home?: string; sig
                 >
                   <Icon name={tab.icon} />
                   {tab.label}
+                  <PendingSignal href={tab.label === "Home" ? home : tab.href} />
                 </Link>
               </li>
             );

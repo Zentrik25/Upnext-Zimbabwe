@@ -19,7 +19,7 @@ from employers import staff_analytics as stats
 from employers.models import ListingDailyStat, ListingHourlyStat
 from opportunities import workflow
 from opportunities.models import Opportunity
-from tests.factories import World, published, varied
+from tests.factories import STANDARD, World, published, varied
 
 from .test_staff_api import S, signed_in
 
@@ -334,7 +334,7 @@ def test_the_overview_reports_traffic_operations_chart_and_says_unique_visitors_
     assert [r["id"] for r in body["most_viewed"]] == [str(a.pk)]
     assert [r["id"] for r in body["recently_viewed"]] == [str(a.pk)]
     assert "hourly_since" in body["tracking"]
-    workflow.set_verification(people["admin"], a.pk, verified=True)
+    workflow.set_verification(people["admin"], a.pk, verified=True, **STANDARD)
     caches["local"].clear()
     assert signed_in(people["admin"]).get(f"{S}/analytics").json()["operations"]["awaiting_verification"] == 1
 

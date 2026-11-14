@@ -17,6 +17,8 @@ from opportunities import demo, workflow
 from opportunities.models import Opportunity
 
 CHECKLIST = {"source_reviewed": True, "duplicates_reviewed": True, "content_matches_source": True}
+# What the verification standard (D-75) needs to mark a listing Verified, besides a recorded source.
+STANDARD = {"method": "issuer_contact", "evidence": "Confirmed by telephone with the issuer's HR office."}
 
 
 @dataclass

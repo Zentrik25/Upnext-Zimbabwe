@@ -1,6 +1,6 @@
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import type { Metadata } from "next";
-import { cache, Suspense } from "react";
+import { cache } from "react";
 import { socialFor } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { permanentRedirect } from "next/navigation";
@@ -10,10 +10,9 @@ import Link from "next/link";
 import { Container } from "@/components/layout";
 import { fetchList, listHref, ResultsLoader } from "@/components/opportunities/results";
 import { Button, Icon, Panel, SearchGroup, Select, Tabs } from "@/components/ui";
-import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
-import { SkeletonTabs } from "@/components/ui/skeleton";
 import { listCategories, listLocations } from "@/lib/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
+import { CareerResources } from "@/components/public/career-resources";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor } from "@/lib/structured-data";
 
@@ -72,10 +71,13 @@ function first(value: string | string[] | undefined): string | undefined {
 const categoriesOnce = cache(listCategories);
 
 /**
- * The heading and the explanation are sent at once. The search box and the tabs (categories), the filters
- * (locations) and the results (the list) each wait in a Suspense boundary of their own, so a slow list does not hold
- * back the controls and a slow category list does not hold back the results. Nothing here decides the status
- * code, which is why a boundary is safe on this public page (a route-level loading file would not be).
+ * Everything a reader or a crawler needs is in the first HTML response, visible without JavaScript (D-74, owner
+ * instruction 2026-11-14): the search box, the category tabs, the filters and the results with a link to every listing.
+ * There is deliberately no Suspense boundary here: a streamed fallback put the real list in a hidden container that only
+ * a script moves into place, so a client without JavaScript saw "Loading …" (live audit 2026-11-14). The four async
+ * sections are rendered concurrently, so the page waits for the slowest request, not their sum, and the list request is
+ * shared with `generateMetadata` (`fetchList` is cached per render). Searching and filtering stay plain GET forms and
+ * pagination stays a link, so all of it also works without JavaScript.
  */
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<Search> }) {
   const raw = await searchParams;
@@ -119,15 +121,11 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
               Applications happen on the issuer&apos;s own channel.
             </p>
           )}
-          <Suspense fallback={<SearchSkeleton />}>
-            <SearchControls params={params} />
-          </Suspense>
+          <SearchControls params={params} />
         </Container>
       </section>
       <Container>
-        <Suspense fallback={<SkeletonTabs />}>
-          <CategoryTabs params={params} />
-        </Suspense>
+        <CategoryTabs params={params} />
       </Container>
       <Container className="grid grid-cols-[230px_1fr] gap-6 pt-[18px] pb-[65px] max-md:grid-cols-1">
         <div className="relative max-md:order-first">
@@ -152,18 +150,16 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
             <Icon name="sliders" className="h-5 w-5" />
           </label>
           <Panel aria-label="Filters" className="mt-2 max-md:hidden peer-checked:max-md:block md:mt-0">
-            <Suspense fallback={<FiltersSkeleton />}>
-              <FilterForm params={params} />
-            </Suspense>
+            <FilterForm params={params} />
           </Panel>
         </div>
         <section aria-labelledby="list-title" className="min-w-0">
           <h2 id="list-title" className="sr-only">
             Results
           </h2>
-          <Suspense fallback={<ResultsSkeleton />}>
-            <ResultsLoader params={params} />
-          </Suspense>
+          <ResultsLoader params={params} />
+          {/* The guides that help with this kind of opportunity (D-74): the same links on every view of a list. */}
+          <CareerResources category={view.kind === "category" ? view.category : null} />
         </section>
       </Container>
     </>

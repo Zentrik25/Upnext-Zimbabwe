@@ -6,6 +6,7 @@ import { BRAND } from "@/lib/brand";
 import { homeOf } from "@/lib/safe-next";
 import { getCurrentUser } from "@/lib/session";
 import { MobileMenu, type MenuItem } from "./mobile-menu";
+import { PendingSignal } from "@/components/navigation/pending-navigation";
 
 /** The five places the public navigation always offers (D-73). One list feeds the bar and the menu. */
 export const PUBLIC_NAV = [
@@ -54,11 +55,13 @@ export async function SiteHeader() {
       <Container className="flex min-h-[56px] items-center gap-x-6 max-md:justify-between">
         <Link href="/" aria-label={`${BRAND.name} home`} className="inline-flex min-h-[44px] items-center">
           <Logo />
+          <PendingSignal href="/" />
         </Link>
         <nav aria-label="Primary" className="flex flex-1 items-center gap-x-6 max-md:hidden">
           {PUBLIC_NAV.map((item) => (
             <Link key={item.href} href={item.href} className={bar}>
               {item.label}
+              <PendingSignal href={item.href} />
             </Link>
           ))}
         </nav>

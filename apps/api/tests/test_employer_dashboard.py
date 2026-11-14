@@ -23,7 +23,7 @@ from opportunities.errors import PermissionDeniedError
 from opportunities.models import ListingStatus, Opportunity
 from tests.conftest import csrf
 from tests.employer_helpers import employer_content, verified_member
-from tests.factories import CHECKLIST, World
+from tests.factories import CHECKLIST, STANDARD, World
 from tests.test_employer_api import J, send, signed_in
 
 pytestmark = pytest.mark.django_db
@@ -510,7 +510,7 @@ def test_an_employer_cannot_review_verify_or_publish_their_own_listing(
             employer, waiting.pk, expected_row_version=waiting.row_version, checklist=CHECKLIST
         )
     with pytest.raises(PermissionDeniedError):
-        workflow.set_verification(employer, waiting.pk, verified=True)
+        workflow.set_verification(employer, waiting.pk, verified=True, **STANDARD)
     web = signed_in(employer)
     for url in ("/api/v1/staff/session", "/api/v1/staff/opportunities"):
         assert web.get(url).status_code == 403  # no staff authority comes with an employer membership

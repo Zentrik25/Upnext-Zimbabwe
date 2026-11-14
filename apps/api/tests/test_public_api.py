@@ -231,7 +231,12 @@ class PublicCatalogTests(TestCase):
         assert "<strong>Graduate Electrical Engineer</strong>" in body["description_html"]
         assert body["canonical_path"] == f"/opportunities/{body['slug']}"
         assert body["sources"][0]["is_primary"] is True and body["sources"][0]["observed_on"]
-        assert body["verification"] == {"level": "not_verified", "checked_at": None}
+        assert body["verification"] == {
+            "level": "not_verified",
+            "reverification_pending": False,  # D-75
+            "checked_at": None,
+            "method": None,
+        }
         assert body["is_saved"] is None
         assert body["application"]["method"] == "external_url" and body["application"]["url"].startswith(
             "https://"

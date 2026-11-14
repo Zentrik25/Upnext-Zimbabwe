@@ -98,9 +98,24 @@ export const VERIFICATION: Record<VerificationLevel, { label: string; explanatio
   },
   issuer_verified: {
     label: "Verified",
-    explanation: "UPNEXT staff have checked this listing and marked it as verified.",
+    explanation:
+      "An editor at UPNEXT who did not write the listing checked it against UPNEXT's verification standard: the vacancy was confirmed on the employer's own channel, in its original notice, directly with the employer, or through a verified employer account, and the original source is recorded.",
   },
 };
+
+/** What each verification method of the standard means to a reader (D-75). */
+export const VERIFICATION_METHOD: Record<string, string> = {
+  source_page_review:
+    "An editor at UPNEXT found this vacancy on the employer's own website or official channel.",
+  document_review: "An editor at UPNEXT checked the employer's original notice.",
+  issuer_contact: "An editor at UPNEXT confirmed this vacancy directly with the employer.",
+  employer_account:
+    "The employer posted it through a verified UPNEXT employer account, and an editor at UPNEXT checked it.",
+};
+
+/** Said instead of a check date for a listing Verified before the standard was adopted (D-75). */
+export const REVERIFICATION_PENDING =
+  "This listing was marked verified before UPNEXT adopted its current verification standard and is being checked again.";
 
 /** Verified is purple (the accent) and Not verified is grey; the label text always carries the meaning. */
 export function verificationTone(level: VerificationLevel): "default" | "good" | "accent" {

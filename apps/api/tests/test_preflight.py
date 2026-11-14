@@ -250,3 +250,17 @@ def test_demo_seeding_is_refused_without_demo_tools(
     settings.DEBUG = False  # type: ignore[attr-defined]
     with pytest.raises(CommandError, match="UPNEXT_DEMO_TOOLS"):
         call_command("seed_demo", "--force")
+
+
+def test_an_empty_place_catalogue_is_a_warning_and_seeding_clears_it(db: None) -> None:
+    """Without places no listing can carry JobPosting (AdSense audit 2026-11-14, ADS-T01); a warning, never a block."""
+    from catalog.models import Location
+    from catalog.seed import seed_taxonomies
+
+    name = "the place catalogue holds active locations"
+    Location.objects.all().delete()
+    empty = preflight.database_findings(connection, SimpleNamespace(UPNEXT_ENVIRONMENT="production"))
+    assert status(empty, name) == preflight.WARN
+    seed_taxonomies()
+    seeded = preflight.database_findings(connection, SimpleNamespace(UPNEXT_ENVIRONMENT="production"))
+    assert status(seeded, name) == preflight.PASS

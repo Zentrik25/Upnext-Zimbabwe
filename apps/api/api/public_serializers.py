@@ -14,6 +14,7 @@ from opportunities.models import (
     SalaryPeriod,
     SourceKind,
     VerificationLevel,
+    VerificationMethod,
     WorkMode,
 )
 
@@ -65,7 +66,9 @@ class MoneySerializer(serializers.Serializer[None]):
 
 class VerificationSerializer(serializers.Serializer[None]):
     level = serializers.ChoiceField(choices=VerificationLevel.values)
+    reverification_pending = serializers.BooleanField()
     checked_at = serializers.DateTimeField(allow_null=True)
+    method = serializers.ChoiceField(choices=VerificationMethod.values, allow_null=True, required=False)
 
 
 class SourceSerializer(serializers.Serializer[None]):

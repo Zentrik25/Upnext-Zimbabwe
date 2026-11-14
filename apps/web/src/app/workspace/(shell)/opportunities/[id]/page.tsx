@@ -143,7 +143,12 @@ export default async function OpportunityPage({ params, searchParams }: Props) {
             <span>Closing: {dateText(o.closing)}</span>
           </p>
           <p className="m-0 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-ctl text-muted">
-            <VerifyToggle id={o.id} verified={o.verified} canVerify={o.can_verify} />
+            <VerifyToggle
+              id={o.id}
+              verified={o.verified}
+              canVerify={o.can_verify}
+              reverify={Boolean(o.reverification_required)}
+            />
             {o.verified && o.verified_by ? (
               <span className="text-small">
                 {o.verified_by}, {dateTimeText(o.verified_at)}

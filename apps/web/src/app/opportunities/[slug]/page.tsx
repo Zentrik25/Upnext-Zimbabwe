@@ -11,7 +11,7 @@ import { RelatedCard } from "@/components/opportunities/job-parts";
 import { Icon } from "@/components/ui/icons";
 import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
-import { shareImage, socialFor } from "@/lib/brand";
+import { shareImage, socialFor, withoutBrandSuffix } from "@/lib/brand";
 import { getOpportunity as fetchOpportunity, listOpportunities } from "@/lib/catalog";
 import type { OpportunityDetail } from "@/lib/catalog-types";
 import { absolute } from "@/lib/site";
@@ -45,7 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (result.data === null) return { title: "Opportunity not found", robots: { index: false } };
   const listing = result.data;
   const seo = listing.seo;
-  const title = seo?.title || `${listing.title} at ${listing.organisation.name}`;
+  // The layout adds " | UPNEXT Careers"; a staff title that already ends with the brand would repeat it.
+  const title = withoutBrandSuffix(seo?.title) || `${listing.title} at ${listing.organisation.name}`;
   const description =
     seo?.description ||
     listing.summary ||

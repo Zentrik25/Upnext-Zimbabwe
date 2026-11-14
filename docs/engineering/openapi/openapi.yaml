@@ -1509,12 +1509,12 @@ paths:
     put:
       tags: [staff]
       operationId: setStaffVerification
-      summary: 'Verify or unverify a listing with {"verified": true|false}'
-      description: 'One switch, independent of publication; no note or second person. Needs opp.verify.record (Editors and Administrators), enforced by the publishing service. Idempotent; the change is recorded with who and when. Added in D-62.'
+      summary: 'Verify a listing under the verification standard, or unverify it'
+      description: 'One switch, independent of publication (D-62). Verifying needs a method from the verification standard, an evidence note (20 to 2,000 characters), a recorded source on the revision the public sees and a checker who did not write or submit that revision (D-75); otherwise 400 with field errors (method, evidence, sources) or 403 separation_of_duties. The check is kept as a verification record and clears reverification_required. Unverifying needs only {"verified": false}. Needs opp.verify.record (Editors and Administrators), enforced by the publishing service. Idempotent; recorded with who and when.'
       security: [{ cookieAuth: [] }, { csrf: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [verified], properties: { verified: { type: boolean } } } } }
+        content: { application/json: { schema: { type: object, required: [verified], properties: { verified: { type: boolean }, method: { type: string, enum: [source_page_review, document_review, issuer_contact, employer_account] }, evidence: { type: string, minLength: 20, maxLength: 2000 } } } } }
       responses:
         '200': { description: 'The listing row after the change', content: { application/json: { schema: { type: object } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -1924,7 +1924,14 @@ components:
       required: [level]
       properties:
         level: { $ref: '#/components/schemas/VerificationLevel' }
+        reverification_pending:
+          type: boolean
+          description: 'Verified before the verification standard (D-75) and not yet re-checked; no check date is claimed'
         checked_at: { type: [string, 'null'], format: date-time }
+        method:
+          type: [string, 'null']
+          enum: [source_page_review, document_review, issuer_contact, employer_account, null]
+          description: 'Detail only: how the Verified label was earned under the standard; null when not verified or awaiting re-verification'
     Source:
       type: object
       required: [kind, name, observed_on, is_primary]

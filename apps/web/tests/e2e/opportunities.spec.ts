@@ -116,7 +116,7 @@ test.describe("detail page", () => {
     await expect(page.getByTestId("category-details")).not.toContainText("Benefits");
     // Verification is one switch (D-62): the page says Verified or Not verified, whichever the demo data has.
     await expect(page.getByText(/^(Verified|Not verified)$/).first()).toBeVisible();
-    // No sources block: the verification level is shown only as its label.
+    // No "Sources" block (D-67); the recorded source appears once, in About this listing (D-74).
     await expect(page.getByRole("heading", { name: "Where this came from" })).toHaveCount(0);
     await expect(page.getByLabel("Sources")).toHaveCount(0);
   });
@@ -140,10 +140,18 @@ test.describe("detail page", () => {
     await expect(page.locator('article[aria-labelledby="listing-title"]')).not.toContainText("USD");
   });
 
-  test("an unverified listing says so and shows no source", async ({ page }) => {
+  test("an unverified listing says so; its recorded source appears once, in About this listing (D-74)", async ({
+    page,
+  }) => {
     await openFirst(page, "Supply of Solar Water Heating Units");
     await expect(page.getByText("Not verified").first()).toBeVisible();
-    await expect(page.getByText("Example City Procurement Unit tender notice")).toHaveCount(0);
+    await expect(page.getByTestId("listing-verification")).toContainText(
+      "Check it with the organisation before you apply.",
+    );
+    // D-67 hid every source; D-74 shows the recorded one on the job page only, once, in its own section.
+    const source = page.getByTestId("listing-source");
+    await expect(source).toHaveCount(1);
+    await expect(page.getByText("Example City Procurement Unit tender notice")).toHaveCount(1);
   });
 
   test("unknown and non-public addresses show the designed not-found page", async ({ page }) => {
