@@ -4,6 +4,7 @@ import { Container } from "@/components/layout";
 import { VerificationTag } from "@/components/opportunities/parts";
 import { FeaturedImage } from "@/components/opportunities/featured-image";
 import { ListingRecord } from "@/components/opportunities/listing-record";
+import { operatorAffiliation } from "@/content/legal/operator";
 import { ShareButton } from "@/components/opportunities/share-button";
 import { Block, Chip, OrgMark, withoutRepeatedHeadings } from "@/components/opportunities/job-parts";
 import { ButtonLink, Tag } from "@/components/ui";
@@ -197,6 +198,8 @@ export function JobView({
       : "This opportunity has closed. It is kept here so shared links keep working.";
 
   const verified = listing.verification.level === "issuer_verified";
+  // The operator's own vacancies say so (owner decision 2026-11-14, D-75).
+  const disclosure = operatorAffiliation(listing.organisation.name);
   const instructionsPlain = (listing.application.instructions ?? "").trim();
   const instructionsText = instructionsPlain.toLowerCase();
   const email = listing.application.email;
@@ -277,6 +280,16 @@ export function JobView({
                 )}
               </p>
             </div>
+
+            {disclosure ? (
+              <p
+                data-testid="operator-disclosure"
+                className="m-0 mt-3 rounded-card border border-line bg-surface-pale px-3 py-2 text-small text-ink"
+              >
+                <strong>Disclosure:</strong> {disclosure} It is reviewed and labelled under the same rules as
+                every other listing.
+              </p>
+            ) : null}
 
             {listing.image?.featured ? (
               <FeaturedImage src={listing.image.featured} alt={listing.image.alt} />

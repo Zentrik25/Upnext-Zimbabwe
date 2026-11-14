@@ -861,7 +861,12 @@ export function JobEditor({
               <div className="grid gap-1">
                 <dt className="text-small text-muted">Verification</dt>
                 <dd className="m-0">
-                  <VerifyToggle id={id} verified={detail.verified} canVerify />
+                  <VerifyToggle
+                    id={id}
+                    verified={detail.verified}
+                    canVerify
+                    reverify={Boolean(detail.reverification_required)}
+                  />
                 </dd>
               </div>
             ) : null}

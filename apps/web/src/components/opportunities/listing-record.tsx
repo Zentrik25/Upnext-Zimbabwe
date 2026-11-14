@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { OpportunityDetail, Source } from "@/lib/catalog-types";
-import { formatDate, VERIFICATION } from "@/lib/format";
+import { formatDate, REVERIFICATION_PENDING, VERIFICATION, VERIFICATION_METHOD } from "@/lib/format";
 import { Block } from "@/components/opportunities/job-parts";
 
 /**
@@ -57,6 +57,10 @@ export function ListingRecord({ listing }: { listing: OpportunityDetail }) {
   const level = listing.verification.level;
   const label = VERIFICATION[level] ?? VERIFICATION.not_verified;
   const checked = listing.verification.checked_at ? day(listing.verification.checked_at) : null;
+  const pending = Boolean(listing.verification.reverification_pending);
+  const method = listing.verification.method
+    ? (VERIFICATION_METHOD[listing.verification.method] ?? null)
+    : null;
   const webmail = webmailDomain(listing.application.email);
 
   return (
@@ -89,9 +93,23 @@ export function ListingRecord({ listing }: { listing: OpportunityDetail }) {
         <div className="grid grid-cols-[170px_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0">
           <dt className="text-muted">Verification</dt>
           <dd className="m-0" data-testid="listing-verification">
-            <strong>{label.label}.</strong> {label.explanation}
-            {level === "issuer_verified" && checked ? <> Checked on {checked}.</> : null}
-            {level === "not_verified" ? <> Check it with the organisation before you apply.</> : null}{" "}
+            <strong>{label.label}.</strong>{" "}
+            {level === "issuer_verified" && pending ? (
+              <>{REVERIFICATION_PENDING} </>
+            ) : level === "issuer_verified" && method ? (
+              <>
+                {method}
+                {checked ? <> Checked on {checked}.</> : null}{" "}
+              </>
+            ) : (
+              <>
+                {label.explanation}
+                {level === "issuer_verified" && checked ? <> Checked on {checked}.</> : null}
+                {level === "not_verified" ? (
+                  <> Check it with the organisation before you apply.</>
+                ) : null}{" "}
+              </>
+            )}
             <Link href="/guides/how-listings-are-verified" className="text-accent underline">
               What the labels mean
             </Link>

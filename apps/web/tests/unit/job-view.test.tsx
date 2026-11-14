@@ -966,3 +966,65 @@ describe("listing titles never repeat the brand", () => {
     expect(withoutBrandSuffix(null)).toBe("");
   });
 });
+
+describe("verification standard on the job page (D-75)", () => {
+  it("says how a listing was verified under the standard", () => {
+    render(
+      <JobView
+        listing={listing({
+          verification: {
+            level: "issuer_verified",
+            checked_at: "2026-11-14T08:00:00Z",
+            method: "issuer_contact",
+          },
+        })}
+      />,
+    );
+    const v = screen.getByTestId("listing-verification");
+    expect(v).toHaveTextContent("confirmed this vacancy directly with the employer");
+    expect(v).toHaveTextContent("Checked on 14 Nov 2026.");
+  });
+
+  it("never claims a check date for a listing awaiting re-verification", () => {
+    render(
+      <JobView
+        listing={listing({
+          verification: {
+            level: "issuer_verified",
+            checked_at: null,
+            reverification_pending: true,
+            method: null,
+          },
+        })}
+      />,
+    );
+    const v = screen.getByTestId("listing-verification");
+    expect(v).toHaveTextContent(
+      "before UPNEXT adopted its current verification standard and is being checked again",
+    );
+    expect(v).not.toHaveTextContent("Checked on");
+  });
+});
+
+describe("operator relationship disclosure (D-75)", () => {
+  it("discloses that the operator is the employer, whatever the spelling of its name", async () => {
+    const { operatorAffiliation } = await import("@/content/legal/operator");
+    for (const name of [
+      "Zentrik Solutions",
+      "ZENTRIK SOLUTIONS (Pvt) Ltd",
+      "Zentrik Solutions (Private) Limited",
+    ])
+      expect(operatorAffiliation(name), name).toContain("operates UPNEXT Careers");
+    expect(operatorAffiliation("Zentrik Mining")).toBeNull();
+    expect(operatorAffiliation(null)).toBeNull();
+    render(<JobView listing={listing({ organisation: { id: "z", name: "Zentrik Solutions" } })} />);
+    expect(screen.getByTestId("operator-disclosure")).toHaveTextContent(
+      "Zentrik Solutions (Pvt) Ltd, the employer for this vacancy, operates UPNEXT Careers.",
+    );
+  });
+
+  it("shows nothing for any other employer", () => {
+    render(<JobView listing={listing()} />);
+    expect(screen.queryByTestId("operator-disclosure")).toBeNull();
+  });
+});

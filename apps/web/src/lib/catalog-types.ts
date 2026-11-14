@@ -2,6 +2,8 @@
 export type Category = { code: string; name: string };
 export type Location = { id: string; slug: string; name: string; kind: string; parent_slug: string | null };
 export type Sector = { id: string; slug: string; name: string };
+export type VerificationMethod =
+  "source_page_review" | "document_review" | "issuer_contact" | "employer_account";
 export type DeadlineState = "open" | "closing_soon" | "unknown" | "expired";
 export type Deadline = {
   at: string | null;
@@ -29,7 +31,14 @@ export type OpportunitySummary = {
   salary_text?: string | null;
   /** The location as written; shown when no structured place is attached. */
   location_text?: string | null;
-  verification: { level: VerificationLevel; checked_at: string | null };
+  verification: {
+    level: VerificationLevel;
+    checked_at: string | null;
+    /** Verified before the verification standard (D-75) and not yet re-checked: no check date is claimed. */
+    reverification_pending?: boolean;
+    /** Detail only: how the Verified label was earned under the standard; null when none applies. */
+    method?: VerificationMethod | null;
+  };
   primary_source_name: string | null;
   /** The listing's own pictures (absolute https addresses); null when it has none. Never an employer logo. */
   image?: { featured: string | null; social: string | null; alt: string | null } | null;

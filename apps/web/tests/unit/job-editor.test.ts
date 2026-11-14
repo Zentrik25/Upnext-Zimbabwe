@@ -419,3 +419,15 @@ describe("helpers", () => {
     expect(canCreate({ ...s, organisation: org, title: "Accountant" })).toBe(true);
   });
 });
+
+describe("place matching agrees with the server's report (D-75, O-2)", () => {
+  it("gives the shared cases' places, including the live listings' location texts", async () => {
+    const { readRepoFile } = await import("./helpers");
+    const doc = JSON.parse(readRepoFile("docs/engineering/place-match-cases.json")) as {
+      places: { slug: string; name: string; kind: string }[];
+      cases: { text: string; expected: string[] }[];
+    };
+    const places = doc.places.map((p) => ({ id: p.slug, name: p.name, kind: p.kind }));
+    for (const c of doc.cases) expect(matchPlaces(c.text, places), c.text).toEqual(c.expected);
+  });
+});

@@ -9,6 +9,7 @@ import { Icon, type IconName } from "@/components/ui/icons";
 import { SignOutButton } from "@/components/account/sign-out-button";
 import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/cn";
+import { PendingSignal } from "@/components/navigation/pending-navigation";
 
 export type MenuItem = { href: string; label: string; icon: IconName };
 
@@ -157,6 +158,7 @@ export function MobileMenu({ groups, signedIn }: { groups: MenuItem[][]; signedI
                               {...(current ? { fill: "currentColor" } : {})}
                             />
                             {item.label}
+                            <PendingSignal href={item.href} />
                           </Link>
                         </li>
                       );

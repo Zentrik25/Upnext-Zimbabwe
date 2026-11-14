@@ -61,7 +61,16 @@ function stubApi(
 }
 
 describe("verification switch", () => {
-  it("shows Verify to an authorised person, saves it with one request and only then says Verified", async () => {
+  /** Verify opens the standard's form (D-75); fill it and submit. */
+  function fillAndSubmit() {
+    fireEvent.change(screen.getByLabelText("How was it checked?"), { target: { value: "issuer_contact" } });
+    fireEvent.change(screen.getByLabelText(/Evidence/), {
+      target: { value: "Confirmed by telephone with the employer's HR office." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mark verified" }));
+  }
+
+  it("verifies under the standard: the form asks how and what, saves once and only then says Verified", async () => {
     let release: (v: { json: unknown }) => void = () => {};
     const calls = stubApi(
       () =>
@@ -72,19 +81,57 @@ describe("verification switch", () => {
     render(<VerifyToggle id="abc" verified={false} canVerify />);
     expect(screen.getByText("Not verified")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    expect(calls).toHaveLength(0); // opening the form saves nothing
+    fillAndSubmit();
     // while the server has not answered, the label is unchanged and the button is busy
     await waitFor(() => expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled());
     expect(screen.getByText("Not verified")).toBeInTheDocument();
-    release({ json: { verified: true } });
+    release({ json: { verified: true, reverification_required: false } });
     expect(await screen.findByText("Verified")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Unverify" })).toBeInTheDocument();
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
       url: "/api/v1/staff/opportunities/abc/verification",
       method: "PUT",
-      body: { verified: true },
+      body: {
+        verified: true,
+        method: "issuer_contact",
+        evidence: "Confirmed by telephone with the employer's HR office.",
+      },
     });
     expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it("shows the standard's field errors from the server and claims nothing", async () => {
+    stubApi(() => ({
+      status: 400,
+      json: {
+        error: {
+          code: "validation_failed",
+          message: "The listing does not meet the verification standard.",
+          fields: {
+            sources: [{ message: "Record the original source on the listing before verifying it." }],
+          },
+        },
+      },
+    }));
+    render(<VerifyToggle id="abc" verified={false} canVerify />);
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    fillAndSubmit();
+    expect(
+      await screen.findByText("Record the original source on the listing before verifying it."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Not verified")).toBeInTheDocument();
+  });
+
+  it("marks a listing verified before the standard for re-verification and clears it only on a real check", async () => {
+    const calls = stubApi(() => ({ json: { verified: true, reverification_required: false } }));
+    render(<VerifyToggle id="abc" verified reverify canVerify />);
+    expect(screen.getByText("Re-verify", { selector: "span" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Re-verify" }));
+    fillAndSubmit();
+    await waitFor(() => expect(screen.queryByText("Re-verify")).toBeNull());
+    expect(calls[0]!.body).toMatchObject({ verified: true, method: "issuer_contact" });
   });
 
   it("unverifies with one request", async () => {
@@ -106,6 +153,7 @@ describe("verification switch", () => {
     }));
     render(<VerifyToggle id="abc" verified={false} canVerify />);
     fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    fillAndSubmit();
     expect(await screen.findByRole("alert")).toHaveTextContent("permission");
     expect(screen.getByText("Not verified")).toBeInTheDocument(); // nothing was saved, nothing is claimed
   });

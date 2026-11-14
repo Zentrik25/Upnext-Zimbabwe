@@ -10,6 +10,7 @@ import { adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
+import { PendingMain, PendingNavigationProvider } from "@/components/navigation/pending-navigation";
 
 // Inter (weights 300 and 400) and Source Code Pro, Latin subsets, served from this origin (no third-party font
 // request). Used by the staff workspace and the employer dashboard only; public pages use the system font (D-73).
@@ -105,13 +106,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <AuthFooter />
           </>
         ) : (
-          <>
+          // Skeletons for client-side transitions to the discovery pages only (O-12, D-75): the first HTML is
+          // always the complete page, because nothing is pending on the server.
+          <PendingNavigationProvider>
             <SkipLink />
             <SiteHeader />
-            <main id="main">{children}</main>
+            <main id="main">
+              <PendingMain>{children}</PendingMain>
+            </main>
             <SiteFooter />
             <BottomNav home={home} signedIn={Boolean(signedIn)} />
-          </>
+          </PendingNavigationProvider>
         )}
       </body>
     </html>

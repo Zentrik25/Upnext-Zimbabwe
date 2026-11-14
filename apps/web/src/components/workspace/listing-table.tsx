@@ -97,7 +97,13 @@ export function ListingTable({
                     <td className={td}>{r.submitted_by ?? "-"}</td>
                     <td className={`${td} whitespace-nowrap`}>{dateTimeText(r.submitted_at)}</td>
                     <td className={td}>
-                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                      <VerifyToggle
+                        id={r.id}
+                        verified={r.verified}
+                        canVerify={r.can_verify}
+                        reverify={Boolean(r.reverification_required)}
+                        compact
+                      />
                     </td>
                   </>
                 ) : (
@@ -111,7 +117,13 @@ export function ListingTable({
                       </td>
                     ) : null}
                     <td className={td}>
-                      <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+                      <VerifyToggle
+                        id={r.id}
+                        verified={r.verified}
+                        canVerify={r.can_verify}
+                        reverify={Boolean(r.reverification_required)}
+                        compact
+                      />
                     </td>
                   </>
                 )}
@@ -147,7 +159,13 @@ export function ListingTable({
               {showViews ? <span>Views: {count(r.views)}</span> : null}
             </p>
             <p className="m-0 mt-2">
-              <VerifyToggle id={r.id} verified={r.verified} canVerify={r.can_verify} compact />
+              <VerifyToggle
+                id={r.id}
+                verified={r.verified}
+                canVerify={r.can_verify}
+                reverify={Boolean(r.reverification_required)}
+                compact
+              />
             </p>
           </li>
         ))}
