@@ -14,6 +14,8 @@ Status: **RECOMMENDATION, not a decision.** D-20 asked for researched, evidence-
 | Node.js | **24.22.0** (LTS "Krypton", npm 11.19.1 bundled) | nodejs.org 2026-10-14 | Maintenance LTS from 2026-10-20; **end of life 2028-04-30** (nodejs/Release schedule) |
 | Next.js | **16.4.2** | npm 2026-10-15 | Active LTS while 16 is the latest major; Maintenance LTS afterwards (secondary sources; the official support-policy page was unreachable) |
 | React / React DOM | **19.3.1** | npm latest | required by Next 16 (`^19`) |
+| nh3 (HTML sanitiser, Career Insights, D-78) | **0.3.7** | PyPI upload 2026-08-23; MIT; `requires_python >=3.8` | maintained Rust `ammonia` binding; pinned with hashes in `requirements/runtime.txt` |
+| Tiptap (`@tiptap/react`, `pm`, `starter-kit`, `extension-image`, `extension-table`; editor, D-78) | **3.32.2** | npm 2026-10-30 (15 days before adoption); MIT | peer `react ^17 || ^18 || ^19`; loaded only on `/workspace/insights` editor pages, never on public pages; `npm audit` 0 vulnerabilities on 2026-11-14 |
 
 Re-pin to the then-latest patch of the same series at Phase 1 start (security patches ship continuously), record the result, and commit lockfiles. Do not move to a newer minor/major series without a new decision.
 

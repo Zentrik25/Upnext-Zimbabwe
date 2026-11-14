@@ -75,6 +75,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-73 | Public and seeker surface redesign (D-73, DRAFT): scoped Apple-inspired light-only tokens; header with Find Jobs, Categories, Locations, Career Guides, For Employers; category, location and guide directories; home without illustration (keyword, location, Search Jobs, latest, categories, locations, entry-level, guides, employer call to action, trust); footer; bottom navigation without private tabs for visitors; staff and employer dashboards unchanged | D-73; D-45 | SC-01, SC-02 | listOpportunities, listLocations, listCategories | UI-73-01, UI-73-02 | D-73 remaining layout work |
 | R-74 | AdSense low-value remediation (D-74, DRAFT): the job page's About this listing shows publication and update dates, the primary recorded source (https link, date seen; nothing when none is recorded), the verification label explained with its check date and a link to the policy, and a note for free-webmail application addresses; titles never repeat the brand; long text wraps on phones; preflight warns on an empty place catalogue; guide drafts for editorial review (unpublished); discovery pages (/opportunities, category lists, home) send their listing links in the first HTML with no Suspense fallback, readable without JavaScript, search and filters as GET forms (narrows R-52); /categories shows real open counts, the newest listings and a guide per category; every list links the guides for its category | D-74; D-67 (superseded for the job page); D-51; D-68; R-52 (narrowed) | SC-01, SC-02, SC-03 | getOpportunity, listOpportunities | ADS-01, ADS-02, ADS-03, ADS-04 | O-1 to O-10 (docs/adsense/ADSENSE_LOW_VALUE_CONTENT_AUDIT_2026-11-14.md) |
 | R-75 | Owner decisions of 2026-11-14 (D-75): verification standard enforced by the server (method, evidence note, recorded source, independent checker; append-only verification record; listings verified before the standard flagged for re-verification, never certified automatically, and say so publicly); disclosure on listings from organisations related to the operator; skeletons only for client-side transitions to discovery pages (first HTML complete); place catalogue seeding shown idempotent and non-destructive with a dry run and a read-only place report | D-75; D-74; D-62 (changed for turning Verified on); D-46; R-52 (narrowed) | SC-03, SC-12 | setStaffVerification, getOpportunity, listOpportunities, listLocations | VERSTD-01, VERSTD-02, NAV-01, PLACE-01 | Production seeding and migration need a deployment approval |
+| R-78 | Career Insights blog and editorial CMS (D-78, DRAFT): database-backed articles with a working copy and an approved live snapshot; draft, submitted, in review, approved, published and archived states; nobody reviews or approves their own article (database trigger); a ten-item review checklist; a material change after approval needs a new approval; publication only of the exact approved content; server-side sanitising of the article body (nh3) and a second allow-list renderer in the browser; optimistic concurrency; slug redirects; database-managed categories, normalised tags and author profiles without invented credentials; placement (featured, editors' picks, top story) only for live articles; public /insights, article, category and author pages complete in the first HTML with Article and BreadcrumbList data and real dates; search, tag and later pages noindex; empty categories noindex; sitemap only with published articles; articles linked from the home page, opportunity lists and job pages by job category; the six /guides pages unchanged; no paywall, newsletter or popularity figures | D-78; D-18; D-22; D-23; D-46; D-73; D-74 | SC-01, SC-03 | getInsightsHome, listInsightsArticles, getInsightsArticle, listInsightsCategories, getInsightsAuthor, getInsightsSitemap, getStaffInsightsMeta, listStaffArticles, createStaffArticle, getStaffArticle, saveStaffArticle, runStaffArticleAction, setStaffArticlePlacement, previewStaffArticle, listStaffArticleHistory, listStaffArticleTags, listStaffArticleCategories, createStaffArticleCategory, updateStaffArticleCategory, listStaffAuthors, saveStaffAuthor | INS-01, INS-02, INS-03, INS-04, INS-05, INS-06 | No article is written or published by this change; the twelve planned articles need writing, review and approval |
 
 ## 2. Screen register
 
@@ -201,6 +202,27 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `getStaffAnalytics` | GET `/staff/analytics` | staff | R-63 |
 | `listStaffAnalyticsOpportunities` | GET `/staff/analytics/opportunities` | staff | R-63 |
 | `uploadListingImage` | POST `/staff/images` | staff | R-57 |
+| `getInsightsHome` | GET `/insights/home` | public | R-78 |
+| `listInsightsArticles` | GET `/insights/articles` | public | R-78 |
+| `getInsightsArticle` | GET `/insights/articles/{slug}` | public | R-78 |
+| `listInsightsCategories` | GET `/insights/categories` | public | R-78 |
+| `getInsightsAuthor` | GET `/insights/authors/{slug}` | public | R-78 |
+| `getInsightsSitemap` | GET `/insights/sitemap` | public | R-78 |
+| `getStaffInsightsMeta` | GET `/staff/insights/meta` | staff | R-78 |
+| `listStaffArticles` | GET `/staff/insights/articles` | staff | R-78 |
+| `createStaffArticle` | POST `/staff/insights/articles` | staff | R-78 |
+| `getStaffArticle` | GET `/staff/insights/articles/{articleId}` | staff | R-78 |
+| `saveStaffArticle` | PATCH `/staff/insights/articles/{articleId}` | staff | R-78 |
+| `runStaffArticleAction` | POST `/staff/insights/articles/{articleId}/actions/{action}` | staff | R-78 |
+| `setStaffArticlePlacement` | PUT `/staff/insights/articles/{articleId}/placement` | staff | R-78 |
+| `previewStaffArticle` | GET `/staff/insights/articles/{articleId}/preview` | staff | R-78 |
+| `listStaffArticleHistory` | GET `/staff/insights/articles/{articleId}/history` | staff | R-78 |
+| `listStaffArticleTags` | GET `/staff/insights/tags` | staff | R-78 |
+| `listStaffArticleCategories` | GET `/staff/insights/categories` | staff | R-78 |
+| `createStaffArticleCategory` | POST `/staff/insights/categories` | staff | R-78 |
+| `updateStaffArticleCategory` | PATCH `/staff/insights/categories/{categoryId}` | staff | R-78 |
+| `listStaffAuthors` | GET `/staff/insights/authors` | staff | R-78 |
+| `saveStaffAuthor` | PUT `/staff/insights/authors/{userId}` | staff | R-78 |
 | `listStaffMedia` | GET `/staff/media` | staff | R-62 |
 | `uploadStaffMedia` | POST `/staff/media` | staff | R-62 |
 | `listStaffTeam` | GET `/staff/team` | staff | R-56 |
@@ -564,6 +586,12 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | VERSTD-02 | Re-verification (D-75): migration 0012 flags exactly the listings Verified before the standard; they keep the label, claim no check date and say they are being checked again; only a verification under the standard or unverifying clears the flag; the operator relationship is disclosed on related listings |
 | NAV-01 | Transition skeletons (O-12, D-75): the server HTML of discovery pages is never a skeleton; a pending site-navigation link to a discovery page shows that page's skeleton until it arrives; other links and private routes are unaffected |
 | PLACE-01 | Place seeding (O-2, D-75): seeding twice creates nothing the second time, never edits, re-activates or deletes rows, touches no listing; the dry run writes nothing; the read-only place report and the editor match places identically on shared cases |
+| INS-01 | Career Insights workflow (D-78): create, save with row version (stale save refused), submit with completeness checks, review start, checklist approval, rejection and return with a note, publication of the approved hash only, material change clears approval, non-material change keeps it, archive; author and reviewer separated in code and by a database trigger; review and event rows append-only |
+| INS-02 | Career Insights sanitising (D-78): scripts, handlers, styles, iframes, javascript: and data: addresses and unknown tags are removed on save; links and pictures restricted to https, mailto and the Media Library; plain-text fields refuse markup; the browser renderer builds only its allow-list and never uses dangerouslySetInnerHTML |
+| INS-03 | Career Insights permissions (D-78): writers see and edit only their own articles; reviewers and publishers see all; categories need insights.manage; author profiles are one's own or need insights.manage; placement only on live articles; mass-assigned workflow fields are ignored |
+| INS-04 | Career Insights public API and pages (D-78): only the live snapshot is public; an old slug answers with the current one and the page redirects permanently; search, tag and later pages are noindex and canonical to /insights; an empty blog or category is noindex; author archives exist only with enough published articles; Article and BreadcrumbList data carry the real publication and update dates |
+| INS-05 | Career Insights discovery (D-78): the sitemap lists the Insights home, articles, non-empty categories and author archives only once an article is published, with no query addresses; the home page, category lists and job pages link articles the editors tied to that job category and show nothing when none is |
+| INS-06 | Career Insights accessibility and layout (D-78): public pages have no serious or critical axe findings and no horizontal scroll at 320, 390, 768 and 1440 px; the editor toolbar is a labelled toolbar of real buttons with pressed states |
 
 ## 5. Rules for maintaining this file
 
@@ -872,3 +900,9 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | VERSTD-02 | `apps/api/tests/test_verification_standard.py; apps/web/tests/unit/job-view.test.tsx (verification standard, operator disclosure)` | executed |
 | NAV-01 | `apps/web/tests/unit/pending-navigation.test.tsx; apps/web/tests/unit/server-html.test.tsx` | executed; also in Chromium against a local production build with a delayed API |
 | PLACE-01 | `apps/api/tests/test_place_seeding.py; apps/api/tests/test_place_match.py; apps/web/tests/unit/job-editor.test.ts (shared cases)` | executed |
+| INS-01 | `apps/api/tests/test_insights.py` | executed |
+| INS-02 | `apps/api/tests/test_insights.py; apps/web/tests/unit/insights.test.tsx (renderer)` | executed |
+| INS-03 | `apps/api/tests/test_insights.py; apps/api/tests/test_endpoint_review.py` | executed |
+| INS-04 | `apps/api/tests/test_insights.py; apps/web/tests/unit/insights.test.tsx; apps/web/tests/unit/seo-readiness.test.tsx (public route list)` | executed |
+| INS-05 | `apps/web/tests/unit/insights.test.tsx (sitemap); apps/web/tests/unit/category-pages.test.tsx; apps/web/tests/unit/server-html.test.tsx` | executed |
+| INS-06 | `docs/editorial/CAREER_INSIGHTS_CMS.md §9 (axe-core and layout run in Chromium on a local stack with fictional data)` | executed manually; not in CI |

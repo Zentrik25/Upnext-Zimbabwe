@@ -52,3 +52,7 @@ showing "(n applied)"); from 991px the panel is the sidebar. The title of an opp
 ## Not changed beyond the tokens
 The opportunity (detail) page layout, the public employer profile (`/employers/[slug]`; the demo data has none, so it was not
 viewed) and the authentication forms keep their structure and take the new colours, fonts and corners.
+
+## Career Insights (D-78)
+
+The blog pages (`/insights`, articles, categories, authors) use the same public tokens: semibold headings, link blue for text links, 8px cards and controls, a pill for the Search call to action and category chips, `#f5f5f7` panels for reader aids, no shadows, light only. Article text uses `.insights-prose` in `globals.css` (a 720px reading column, 1.125rem body, h2/h3 spacing, quotes with a rule, tables that scroll inside their own region on phones). Editors' picks are a horizontal scrolling row that never moves on its own. The staff editor keeps the D-45 workspace tokens.
