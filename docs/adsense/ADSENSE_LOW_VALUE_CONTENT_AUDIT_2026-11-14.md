@@ -135,7 +135,7 @@ infrastructure is untouched; F5 and O-2 make it able to work.
 
 | # | Check | Result | Evidence |
 |---|---|---|---|
-| T1 | Server-rendered content | **PASS** | listing and guide text in the first response (streamed Suspense); "Loading …" placeholders only for non-JS readers |
+| T1 | Server-rendered content | **FAIL → FIXED on the branch** (corrected after the browser audit, §11) | guide and listing pages were complete; on `/opportunities`, the category lists and home, every listing link was in a hidden streaming container shown only by a script, so without JavaScript the page showed "Loading …". Now rendered in the first response (`BROWSER_AUDIT_VERIFICATION_2026-11-14.md`) |
 | T2 | Mobile usability | **PASS after F4** | no horizontal scroll at 390 px except Nurse Aides (fixed, re-checked locally against live data) |
 | T3 | Broken internal links | **PASS** | 76/76 internal links 200 |
 | T4 | Broken external/application links | **BLOCKED** | hosts unreachable; `lnkd.in` and `ipcjobs.org` are quality problems regardless |
@@ -201,3 +201,65 @@ infrastructure is untouched; F5 and O-2 make it able to work.
 - [ ] Several weeks of steady publishing with sources and complete details
 - [ ] Live re-check of every item in §5–§7 from outside (including application links and Search Console coverage)
 - [ ] Only then request review; do not enable ads before approval and the CMP decision (AS-B06)
+
+## 11. Update after the external browser audit (2026-11-14, later the same day)
+
+An external browser audit reported eight findings; each was verified (`BROWSER_AUDIT_VERIFICATION_2026-11-14.md`).
+Seven were confirmed (one, reproduction of adverts, only by indicators: a text comparison was BLOCKED); the
+"Loading …" finding was confirmed and fixed on this branch. Status by area, with what this branch changes. "FIXED"
+means fixed in code on this branch, **not deployed**: production stays as audited until the owner approves a release.
+
+### 11.1 Technical blockers
+
+| # | Item | Status | Evidence / change |
+|---|---|---|---|
+| TB1 | Listings visible in the first HTML without JavaScript (`/opportunities`, category lists, home) | **FAIL → FIXED** | before: 0 visible links without JS (live); after: 10/10, 7/7, 3/3, home 7, identical with and without JS (local production build on live data) |
+| TB2 | Canonicals, robots, metadata, structured data unchanged by TB1 | **PASS** | searched, sorted and empty views still `noindex, follow`; same canonicals; unit and rendered checks |
+| TB3 | JobPosting on open jobs | **FAIL (data)** | 0/10: production has no places (ADS-T01); fix O-2 |
+| TB4 | Sitemap accurate | **PASS** | 25 URLs = 7 static + 6 guides + 2 lists + 10 open listings; closed listings correctly absent |
+| TB5 | Expired listings handled | **PASS** | closed banner, `noindex`, no JobPosting, out of lists and sitemap |
+| TB6 | No duplicate or thin *indexable* filter URLs | **PASS** | no new route or indexable view; landing threshold unchanged |
+| TB7 | Accessibility of changed pages | **PASS (automated)** | axe 0 violations at 390 and 1280 px on `/`, `/opportunities`, a category list, `/categories`, job pages |
+| TB8 | Phone overflow on long listing text | **FAIL → FIXED** | F4 |
+
+### 11.2 Content-quality blockers
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| CQ1 | Enough open, complete listings | **FAIL** | 10 open; 7 on 21 Nov without new publishing; 4 categories empty |
+| CQ2 | Source recorded and shown | **FAIL (data) / page FIXED** | 1 of 10 open listings has a source; the job page now shows recorded sources (F1) |
+| CQ3 | Verification claims supported | **FAIL** | anonymous and webmail issuers labelled Verified; policy undefined (O-3) |
+| CQ4 | Listings beyond reproduced adverts | **FAIL → partly addressed** | page now adds UPNEXT's record, verification explanation, webmail note, related guides; per-listing amendments in `docs/editorial/LISTING_REVIEW_2026-11-14.md` |
+| CQ5 | Original editorial content | **FAIL** | 6 short guides; drafts and a 12-article plan exist but are unreviewed |
+| CQ6 | Category pages useful | **FAIL → partly FIXED** | `/categories` now has real counts, newest links and guides; lists link career resources; 4 categories still empty |
+| CQ7 | Adverts reproduced verbatim | **BLOCKED** | originals unreachable from this session; indicators of verbatim copying in instructions |
+
+### 11.3 Editorial work (editors, after owner decisions)
+
+| # | Work | Status |
+|---|---|---|
+| EW1 | Amend the 10 open listings per `LISTING_REVIEW_2026-11-14.md` (sources, places, UNOPS title/date, Mbire content, Mutapa links, anonymous issuers) | **FAIL** (not started) |
+| EW2 | Adopt `JOB_LISTING_QUALITY_CHECKLIST.md` for every new listing | **BLOCKED** (owner approval) |
+| EW3 | Verify and publish guide drafts 01–06 | **BLOCKED** (editorial review) |
+| EW4 | Research and write the 12 Career Insights articles (`CAREER_INSIGHTS_LAUNCH_PLAN.md`), P1 first | **BLOCKED** (owner choice of option A/B; editorial capacity) |
+| EW5 | Publish steadily across categories for several weeks | **FAIL** |
+
+### 11.4 Owner decisions
+
+O-1 to O-10 (§8) stand. Added: **O-11** choose static guide pages or a Career Insights CMS (plan §0); **O-12** approve
+removing the Suspense fallbacks on public discovery pages (narrows R-52, D-74); **O-13** set the rule for listings
+without a closing date (for example review after 30 days).
+
+### 11.5 Production verification (after an approved deployment)
+
+| # | Check | Status |
+|---|---|---|
+| PV1 | `/opportunities`, category lists and home show listing links with JavaScript disabled | **BLOCKED** (not deployed) |
+| PV2 | `seed_taxonomies` run; JobPosting present on open jobs (Rich Results Test) | **BLOCKED** (O-2; Google tools unreachable here) |
+| PV3 | Application links of every open listing open the employer's page | **BLOCKED** (hosts unreachable here) |
+| PV4 | Search Console: coverage, no "Crawled – currently not indexed" spike on listings | **BLOCKED** (no access) |
+| PV5 | Field Core Web Vitals after removing the fallbacks (first byte now waits for the slowest section) | **BLOCKED** (no CrUX access; lab TTFB 0.4–0.6 s locally) |
+
+**Verdict unchanged: do not request another review yet.** The technical blockers are fixed in code; the content and
+editorial blockers decide the outcome and need people.
+
