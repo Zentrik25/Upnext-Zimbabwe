@@ -277,3 +277,10 @@ editorial blockers decide the outcome and need people.
 CQ3 (verification claims supported) moves from FAIL to **FIXED in code, BLOCKED on editorial re-verification and
 deployment**. The verdict is unchanged: do not request another review yet.
 
+## 13. Legal and verification policies approved (D-76, 2026-11-14)
+
+The owner approved the Privacy Policy, the Terms of Service (after review by a qualified Zimbabwean adviser) and the
+verification standard. R3 and R4 move from BLOCKED to **APPROVED, publication pending**: the pages stay `noindex`
+until the owner supplies the missing facts (F-1 to F-10, `docs/legal/LEGAL_APPROVAL_CHECKLIST.md`) and sets
+`UPNEXT_LEGAL_APPROVED=true` on the server. R8 (public "draft" wording on `/employers`) is **FIXED** on the branch.
+

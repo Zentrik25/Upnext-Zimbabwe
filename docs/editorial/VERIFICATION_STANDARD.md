@@ -1,7 +1,7 @@
-# UPNEXT verification standard — DRAFT for wording, decision APPROVED
+# UPNEXT verification standard — APPROVED
 
 Status: the owner decided on 2026-11-14 that a documented verification standard is defined and enforced (D-75,
-O-3). This document is the standard; its wording is DRAFT until the owner approves it. It is enforced in code
+O-3). This document is the standard; the owner approved its wording on 2026-11-14 (D-76). It is enforced in code
 (`apps/api/opportunities/workflow.py` `set_verification`, database trigger `upnext_reviewer_not_author`), so a
 listing cannot be labelled **Verified** without meeting it.
 

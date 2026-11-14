@@ -1,6 +1,6 @@
 # Owner and legal approval checklist — Privacy Policy and Terms of Service
 
-Status: **OPEN. Nothing here has been approved.** The public pages `/privacy` and `/terms` are complete and carry no draft wording, but they stay **noindex and out of the sitemap** until the owner sets `UPNEXT_LEGAL_APPROVED=true` in the deployed web service's environment (`infrastructure/compose/production.env.example`). That setting is the owner's act, taken only after every item in section 1 and the gating items in section 2 are closed. The application never sets it.
+Status: **Wording APPROVED by the owner on 2026-11-14, after review by a qualified Zimbabwean legal adviser (owner's statement, D-76).** The adviser's written answers to L-1 to L-13 and the owner facts F-1 to F-10 marked missing below have not been supplied to the repository; they remain open until recorded. Previously: OPEN. The public pages `/privacy` and `/terms` are complete and carry no draft wording, but they stay **noindex and out of the sitemap** until the owner sets `UPNEXT_LEGAL_APPROVED=true` in the deployed web service's environment (`infrastructure/compose/production.env.example`). That setting is the owner's act, taken only after every item in section 1 and the gating items in section 2 are closed. The application never sets it.
 
 Sources and reasoning: `LEGAL_RESEARCH.md`. Statement-to-code mapping: `CODE_TO_POLICY_CHECKLIST.md`. Screenshots: `docs/legal/screenshots/`.
 

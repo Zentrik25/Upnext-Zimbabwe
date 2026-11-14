@@ -99,7 +99,7 @@ export default function EmployersPage() {
           </h2>
           <p className="mt-3 text-base">
             See the <Link href="/contact">contact page</Link> and the{" "}
-            <Link href="/privacy">privacy notice</Link> (a draft awaiting owner and legal review).
+            <Link href="/privacy">privacy notice</Link>.
           </p>
         </section>
       </Container>
