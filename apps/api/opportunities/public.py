@@ -204,6 +204,11 @@ def _open(now: datetime) -> QuerySet[OpportunityVersion]:
     return visible_versions().filter(Q(deadline_at__isnull=True) | Q(deadline_at__gt=now))
 
 
+def sitemap_open_versions(now: datetime) -> QuerySet[OpportunityVersion]:
+    """Live revisions of listings open for browsing (published, deadline not passed): the sitemap rule."""
+    return _open(now)
+
+
 def collection_duplicate_of(slug: str, now: datetime) -> str | None:
     """The indexable list a collection repeats exactly, or None (D-68: a landing page must hold something of
     its own). Returns "category:<code>" or "all" when its open listings are the same set as one category list

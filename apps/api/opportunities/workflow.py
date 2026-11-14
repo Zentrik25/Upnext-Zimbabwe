@@ -38,6 +38,7 @@ from employers.models import EmployerListing
 from . import content as content_mod
 from .duplicates import find_duplicates
 from .errors import (
+    FieldErrors,
     InvalidTransition,
     NotFoundError,
     PermissionDeniedError,
@@ -51,10 +52,14 @@ from .models import (
     Decision,
     ListingStatus,
     Opportunity,
+    OpportunitySource,
     OpportunityVersion,
     PublishingEvent,
     ReviewDecision,
     VerificationLevel,
+    VerificationMethod,
+    VerificationOutcome,
+    VerificationRecord,
     VersionState,
 )
 from .signals import transition_recorded
@@ -1023,15 +1028,57 @@ def _copy_version(opportunity: Opportunity, source: OpportunityVersion, actor: U
     return draft
 
 
-# --- V02 / V03 verification switch (D-62) -----------------------------------------------------------
-def set_verification(actor: User, opportunity_id: uuid.UUID | str, *, verified: bool) -> Opportunity:
-    """Mark a listing Verified or Not Verified. One action, no note, no second person.
+# --- V02 / V03 verification switch (D-62) under the verification standard (D-75) --------------------------
+EVIDENCE_MIN = 20
+EVIDENCE_MAX = 2000
 
-    Verification is separate from publication (a listing can be live and unverified) and belongs to the
-    listing, not to a revision, so it does not change `row_version`: an editor with the draft open can
-    still save. The change is idempotent (asking for the state it already has writes nothing), applied
-    under the listing's lock, and recorded with who changed it and when (on the listing, in the
-    publishing history and in the audit log). The permission is checked here, whatever the interface showed.
+
+def _check_standard(
+    opportunity: Opportunity, shown: OpportunityVersion | None, method: str | None, evidence: str | None
+) -> tuple[str, str]:
+    """The documented verification standard (docs/editorial/VERIFICATION_STANDARD.md), enforced here so no
+    interface can mark a listing Verified without it: a method from the standard, an evidence note saying what
+    was checked, and a recorded source on the revision the public sees. `employer_account` is only for a
+    listing submitted through the employer portal."""
+    errors: FieldErrors = {}
+    if method not in VerificationMethod.values:
+        errors["method"] = [("required", "Choose how the listing was checked.")]
+    elif (
+        method == VerificationMethod.EMPLOYER_ACCOUNT
+        and not EmployerListing.objects.filter(opportunity=opportunity).exists()
+    ):
+        errors["method"] = [("invalid", "Only a listing submitted through the employer portal qualifies.")]
+    note = (evidence or "").strip()
+    if len(note) < EVIDENCE_MIN:
+        errors["evidence"] = [
+            ("too_short", "Say what was checked, where and with whom (at least 20 characters).")
+        ]
+    elif len(note) > EVIDENCE_MAX:
+        errors["evidence"] = [("too_long", "Keep the evidence note under 2,000 characters.")]
+    if shown is None or not OpportunitySource.objects.filter(version=shown).exists():
+        errors["sources"] = [("required", "Record the original source on the listing before verifying it.")]
+    if errors:
+        raise ValidationFailed(errors, "The listing does not meet the verification standard.")
+    assert method is not None
+    return method, note
+
+
+def set_verification(
+    actor: User,
+    opportunity_id: uuid.UUID | str,
+    *,
+    verified: bool,
+    method: str | None = None,
+    evidence: str | None = None,
+) -> Opportunity:
+    """Mark a listing Verified or Not Verified (D-62), Verified only under the verification standard (D-75).
+
+    Turning Verified on needs a method, an evidence note and a recorded source (`_check_standard`); the check
+    is kept as an append-only `VerificationRecord` and clears `reverification_required`. A listing that is
+    already Verified under the standard is left alone; one flagged for re-verification is checked again.
+    Unverifying needs nothing more and also clears the flag. Verification is separate from publication and
+    belongs to the listing, not a revision, so it does not change `row_version`. The permission is checked
+    here, whatever the interface showed, and every change is recorded (listing, history, audit log).
     """
     code, action = ("V02", "opportunity.verified") if verified else ("V03", "opportunity.unverified")
     ctx = Context(code, action, Permission.OPP_VERIFY_RECORD)
@@ -1039,10 +1086,32 @@ def set_verification(actor: User, opportunity_id: uuid.UUID | str, *, verified: 
     def body() -> Opportunity:
         _require(actor, ctx.permission)
         opportunity = _lock(opportunity_id, None)
-        if opportunity.is_verified == verified:
+        if opportunity.is_verified == verified and not (verified and opportunity.reverification_required):
             return opportunity
+        shown = opportunity.live_version or opportunity.pending_version
         now = timezone.now()
+        extra: dict[str, Any] = {"verified": verified}
+        if verified:
+            chosen, note = _check_standard(opportunity, shown, method, evidence)
+            assert shown is not None
+            # Verification stays independent (D-46, D-75): whoever wrote or submitted the revision the public
+            # sees cannot verify it. The database trigger on verification records refuses it too.
+            if actor.pk in chain_author_ids(shown):
+                raise SeparationOfDuties("You cannot verify a listing you wrote or submitted.")
+            VerificationRecord.objects.create(
+                opportunity=opportunity,
+                version=shown,
+                level=VerificationLevel.ISSUER_VERIFIED,
+                method=chosen,
+                outcome=VerificationOutcome.CONFIRMED,
+                evidence_note=note,
+                checked_by=actor,
+                checked_at=now,
+            )
+            extra["method"] = chosen
+            extra["reverified"] = opportunity.is_verified  # True when this cleared a re-verification flag
         opportunity.is_verified = verified
+        opportunity.reverification_required = False
         opportunity.verification_changed_by = actor
         opportunity.verification_changed_at = now
         # Keep the older level column in step: public queries and the content-health counts read it.
@@ -1051,11 +1120,27 @@ def set_verification(actor: User, opportunity_id: uuid.UUID | str, *, verified: 
         )
         opportunity.verification_checked_at = now if verified else None
         opportunity.save()  # no `_bump`: verification is not a content change
-        shown = opportunity.live_version or opportunity.pending_version
-        _record(ctx, actor, opportunity, shown, opportunity.status, extra={"verified": verified})
+        _record(ctx, actor, opportunity, shown, opportunity.status, extra=extra)
         return opportunity
 
     return _run(ctx, actor, opportunity_id, body)
+
+
+def verification_method(opportunity: Opportunity) -> str | None:
+    """How the current Verified label was earned under the standard; None when not verified or awaiting
+    re-verification (an older label is never presented as checked against the standard)."""
+    if not opportunity.is_verified or opportunity.reverification_required:
+        return None
+    return (
+        VerificationRecord.objects.filter(
+            opportunity=opportunity,
+            level=VerificationLevel.ISSUER_VERIFIED,
+            outcome=VerificationOutcome.CONFIRMED,
+        )
+        .order_by("-checked_at")
+        .values_list("method", flat=True)
+        .first()
+    )
 
 
 # --- queries used by the staff interface --------------------------------------------------------

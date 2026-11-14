@@ -27,7 +27,7 @@ from opportunities.models import (
     VerificationLevel,
     VersionState,
 )
-from tests.factories import CHECKLIST, World, approved, new_draft, published, submitted
+from tests.factories import CHECKLIST, STANDARD, World, approved, new_draft, published, submitted
 
 pytestmark = pytest.mark.django_db
 
@@ -490,7 +490,7 @@ def test_verification_is_a_switch_recorded_with_who_and_when(world: World, peopl
     opp = published(world, people["author"], people["editor"])
     assert fresh(opp).is_verified is False and opp.verification_level == VerificationLevel.NOT_VERIFIED
     version_before = fresh(opp).row_version
-    workflow.set_verification(people["editor2"], opp.pk, verified=True)
+    workflow.set_verification(people["editor2"], opp.pk, verified=True, **STANDARD)
     verified = fresh(opp)
     assert verified.is_verified and verified.verification_level == VerificationLevel.ISSUER_VERIFIED
     assert verified.verification_changed_by_id == people["editor2"].pk and verified.verification_changed_at
@@ -512,10 +512,10 @@ def test_asking_for_the_state_a_listing_already_has_changes_nothing(
     opp = published(world, people["author"], people["editor"])
     workflow.set_verification(people["editor"], opp.pk, verified=False)  # already Not Verified
     assert not fresh(opp).events.filter(transition__in=["V02", "V03"]).exists()
-    workflow.set_verification(people["editor"], opp.pk, verified=True)
+    workflow.set_verification(people["editor"], opp.pk, verified=True, **STANDARD)
     stamp = fresh(opp).verification_changed_at
     workflow.set_verification(
-        people["admin"], opp.pk, verified=True
+        people["admin"], opp.pk, verified=True, **STANDARD
     )  # already Verified: nobody is re-credited
     again = fresh(opp)
     assert again.verification_changed_at == stamp and again.verification_changed_by_id == people["editor"].pk
@@ -527,7 +527,7 @@ def test_a_new_listing_is_not_verified_and_verification_survives_an_amendment(
     draft = new_draft(world, people["author"])
     assert fresh(draft).is_verified is False
     opp = published(world, people["author"], people["editor"], example="jobs-2")
-    workflow.set_verification(people["editor"], opp.pk, verified=True)
+    workflow.set_verification(people["editor"], opp.pk, verified=True, **STANDARD)
     workflow.amend(people["author"], opp.pk, expected_row_version=fresh(opp).row_version)
     assert fresh(opp).is_verified  # it belongs to the listing, not to a revision
 
@@ -536,7 +536,7 @@ def test_only_staff_with_the_permission_can_verify(world: World, people: dict[st
     opp = published(world, people["author"], people["editor"])
     for who in ("author", "seeker"):  # a Contributor and a seeker
         with pytest.raises(PermissionDeniedError):
-            workflow.set_verification(people[who], opp.pk, verified=True)
+            workflow.set_verification(people[who], opp.pk, verified=True, **STANDARD)
     assert fresh(opp).is_verified is False
     assert AuditEvent.objects.filter(object_id=opp.pk, action="opportunity.verified.denied").count() == 2
 

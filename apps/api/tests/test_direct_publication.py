@@ -34,7 +34,7 @@ from opportunities.models import (
     VerificationLevel,
     VersionState,
 )
-from tests.factories import CHECKLIST, World, new_draft, published
+from tests.factories import CHECKLIST, STANDARD, World, new_draft, published
 
 pytestmark = pytest.mark.django_db
 
@@ -181,12 +181,15 @@ def test_direct_publication_does_not_verify_the_listing(world: World, people: di
     assert opp.status == "published" and opp.is_verified is False
     with pytest.raises(PermissionDeniedError):
         workflow.set_verification(
-            people["author"], opp.pk, verified=True
+            people["author"], opp.pk, verified=True, **STANDARD
         )  # a Contributor has no such permission
-    workflow.set_verification(actor, opp.pk, verified=True)
+    # Verification stays independent (D-46, D-75): the editor who wrote and published it cannot verify it.
+    with pytest.raises(SeparationOfDuties):
+        workflow.set_verification(actor, opp.pk, verified=True, **STANDARD)
+    workflow.set_verification(people["admin"], opp.pk, verified=True, **STANDARD)
     opp.refresh_from_db()
     assert opp.is_verified and opp.verification_level == VerificationLevel.ISSUER_VERIFIED
-    assert opp.verification_changed_by_id == actor.pk and opp.verification_changed_at is not None
+    assert opp.verification_changed_by_id == people["admin"].pk and opp.verification_changed_at is not None
 
 
 def test_actions_offered_include_direct_publication_for_the_author_only(

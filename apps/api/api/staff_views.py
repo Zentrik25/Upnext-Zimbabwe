@@ -304,6 +304,8 @@ def _row(user: User, opp: Opportunity) -> dict[str, Any]:
         "verified_by": opp.verification_changed_by.display_name
         if opp.is_verified and opp.verification_changed_by
         else None,
+        # Verified before the verification standard (D-75): waits for an editor to check it again.
+        "reverification_required": opp.is_verified and opp.reverification_required,
         "can_verify": user.has_permission_code(Permission.OPP_VERIFY_RECORD),
         "submitted_by": who,
         "submitted_at": _iso(pending.submitted_at) if pending and _may_see(user, pending) else None,
@@ -740,10 +742,13 @@ class SaveDraftView(StaffView):
 
 
 class VerificationView(StaffView):
-    """`PUT /staff/opportunities/<id>/verification` with `{"verified": true|false}` (D-62).
+    """`PUT /staff/opportunities/<id>/verification` (D-62, D-75).
 
-    The one place verification changes. It needs `opp.verify.record` (checked again inside the publishing
-    service), does not need a note or a second person, and answers with the listing's row so the screen can
+    `{"verified": false}` unverifies. `{"verified": true, "method": "...", "evidence": "..."}` verifies
+    under the verification standard: the publishing service refuses it (400, field errors) without a
+    method from the standard, an evidence note and a recorded source, and keeps the check as a
+    verification record. The one place verification changes; it needs `opp.verify.record` (checked again
+    inside the service) and answers with the listing's row so the screen can
     show the saved state straight away."""
 
     @extend_schema(
@@ -762,10 +767,17 @@ class VerificationView(StaffView):
         data = _body(request)
         if data is None or not isinstance(data.get("verified"), bool):
             return error_response("validation_failed", 'Send {"verified": true} or {"verified": false}.', 400)
+        method, evidence = data.get("method"), data.get("evidence")
+        if (method is not None and not isinstance(method, str)) or (
+            evidence is not None and not isinstance(evidence, str)
+        ):
+            return error_response("validation_failed", "The method and the evidence must be text.", 400)
         if _visible_listing(user, opportunity_id) is None:
             return _not_found()
         try:
-            workflow.set_verification(user, opportunity_id, verified=data["verified"])
+            workflow.set_verification(
+                user, opportunity_id, verified=data["verified"], method=method, evidence=evidence
+            )
         except WorkflowError as exc:
             return _refused(exc)
         fresh = _visible_listing(user, opportunity_id)

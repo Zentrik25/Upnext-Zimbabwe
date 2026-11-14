@@ -1,0 +1,190 @@
+{
+ "_comment": "Shared cases for matchPlaces (apps/web/src/lib/job-editor.ts) and match_places (apps/api/catalog/place_match.py), with the places of catalog/seed.py. The first seven are the location texts of live listings on 2026-11-14 (D-75, O-2).",
+ "places": [
+  {
+   "slug": "zimbabwe",
+   "name": "Zimbabwe",
+   "kind": "country"
+  },
+  {
+   "slug": "harare-province",
+   "name": "Harare Province",
+   "kind": "province"
+  },
+  {
+   "slug": "bulawayo-province",
+   "name": "Bulawayo Province",
+   "kind": "province"
+  },
+  {
+   "slug": "manicaland",
+   "name": "Manicaland",
+   "kind": "province"
+  },
+  {
+   "slug": "mashonaland-central",
+   "name": "Mashonaland Central",
+   "kind": "province"
+  },
+  {
+   "slug": "mashonaland-east",
+   "name": "Mashonaland East",
+   "kind": "province"
+  },
+  {
+   "slug": "mashonaland-west",
+   "name": "Mashonaland West",
+   "kind": "province"
+  },
+  {
+   "slug": "masvingo-province",
+   "name": "Masvingo Province",
+   "kind": "province"
+  },
+  {
+   "slug": "matabeleland-north",
+   "name": "Matabeleland North",
+   "kind": "province"
+  },
+  {
+   "slug": "matabeleland-south",
+   "name": "Matabeleland South",
+   "kind": "province"
+  },
+  {
+   "slug": "midlands",
+   "name": "Midlands",
+   "kind": "province"
+  },
+  {
+   "slug": "harare",
+   "name": "Harare",
+   "kind": "city"
+  },
+  {
+   "slug": "bulawayo",
+   "name": "Bulawayo",
+   "kind": "city"
+  },
+  {
+   "slug": "mutare",
+   "name": "Mutare",
+   "kind": "city"
+  },
+  {
+   "slug": "gweru",
+   "name": "Gweru",
+   "kind": "city"
+  },
+  {
+   "slug": "kwekwe",
+   "name": "Kwekwe",
+   "kind": "city"
+  },
+  {
+   "slug": "masvingo",
+   "name": "Masvingo",
+   "kind": "city"
+  },
+  {
+   "slug": "chinhoyi",
+   "name": "Chinhoyi",
+   "kind": "city"
+  },
+  {
+   "slug": "kadoma",
+   "name": "Kadoma",
+   "kind": "city"
+  },
+  {
+   "slug": "victoria-falls",
+   "name": "Victoria Falls",
+   "kind": "city"
+  },
+  {
+   "slug": "remote",
+   "name": "Remote",
+   "kind": "remote"
+  }
+ ],
+ "cases": [
+  {
+   "text": "Estlea, Harare",
+   "expected": [
+    "harare"
+   ]
+  },
+  {
+   "text": "Kariba",
+   "expected": []
+  },
+  {
+   "text": "Home-based",
+   "expected": [
+    "remote"
+   ]
+  },
+  {
+   "text": "Mbire, Mashonaland Central, Zimbabwe",
+   "expected": [
+    "mashonaland-central"
+   ]
+  },
+  {
+   "text": "Harare, Zimbabwe",
+   "expected": [
+    "harare"
+   ]
+  },
+  {
+   "text": "Harare",
+   "expected": [
+    "harare"
+   ]
+  },
+  {
+   "text": "Shamva, Zimbabwe",
+   "expected": []
+  },
+  {
+   "text": "Zimbabwe",
+   "expected": []
+  },
+  {
+   "text": "Bulawayo and Gweru",
+   "expected": [
+    "bulawayo",
+    "gweru"
+   ]
+  },
+  {
+   "text": "Nationwide, or remote",
+   "expected": [
+    "zimbabwe",
+    "remote"
+   ]
+  },
+  {
+   "text": "Remote, then Harare",
+   "expected": [
+    "remote",
+    "harare"
+   ]
+  },
+  {
+   "text": "Hararexyz",
+   "expected": []
+  },
+  {
+   "text": "Harare Province",
+   "expected": [
+    "harare-province",
+    "harare"
+   ]
+  },
+  {
+   "text": "",
+   "expected": []
+  }
+ ]
+}

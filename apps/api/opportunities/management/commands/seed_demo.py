@@ -116,7 +116,14 @@ class Command(BaseCommand):
                 second if index % 2 == 0 else editor, opp.pk, expected_row_version=opp.row_version
             )
             if index % 3 == 0:
-                workflow.set_verification(admin_user, opp.pk, verified=True)
+                # Verification standard (D-75): a method, evidence and the example's recorded source.
+                workflow.set_verification(
+                    admin_user,
+                    opp.pk,
+                    verified=True,
+                    method="source_page_review",
+                    evidence="Demo data: the fictional issuer's notice was compared with this listing.",
+                )
         self._pipeline_examples(contributor, editor, org_ids, loc, sec, skills, today)
 
     def _pipeline_examples(

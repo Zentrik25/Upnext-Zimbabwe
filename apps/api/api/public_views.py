@@ -23,7 +23,7 @@ from access.registry import Permission
 from catalog.models import Category, Location, Sector, Skill
 from catalog.text import TextError, clean_single_line
 from employers.models import EmployerProfile
-from opportunities import images, public
+from opportunities import images, public, workflow
 from opportunities.models import PUBLIC_STATUSES, OpportunityVersion
 
 from .errors import error_response
@@ -105,7 +105,11 @@ def summary_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fa
         "location_text": version.location_text,
         "verification": {
             "level": opportunity.verification_level,
-            "checked_at": _iso(opportunity.verification_checked_at),
+            # Verified before the standard (D-75) and not yet re-checked: no check date is claimed.
+            "reverification_pending": opportunity.is_verified and opportunity.reverification_required,
+            "checked_at": None
+            if opportunity.reverification_required
+            else _iso(opportunity.verification_checked_at),
         },
         "primary_source_name": primary.name if primary else None,
         "image": _image_of(version),
@@ -129,6 +133,8 @@ def detail_of(version: OpportunityVersion, now: datetime, *, preview: bool = Fal
         .values_list("slug", flat=True)
         .first()
     )
+    # How the label was earned under the verification standard (detail only: one query per page, not per row).
+    out["verification"]["method"] = None if preview else workflow.verification_method(opportunity)
     out.update(
         {
             "description_html": public.render_html(version.description_md) or "",

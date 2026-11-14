@@ -105,9 +105,18 @@ class VerificationLevel(models.TextChoices):
 
 
 class VerificationMethod(models.TextChoices):
+    """How a Verified listing was checked (verification standard, D-75).
+
+    `source_page_review`: the same vacancy was found on the issuer's own website, portal or official channel.
+    `document_review`: the issuer's original notice (letter, PDF, newspaper advert) was examined.
+    `issuer_contact`: confirmed with the issuer through a contact found independently of the advert.
+    `employer_account`: submitted through the employer portal by a member of a verified organisation.
+    """
+
     SOURCE_PAGE_REVIEW = "source_page_review"
     DOCUMENT_REVIEW = "document_review"
     ISSUER_CONTACT = "issuer_contact"
+    EMPLOYER_ACCOUNT = "employer_account"
 
 
 class VerificationOutcome(models.TextChoices):
@@ -152,6 +161,10 @@ class Opportunity(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     verification_changed_at = models.DateTimeField(null=True, blank=True)
+    # Verified before the documented verification standard existed (D-75): the label stays, but the listing
+    # waits for an editor to check it against the standard. Cleared only by a verification that records a
+    # method and evidence, or by unverifying; never set back automatically.
+    reverification_required = models.BooleanField(default=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     first_published_at = models.DateTimeField(null=True, blank=True)
     last_published_at = models.DateTimeField(null=True, blank=True)
