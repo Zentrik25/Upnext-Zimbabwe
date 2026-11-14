@@ -263,3 +263,17 @@ without a closing date (for example review after 30 days).
 **Verdict unchanged: do not request another review yet.** The technical blockers are fixed in code; the content and
 editorial blockers decide the outcome and need people.
 
+## 12. Owner decisions of 2026-11-14 (D-75)
+
+| Decision | Status after this change |
+|---|---|
+| O-12 first HTML complete; skeletons only for client-side transitions and authenticated pages | **Implemented** (branch); checked in Chromium |
+| O-11 full Career Insights CMS | **Planned** (`docs/editorial/CAREER_INSIGHTS_CMS_PLAN.md`); nothing built |
+| O-2 place seeding approved in principle | **Verified** idempotent, non-destructive, listing mapping shown (`docs/engineering/PLACE_SEEDING_VERIFICATION.md`); production run **BLOCKED** on a deployment approval |
+| O-3 verification standard | **Implemented and enforced** (`docs/editorial/VERIFICATION_STANDARD.md`); 13 Verified listings flagged for re-verification when migration 0012 runs on production |
+| O-6 Zentrik vacancy kept with disclosure | **Implemented** on the job page |
+| Recorded source attribution on job pages | **Kept** (D-74) |
+
+CQ3 (verification claims supported) moves from FAIL to **FIXED in code, BLOCKED on editorial re-verification and
+deployment**. The verdict is unchanged: do not request another review yet.
+

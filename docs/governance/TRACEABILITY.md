@@ -74,6 +74,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | R-72 | SEO monitoring and Indexing API hygiene (D-72, DRAFT): an Administrator-only page (/workspace/seo) with the Indexing API queue, quota, last run and last accepted submission, open and JobPosting-eligible jobs, jobs in the sitemap and structured-data findings, never presenting a notification as indexing; audited retry of failed or dead notifications, refused when superseded; no second URL_UPDATED for a republication that changes nothing visible; three editorial guides; an AdSense readiness audit | D-72; D-68; D-51 | — | getStaffSeo, listStaffSeoNotifications, retryStaffSeoNotification, retryStaffSeoDeadNotifications | IDX-04, IDX-05, SEO-15 | D-67 source attribution; Search Console API |
 | R-73 | Public and seeker surface redesign (D-73, DRAFT): scoped Apple-inspired light-only tokens; header with Find Jobs, Categories, Locations, Career Guides, For Employers; category, location and guide directories; home without illustration (keyword, location, Search Jobs, latest, categories, locations, entry-level, guides, employer call to action, trust); footer; bottom navigation without private tabs for visitors; staff and employer dashboards unchanged | D-73; D-45 | SC-01, SC-02 | listOpportunities, listLocations, listCategories | UI-73-01, UI-73-02 | D-73 remaining layout work |
 | R-74 | AdSense low-value remediation (D-74, DRAFT): the job page's About this listing shows publication and update dates, the primary recorded source (https link, date seen; nothing when none is recorded), the verification label explained with its check date and a link to the policy, and a note for free-webmail application addresses; titles never repeat the brand; long text wraps on phones; preflight warns on an empty place catalogue; guide drafts for editorial review (unpublished); discovery pages (/opportunities, category lists, home) send their listing links in the first HTML with no Suspense fallback, readable without JavaScript, search and filters as GET forms (narrows R-52); /categories shows real open counts, the newest listings and a guide per category; every list links the guides for its category | D-74; D-67 (superseded for the job page); D-51; D-68; R-52 (narrowed) | SC-01, SC-02, SC-03 | getOpportunity, listOpportunities | ADS-01, ADS-02, ADS-03, ADS-04 | O-1 to O-10 (docs/adsense/ADSENSE_LOW_VALUE_CONTENT_AUDIT_2026-11-14.md) |
+| R-75 | Owner decisions of 2026-11-14 (D-75): verification standard enforced by the server (method, evidence note, recorded source, independent checker; append-only verification record; listings verified before the standard flagged for re-verification, never certified automatically, and say so publicly); disclosure on listings from organisations related to the operator; skeletons only for client-side transitions to discovery pages (first HTML complete); place catalogue seeding shown idempotent and non-destructive with a dry run and a read-only place report | D-75; D-74; D-62 (changed for turning Verified on); D-46; R-52 (narrowed) | SC-03, SC-12 | setStaffVerification, getOpportunity, listOpportunities, listLocations | VERSTD-01, VERSTD-02, NAV-01, PLACE-01 | Production seeding and migration need a deployment approval |
 
 ## 2. Screen register
 
@@ -102,8 +103,8 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | Operation | Method path | Tag | Requirements |
 |---|---|---|---|
 | `getApiRoot` | GET `/` | health | R-24 |
-| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-73, R-74, R-65, R-64 |
-| `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29, R-74, R-64 |
+| `listOpportunities` | GET `/opportunities` | public | R-01, R-13, R-21, R-26, R-73, R-74, R-75, R-65, R-64 |
+| `getOpportunity` | GET `/opportunities/{slug}` | public | R-02, R-03, R-12, R-21, R-22, R-26, R-28, R-29, R-74, R-75, R-64 |
 | `getEmployerOverview` | GET `/employer/overview` | employer | R-42 |
 | `searchOrganisationsToClaim` | GET `/employer/organisations/search` | employer | R-42 |
 | `submitOrganisationClaim` | POST `/employer/claims` | employer | R-42 |
@@ -131,7 +132,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `createListingReport` | POST `/opportunities/{slug}/reports` | public | R-50 |
 | `getSitemapEntries` | GET `/sitemap` | public | R-29, R-65, R-64 |
 | `listCategories` | GET `/categories` | public | R-01, R-73 |
-| `listLocations` | GET `/locations` | public | R-01, R-73 |
+| `listLocations` | GET `/locations` | public | R-01, R-73, R-75 |
 | `listSectors` | GET `/sectors` | public | R-01 |
 | `searchSkills` | GET `/skills` | public | R-07 |
 | `getCsrfToken` | GET `/auth/csrf` | auth | R-04, R-17 |
@@ -212,7 +213,7 @@ Sources: PR-xx = `docs/product/PRD.md`; spec = specification v1.0 (reconciled in
 | `listStaffOpportunities` | GET `/staff/opportunities` | staff | R-55 |
 | `createStaffDraft` | POST `/staff/opportunities` | staff | R-55 |
 | `getStaffOpportunity` | GET `/staff/opportunities/{opportunityId}` | staff | R-55 |
-| `setStaffVerification` | PUT `/staff/opportunities/{opportunityId}/verification` | staff | R-62 |
+| `setStaffVerification` | PUT `/staff/opportunities/{opportunityId}/verification` | staff | R-75, R-62 |
 | `saveStaffDraft` | PATCH `/staff/opportunities/{opportunityId}/draft` | staff | R-55 |
 | `previewStaffOpportunity` | GET `/staff/opportunities/{opportunityId}/preview` | staff | R-55 |
 | `runStaffAction` | POST `/staff/opportunities/{opportunityId}/actions/{action}` | staff | R-55 |
@@ -559,6 +560,10 @@ Families: **UT** Unit; **IT** Integration; **DB** Database constraint / migratio
 | ADS-02 | Preflight warns, never blocks, when the place catalogue holds no active location, and passes once seed_taxonomies has run |
 | ADS-03 | Discovery without JavaScript (D-74): the server HTML of /opportunities, a category list and the home page holds every listing as a visible link, no loading placeholder, GET search and filter forms and a plain next-page link; an API failure is an error, never an empty list; no Suspense fallback returns on these pages |
 | ADS-04 | Category pages (D-74): /categories shows the real open count and newest listings per category from one small request each, says when a category is empty, shows no count when a list failed, and links a published guide; every list links the guides for its category |
+| VERSTD-01 | Verification standard (D-75): Verified refused without a method, an evidence note of 20 to 2,000 characters or a recorded source, refused for the author or submitter, employer_account only for portal listings; a confirmed verification record is written; the staff form sends method and evidence and shows field errors |
+| VERSTD-02 | Re-verification (D-75): migration 0012 flags exactly the listings Verified before the standard; they keep the label, claim no check date and say they are being checked again; only a verification under the standard or unverifying clears the flag; the operator relationship is disclosed on related listings |
+| NAV-01 | Transition skeletons (O-12, D-75): the server HTML of discovery pages is never a skeleton; a pending site-navigation link to a discovery page shows that page's skeleton until it arrives; other links and private routes are unaffected |
+| PLACE-01 | Place seeding (O-2, D-75): seeding twice creates nothing the second time, never edits, re-activates or deletes rows, touches no listing; the dry run writes nothing; the read-only place report and the editor match places identically on shared cases |
 
 ## 5. Rules for maintaining this file
 
@@ -863,3 +868,7 @@ Only the tests listed here exist. Everything else in §4 is still planned. "exec
 | ADS-02 | `apps/api/tests/test_preflight.py (empty place catalogue)` | executed |
 | ADS-03 | `apps/web/tests/unit/server-html.test.tsx; apps/web/tests/unit/skeleton-system.test.tsx (no fallback on discovery pages); apps/web/tests/unit/sitelinks.test.tsx` | executed; also checked with JavaScript disabled in Chromium against a local production build on live data |
 | ADS-04 | `apps/web/tests/unit/category-pages.test.tsx` | executed; rendered with axe at 390 and 1280 px |
+| VERSTD-01 | `apps/api/tests/test_verification_standard.py; apps/api/tests/test_verification_switch.py; apps/web/tests/unit/media-and-verification.test.tsx` | executed |
+| VERSTD-02 | `apps/api/tests/test_verification_standard.py; apps/web/tests/unit/job-view.test.tsx (verification standard, operator disclosure)` | executed |
+| NAV-01 | `apps/web/tests/unit/pending-navigation.test.tsx; apps/web/tests/unit/server-html.test.tsx` | executed; also in Chromium against a local production build with a delayed API |
+| PLACE-01 | `apps/api/tests/test_place_seeding.py; apps/api/tests/test_place_match.py; apps/web/tests/unit/job-editor.test.ts (shared cases)` | executed |

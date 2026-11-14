@@ -6,6 +6,9 @@ before it goes live. No minimum word count is set: an article is as long as the 
 
 ## 0. Is there a Career Insights CMS?
 
+**Decided 2026-11-14 (O-11, D-75): a full article CMS (option B).** Implementation plan:
+`CAREER_INSIGHTS_CMS_PLAN.md`. The comparison below is kept as the record of the choice.
+
 No. The repository has no "Career Insights" model, API, page or document (searched on 2026-11-14). Editorial content
 today is six guides written as static pages (`apps/web/src/app/guides/*/page.tsx`, listed in `src/lib/guides.ts`,
 with Article and BreadcrumbList data, dates, sitemap entries and an optional mid-guide ad slot). Two ways forward, for

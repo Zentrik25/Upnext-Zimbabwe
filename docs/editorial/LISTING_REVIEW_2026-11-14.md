@@ -20,7 +20,7 @@ E UPNEXT's own value):
 | Graduate Trainee Programme 2027/2028, PROBFIX (`probfix-graduate-trainee-programme-2027-2028`) | 15 Nov | D | no source; otherwise complete | record the source |
 | School Administrator / Project Coordinator, "Enrollin Classes" (`school-administrator-project-coordinator-z7vxnt`) | not stated | A, D | issuer not findable from the listing; Gmail address `hospitalitytrain2026@…`; Verified with no source | confirm the issuer exists and placed the notice; otherwise set Not verified or withdraw |
 | Senior Programmes Lawyer, "National Human Rights Organisation" (`senior-programmes-lawyer-1-post-skx7p4`) | 20 Nov | A, D | **anonymous issuer labelled Verified**; Gmail address `recruitmentnew2026@…` | set Not verified unless staff confirmed the organisation directly; record the source |
-| Software Developer, Zentrik Solutions (`software-developer-p5qjrp`) | 30 Nov | D | **the operator's own vacancy**, Verified, not disclosed; the only open listing with a recorded source | owner confirms it is real; disclose "posted by the operator of UPNEXT" or withdraw (O-6) |
+| Software Developer, Zentrik Solutions (`software-developer-p5qjrp`) | 30 Nov | D | **the operator's own vacancy**, Verified, not disclosed; the only open listing with a recorded source | decided (O-6, D-75): genuine; kept with a disclosure that the operator is the employer, shown on the job page; re-verify under the standard by someone outside Zentrik |
 
 ## Summary
 
