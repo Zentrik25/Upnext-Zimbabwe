@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSitemapEntries } from "@/lib/catalog";
+import { getInsightsSitemap, getSitemapEntries } from "@/lib/catalog";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { GUIDES } from "@/lib/guides";
 import { landingIndexable, landingPage, landingPath } from "@/lib/landing-pages";
@@ -19,7 +19,9 @@ const date = (iso: string | null | undefined) => (iso ? new Date(iso) : undefine
  *  - one list per catalogue category while it holds an open listing (the newest publication in it);
  *  - each landing page while `landingIndexable` holds (threshold and no repeated list: the same rule as its `robots`);
  *  - every open published listing (its last publication: first publication or the last material change);
- *  - every public company profile (the approval of its live revision).
+ *  - every public company profile (the approval of its live revision);
+ *  - Career Insights (D-78): its home while it has a published article, each live article (its last material change),
+ *    each category holding one, and each author archive the API offers (enough published articles).
  * Closed, withdrawn and archived listings, search, filter, sort and page addresses, empty lists and almost empty
  * landing pages are never listed (P4-03, D-51, D-68). One API request feeds the whole file.
  *
@@ -28,8 +30,9 @@ const date = (iso: string | null | undefined) => (iso ? new Date(iso) : undefine
  * 49,000 so one file stays under the protocol's 50,000-URL limit; past that, split with `generateSitemaps`.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const feed = await getSitemapEntries();
+  const [feed, insights] = await Promise.all([getSitemapEntries(), getInsightsSitemap()]);
   if (!feed.ok) unavailable(feed.reason);
+  if (!insights.ok) unavailable(insights.reason);
   // The legal pages are listed only once the owner has recorded their approval (UPNEXT_LEGAL_APPROVED).
   const open = legalPublished();
   const fixed = STATIC_PATHS.filter((path) => open || (path !== "/privacy" && path !== "/terms")).map(
@@ -50,5 +53,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: absolute(`/employers/${entry.slug}`),
     lastModified: date(entry.updated_at),
   }));
-  return [...fixed, ...lists, ...landings, ...listings, ...profiles];
+  const blog = insights.data;
+  const articles = blog.articles.length
+    ? [
+        { url: absolute("/insights"), lastModified: date(blog.updated_at) },
+        ...blog.articles.map((a) => ({
+          url: absolute(`/insights/${a.slug}`),
+          lastModified: date(a.updated_at),
+        })),
+        ...blog.categories.map((c) => ({
+          url: absolute(`/insights/category/${c.slug}`),
+          lastModified: date(c.updated_at),
+        })),
+        ...blog.authors.map((a) => ({ url: absolute(`/insights/author/${a.slug}`) })),
+      ]
+    : [];
+  return [...fixed, ...lists, ...landings, ...listings, ...profiles, ...articles];
 }

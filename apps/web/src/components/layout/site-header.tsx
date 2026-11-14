@@ -8,12 +8,13 @@ import { getCurrentUser } from "@/lib/session";
 import { MobileMenu, type MenuItem } from "./mobile-menu";
 import { PendingSignal } from "@/components/navigation/pending-navigation";
 
-/** The five places the public navigation always offers (D-73). One list feeds the bar and the menu. */
+/** The five places the public navigation always offers (D-73). Since D-78 the fourth is Career Insights, whose home
+ *  lists every career guide; the menu and the footer still link the guides directly. */
 export const PUBLIC_NAV = [
   { href: "/opportunities", label: "Find Jobs" },
   { href: "/categories", label: "Categories" },
   { href: "/locations", label: "Locations" },
-  { href: "/guides", label: "Career Guides" },
+  { href: "/insights", label: "Career Insights" },
   { href: "/employers", label: "For Employers" },
 ] as const;
 
@@ -30,6 +31,7 @@ export async function SiteHeader() {
       { href: "/opportunities", label: "Find Jobs", icon: "briefcase" },
       { href: "/categories", label: "Categories", icon: "grid" },
       { href: "/locations", label: "Locations", icon: "pin" },
+      { href: "/insights", label: "Career Insights", icon: "doc" },
       { href: "/guides", label: "Career Guides", icon: "doc" },
       { href: "/employers", label: "For Employers", icon: "building" },
     ],

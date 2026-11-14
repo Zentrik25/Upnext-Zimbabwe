@@ -2,7 +2,7 @@
   "name": "upnext-web",
   "version": "0.1.0",
   "private": true,
-  "description": "UPNEXT web application (Next.js + TypeScript + Tailwind CSS) \u2014 Phase 1 foundation",
+  "description": "UPNEXT web application (Next.js + TypeScript + Tailwind CSS) — Phase 1 foundation",
   "engines": {
     "node": ">=24.22.0 <25",
     "npm": ">=11"
@@ -21,6 +21,11 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@tiptap/extension-image": "3.32.2",
+    "@tiptap/extension-table": "3.32.2",
+    "@tiptap/pm": "3.32.2",
+    "@tiptap/react": "3.32.2",
+    "@tiptap/starter-kit": "3.32.2",
     "next": "16.4.2",
     "qrcode": "1.5.4",
     "react": "19.3.1",

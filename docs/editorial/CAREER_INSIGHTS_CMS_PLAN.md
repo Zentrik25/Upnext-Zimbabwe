@@ -1,5 +1,7 @@
 # Career Insights CMS: implementation plan — DRAFT
 
+> **2026-11-14:** implemented as D-78 (DRAFT) on the owner's brief, which places the blog at `/insights` (O-14) and keeps the guides at `/guides`. Current description: `CAREER_INSIGHTS_CMS.md`.
+
 Status: DRAFT for the owner's approval. The owner chose a full article CMS on 2026-11-14 (O-11, D-75) instead of
 more hard-coded guide pages. **This is a plan only: nothing here is built, migrated or published.** Building it needs
 the owner's approval of this plan; each phase ends at a review gate (CLAUDE.md rule 8). Article content still needs

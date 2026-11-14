@@ -11,6 +11,15 @@ vi.mock("next/navigation", () => ({ notFound: vi.fn(), usePathname: () => "/" })
 vi.mock("@/components/ads/ad-slot", () => ({ AdSlot: () => null }));
 
 const catalog = vi.hoisted(() => ({
+  getInsightsHome: vi.fn(async () => ({ ok: false as const, reason: "unreachable" as const })),
+  listInsightsArticles: vi.fn(async () => ({
+    ok: true as const,
+    data: { data: [], page: { page: 1, pages: 1, total: 0, limit: 3 } },
+  })),
+  getInsightsSitemap: vi.fn(async () => ({
+    ok: true as const,
+    data: { articles: [], categories: [], authors: [], updated_at: null },
+  })),
   getSitemapEntries: vi.fn(),
   listCategories: vi.fn(),
   getOpportunity: vi.fn(),
@@ -388,6 +397,10 @@ describe("private routes cannot be indexed by accident", () => {
     /^\/terms$/,
     /^\/guides$/,
     /^\/guides\/[a-z-]+$/,
+    /^\/insights$/, // Career Insights (D-78): noindex while empty and for search, tag and later pages
+    /^\/insights\/\[slug\]$/,
+    /^\/insights\/category\/\[slug\]$/, // noindex while empty and past page one
+    /^\/insights\/author\/\[slug\]$/, // exists only with enough published articles
     /^\/categories$/,
     /^\/locations$/, // noindex while the catalogue holds no place (generateMetadata)
     /^\/jobs\/\[slug\]$/, // landing pages (D-68); their own indexing rules are tested in seo-hardening

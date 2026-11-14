@@ -22,7 +22,12 @@ const SEEKER_TABS: typeof TABS = [
   },
 ];
 const VISITOR_TABS: typeof TABS = [
-  { href: "/guides", label: "Guides", icon: "doc", match: (p) => p.startsWith("/guides") },
+  {
+    href: "/insights",
+    label: "Insights",
+    icon: "doc",
+    match: (p) => p.startsWith("/insights") || p.startsWith("/guides"),
+  },
   { href: "/sign-in", label: "Sign in", icon: "user", match: (p) => p === "/sign-in" },
 ];
 

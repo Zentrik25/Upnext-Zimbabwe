@@ -7,6 +7,7 @@ from drf_spectacular.views import SpectacularAPIView
 from api import (
     account_views,
     employer_views,
+    insights_views,
     profile_views,
     public_views,
     report_views,
@@ -189,6 +190,61 @@ urlpatterns = [
     ),
     path("staff/images", staff_images.ImageUploadView.as_view(), name="staff-image-upload"),
     path("staff/media", staff_images.MediaView.as_view(), name="staff-media"),
+    # Career Insights (D-78): public reads of the live snapshot, and the staff editorial CMS.
+    path("insights/home", insights_views.InsightsHomeView.as_view(), name="insights-home"),
+    path("insights/articles", insights_views.InsightsArticleListView.as_view(), name="insights-articles"),
+    path(
+        "insights/articles/<slug:slug>",
+        insights_views.InsightsArticleDetailView.as_view(),
+        name="insights-article",
+    ),
+    path(
+        "insights/categories", insights_views.InsightsCategoryListView.as_view(), name="insights-categories"
+    ),
+    path("insights/authors/<slug:slug>", insights_views.InsightsAuthorView.as_view(), name="insights-author"),
+    path("insights/sitemap", insights_views.InsightsSitemapView.as_view(), name="insights-sitemap"),
+    path("staff/insights/meta", insights_views.StaffInsightsMetaView.as_view(), name="staff-insights-meta"),
+    path("staff/insights/articles", insights_views.StaffArticleListView.as_view(), name="staff-articles"),
+    path(
+        "staff/insights/articles/<uuid:article_id>",
+        insights_views.StaffArticleView.as_view(),
+        name="staff-article",
+    ),
+    path(
+        "staff/insights/articles/<uuid:article_id>/actions/<str:action>",
+        insights_views.StaffArticleActionView.as_view(),
+        name="staff-article-action",
+    ),
+    path(
+        "staff/insights/articles/<uuid:article_id>/placement",
+        insights_views.StaffArticlePlacementView.as_view(),
+        name="staff-article-placement",
+    ),
+    path(
+        "staff/insights/articles/<uuid:article_id>/preview",
+        insights_views.StaffArticlePreviewView.as_view(),
+        name="staff-article-preview",
+    ),
+    path(
+        "staff/insights/articles/<uuid:article_id>/history",
+        insights_views.StaffArticleHistoryView.as_view(),
+        name="staff-article-history",
+    ),
+    path("staff/insights/tags", insights_views.StaffTagListView.as_view(), name="staff-article-tags"),
+    path(
+        "staff/insights/categories",
+        insights_views.StaffCategoryListView.as_view(),
+        name="staff-article-categories",
+    ),
+    path(
+        "staff/insights/categories/<uuid:category_id>",
+        insights_views.StaffCategoryView.as_view(),
+        name="staff-article-category",
+    ),
+    path("staff/insights/authors", insights_views.StaffAuthorListView.as_view(), name="staff-authors"),
+    path(
+        "staff/insights/authors/<uuid:user_id>", insights_views.StaffAuthorView.as_view(), name="staff-author"
+    ),
     path("staff/team", staff_team.TeamListView.as_view(), name="staff-team"),
     path("staff/team/<uuid:target_id>", staff_team.TeamDetailView.as_view(), name="staff-team-member"),
     path(
