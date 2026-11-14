@@ -21,6 +21,8 @@ APPEND_ONLY = (
     "opportunities_verificationrecord",
     "opportunities_reviewdecision",
     "opportunities_publishingevent",
+    "insights_articlereview",  # Career Insights review decisions (D-78)
+    "insights_articleevent",  # Career Insights history (D-78)
 )
 NO_DELETE = ("accounts_user",)
 READ_ONLY_FOR_APP = ("django_migrations",)

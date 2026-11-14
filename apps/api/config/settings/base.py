@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "alerts",
     "reports",
     "indexing",
+    "insights",
 ]
 
 MIDDLEWARE = [

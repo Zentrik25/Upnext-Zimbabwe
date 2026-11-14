@@ -9,3 +9,4 @@ whitenoise
 jsonschema
 pillow
 cryptography  # RS256 signature of the Google Indexing API service-account token (D-68); no other Google library
+nh3==0.3.7  # server-side HTML sanitiser for Career Insights article bodies (D-78); Rust (ammonia) core, abi3 wheels

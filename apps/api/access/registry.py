@@ -53,6 +53,13 @@ class Permission(StrEnum):
     REPORT_RESOLVE = "report.resolve"
     REPORT_RESOLVE_ESCALATED = "report.resolve_escalated"
     SETTINGS_MANAGE = "settings.manage"
+    # Career Insights (D-78): write own articles; review others' (never one's own); publish, archive and
+    # place;
+    # manage categories, tags and other people's author profiles. No Publisher role (D-23).
+    INSIGHTS_WRITE = "insights.write"
+    INSIGHTS_REVIEW = "insights.review"
+    INSIGHTS_PUBLISH = "insights.publish"
+    INSIGHTS_MANAGE = "insights.manage"
     ME_PROFILE = "me.profile"
     ME_SAVED = "me.saved"
     ME_SESSIONS = "me.sessions"
@@ -94,6 +101,9 @@ _EDITOR_CODES = frozenset(
         P.REPORT_READ,
         P.REPORT_TRIAGE,
         P.REPORT_RESOLVE,
+        P.INSIGHTS_WRITE,
+        P.INSIGHTS_REVIEW,
+        P.INSIGHTS_PUBLISH,
     }
 )
 
@@ -123,6 +133,7 @@ _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
                 P.OPP_DISCARD_OWN,
                 P.OPP_AMEND,
                 P.ORG_CREATE,
+                P.INSIGHTS_WRITE,
             }
         ),
         Role.EDITOR: _EDITOR_CODES,
@@ -137,6 +148,7 @@ _DEFAULT_GRANTS: Mapping[str, frozenset[str]] = MappingProxyType(
                 P.SETTINGS_MANAGE,
                 P.EMPLOYER_VERIFICATION_REVOKE,
                 P.REPORT_RESOLVE_ESCALATED,
+                P.INSIGHTS_MANAGE,
             }
         ),
     }

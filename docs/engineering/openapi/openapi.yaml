@@ -1361,6 +1361,254 @@ paths:
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '429': { $ref: '#/components/responses/RateLimited' }
+  /insights/home:
+    get:
+      tags: [public]
+      operationId: getInsightsHome
+      summary: 'Career Insights home: featured, top story, carousel, latest, graduate resources and categories'
+      description: 'Live articles only; no popularity figures (none are recorded). Added in D-78.'
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+  /insights/articles:
+    get:
+      tags: [public]
+      operationId: listInsightsArticles
+      summary: 'Published articles, newest first or by relevance'
+      description: 'Query: q (headline, summary, body, category and tag names), category, tag, author, opportunity_category, page, limit (up to 24). Added in D-78.'
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+  /insights/articles/{slug}:
+    get:
+      tags: [public]
+      operationId: getInsightsArticle
+      summary: 'One published article'
+      description: 'An earlier address of an article answers with the article; `slug` then differs and the web redirects permanently. Added in D-78.'
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /insights/categories:
+    get:
+      tags: [public]
+      operationId: listInsightsCategories
+      summary: 'Active article categories with their count of published articles'
+      description: ' Added in D-78.'
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+  /insights/authors/{slug}:
+    get:
+      tags: [public]
+      operationId: getInsightsAuthor
+      summary: 'A public author archive'
+      description: 'Only for a public profile with at least 3 published articles. Added in D-78.'
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /insights/sitemap:
+    get:
+      tags: [public]
+      operationId: getInsightsSitemap
+      summary: 'Career Insights entries for the XML sitemap'
+      description: 'Live articles, categories with articles and author archives, with real modification times. Added in D-78.'
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+  /staff/insights/meta:
+    get:
+      tags: [staff]
+      operationId: getStaffInsightsMeta
+      summary: 'Choices for the article editor'
+      description: 'Categories, opportunity categories, the review checklist, writers (for publishers) and the caller''s permissions. Added in D-78.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/insights/articles:
+    get:
+      tags: [staff]
+      operationId: listStaffArticles
+      summary: 'Articles the caller may see, with filters and paging'
+      description: 'Query: q, status, category, author, sort (created, updated, published), page, limit. Contributors see their own. Added in D-78.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: createStaffArticle
+      summary: 'Create a draft article'
+      description: 'Needs insights.write. Added in D-78.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: 'Conflict: stale row_version, or the action is not available in the current state', content: { application/json: { schema: { type: object } } } }
+  /staff/insights/articles/{articleId}:
+    get:
+      tags: [staff]
+      operationId: getStaffArticle
+      summary: 'An article''s working copy, status and allowed actions'
+      description: ' Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [staff]
+      operationId: saveStaffArticle
+      summary: 'Save the working copy'
+      description: 'Send expected_row_version (409 when stale). The body is sanitised. A material change after approval returns the article to draft. Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Conflict: stale row_version, or the action is not available in the current state', content: { application/json: { schema: { type: object } } } }
+  /staff/insights/articles/{articleId}/actions/{action}:
+    post:
+      tags: [staff]
+      operationId: runStaffArticleAction
+      summary: 'Run a workflow action'
+      description: 'action: submit, start_review, approve (checklist required), reject or return (note required), publish, archive. Nobody reviews their own article. Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string } }]
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'Conflict: stale row_version, or the action is not available in the current state', content: { application/json: { schema: { type: object } } } }
+  /staff/insights/articles/{articleId}/placement:
+    put:
+      tags: [staff]
+      operationId: setStaffArticlePlacement
+      summary: 'Featured, carousel and top-story placement of a published article'
+      description: 'Needs insights.publish. Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/insights/articles/{articleId}/preview:
+    get:
+      tags: [staff]
+      operationId: previewStaffArticle
+      summary: 'The working copy in the public shape'
+      description: 'Never public, never indexed. Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/insights/articles/{articleId}/history:
+    get:
+      tags: [staff]
+      operationId: listStaffArticleHistory
+      summary: 'Events and review decisions of an article'
+      description: ' Added in D-78.'
+      parameters: [{ name: articleId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/insights/tags:
+    get:
+      tags: [staff]
+      operationId: listStaffArticleTags
+      summary: 'Tag suggestions'
+      description: 'Query: q. Added in D-78.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/insights/categories:
+    get:
+      tags: [staff]
+      operationId: listStaffArticleCategories
+      summary: 'All article categories'
+      description: ' Added in D-78.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [staff]
+      operationId: createStaffArticleCategory
+      summary: 'Create an article category'
+      description: 'Needs insights.manage. Added in D-78.'
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '201': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/insights/categories/{categoryId}:
+    patch:
+      tags: [staff]
+      operationId: updateStaffArticleCategory
+      summary: 'Change an article category'
+      description: 'Needs insights.manage. Added in D-78.'
+      parameters: [{ name: categoryId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/insights/authors:
+    get:
+      tags: [staff]
+      operationId: listStaffAuthors
+      summary: 'Author profiles'
+      description: 'Writers see their own; insights.manage sees every writer. Added in D-78.'
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /staff/insights/authors/{userId}:
+    put:
+      tags: [staff]
+      operationId: saveStaffAuthor
+      summary: 'Save an author profile'
+      description: 'Your own (insights.write) or anyone''s (insights.manage). Nothing is filled in automatically. Added in D-78.'
+      parameters: [{ name: userId, in: path, required: true, schema: { type: string, format: uuid } }]
+      security: [{ cookieAuth: [] }, { csrf: [] }]
+      requestBody: { required: false, content: { application/json: { schema: { type: object } } } }
+      responses:
+        '200': { description: 'OK', content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /staff/media:
     get:
       tags: [staff]
