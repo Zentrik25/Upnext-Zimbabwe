@@ -2,16 +2,6 @@
 
 import { useLinkStatus } from "next/link";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Container } from "@/components/layout/container";
-import { FiltersSkeleton, ResultsSkeleton, SearchSkeleton } from "@/components/opportunities/skeletons";
-import {
-  LoadingRegion,
-  SkeletonHeading,
-  SkeletonLine,
-  SkeletonListingRows,
-  SkeletonTabs,
-} from "@/components/ui/skeleton";
-
 /**
  * Skeletons for client-side transitions only (owner decision O-12, 2026-11-14, D-75).
  *
@@ -63,53 +53,51 @@ export function discoveryDestination(href: string | null): "home" | "opportuniti
   return null;
 }
 
-function OpportunitiesTransition() {
+/*
+ * Deliberately small (plain elements, no imports): this module ships with every public page, which have script budgets
+ * (tests/e2e/mobile-budget.spec.ts). The shapes follow the real pages; the status is announced once.
+ */
+const bar = "rounded-control bg-line";
+const wrap = "mx-auto w-full max-w-[1160px] px-4 py-8";
+
+function Status({ label }: { label: string }) {
   return (
-    <>
-      <section className="border-b border-line py-[22px]">
-        <Container>
-          <LoadingRegion label="opportunities" className="grid gap-3">
-            <SkeletonHeading size="page" className="w-1/2 max-sm:w-full" />
-          </LoadingRegion>
-          <div className="mt-3">
-            <SearchSkeleton />
-          </div>
-        </Container>
-      </section>
-      <Container>
-        <SkeletonTabs />
-      </Container>
-      <Container className="grid grid-cols-[230px_1fr] gap-6 pt-[18px] pb-[65px] max-md:grid-cols-1">
-        <div className="max-md:hidden">
-          <FiltersSkeleton />
+    <div role="heading" aria-level={1} className="sr-only">
+      Loading {label}…
+    </div>
+  );
+}
+
+function Rows({ count }: { count: number }) {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="grid gap-2 border-b border-line pb-4">
+          <div className={`h-5 w-2/3 ${bar}`} />
+          <div className={`h-4 w-1/3 ${bar}`} />
         </div>
-        <ResultsSkeleton />
-      </Container>
-    </>
+      ))}
+    </div>
   );
 }
 
-function HomeTransition() {
+function Transition({ label, kind }: { label: string; kind: "opportunities" | "home" | "directory" }) {
   return (
-    <Container className="py-10 max-sm:py-6">
-      <LoadingRegion label="the home page" className="grid gap-4">
-        <SkeletonHeading size="page" className="w-2/3" />
-        <SkeletonLine className="w-1/2" />
-        <SkeletonListingRows count={4} />
-      </LoadingRegion>
-    </Container>
-  );
-}
-
-function DirectoryTransition() {
-  return (
-    <Container className="py-10 max-sm:py-6">
-      <LoadingRegion label="the page" className="grid gap-4">
-        <SkeletonHeading size="page" className="w-1/2" />
-        <SkeletonLine className="w-2/3" />
-        <SkeletonListingRows count={4} />
-      </LoadingRegion>
-    </Container>
+    <div role="status" aria-busy="true" aria-live="polite" data-testid="loading" className={wrap}>
+      <Status label={label} />
+      <div aria-hidden="true" className="skeleton-pulse grid gap-5">
+        <div className={`h-9 w-1/2 max-sm:w-full ${bar}`} />
+        {kind === "opportunities" ? (
+          <div className="h-[44px] w-full max-w-[790px] rounded-control border border-line" />
+        ) : null}
+        <div
+          className={kind === "opportunities" ? "grid grid-cols-[230px_1fr] gap-6 max-md:grid-cols-1" : ""}
+        >
+          {kind === "opportunities" ? <div className={`h-64 max-md:hidden ${bar}`} /> : null}
+          <Rows count={kind === "home" ? 4 : 6} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -117,8 +105,8 @@ function DirectoryTransition() {
 export function PendingMain({ children }: { children: ReactNode }) {
   const { href } = useContext(PendingContext);
   const destination = discoveryDestination(href);
-  if (destination === "opportunities") return <OpportunitiesTransition />;
-  if (destination === "home") return <HomeTransition />;
-  if (destination === "directory") return <DirectoryTransition />;
+  if (destination === "opportunities") return <Transition label="opportunities" kind="opportunities" />;
+  if (destination === "home") return <Transition label="the home page" kind="home" />;
+  if (destination === "directory") return <Transition label="the page" kind="directory" />;
   return <>{children}</>;
 }
