@@ -13,6 +13,7 @@ import { Button, Icon, Panel, SearchGroup, Select, Tabs } from "@/components/ui"
 import { listCategories, listLocations } from "@/lib/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CareerResources } from "@/components/public/career-resources";
+import { RelatedInsights } from "@/components/insights/related-insights";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor } from "@/lib/structured-data";
 
@@ -160,6 +161,8 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <ResultsLoader params={params} />
           {/* The guides that help with this kind of opportunity (D-74): the same links on every view of a list. */}
           <CareerResources category={view.kind === "category" ? view.category : null} />
+          {/* Career Insights articles linked to this category (D-78); nothing on the plain list or when none is. */}
+          {view.kind === "category" ? <RelatedInsights category={view.category} /> : null}
         </section>
       </Container>
     </>

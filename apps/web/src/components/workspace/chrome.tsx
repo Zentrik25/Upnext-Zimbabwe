@@ -128,6 +128,13 @@ function groups(session: StaffSession): Group[] {
       icon: "chart",
       active: startsWith("/workspace/analytics"),
     });
+  if (has("insights.write") || has("insights.review") || has("insights.publish"))
+    editorial.push({
+      label: "Career Insights",
+      href: "/workspace/insights",
+      icon: "file",
+      active: startsWith("/workspace/insights"),
+    });
   if (has("opp.draft.create") || has("opp.draft.edit_own"))
     editorial.push({
       label: "Media Library",

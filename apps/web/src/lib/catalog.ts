@@ -10,6 +10,14 @@ import type {
   Sector,
 } from "./catalog-types";
 import type { PublicProfile } from "./employer-types";
+import type {
+  ArticleDetail,
+  ArticlePage,
+  InsightsAuthor,
+  InsightsCategory,
+  InsightsHome,
+  InsightsSitemap,
+} from "./insights-types";
 
 export type Failure = "unreachable" | "invalid-query" | "rate-limited" | "unexpected-response";
 export type Result<T> = { ok: true; data: T } | { ok: false; reason: Failure; message?: string };
@@ -142,6 +150,51 @@ export async function getEmployerProfile(slug: string): Promise<Result<PublicPro
   if (!response.ok) return { ok: false, reason: "unexpected-response" };
   try {
     return { ok: true, data: (await response.json()) as PublicProfile };
+  } catch {
+    return { ok: false, reason: "unexpected-response" };
+  }
+}
+
+// --- Career Insights (D-78): the live snapshot only --------------------------------------------------------------
+export function getInsightsHome() {
+  return json<InsightsHome>("insights/home");
+}
+
+export function listInsightsArticles(params: URLSearchParams) {
+  return json<ArticlePage>("insights/articles", params);
+}
+
+export function listInsightsCategories() {
+  return json<{ data: InsightsCategory[] }>("insights/categories");
+}
+
+export function getInsightsSitemap() {
+  const seconds = Number(process.env.UPNEXT_SITEMAP_CACHE_SECONDS ?? 300);
+  return json<InsightsSitemap>("insights/sitemap", undefined, seconds > 0 ? seconds : undefined);
+}
+
+/** One article, or null when no live article has (or had) this address. */
+export async function getInsightsArticle(slug: string): Promise<Result<ArticleDetail | null>> {
+  const response = await get(`insights/articles/${encodeURIComponent(slug)}`);
+  if (response === null) return { ok: false, reason: "unreachable" };
+  if (response.status === 404) return { ok: true, data: null };
+  if (response.status === 429) return { ok: false, reason: "rate-limited" };
+  if (!response.ok) return { ok: false, reason: "unexpected-response" };
+  try {
+    return { ok: true, data: (await response.json()) as ArticleDetail };
+  } catch {
+    return { ok: false, reason: "unexpected-response" };
+  }
+}
+
+/** A public author archive, or null when the author has none (not public, or too few articles). */
+export async function getInsightsAuthor(slug: string): Promise<Result<InsightsAuthor | null>> {
+  const response = await get(`insights/authors/${encodeURIComponent(slug)}`);
+  if (response === null) return { ok: false, reason: "unreachable" };
+  if (response.status === 404) return { ok: true, data: null };
+  if (!response.ok) return { ok: false, reason: "unexpected-response" };
+  try {
+    return { ok: true, data: (await response.json()) as InsightsAuthor };
   } catch {
     return { ok: false, reason: "unexpected-response" };
   }

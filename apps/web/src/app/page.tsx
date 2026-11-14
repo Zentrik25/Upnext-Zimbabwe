@@ -9,6 +9,7 @@ import {
   EntryLevel,
 } from "@/components/home/browse";
 import { HomeLatest } from "@/components/home/latest";
+import { HomeInsights } from "@/components/insights/related-insights";
 import { SectionHeading } from "@/components/public/cards";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listCategories, listLocations } from "@/lib/catalog";
@@ -61,6 +62,8 @@ export default function HomePage() {
       <BrowseByLocation />
       <EntryLevel />
       <CareerGuides />
+      {/* Career Insights (D-78): the top story and picks; nothing at all until an article is published. */}
+      <HomeInsights />
       <EmployerCta />
       <TrustSection />
     </>

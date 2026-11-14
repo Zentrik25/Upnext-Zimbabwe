@@ -11,6 +11,7 @@ import { RelatedCard } from "@/components/opportunities/job-parts";
 import { Icon } from "@/components/ui/icons";
 import { SkeletonLine, SkeletonListingRows } from "@/components/ui/skeleton";
 import { CATEGORY_SEO } from "@/lib/category-seo";
+import { RelatedInsights } from "@/components/insights/related-insights";
 import { shareImage, socialFor, withoutBrandSuffix } from "@/lib/brand";
 import { getOpportunity as fetchOpportunity, listOpportunities } from "@/lib/catalog";
 import type { OpportunityDetail } from "@/lib/catalog-types";
@@ -150,31 +151,35 @@ function SaveSkeleton() {
 async function Related({ listing }: { listing: OpportunityDetail }) {
   const params = new URLSearchParams({ category: listing.category.code, limit: "8" });
   const result = await listOpportunities(params);
-  if (!result.ok) return null;
-  const rows = result.data.data
-    .filter((r) => r.slug !== listing.slug && r.status === "published")
-    .slice(0, 3);
-  if (!rows.length) return null;
+  const rows = result.ok
+    ? result.data.data.filter((r) => r.slug !== listing.slug && r.status === "published").slice(0, 3)
+    : [];
+  // Career Insights articles the editors linked to this kind of opportunity (D-78); nothing when none is linked.
+  const insights = <RelatedInsights category={listing.category.code} heading="Career advice" stack />;
+  if (!rows.length) return insights;
   return (
-    <section aria-labelledby="related-title" className="mt-6 md:mt-0">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 id="related-title" className="m-0 text-title font-strong text-ink">
-          Related opportunities
-        </h2>
-        <Link
-          href={`/opportunities?category=${listing.category.code}`}
-          className="inline-flex items-center gap-1 text-ctl font-medium text-accent"
-        >
-          View all
-          <Icon name="arrowRight" className="h-4 w-4" />
-        </Link>
-      </div>
-      <ul className="m-0 grid list-none gap-2 p-0">
-        {rows.map((row) => (
-          <RelatedCard key={row.id} row={row} />
-        ))}
-      </ul>
-    </section>
+    <>
+      <section aria-labelledby="related-title" className="mt-6 md:mt-0">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h2 id="related-title" className="m-0 text-title font-strong text-ink">
+            Related opportunities
+          </h2>
+          <Link
+            href={`/opportunities?category=${listing.category.code}`}
+            className="inline-flex items-center gap-1 text-ctl font-medium text-accent"
+          >
+            View all
+            <Icon name="arrowRight" className="h-4 w-4" />
+          </Link>
+        </div>
+        <ul className="m-0 grid list-none gap-2 p-0">
+          {rows.map((row) => (
+            <RelatedCard key={row.id} row={row} />
+          ))}
+        </ul>
+      </section>
+      {insights}
+    </>
   );
 }
 

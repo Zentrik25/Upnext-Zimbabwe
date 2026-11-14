@@ -195,6 +195,9 @@ export type ListingDetail = ListingRow & {
 export type MediaItem = {
   id: string;
   name: string;
+  /** The picture's absolute address (the API has always sent it). */
+  url?: string | null;
+  thumb_url?: string | null;
   thumb: string;
   title: string;
   original_filename: string;

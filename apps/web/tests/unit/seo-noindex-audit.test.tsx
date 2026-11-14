@@ -18,6 +18,15 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/components/ads/ad-slot", () => ({ AdSlot: () => null }));
 const catalog = vi.hoisted(() => ({
+  getInsightsHome: vi.fn(async () => ({ ok: false as const, reason: "unreachable" as const })),
+  listInsightsArticles: vi.fn(async () => ({
+    ok: true as const,
+    data: { data: [], page: { page: 1, pages: 1, total: 0, limit: 3 } },
+  })),
+  getInsightsSitemap: vi.fn(async () => ({
+    ok: true as const,
+    data: { articles: [], categories: [], authors: [], updated_at: null },
+  })),
   getSitemapEntries: vi.fn(),
   listCategories: vi.fn(),
   listLocations: vi.fn(),
