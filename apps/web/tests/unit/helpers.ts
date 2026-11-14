@@ -51,3 +51,42 @@ export function dark(name: string): string {
   if (!token) throw new Error(`unknown token ${name}`);
   return token.dark;
 }
+
+/**
+ * The HTML a server component tree produces once every async component has resolved, as a client without
+ * JavaScript receives it (React's `prerender` waits for all data). Returned inside a detached container so the usual
+ * DOM queries work. Use it for pages whose first response must be complete (D-74).
+ */
+export async function serverHtml(element: React.ReactElement): Promise<HTMLElement> {
+  const { prerender } = await import("react-dom/static");
+  const { prelude } = await prerender(element);
+  const container = document.createElement("div");
+  container.innerHTML = await new Response(prelude).text();
+  return container;
+}
+
+/** A complete public listing row (the shape `listOpportunities` returns), for pages that really render their results. */
+export function summaryRow(i: number, over: Record<string, unknown> = {}) {
+  return {
+    id: `id-${i}`,
+    slug: `role-${i}`,
+    title: `Programme Officer ${i}`,
+    summary: "",
+    category: { code: "jobs", name: "Jobs" },
+    organisation: { id: "o", name: "Example Trust" },
+    locations: [{ slug: "harare", name: "Harare", is_primary: true }],
+    location_text: null,
+    work_mode: "onsite",
+    employment_type: "full_time",
+    deadline: { at: "2099-12-31T21:59:59Z", timezone: "Africa/Harare", is_date_only: true, state: "open" },
+    salary: null,
+    salary_text: null,
+    verification: { level: "issuer_verified", checked_at: "2026-11-01T00:00:00Z" },
+    primary_source_name: null,
+    image: null,
+    status: "published",
+    published_at: "2026-11-01T00:00:00Z",
+    is_saved: null,
+    ...over,
+  };
+}

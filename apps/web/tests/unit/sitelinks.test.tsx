@@ -8,7 +8,12 @@ import type { Metadata } from "next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("next/navigation", () => ({ notFound: vi.fn(), usePathname: () => "/" }));
+vi.mock("next/navigation", () => ({
+  notFound: vi.fn(),
+  permanentRedirect: vi.fn(),
+  usePathname: () => "/",
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
 vi.mock("@/components/ads/ad-slot", () => ({ AdSlot: () => null }));
 const catalog = vi.hoisted(() => ({
   getSitemapEntries: vi.fn(),
@@ -30,10 +35,14 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { BRAND } from "@/lib/brand";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { PRIORITY_DESTINATIONS } from "@/lib/destinations";
+import { serverHtml, summaryRow } from "./helpers";
 
 process.env.UPNEXT_PUBLIC_BASE_URL = "https://upnext.co.zw";
 const ORIGIN = "https://upnext.co.zw";
-const listed = { ok: true, data: { data: [{ id: "1" }], page: { total: 1 } } };
+const listed = {
+  ok: true,
+  data: { data: [summaryRow(1)], page: { limit: 20, has_more: false, next_cursor: null, total: 1 } },
+};
 
 async function metaOf(href: string): Promise<Metadata> {
   if (href === "/employers") return employersMeta;
@@ -103,9 +112,7 @@ describe("the eight priority destinations (D-69)", () => {
     const headings = new Set<string>();
     for (const d of PRIORITY_DESTINATIONS.filter((x) => x.href.startsWith("/opportunities"))) {
       const query = Object.fromEntries(new URL(d.href, ORIGIN).searchParams);
-      const { container, unmount } = render(
-        await OpportunitiesPage({ searchParams: Promise.resolve(query) }),
-      );
+      const container = await serverHtml(await OpportunitiesPage({ searchParams: Promise.resolve(query) }));
       const h1 = container.querySelector("h1")!.textContent!;
       headings.add(h1);
       // The plain list shows no intro (owner instruction 2026-11-11, superseding D-69 for that one list); its text stays in the metadata.
@@ -121,7 +128,6 @@ describe("the eight priority destinations (D-69)", () => {
         expect(ld.join(""), d.href).toContain('"BreadcrumbList"');
       }
       expect(ld.join(""), d.href).not.toContain("JobPosting"); // lists never carry it
-      unmount();
     }
     expect(headings.size).toBe(6);
   });

@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Container } from "@/components/layout";
-import { HeroFrame, HeroSearch, HeroSearchSkeleton, TrustSection } from "@/components/home/sections";
+import { HeroFrame, HeroSearch, TrustSection } from "@/components/home/sections";
 import {
   BrowseByCategory,
   BrowseByLocation,
-  BrowseLocationSkeleton,
   CareerGuides,
   EmployerCta,
   EntryLevel,
-  EntryLevelSkeleton,
 } from "@/components/home/browse";
-import { HomeLatest, HomeLatestSkeleton } from "@/components/home/latest";
+import { HomeLatest } from "@/components/home/latest";
 import { SectionHeading } from "@/components/public/cards";
 import { JsonLd } from "@/components/seo/json-ld";
 import { listCategories, listLocations } from "@/lib/catalog";
@@ -32,8 +29,9 @@ async function HomeSearch() {
 }
 
 /**
- * Static content (the headline, the illustration, the section headings, the trust section) is sent at once. The
- * two sections that wait for the API each have their own Suspense boundary, so none of them holds up the others.
+ * The whole page, including the latest listings, the places and the entry-level listings, is in the first HTML
+ * response and readable without JavaScript (D-74, owner instruction 2026-11-14). No Suspense boundary: a streamed
+ * fallback hid the listing links in a container only a script reveals. The async sections render concurrently.
  */
 export default function HomePage() {
   return (
@@ -46,9 +44,7 @@ export default function HomePage() {
         <JsonLd key={index} data={block} />
       ))}
       <HeroFrame>
-        <Suspense fallback={<HeroSearchSkeleton />}>
-          <HomeSearch />
-        </Suspense>
+        <HomeSearch />
       </HeroFrame>
       <section aria-labelledby="latest-title" className="py-8 max-sm:py-6">
         <Container>
@@ -58,18 +54,12 @@ export default function HomePage() {
             href="/opportunities"
             hiddenLabel="opportunities"
           />
-          <Suspense fallback={<HomeLatestSkeleton />}>
-            <HomeLatest />
-          </Suspense>
+          <HomeLatest />
         </Container>
       </section>
       <BrowseByCategory />
-      <Suspense fallback={<BrowseLocationSkeleton />}>
-        <BrowseByLocation />
-      </Suspense>
-      <Suspense fallback={<EntryLevelSkeleton />}>
-        <EntryLevel />
-      </Suspense>
+      <BrowseByLocation />
+      <EntryLevel />
       <CareerGuides />
       <EmployerCta />
       <TrustSection />

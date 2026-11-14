@@ -387,13 +387,15 @@ describe("route wiring", () => {
     expect(publicRoutes).toEqual([]);
   });
 
-  it("the slow sections of the public pages sit in their own Suspense boundaries", () => {
+  it("the discovery pages send their listings in the first HTML, with no Suspense fallback (D-74)", () => {
+    // A streamed fallback put the real list in a hidden container that only a script reveals, so a client without
+    // JavaScript saw "Loading …" (live audit 2026-11-14). The home page and the list now render everything at once.
     const home = readFileSync(join(app, "page.tsx"), "utf8");
-    expect(home.match(/<Suspense/g)).toHaveLength(4); // the search, the latest list, locations and entry-level
-    expect(home).toContain("fallback={<HomeLatestSkeleton />}");
+    expect(home).not.toMatch(/<Suspense/);
+    expect(home).toContain("<HomeLatest />");
     const list = readFileSync(join(app, "opportunities/page.tsx"), "utf8");
-    expect(list.match(/<Suspense/g)).toHaveLength(4);
-    expect(list).toContain("fallback={<ResultsSkeleton />}");
+    expect(list).not.toMatch(/<Suspense/);
+    expect(list).toContain("<ResultsLoader params={params} />");
     const detail = readFileSync(join(app, "opportunities/[slug]/page.tsx"), "utf8");
     // the status code is decided before anything is streamed: notFound() comes before the first boundary
     expect(detail.indexOf("notFound()")).toBeLessThan(detail.indexOf("<Suspense"));
