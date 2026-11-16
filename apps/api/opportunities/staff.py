@@ -166,6 +166,7 @@ TRANSITION_LABELS = {
     "T10": "Withdrawn",
     "T11": "Expired",
     "T12": "Archived",
+    "T16": "Merged into another listing (duplicate)",
     "T13": "Draft discarded",
     "T14": "Reopened for editing",
     "T15": "Amendment started",

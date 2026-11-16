@@ -6,7 +6,7 @@ import { AuthFooter, SiteFooter, SiteHeader, SkipLink } from "@/components/layou
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { homeOf } from "@/lib/safe-next";
 import { getCurrentUser } from "@/lib/session";
-import { adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
+import { adsenseAccountMeta, adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
 import "@/styles/globals.css";
@@ -86,11 +86,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
   // after the visitor agrees, by the ad slot (components/ads).
   const adsense = workspace || auth || adsenseMode() !== "verify" ? undefined : adsenseClient();
+  // Google's site-ownership meta tag (lib/adsense.ts `adsenseAccountMeta`): text only, no request to Google, no consent.
+  const adsenseAccount = adsenseAccountMeta(pathname);
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {adsenseAccount ? <meta name="google-adsense-account" content={adsenseAccount} /> : null}
         {adsense ? (
           <script async nonce={nonce} src={adsenseScriptSrc(adsense)} crossOrigin="anonymous" />
         ) : null}

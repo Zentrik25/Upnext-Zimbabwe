@@ -95,7 +95,7 @@ paths:
       tags: [public]
       operationId: getOpportunity
       summary: Opportunity detail by public slug
-      description: Non-public listings (draft, in review, approved, rejected, takedown) return 404. Expired/withdrawn behaviour x-open OQ-20.
+      description: Non-public listings (draft, in review, approved, rejected, takedown) return 404. Expired/withdrawn behaviour x-open OQ-20. The address of a duplicate merged into another listing (D-79, ADR-0027) answers 200 with the listing that replaced it; its `slug` and `canonical_path` then differ from the slug asked for, and the web page moves the visitor there with one 308.
       parameters:
         - { $ref: '#/components/parameters/Slug' }
       responses:

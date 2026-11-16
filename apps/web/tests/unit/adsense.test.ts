@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { adSlotId, adsCspExtra, adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
+import {
+  adSlotId,
+  adsCspExtra,
+  adsenseAccountMeta,
+  adsenseClient,
+  adsenseMode,
+  adsenseScriptSrc,
+} from "@/lib/adsense";
 import { isAdEligiblePath } from "@/lib/ad-rules";
 
 const CLIENT = "ca-pub-1234567890123456"; // a syntactically valid TEST value, not a real publisher id
@@ -48,5 +55,31 @@ describe("Content-Security-Policy additions for advertising", () => {
     expect(adsCspExtra("/opportunities/some-job", isAdEligiblePath, live)["frame-src"]).toBeDefined();
     for (const path of ["/", "/sign-in", "/account", "/saved", "/workspace", "/privacy", "/opportunities"])
       expect(adsCspExtra(path, isAdEligiblePath, live), path).toEqual({});
+  });
+});
+
+describe("the google-adsense-account ownership meta tag (D-79)", () => {
+  it("carries the configured publisher id on public pages in every mode, and nothing when unset or malformed", () => {
+    for (const mode of [undefined, "off", "verify", "live"]) {
+      const env = { UPNEXT_ADSENSE_CLIENT: CLIENT, UPNEXT_ADSENSE_MODE: mode };
+      for (const path of [
+        "/",
+        "/opportunities",
+        "/opportunities/x-abc123",
+        "/guides",
+        "/insights",
+        "/privacy",
+      ])
+        expect(adsenseAccountMeta(path, env), `${mode} ${path}`).toBe(CLIENT);
+    }
+    expect(adsenseAccountMeta("/", {})).toBeUndefined();
+    expect(adsenseAccountMeta("/", { UPNEXT_ADSENSE_CLIENT: "pub-123" })).toBeUndefined();
+  });
+
+  it("is never on the staff workspace or the employer dashboard (the public /employers pages keep it)", () => {
+    const env = { UPNEXT_ADSENSE_CLIENT: CLIENT };
+    for (const path of ["/workspace", "/workspace/seo", "/employer", "/employer/listings/new"])
+      expect(adsenseAccountMeta(path, env), path).toBeUndefined();
+    expect(adsenseAccountMeta("/employers/acme", env)).toBe(CLIENT);
   });
 });

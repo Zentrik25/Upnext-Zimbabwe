@@ -8,8 +8,19 @@ import { adsenseScriptSrc, type AdPlacement } from "@/lib/adsense";
 
 declare global {
   interface Window {
-    adsbygoogle?: unknown[];
+    /** Google's command queue. `pauseAdRequests` (1 = hold, 0 = go) is Google's documented publisher-tag switch. */
+    adsbygoogle?: unknown[] & { pauseAdRequests?: number };
   }
+}
+
+/**
+ * Hold or release ad requests from a Google script that is already in the page. The script cannot be unloaded once
+ * it has run, so when the visitor withdraws consent, or leaves the ad page by an in-app link, it is told to request
+ * nothing more (the next full page load does not load it at all without consent).
+ */
+export function setAdRequestsPaused(paused: boolean) {
+  const queue = (window.adsbygoogle = window.adsbygoogle ?? []);
+  queue.pauseAdRequests = paused ? 1 : 0;
 }
 
 const SCRIPT_MARK = "data-upnext-adsense";
@@ -44,7 +55,13 @@ export function AdUnit({
   const requested = useRef(false);
 
   useEffect(() => {
-    if (consent !== "granted" || requested.current) return;
+    if (consent !== "granted") {
+      // Withdrawn after the script ran (or never given): nothing more is requested from Google.
+      if (document.querySelector(`script[${SCRIPT_MARK}]`)) setAdRequestsPaused(true);
+      return;
+    }
+    setAdRequestsPaused(false);
+    if (requested.current) return;
     requested.current = true;
     loadAdsenseScript(client);
     try {
@@ -53,6 +70,14 @@ export function AdUnit({
       /* a blocked or failed ad request leaves the reserved box empty; the page is unaffected */
     }
   }, [consent, client]);
+
+  // Leaving the ad page by an in-app link keeps the same document (and Google's script); pause it there.
+  useEffect(
+    () => () => {
+      if (document.querySelector(`script[${SCRIPT_MARK}]`)) setAdRequestsPaused(true);
+    },
+    [],
+  );
 
   if (consent === "denied")
     return (

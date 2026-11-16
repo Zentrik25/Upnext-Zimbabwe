@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout";
+import { GuideCard } from "@/components/public/cards";
 import { ArticleCard } from "@/components/insights/article-card";
 import { ArticleGrid, first, Pager, pageOf } from "@/components/insights/article-list";
 import { JsonLd } from "@/components/seo/json-ld";
 import { socialFor } from "@/lib/brand";
 import { getInsightsHome, listInsightsArticles } from "@/lib/catalog";
+import type { InsightsHome } from "@/lib/insights-types";
 import { GUIDES } from "@/lib/guides";
 import { absolute } from "@/lib/site";
 import { breadcrumbFor } from "@/lib/structured-data";
@@ -23,6 +25,11 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
  * The Career Insights home (D-78). Only `/insights` itself is indexable: a search (`?q=`), a tag (`?tag=`) or a later
  * page is a view of the same articles (noindex, follow), so no uncontrolled indexable addresses appear. Everything,
  * including the search results, is in the first HTML.
+ *
+ * While no article is published (AdSense audit 2026-11-16, D-79) the published career guides are the page's main
+ * content, drawn from the same list and card as /guides and linking to their own addresses (nothing is copied, no
+ * placeholder is shown), and the article search is not offered because it could find nothing. The page stays
+ * `noindex, follow` until it has an article of its own, so it never competes with /guides for the same guides.
  */
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const raw = await searchParams;
@@ -52,6 +59,11 @@ export default async function InsightsHomePage({ searchParams }: Props) {
     const result = await listInsightsArticles(params);
     if (!result.ok) unavailable(result.reason);
     const { data, page: info } = result.data;
+    if (info.total === 0) {
+      // Nothing is published yet: show the guides rather than an empty result and a search that cannot find anything.
+      const home = await getInsightsHome();
+      if (home.ok && !home.data.has_articles) return <Hub home={home.data} />;
+    }
     const heading = q ? `Articles about “${q}”` : tag ? `Articles tagged “${tag.replace(/-/g, " ")}”` : TITLE;
     const href = (n: number) => {
       const next = new URLSearchParams();
@@ -94,7 +106,11 @@ export default async function InsightsHomePage({ searchParams }: Props) {
 
   const result = await getInsightsHome();
   if (!result.ok) unavailable(result.reason);
-  const home = result.data;
+  return <Hub home={result.data} />;
+}
+
+/** The hub itself: articles when there are any, otherwise the published guides as the main content. */
+function Hub({ home }: { home: InsightsHome }) {
   const lead = home.featured ?? home.top_story;
   const latest = home.latest.filter((a) => a.slug !== lead?.slug);
   const categories = home.categories.filter((c) => c.count > 0);
@@ -107,7 +123,26 @@ export default async function InsightsHomePage({ searchParams }: Props) {
           { name: TITLE, url: absolute("/insights") },
         ])}
       />
-      <Header q="" />
+      <Header q="" search={home.has_articles} />
+
+      {!home.has_articles ? (
+        <section aria-labelledby="career-guides" className="mt-10" data-testid="insights-guides">
+          <h2 id="career-guides" className="m-0 mb-1 text-title font-semibold text-ink">
+            Career guides
+          </h2>
+          <p className="m-0 mb-6 max-w-[62ch] text-base text-muted">
+            Written and checked by the UPNEXT Careers editors: finding and applying for jobs in Zimbabwe, CVs,
+            graduate programmes, internships, and how listings are verified.
+          </p>
+          <ul className="m-0 grid list-none grid-cols-2 gap-4 p-0 max-sm:grid-cols-1">
+            {GUIDES.map((g) => (
+              <li key={g.path}>
+                <GuideCard guide={g} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {categories.length > 0 ? (
         <nav aria-label="Article categories" className="mt-6">
@@ -173,13 +208,6 @@ export default async function InsightsHomePage({ searchParams }: Props) {
         </section>
       ) : null}
 
-      {!home.has_articles ? (
-        <p className="m-0 mt-10 max-w-[62ch] text-base text-ink" data-testid="insights-empty">
-          The first Career Insights articles are being written and reviewed by the editors. Until they are
-          published, the career guides below answer the most common questions.
-        </p>
-      ) : null}
-
       {home.graduate.length > 0 ? (
         <section aria-labelledby="graduate" className="mt-12">
           <h2 id="graduate" className="m-0 mb-4 text-title font-semibold text-ink">
@@ -194,21 +222,23 @@ export default async function InsightsHomePage({ searchParams }: Props) {
         </section>
       ) : null}
 
-      <section aria-labelledby="guides" className="mt-12 border-t border-line pt-8">
-        <h2 id="guides" className="m-0 mb-4 text-title font-semibold text-ink">
-          Featured guides
-        </h2>
-        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
-          {GUIDES.map((g) => (
-            <li key={g.path} className="rounded-card border border-line p-4">
-              <Link href={g.path} className="text-ctl font-semibold text-ink hover:underline">
-                {g.title}
-              </Link>
-              <p className="m-0 mt-1 text-small text-muted">{g.description}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {home.has_articles ? (
+        <section aria-labelledby="guides" className="mt-12 border-t border-line pt-8">
+          <h2 id="guides" className="m-0 mb-4 text-title font-semibold text-ink">
+            Featured guides
+          </h2>
+          <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
+            {GUIDES.map((g) => (
+              <li key={g.path} className="rounded-card border border-line p-4">
+                <Link href={g.path} className="text-ctl font-semibold text-ink hover:underline">
+                  {g.title}
+                </Link>
+                <p className="m-0 mt-1 text-small text-muted">{g.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section aria-labelledby="jobs" className="mt-12 rounded-card bg-surface-pale p-6">
         <h2 id="jobs" className="m-0 text-title font-semibold text-ink">
@@ -244,31 +274,38 @@ export default async function InsightsHomePage({ searchParams }: Props) {
   );
 }
 
-function Header({ q }: { q: string }) {
+function Header({ q, search = true }: { q: string; search?: boolean }) {
   return (
     <header>
       <h1 className="m-0 text-display">{TITLE}</h1>
       <p className="mt-3 max-w-[62ch] text-lead text-muted">{DESCRIPTION}</p>
-      <form role="search" method="get" action="/insights" className="mt-6 flex max-w-[560px] gap-2">
-        <label htmlFor="insights-q" className="sr-only">
-          Search Career Insights
-        </label>
-        <input
-          id="insights-q"
-          name="q"
-          type="search"
-          defaultValue={q}
-          maxLength={60}
-          placeholder="Search articles"
-          className="min-h-[44px] min-w-0 flex-1 rounded-control border border-control-border bg-surface px-3 text-base text-ink"
-        />
-        <button
-          type="submit"
-          className="min-h-[44px] rounded-pill bg-accent-solid px-5 text-base font-semibold text-white"
-        >
-          Search
-        </button>
-      </form>
+      {search ? <SearchForm q={q} /> : null}
     </header>
+  );
+}
+
+/** Article search: shown only while there are published articles to search. */
+function SearchForm({ q }: { q: string }) {
+  return (
+    <form role="search" method="get" action="/insights" className="mt-6 flex max-w-[560px] gap-2">
+      <label htmlFor="insights-q" className="sr-only">
+        Search Career Insights
+      </label>
+      <input
+        id="insights-q"
+        name="q"
+        type="search"
+        defaultValue={q}
+        maxLength={60}
+        placeholder="Search articles"
+        className="min-h-[44px] min-w-0 flex-1 rounded-control border border-control-border bg-surface px-3 text-base text-ink"
+      />
+      <button
+        type="submit"
+        className="min-h-[44px] rounded-pill bg-accent-solid px-5 text-base font-semibold text-white"
+      >
+        Search
+      </button>
+    </form>
   );
 }

@@ -53,6 +53,18 @@ export function adSlotId(placement: AdPlacement, env: Env = process.env): string
 export const adsTxtFor = (client: string): string =>
   `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`;
 
+/**
+ * The publisher id for Google's site-ownership meta tag (`<meta name="google-adsense-account" content="ca-pub-…">`),
+ * or undefined. Present on every public page whenever the owner configured a well-formed UPNEXT_ADSENSE_CLIENT (the
+ * same id /ads.txt publishes), in every mode: the tag is text, loads nothing from Google and needs no consent. Never on
+ * the staff workspace or the employer dashboard.
+ */
+export function adsenseAccountMeta(pathname: string, env: Env = process.env): string | undefined {
+  const internal =
+    pathname.startsWith("/workspace") || pathname === "/employer" || pathname.startsWith("/employer/");
+  return internal ? undefined : adsenseClient(env);
+}
+
 export const adsenseScriptSrc = (client: string): string =>
   `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
 

@@ -32,6 +32,8 @@ class ArchiveReason(models.TextChoices):
     HOUSEKEEPING = "housekeeping"
     TAKEDOWN = "takedown"
     ABANDONED = "abandoned"
+    # The same vacancy as another public listing: its address now moves permanently to that listing (D-79).
+    MERGED = "merged"
 
 
 class VersionState(models.TextChoices):
@@ -578,3 +580,39 @@ class SavedOpportunity(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.opportunity_id}"
+
+
+class OpportunityRedirect(models.Model):
+    """A permanent move of a retired listing address to the listing that replaced it (D-79, ADR-0027).
+
+    Written only by `workflow.merge_duplicate`, together with the archived duplicate and its history;
+    append-only (database trigger), so an address that was ever shared keeps working. `from_slug` is the
+    duplicate's own slug, which stays on its archived row (slugs are never reused, ADR-0006). The public
+    detail endpoint follows the row, and any chain of merges, to the listing that is public now, so a visitor
+    is moved in one step."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    from_slug = models.CharField(max_length=80, unique=True)
+    from_opportunity = models.OneToOneField(
+        Opportunity, on_delete=models.PROTECT, related_name="redirect_from_here"
+    )
+    to_opportunity = models.ForeignKey(
+        Opportunity, on_delete=models.PROTECT, related_name="redirects_to_here"
+    )
+    reason = models.TextField()
+    # Facts the two listings disagree on, recorded at the merge for an editor to settle (never resolved by
+    # code).
+    review_notes = models.JSONField(default=list)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(from_opportunity=models.F("to_opportunity")), name="redirect_not_to_itself"
+            ),
+        ]
+        indexes = [models.Index(fields=["to_opportunity"], name="redirect_to_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.from_slug} -> {self.to_opportunity_id}"

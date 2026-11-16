@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Container } from "@/components/layout";
 import { ReportForm } from "@/components/opportunities/report-form";
 import { EmptyState } from "@/components/ui";
@@ -31,6 +31,8 @@ export default async function ReportPage({ params }: Props) {
   }
   if (result.data === null) notFound();
   const listing = result.data;
+  // A merged duplicate's address (D-79) or a differently spelt one: report the listing at its one canonical address.
+  if (slug !== listing.slug) permanentRedirect(`/opportunities/${listing.slug}/report`);
   return (
     <Container className="py-8">
       <nav aria-label="Breadcrumb" className="mb-3 text-small">
