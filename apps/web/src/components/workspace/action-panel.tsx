@@ -93,7 +93,11 @@ export function ActionPanel({
     const result = await apiFetch("POST", `${endpoint}/${action.name}`, body);
     setBusy(false);
     if (!result.ok) {
-      if (result.code === "validation_failed" || result.code === "duplicate_detected")
+      if (
+        result.code === "validation_failed" ||
+        result.code === "duplicate_detected" ||
+        result.code === "duplicate_review_required"
+      )
         setErrors(result.fields);
       if (result.code === "state_conflict") router.refresh();
       setFailure(describeFailure(result));

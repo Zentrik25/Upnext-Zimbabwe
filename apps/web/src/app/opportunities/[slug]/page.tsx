@@ -101,7 +101,9 @@ export default async function OpportunityPage({ params }: Props) {
       <ListingEvents slug={listing.slug} open={listing.status === "published"} />
       <JobView
         listing={listing}
-        ad={listing.status === "published" ? <AdSlot placement="job-detail" /> : null}
+        // An advertisement only on a listing that is open, after its description: never on a closed listing, and
+        // never straight under the Apply, Save and Share row when a listing has no description (AdSense audit).
+        ad={isOpen(listing) && listing.description_html ? <AdSlot placement="job-detail" /> : null}
         personal={
           <Suspense fallback={listing.status === "published" ? <SaveSkeleton /> : null}>
             <ListingSave listing={listing} />

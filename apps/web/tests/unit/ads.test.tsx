@@ -91,6 +91,34 @@ describe("AdUnit respects the visitor's advertising choice", () => {
     act(() => setAdConsent("granted")); // cannot be stored: must not start advertising by itself
   });
 
+  it("withdrawing consent pauses a Google script that already ran; allowing again resumes it", () => {
+    render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
+    act(() => screen.getByRole("button", { name: "Allow advertisements" }).click());
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(0);
+    act(() => screen.getByRole("button", { name: "Stop advertisements" }).click());
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(1); // the script stays in the page, but requests nothing more
+    act(() => screen.getByRole("button", { name: "Allow advertisements" }).click());
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(0);
+  });
+
+  it("leaving the ad page by an in-app link pauses Google's script; the next ad page resumes it", () => {
+    window.localStorage.setItem(AD_CONSENT_KEY, "granted");
+    const first = render(<AdUnit client={CLIENT} slot={SLOT} placement="job-detail" />);
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(0);
+    first.unmount(); // e.g. a client-side navigation to /sign-in or /saved, where no ad may appear
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(1);
+    render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
+    expect(window.adsbygoogle?.pauseAdRequests).toBe(0);
+    expect(googleScripts().length).toBe(1); // loaded once per document
+  });
+
+  it("without consent nothing touches Google's queue, even on leaving the page", () => {
+    const { unmount } = render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
+    unmount();
+    expect(window.adsbygoogle).toBeUndefined();
+    expect(googleScripts().length).toBe(0);
+  });
+
   it("never sits inside a link or button and is a labelled landmark apart from the text", () => {
     const { container } = render(<AdUnit client={CLIENT} slot={SLOT} placement="guide" />);
     expect(container.querySelector("a, button")?.closest("aside")).not.toBeNull(); // its own controls only
