@@ -21,22 +21,38 @@ const SEEKER_TABS: typeof TABS = [
     match: (p) => ["/account", "/profile", "/alerts", "/for-you"].some((x) => p.startsWith(x)),
   },
 ];
+const advice = (p: string) => p.startsWith("/insights") || p.startsWith("/guides");
+const SIGN_IN: (typeof TABS)[number] = {
+  href: "/sign-in",
+  label: "Sign in",
+  icon: "user",
+  match: (p) => p === "/sign-in",
+};
 const VISITOR_TABS: typeof TABS = [
-  {
-    href: "/insights",
-    label: "Insights",
-    icon: "doc",
-    match: (p) => p.startsWith("/insights") || p.startsWith("/guides"),
-  },
-  { href: "/sign-in", label: "Sign in", icon: "user", match: (p) => p === "/sign-in" },
+  { href: "/insights", label: "Insights", icon: "doc", match: advice },
+  SIGN_IN,
+];
+// Until an article is published the tab opens the career guides, which exist (D-79).
+const VISITOR_TABS_GUIDES: typeof TABS = [
+  { href: "/guides", label: "Guides", icon: "doc", match: advice },
+  SIGN_IN,
 ];
 
 /** Phone-only tab bar for the five places a visitor goes most. Sign-in and registration stay inside the menu.
  *  No prefetching: each tab is a server-rendered page that calls the API, and five prefetches on every page view
  *  would multiply API load (and trip the per-address read limit in the browser suite). */
-export function BottomNav({ home = "/", signedIn = false }: { home?: string; signedIn?: boolean }) {
+export function BottomNav({
+  home = "/",
+  signedIn = false,
+  insights = true,
+}: {
+  home?: string;
+  signedIn?: boolean;
+  /** Whether a Career Insights article is published (lib/site-sections.ts). */
+  insights?: boolean;
+}) {
   const pathname = usePathname();
-  const tabs = [...TABS, ...(signedIn ? SEEKER_TABS : VISITOR_TABS)];
+  const tabs = [...TABS, ...(signedIn ? SEEKER_TABS : insights ? VISITOR_TABS : VISITOR_TABS_GUIDES)];
   return (
     <>
       <nav

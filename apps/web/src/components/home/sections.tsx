@@ -8,6 +8,7 @@ import { Icon, type IconName } from "@/components/ui/icons";
 import type { Category, Location } from "@/lib/catalog-types";
 import { DEADLINES, EMPLOYMENT, MODES } from "@/lib/filters";
 import { VerificationTag } from "@/components/opportunities/parts";
+import { leadsSomewhere, siteSections } from "@/lib/site-sections";
 
 /** Every search control is one outlined box: 40px tall, 14px text, icon on the left (D-53, D-73). */
 const FIELD =
@@ -86,7 +87,7 @@ export function HeroFrame({ children }: { children: ReactNode }) {
   );
 }
 
-/** The four shortcuts under the search: white chips with an icon. Static, so they are sent with the headline. */
+/** The shortcuts under the search: white chips. */
 const QUICK_LINKS: readonly { label: string; href: string }[] = [
   { label: "Jobs", href: "/opportunities?category=jobs" },
   { label: "Internships", href: "/opportunities?category=internships" },
@@ -95,12 +96,16 @@ const QUICK_LINKS: readonly { label: string; href: string }[] = [
   { label: "Tenders", href: "/opportunities?category=tenders" },
 ];
 
-function QuickLinks() {
+/** A shortcut is offered only for a category that holds an open listing (D-79). */
+async function QuickLinks() {
+  const sections = await siteSections();
+  const links = QUICK_LINKS.filter((link) => leadsSomewhere(link.href, sections));
+  if (links.length === 0) return null;
   return (
     <nav aria-label="Quick links">
       <ul className="m-0 flex list-none flex-wrap items-center gap-2 p-0">
         <li className="text-ctl text-muted">Popular:</li>
-        {QUICK_LINKS.map((link) => (
+        {links.map((link) => (
           <li key={link.label}>
             <Link
               href={link.href}
@@ -130,7 +135,10 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
       aria-label="Search opportunities"
       className="grid gap-3 rounded-feature border border-line bg-surface p-3"
     >
-      <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto] gap-3 max-md:grid-cols-1">
+      {/* The Location list is offered only when the catalogue holds a place: an empty list is a dead control. */}
+      <div
+        className={`grid gap-3 max-md:grid-cols-1 ${places.length > 0 ? "grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}
+      >
         <div>
           <label htmlFor="home-q" className="sr-only">
             Search by title, organisation or keyword
@@ -148,14 +156,16 @@ export function HeroSearch({ categories, locations }: { categories: Category[]; 
             />
           </IconControl>
         </div>
-        <FilterSelect
-          id="home-location"
-          name="location"
-          label="Location"
-          icon="pin"
-          all="Location"
-          options={places}
-        />
+        {places.length > 0 ? (
+          <FilterSelect
+            id="home-location"
+            name="location"
+            label="Location"
+            icon="pin"
+            all="Location"
+            options={places}
+          />
+        ) : null}
         <Button type="submit" className="h-field w-full gap-2 rounded-pill px-6 text-ctl md:w-auto">
           Search Jobs
         </Button>

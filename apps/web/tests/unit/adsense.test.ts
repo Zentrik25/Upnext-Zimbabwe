@@ -19,6 +19,8 @@ describe("AdSense configuration is off unless the owner sets it", () => {
     expect(adsenseMode({ UPNEXT_ADSENSE_CLIENT: CLIENT, UPNEXT_ADSENSE_MODE: "on" })).toBe("off");
     expect(adsenseMode({ UPNEXT_ADSENSE_MODE: "live" })).toBe("off");
     expect(adsenseMode({ UPNEXT_ADSENSE_CLIENT: CLIENT, UPNEXT_ADSENSE_MODE: "verify" })).toBe("verify");
+    expect(adsenseMode({ UPNEXT_ADSENSE_CLIENT: CLIENT, UPNEXT_ADSENSE_MODE: "meta" })).toBe("meta");
+    expect(adsenseMode({ UPNEXT_ADSENSE_MODE: "meta" })).toBe("off"); // no publisher id, no tag
     expect(adsenseMode({ UPNEXT_ADSENSE_CLIENT: CLIENT, UPNEXT_ADSENSE_MODE: " LIVE " })).toBe("live");
   });
 

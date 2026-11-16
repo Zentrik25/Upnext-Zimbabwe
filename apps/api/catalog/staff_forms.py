@@ -8,12 +8,27 @@ from typing import Any
 from django import forms
 
 from .models import Category, Location, Organisation, Sector, Skill
+from .text import normalise_name
 
 
 class OrganisationForm(forms.ModelForm):  # type: ignore[type-arg]
     class Meta:
         model = Organisation
         fields = ("name", "website_url")
+
+    def clean_name(self) -> str:
+        """One record per employer: a second record with the same name hides duplicate listings from the
+        duplicate check and splits the employer's listings (found on the live site, 2026-11-16)."""
+        name = str(self.cleaned_data["name"]).strip()
+        same = Organisation.objects.filter(name_normalized=normalise_name(name), merged_into__isnull=True)
+        if self.instance.pk:
+            same = same.exclude(pk=self.instance.pk)
+        if same.exists():
+            raise forms.ValidationError(
+                "An organisation with this name already exists. Choose it instead of adding it again.",
+                code="duplicate",
+            )
+        return name
 
 
 class CategoryForm(forms.ModelForm):  # type: ignore[type-arg]

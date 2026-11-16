@@ -27,7 +27,7 @@ Nothing here changes those decisions. A decision-register entry superseding them
 | Variable | Meaning |
 |---|---|
 | `UPNEXT_ADSENSE_CLIENT` | The real publisher id `ca-pub-…` from the owner's AdSense account. Invalid or blank: advertising is off and `/ads.txt` answers 404. On its own it only serves `/ads.txt`: no Google script loads and no ad shows |
-| `UPNEXT_ADSENSE_MODE` | `verify` or `live`. Blank or anything else: off |
+| `UPNEXT_ADSENSE_MODE` | `meta` (ownership meta tag `google-adsense-account` on public pages, no Google script, no ads; D-79), `verify` (ownership code snippet, no ads) or `live`. Blank or anything else: off. The ads.txt method needs no mode |
 | `UPNEXT_ADSENSE_SLOT_JOB_DETAIL`, `UPNEXT_ADSENSE_SLOT_GUIDE` | Real ad-unit ids (digits) created in AdSense after approval; a placement with no id renders nothing |
 
 ## Requires Google AdSense approval, configuration or legal review (NOT done)
@@ -43,6 +43,6 @@ Nothing here changes those decisions. A decision-register entry superseding them
 10. **Page weight.** With ads off, the home, search and sign-in pages ship no ad code (measured identical to the base build). Opportunity and guide pages carry the ad block (about 1.3 KiB gzipped) even with ads off, so the listing-page script allowance in `tests/e2e/mobile-budget.spec.ts` is 153 KiB; real-device testing is still required (B-10).
 
 ## How to activate (owner, after the steps above)
-1. **Preferred way to get the site verified (no Google script on the pages):** set only `UPNEXT_ADSENSE_CLIENT`, redeploy, open `https://upnext.co.zw/ads.txt` to confirm it shows the line, then in AdSense choose "Ads.txt snippet" and "Request review". Leave `UPNEXT_ADSENSE_MODE` blank. Alternative: also set `UPNEXT_ADSENSE_MODE=verify` and choose "AdSense code snippet"; then a Google script loads for every visitor with no prompt, because the crawler must find it in the page, and the policy says so.
+1. **Preferred way to get the site verified (no Google script on the pages):** set only `UPNEXT_ADSENSE_CLIENT`, redeploy, open `https://upnext.co.zw/ads.txt` to confirm it shows the line, then in AdSense choose "Ads.txt snippet" and "Request review". Leave `UPNEXT_ADSENSE_MODE` blank. Second way without a Google script: set `UPNEXT_ADSENSE_MODE=meta` and choose "Meta tag" in AdSense (the tag is on every public page). Alternative: also set `UPNEXT_ADSENSE_MODE=verify` and choose "AdSense code snippet"; then a Google script loads for every visitor with no prompt, because the crawler must find it in the page, and the policy says so.
 2. After approval, create ad units, set the two slot variables and `UPNEXT_ADSENSE_MODE=live`.
 3. To turn it all off, blank the variables.

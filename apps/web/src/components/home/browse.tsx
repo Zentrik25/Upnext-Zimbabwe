@@ -7,9 +7,15 @@ import { SkeletonHomeRow } from "@/components/ui";
 import { CATEGORY_SEO } from "@/lib/category-seo";
 import { listLocations, listOpportunities } from "@/lib/catalog";
 import { GUIDES } from "@/lib/guides";
+import { siteSections } from "@/lib/site-sections";
 import { getCurrentUser, getSavedIds } from "@/lib/session";
 
-export function BrowseByCategory() {
+/** The categories that hold an open listing. An empty one is not advertised on the home page (D-79); the
+ *  /categories directory still lists all six and says which are empty. */
+export async function BrowseByCategory() {
+  const sections = await siteSections();
+  const codes = Object.keys(CATEGORY_SEO).filter((code) => sections.categoryOpen(code));
+  if (codes.length === 0) return null;
   return (
     <section aria-labelledby="cat-title" className="py-8 max-sm:py-6">
       <Container>
@@ -20,7 +26,7 @@ export function BrowseByCategory() {
           linkLabel="All categories"
         />
         <ul className="m-0 mt-4 grid list-none grid-cols-3 gap-3 p-0 max-md:grid-cols-2 max-sm:grid-cols-1">
-          {Object.keys(CATEGORY_SEO).map((code) => (
+          {codes.map((code) => (
             <li key={code}>
               <CategoryCard code={code} />
             </li>

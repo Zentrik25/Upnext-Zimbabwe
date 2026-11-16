@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/session";
 import { adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
+import { ALL_SECTIONS, siteSections } from "@/lib/site-sections";
 import "@/styles/globals.css";
 import { PendingMain, PendingNavigationProvider } from "@/components/navigation/pending-navigation";
 
@@ -81,16 +82,21 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Signed-in people reach their own dashboard from the Home tab; the public front page stays one tap away in the menu.
   const signedIn = workspace || auth ? null : await getCurrentUser();
   // Only a jobseeker's dashboard shares the public frame; staff and employers reach theirs from the header.
+  const sections = workspace || auth ? ALL_SECTIONS : await siteSections();
   const home = signedIn && homeOf(signedIn.home_path) === "/dashboard" ? "/dashboard" : "/";
   // AdSense site-verification snippet: only in `verify` mode (owner-set UPNEXT_ADSENSE_MODE), on public pages only
   // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
   // after the visitor agrees, by the ad slot (components/ads).
-  const adsense = workspace || auth || adsenseMode() !== "verify" ? undefined : adsenseClient();
+  const adMode = workspace || auth ? "off" : adsenseMode();
+  const adsense = adMode === "verify" ? adsenseClient() : undefined;
+  // The meta-tag method (`meta` mode): Google's ownership tag in the head of public pages, and no Google script.
+  const adsenseMeta = adMode === "meta" ? adsenseClient() : undefined;
   return (
     // data-theme is set before first paint by the script below, so the server and client markup differ on purpose.
     <html lang="en" className={`${inter.variable} ${sourceCode.variable}`} suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {adsenseMeta ? <meta name="google-adsense-account" content={adsenseMeta} /> : null}
         {adsense ? (
           <script async nonce={nonce} src={adsenseScriptSrc(adsense)} crossOrigin="anonymous" />
         ) : null}
@@ -115,7 +121,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <PendingMain>{children}</PendingMain>
             </main>
             <SiteFooter />
-            <BottomNav home={home} signedIn={Boolean(signedIn)} />
+            <BottomNav home={home} signedIn={Boolean(signedIn)} insights={sections.insights} />
           </PendingNavigationProvider>
         )}
       </body>

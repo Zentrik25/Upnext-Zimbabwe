@@ -3,6 +3,7 @@ import { Lockup } from "@/components/brand/logo";
 import { BRAND } from "@/lib/brand";
 import { OPPORTUNITY_DESTINATIONS } from "@/lib/destinations";
 import { GUIDES } from "@/lib/guides";
+import { leadsSomewhere, siteSections } from "@/lib/site-sections";
 import { Container } from "./container";
 
 const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[] = [
@@ -45,7 +46,10 @@ const COLUMNS: { title: string; links: readonly (readonly [string, string])[] }[
 
 const link = "inline-flex min-h-[24px] items-center py-[3px] text-check-text hover:text-accent";
 
-export function SiteFooter() {
+/** Every link leads to a page with content: an empty category list, the location directory without places and
+ *  Career Insights without an article are left out until they hold something (D-79). */
+export async function SiteFooter() {
+  const sections = await siteSections();
   return (
     <footer className="border-t border-line bg-surface-pale py-12 text-small text-check-text max-sm:py-6">
       <Container>
@@ -69,13 +73,15 @@ export function SiteFooter() {
               <div key={column.title} className="max-sm:mb-3 max-sm:break-inside-avoid">
                 <h2 className="text-small font-strong text-ink">{column.title}</h2>
                 <ul className="m-0 mt-2 grid list-none gap-1 p-0">
-                  {column.links.map(([href, label]) => (
-                    <li key={href}>
-                      <Link href={href} className={link}>
-                        {label}
-                      </Link>
-                    </li>
-                  ))}
+                  {column.links
+                    .filter(([href]) => leadsSomewhere(href, sections))
+                    .map(([href, label]) => (
+                      <li key={href}>
+                        <Link href={href} className={link}>
+                          {label}
+                        </Link>
+                      </li>
+                    ))}
                 </ul>
               </div>
             ))}

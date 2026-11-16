@@ -7,8 +7,9 @@ import { homeOf } from "@/lib/safe-next";
 import { getCurrentUser } from "@/lib/session";
 import { MobileMenu, type MenuItem } from "./mobile-menu";
 import { PendingSignal } from "@/components/navigation/pending-navigation";
+import { leadsSomewhere, siteSections, type SiteSections } from "@/lib/site-sections";
 
-/** The five places the public navigation always offers (D-73). Since D-78 the fourth is Career Insights, whose home
+/** The five places the public navigation offers (D-73). Since D-78 the fourth is Career Insights, whose home
  *  lists every career guide; the menu and the footer still link the guides directly. */
 export const PUBLIC_NAV = [
   { href: "/opportunities", label: "Find Jobs" },
@@ -18,11 +19,22 @@ export const PUBLIC_NAV = [
   { href: "/employers", label: "For Employers" },
 ] as const;
 
+/** The bar as a visitor gets it: a section with nothing in it is not offered (D-79). Locations is left out while
+ *  the place catalogue is empty, and until an article is published the fourth place is the career guides, which
+ *  exist, instead of an Insights page with no article. */
+export function publicNav(sections: SiteSections): { href: string; label: string }[] {
+  return PUBLIC_NAV.filter((item) => leadsSomewhere(item.href, sections)).flatMap((item) =>
+    item.href === "/employers" && !sections.insights
+      ? [{ href: "/guides", label: "Career Guides" }, item]
+      : [item],
+  );
+}
+
 const bar =
   "inline-flex min-h-[44px] items-center whitespace-nowrap text-ctl text-nav-text hover:text-accent";
 
 export async function SiteHeader() {
-  const user = await getCurrentUser();
+  const [user, sections] = await Promise.all([getCurrentUser(), siteSections()]);
   // Where this account's own dashboard is (chosen by the API, D-70): the workspace, the employer dashboard or the jobseeker one.
   const dashboard = homeOf(user?.home_path);
   const menuGroups: MenuItem[][] = [
@@ -34,7 +46,7 @@ export async function SiteHeader() {
       { href: "/insights", label: "Career Insights", icon: "doc" },
       { href: "/guides", label: "Career Guides", icon: "doc" },
       { href: "/employers", label: "For Employers", icon: "building" },
-    ],
+    ].filter((item) => leadsSomewhere(item.href, sections)) as MenuItem[],
     [
       { href: "/about", label: "About Us", icon: "info" },
       { href: "/contact", label: "Contact Us", icon: "mail" },
@@ -60,7 +72,7 @@ export async function SiteHeader() {
           <PendingSignal href="/" />
         </Link>
         <nav aria-label="Primary" className="flex flex-1 items-center gap-x-6 max-md:hidden">
-          {PUBLIC_NAV.map((item) => (
+          {publicNav(sections).map((item) => (
             <Link key={item.href} href={item.href} className={bar}>
               {item.label}
               <PendingSignal href={item.href} />

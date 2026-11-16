@@ -26,6 +26,8 @@ const catalog = vi.hoisted(() => ({
     ok: true as const,
     data: { articles: [], categories: [], authors: [], updated_at: null },
   })),
+  getSitemapEntries: vi.fn(async () => ({ ok: false as const, reason: "unreachable" as const })),
+  hasPlaces: vi.fn(async () => true),
   listCategories: vi.fn(),
   listLocations: vi.fn(),
   listOpportunities: vi.fn(),

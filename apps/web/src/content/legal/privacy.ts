@@ -57,7 +57,8 @@ function advertisingSection(ads: AdMode): LegalDocument["sections"][number] {
 /** Every statement below is traced to the code or a decision in docs/legal/CODE_TO_POLICY_CHECKLIST.md. The text depends
  *  on the advertising status set by the owner (lib/adsense.ts): `off` is the default and claims no advertising. */
 export function privacyFor(ads: AdMode = "off"): LegalDocument {
-  const advertising = ads !== "off";
+  // The meta-tag ownership check loads nothing from Google, so the policy reads as it does with advertising off.
+  const advertising = ads !== "off" && ads !== "meta";
   return {
     slug: "privacy",
     title: "Privacy Policy",
