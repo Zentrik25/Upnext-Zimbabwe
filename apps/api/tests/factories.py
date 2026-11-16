@@ -118,5 +118,7 @@ def varied(world: World, example: str, tag: str, **extra: Any) -> dict[str, Any]
     ]
     if content.get("application_url"):
         overrides["application_url"] = f"{content['application_url'].rstrip('/')}/{tag}"
+    if content.get("reference_number"):  # an issuer reference identifies one vacancy (D-79)
+        overrides["reference_number"] = f"{content['reference_number']}-{tag}"
     overrides.update(extra)
     return overrides

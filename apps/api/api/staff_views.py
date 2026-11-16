@@ -577,7 +577,14 @@ def _duplicates_of(opp: Opportunity) -> list[dict[str, str]]:
     ):
         return []
     return [
-        {"id": d.opportunity_id, "title": d.title, "level": d.level, "reason": d.reason, "status": d.status}
+        {
+            "id": d.opportunity_id,
+            "title": d.title,
+            "level": d.level,
+            "reason": d.reason,
+            "status": d.status,
+            "match": d.match,  # "identifier": an issuer reference or a specific address (D-79)
+        }
         for d in find_duplicates(version)
     ]
 
@@ -617,6 +624,11 @@ def _detail(user: User, opp: Opportunity) -> dict[str, Any]:
     for d in duplicates:
         what = "is already open" if d["level"] == "hard" else "looks similar"
         warnings.append(f"{d['title'] or 'Another listing'} {what} for this organisation. {d['reason']}")
+        if d["level"] == "hard" and d["match"] == "identifier":
+            warnings.append(
+                "It shares an issuer identifier, so it cannot be published directly: amend the open listing, "
+                "or submit this one for another person to review."
+            )
     for name, label in listing_actions(user, opp):
         spec = ACTIONS.get(name)
         actions.append(

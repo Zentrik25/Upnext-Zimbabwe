@@ -276,7 +276,10 @@ class OpportunityDetailView(PublicView):
     def get(self, request: Request, slug: str) -> Response:
         if not 8 <= len(slug) <= 80 or not SLUG_RE.match(slug.lower()):
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
-        version = public.get_detail(slug)
+        # A retired duplicate's address answers with the listing that replaced it (D-79). Its `slug` and
+        # `canonical_path` differ from the address asked for, which is how the web page knows to move the
+        # visitor permanently, in one step, exactly as it already does for an address typed in capitals.
+        version = public.get_detail(slug) or public.redirect_target(slug)
         if version is None:
             return error_response("not_found", "Not found.", status.HTTP_404_NOT_FOUND)
         return Response(detail_of(version, timezone.now()))
