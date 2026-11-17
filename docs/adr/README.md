@@ -29,6 +29,7 @@ Format: Context · Decision · Consequences · Alternatives. Decisions are recor
 | [0024](ADR-0024-staff-console-and-direct-publication.md) | Staff console and direct publication by Administrators and Editors (the /staff console part is superseded by 0025) | D-46 |
 | [0025](ADR-0025-staff-workspace-nextjs.md) | Staff workspace in Next.js at /workspace on a thin staff API; Django Admin and the /staff console retired (two-step gated, same workflow service and visibility rule) | D-49 |
 | [0026](ADR-0026-staff-interface-redesign-in-django-admin.md) | Staff interface redesign inside Django Admin (superseded by 0025) | D-49 |
+| [0027](ADR-0027-listing-redirects-for-merged-duplicates.md) | Permanent redirects for merged duplicate listings (DRAFT; relaxes ADR-0006 §5) | D-79 |
 
 ## Proposed or open (not accepted — no file until drafted for review)
 | Ref | Subject | Depends on |

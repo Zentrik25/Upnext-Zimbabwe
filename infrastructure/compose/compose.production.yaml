@@ -169,7 +169,7 @@ services:
       UPNEXT_LANDING_MIN_LISTINGS: ${UPNEXT_LANDING_MIN_LISTINGS:-3} # open listings before a /jobs/* landing page is indexed (D-68)
       # Advertising is OFF while these are blank (docs/engineering/ADSENSE_SITE_VERIFICATION.md). The owner sets them; none is invented.
       UPNEXT_ADSENSE_CLIENT: ${UPNEXT_ADSENSE_CLIENT:-}
-      UPNEXT_ADSENSE_MODE: ${UPNEXT_ADSENSE_MODE:-} # off (blank) | meta (ownership meta tag, no script) | verify (ownership snippet, no ads) | live (ads after consent)
+      UPNEXT_ADSENSE_MODE: ${UPNEXT_ADSENSE_MODE:-} # off (blank) | verify (ownership snippet, no ads) | live (ads after consent)
       UPNEXT_ADSENSE_SLOT_JOB_DETAIL: ${UPNEXT_ADSENSE_SLOT_JOB_DETAIL:-}
       UPNEXT_ADSENSE_SLOT_GUIDE: ${UPNEXT_ADSENSE_SLOT_GUIDE:-}
     user: "1000:1000"

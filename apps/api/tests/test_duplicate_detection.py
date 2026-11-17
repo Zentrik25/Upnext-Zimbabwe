@@ -26,6 +26,8 @@ pytestmark = pytest.mark.django_db
 SHARED = {
     "application_url": "https://careers.deltabeverages.example.org/apply",
     "application_email": None,
+    # The example's issuer reference would identify one vacancy (D-79); these tests are about titles.
+    "reference_number": None,
     "sources": [
         {
             "kind": "issuer_website",
@@ -154,7 +156,7 @@ def test_a_clearly_different_place_reference_or_closing_date_makes_it_a_warning_
     )
     publish(editor, base)
     for extra, reason in (
-        ({"location_text": "Bulawayo", "reference_number": "DB/01"}, "location"),
+        ({"location_text": "Bulawayo", "reference_number": None}, "location"),
         ({"location_text": "Harare", "reference_number": "DB/02"}, "reference"),
     ):
         other = draft(world, editor, delta, "Sales Representative", **extra)
@@ -276,3 +278,16 @@ def test_a_place_written_more_or_less_precisely_is_the_same_place(
     publish(editor, draft(world, editor, delta, "Transport and Office Associate", location_text="Harare"))
     again = draft(world, editor, delta, "Transport and Office Associate", location_text=place)
     assert [d.level for d in duplicates_of(again)] == ["hard"]
+
+
+def test_one_place_written_two_ways_is_not_a_difference(
+    world: World, people: dict[str, User], delta: Organisation
+) -> None:
+    """The audit's ACBF pair (D-79): "Harare" and "Harare, Zimbabwe" are one place, so the same title is a hard
+    duplicate that needs the confirmation, not a warning."""
+    editor = people["editor"]
+    publish(editor, draft(world, editor, delta, "Transport and Office Associate", location_text="Harare"))
+    again = draft(world, editor, delta, "Transport and Office Associate", location_text="Harare, Zimbabwe")
+    assert [d.level for d in duplicates_of(again)] == ["hard"]
+    elsewhere = draft(world, editor, delta, "Transport and Office Associate", location_text="Bulawayo")
+    assert [d.level for d in duplicates_of(elsewhere)] == ["soft"]

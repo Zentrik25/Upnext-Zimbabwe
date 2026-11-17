@@ -5,14 +5,11 @@
  * until the owner sets, in the deployed environment:
  *   UPNEXT_ADSENSE_CLIENT  the real publisher id (`ca-pub-…`) from the owner's AdSense account. On its own it only makes
  *                          /ads.txt available (app/ads.txt/route.ts); no Google script loads and no ad shows
- *   UPNEXT_ADSENSE_MODE    `meta` (site-ownership meta tag only: no Google script, no ads), `verify`
- *                          (site-ownership code snippet: Google's script loads, no ads) or `live` (labelled ads
- *                          after consent). Use the one that matches the method chosen on the AdSense Sites page;
- *                          the ads.txt method needs no mode at all
+ *   UPNEXT_ADSENSE_MODE    `verify` (site-ownership snippet only, no ads) or `live` (labelled ads after consent)
  *   UPNEXT_ADSENSE_SLOT_*  one real ad-unit id per placement, created in AdSense after approval
  * No publisher id or slot id is written in this repository.
  */
-export type AdMode = "off" | "meta" | "verify" | "live";
+export type AdMode = "off" | "verify" | "live";
 export type AdPlacement = "job-detail" | "guide";
 
 type Env = Record<string, string | undefined>;
@@ -27,15 +24,14 @@ export function adsenseClient(env: Env = process.env): string | undefined {
 }
 
 /**
- * `off` unless a well-formed publisher id AND an explicit mode are both present. `meta` writes Google's
- * `google-adsense-account` meta tag into the head of public pages and loads nothing. `verify` loads Google's snippet on
+ * `off` unless a well-formed publisher id AND an explicit mode are both present. `verify` loads Google's snippet on
  * public pages so AdSense can find it (no ads, no consent gate, because the crawler must see it in the page);
  * `live` loads nothing until the visitor agrees, then shows labelled ads in the allowed placements only.
  */
 export function adsenseMode(env: Env = process.env): AdMode {
   if (!adsenseClient(env)) return "off";
   const mode = env.UPNEXT_ADSENSE_MODE?.trim().toLowerCase();
-  return mode === "meta" || mode === "verify" || mode === "live" ? mode : "off";
+  return mode === "verify" || mode === "live" ? mode : "off";
 }
 
 const SLOT_VARIABLE: Record<AdPlacement, string> = {
@@ -56,6 +52,18 @@ export function adSlotId(placement: AdPlacement, env: Env = process.env): string
  */
 export const adsTxtFor = (client: string): string =>
   `google.com, ${client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`;
+
+/**
+ * The publisher id for Google's site-ownership meta tag (`<meta name="google-adsense-account" content="ca-pub-…">`),
+ * or undefined. Present on every public page whenever the owner configured a well-formed UPNEXT_ADSENSE_CLIENT (the
+ * same id /ads.txt publishes), in every mode: the tag is text, loads nothing from Google and needs no consent. Never on
+ * the staff workspace or the employer dashboard.
+ */
+export function adsenseAccountMeta(pathname: string, env: Env = process.env): string | undefined {
+  const internal =
+    pathname.startsWith("/workspace") || pathname === "/employer" || pathname.startsWith("/employer/");
+  return internal ? undefined : adsenseClient(env);
+}
 
 export const adsenseScriptSrc = (client: string): string =>
   `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;

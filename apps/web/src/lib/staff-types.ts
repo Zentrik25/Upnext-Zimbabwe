@@ -187,7 +187,15 @@ export type ListingDetail = ListingRow & {
   /** This listing's own statistics; null when the person may not see analytics. */
   analytics: JobStats | null;
   /** Open listings that look like this draft (a warning, never a block). */
-  duplicates: { id: string; title: string; level: "hard" | "soft"; reason: string; status: string }[];
+  /** `match: "identifier"`: an issuer reference or a specific address is shared (D-79); a hard one needs review. */
+  duplicates: {
+    id: string;
+    title: string;
+    level: "hard" | "soft";
+    reason: string;
+    status: string;
+    match?: "title" | "identifier";
+  }[];
   can_edit: boolean;
 };
 

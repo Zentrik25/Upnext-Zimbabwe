@@ -151,6 +151,8 @@ class Command(BaseCommand):
                     source["url"] = f"{source['url'].rstrip('/')}/demo-{steps}"
             if content.get("application_url"):
                 content["application_url"] = f"{content['application_url'].rstrip('/')}/demo-{steps}"
+            if content.get("reference_number"):  # an issuer reference identifies one vacancy (D-79)
+                content["reference_number"] = f"{content['reference_number']}-DEMO-{steps.upper()}"
             opp = workflow.create_draft(contributor, category_code=category, content=content)
             if steps == "draft":
                 continue

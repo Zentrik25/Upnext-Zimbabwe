@@ -24,9 +24,16 @@ from catalog.models import Category, Location, Organisation, Sector, Skill
 from catalog.text import normalise_name
 
 from . import content as content_mod
-from .duplicates import find_duplicates
+from .duplicates import (
+    Identity,
+    find_duplicates,
+    identity_of,
+    lock_identity_keys,
+    normalise_url,
+    version_identity,
+)
 from .errors import PermissionDeniedError, ValidationFailed
-from .models import OpportunitySource, OpportunityVersion
+from .models import ListingStatus, OpportunitySource, OpportunityVersion, VersionState
 from .workflow import create_draft
 
 PASSTHROUGH_LIMIT = 500
@@ -123,8 +130,36 @@ def _resolve(item: Mapping[str, Any]) -> tuple[str | None, dict[str, Any], list[
     return category, content, problems
 
 
-def _already_known(content: Mapping[str, Any]) -> str | None:
-    """A primary source address that already belongs to a live or pipeline listing (hard duplicate)."""
+# Listings an import must not repeat: any that is not archived and whose revision is still a draft, in review,
+# approved or live. A discarded draft or an archived listing does not block a fresh import.
+_KNOWN_STATES = (VersionState.DRAFT, VersionState.IN_REVIEW, VersionState.APPROVED, VersionState.PUBLISHED)
+
+
+def _identity_of_row(content: Mapping[str, Any]) -> Identity:
+    sources = [
+        str(s["url"])
+        for s in content.get("sources") or []
+        if isinstance(s, Mapping) and s.get("url") and s.get("is_primary")
+    ]
+    url = content.get("application_url")
+    return identity_of(
+        content.get("organisation_id", ""),
+        reference_number=content.get("reference_number")
+        if isinstance(content.get("reference_number"), str)
+        else None,
+        application_url=url if isinstance(url, str) else None,
+        source_urls=sources,
+    )
+
+
+def _already_known(content: Mapping[str, Any], batch: dict[str, int] | None = None) -> str | None:
+    """Why this row repeats a listing already in the catalogue or earlier in the same file, or None (D-79).
+
+    A row is a repeat when its primary source address is already recorded (as before), or when it carries a
+    reliable issuer identifier that an open draft, review or live listing already has: the same organisation's
+    vacancy reference, or the same specific application or source address once tracking parameters are
+    removed. Rows without such an identifier are created, and their title-level matches are reported as notes
+    for review."""
     for source in content.get("sources") or []:
         url = source.get("url") if isinstance(source, Mapping) else None
         if (
@@ -132,7 +167,32 @@ def _already_known(content: Mapping[str, Any]) -> str | None:
             and source.get("is_primary")
             and OpportunitySource.objects.filter(url=url, is_primary=True).exists()
         ):
-            return str(url)
+            return f"the primary source address is already in the catalogue: {url}"
+    identity = _identity_of_row(content)
+    if not identity:
+        return None
+    for key in identity.lock_keys():
+        if batch is not None and key in batch:
+            return f"row {batch[key]} of this file advertises the same vacancy ({key.split(':', 1)[0]})"
+    org = identity.organisation_id
+    near = OpportunityVersion.objects.filter(state__in=_KNOWN_STATES).exclude(
+        opportunity__status=ListingStatus.ARCHIVED
+    )
+    candidates = near.filter(organisation_id=org) if identity.references else near.none()
+    for address in identity.addresses:
+        host = address.split("/")[2]
+        candidates = candidates | near.filter(application_url__icontains=host)
+        candidates = candidates | near.filter(sources__is_primary=True, sources__url__icontains=host)
+    for other in candidates.distinct().prefetch_related("sources").select_related("opportunity"):
+        theirs = version_identity(other)
+        if str(other.organisation_id) == org and identity.references & theirs.references:
+            ref = sorted(identity.references & theirs.references)[0]
+            return f"the organisation's vacancy reference {ref} is already in the catalogue"
+        shared = sorted(identity.addresses & theirs.addresses)
+        if shared:
+            return (
+                f"the application or source address is already in the catalogue: {normalise_url(shared[0])}"
+            )
     return None
 
 
@@ -142,6 +202,7 @@ def import_drafts(
     if not actor.is_active or not DEFAULT_REGISTRY.has(actor.active_roles(), Permission.OPP_DRAFT_CREATE):
         raise PermissionDeniedError()
     results: list[RowResult] = []
+    batch: dict[str, int] = {}  # identity key -> first row that carried it, so one file cannot repeat itself
     for index, item in enumerate(items, start=1):
         title = str(item.get("title", ""))[:120]
         category, content, problems = _resolve(item)
@@ -149,24 +210,34 @@ def import_drafts(
         results.append(result)
         if problems or category is None:
             continue
-        known = _already_known(content)
+        known = _already_known(content, batch)
         if known:
             result.status = "duplicate"
-            result.problems.append(f"the primary source address is already in the catalogue: {known}")
+            result.problems.append(known)
             continue
         _, errors = content_mod.clean_draft(content)
         if errors:
             result.problems.extend(f"{path}: {messages[0][1]}" for path, messages in errors.items())
             continue
+        keys = _identity_of_row(content).lock_keys()
         if dry_run:
             result.status = "would_create"
+            batch.update({key: index for key in keys if key not in batch})
             continue
         try:
             with transaction.atomic():
+                # Two imports of one file at once: the second waits here, then sees the first one's draft.
+                lock_identity_keys(keys)
+                again = _already_known(content)
+                if again:
+                    result.status = "duplicate"
+                    result.problems.append(again)
+                    continue
                 opportunity = create_draft(actor, category_code=category, content=content)
         except ValidationFailed as exc:
             result.problems.extend(f"{path}: {messages[0][1]}" for path, messages in exc.fields.items())
             continue
+        batch.update({key: index for key in keys if key not in batch})
         result.status = "created"
         result.opportunity_id = str(opportunity.pk)
         assert opportunity.pending_version_id is not None

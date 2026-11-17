@@ -1,8 +1,11 @@
 # AdSense readiness audit and fixes (2026-11-16) — DRAFT
 
-Status: DRAFT (D-79). Follows `ADSENSE_LOW_VALUE_CONTENT_AUDIT_2026-11-14.md`. It records what was found on the
+Status: DRAFT (D-80). Taken at 07:00 UTC, before D-79 (PR #78) was merged; where D-79 already fixes a finding, the table says so. Follows `ADSENSE_LOW_VALUE_CONTENT_AUDIT_2026-11-14.md`. It records what was found on the
 live site on 16 November 2026, what this change fixes in code, and what still needs the owner and the editors.
 **It is not a prediction of Google's decision.** No review was requested, nothing was deployed and advertising stays off.
+
+> Finding A2 (two vacancies public twice) is handled for the data by D-79 (merge with redirects). This change adds the
+> prevention across organisation records (G2, G3).
 
 ## 1. What could and could not be checked
 
@@ -74,7 +77,7 @@ and is not affected by `noindex`; it needs the pages to be reachable, which they
 | G1 | The navigation offers only sections that hold something: the header leaves out Locations while there are no places and shows Career Guides until an article is published; the phone tab opens the guides; the footer, the home shortcuts and the home category cards leave out empty categories; the home search hides an empty Location list. Sections return by themselves when they have content; their addresses keep working. Unknown (API unreachable) keeps the link | `lib/site-sections.ts`, `components/layout/site-header.tsx`, `site-footer.tsx`, `bottom-nav.tsx`, `components/home/sections.tsx`, `browse.tsx`, `app/layout.tsx`, `lib/catalog.ts` | `tests/unit/site-sections.test.tsx` (7), `sitelinks.test.tsx` |
 | G2 | Duplicate check: the same employer under several organisation records is one employer (name without case, punctuation or legal form); a place written more or less precisely is the same place; the country alone is no place | `apps/api/opportunities/duplicates.py` | `tests/test_duplicate_detection.py` (4 new) |
 | G3 | An organisation cannot be added, or renamed, to a name another record already has | `apps/api/catalog/staff_forms.py` | `tests/test_staff_catalog.py` (1 new) |
-| G4 | Meta-tag verification: `UPNEXT_ADSENSE_MODE=meta` writes `<meta name="google-adsense-account" content="ca-pub-...">` on public pages (never sign-in or the workspace) and loads no Google script. ads.txt (already live) and the code snippet (`verify`) are unchanged | `lib/adsense.ts`, `app/layout.tsx`, `content/legal/privacy.ts` | `tests/unit/adsense.test.ts` |
+| G4 | Meta-tag verification, listing redirects for merged duplicates and the Career Insights guides while empty were built in parallel in D-79 (PR #78, merged 2026-11-16 10:08 UTC) and are **not** repeated here | see `docs/adsense/ENGINEERING_FIXES_2026-11-16.md` | — |
 
 Not changed: robots, sitemap rules, canonicals, the editorial workflow, any listing or legal wording, infrastructure,
 the staff workspace and employer dashboard. A duplicate warning still never blocks publication.

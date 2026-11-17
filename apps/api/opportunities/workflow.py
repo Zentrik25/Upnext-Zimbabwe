@@ -36,7 +36,13 @@ from employers import capability as employer_capability
 from employers.models import EmployerListing
 
 from . import content as content_mod
-from .duplicates import find_duplicates
+from .duplicates import (
+    Duplicate,
+    find_duplicates,
+    find_identifier_duplicates,
+    lock_identity_keys,
+    version_identity,
+)
 from .errors import (
     FieldErrors,
     InvalidTransition,
@@ -52,10 +58,12 @@ from .models import (
     Decision,
     ListingStatus,
     Opportunity,
+    OpportunityRedirect,
     OpportunitySource,
     OpportunityVersion,
     PublishingEvent,
     ReviewDecision,
+    SavedOpportunity,
     VerificationLevel,
     VerificationMethod,
     VerificationOutcome,
@@ -365,19 +373,52 @@ def _images_changed(
     )
 
 
+def lock_vacancy_identity(version: OpportunityVersion) -> None:
+    """Serialise every check on the same vacancy (D-79): a transaction-scoped PostgreSQL advisory lock per
+    issuer reference and per specific address, taken in a fixed order so two transactions cannot deadlock. Two
+    people submitting, importing or publishing the same vacancy at the same moment therefore run one after the
+    other, and the second one's duplicate check sees the first one's committed listing."""
+    lock_identity_keys(version_identity(version).lock_keys())
+
+
+def _identifier_ids(duplicates: list[Duplicate]) -> list[str]:
+    return sorted(d.opportunity_id for d in duplicates if d.level == "hard" and d.match == "identifier")
+
+
 def _validate_for_submission(
-    version: OpportunityVersion, duplicate_acknowledgement: Mapping[str, Any] | None
+    version: OpportunityVersion,
+    duplicate_acknowledgement: Mapping[str, Any] | None,
+    *,
+    direct: bool = False,
 ) -> list[Any]:
     """Publishability and duplicate checks shared by submission and direct publication.
 
     A listing that is the same vacancy as one already open (same organisation, same job title, no clear
-    difference in place, closing date or reference) needs one confirmation from the person:
-    `{"confirmed": True}`. No id and no explanation is asked for. A merely similar listing is reported to the
-    person but never blocks (D-62).
-    """
+    difference in place, closing date or reference) needs one confirmation from the person: `{"confirmed":
+    True}`. No id and no explanation is asked for. A merely similar listing is reported to the person but
+    never blocks (D-62).
+
+    A listing that shares an issuer identifier with an open listing (the same organisation's vacancy
+    reference, or the same specific application or source address: `duplicates.find_identifier_duplicates`,
+    D-79) is the most reliable duplicate signal there is. It also needs the confirmation, and it is never
+    published on one person's authority: direct publication is refused, so another person reviews the match
+    before it can go live."""
+    lock_vacancy_identity(version)
     errors = validate_publishable(version)
     duplicates = find_duplicates(version)
     hard = [d for d in duplicates if d.level == "hard"]
+    identifier = _identifier_ids(duplicates)
+    if identifier and direct:
+        named = "; ".join(
+            f"{d.title or 'untitled'}: {d.reason}" for d in duplicates if d.opportunity_id in identifier
+        )
+        raise WorkflowError(
+            "duplicate_review_required",
+            f"This listing shares an issuer identifier with an open listing ({named}). Amend that "
+            f"listing instead, "
+            "or submit this one so another person can review the match.",
+            fields={"duplicate_acknowledgement": [("duplicate_review_required", named)]},
+        )
     if hard:
         ack = duplicate_acknowledgement or {}
         legacy = str(ack.get("duplicate_of", "")) in {d.opportunity_id for d in hard} and (
@@ -387,6 +428,7 @@ def _validate_for_submission(
             version.duplicate_acknowledgement = {
                 "duplicate_of": sorted(d.opportunity_id for d in hard)[0],
                 "confirmed": True,
+                **({"identifier_of": identifier} if identifier else {}),
             }
             version.save()
         else:
@@ -404,6 +446,29 @@ def _validate_for_submission(
             raise WorkflowError("duplicate_detected", "Possible duplicate listing.", fields=errors)
         raise ValidationFailed(errors)
     return duplicates
+
+
+def _guard_published_identifier(version: OpportunityVersion) -> None:
+    """At publication (T07), under the identity locks: refuse when a listing that advertises the same vacancy
+    by identifier went live after this revision was reviewed and the review did not see it. Prevents two
+    concurrent pipelines from both reaching the public site (D-79)."""
+    lock_vacancy_identity(version)
+    live = [
+        d
+        for d in find_identifier_duplicates(version)
+        if d.level == "hard" and d.status == ListingStatus.PUBLISHED
+    ]
+    seen = set((version.duplicate_acknowledgement or {}).get("identifier_of") or [])
+    unseen = [d for d in live if d.opportunity_id not in seen]
+    if unseen:
+        named = "; ".join(f"{d.title or 'untitled'}: {d.reason}" for d in unseen)
+        raise WorkflowError(
+            "duplicate_detected",
+            f"A listing for the same vacancy is already live ({named}). Return this revision for "
+            f"review, or amend "
+            "the live listing instead.",
+            fields={"duplicate_acknowledgement": [("duplicate_detected", named)]},
+        )
 
 
 # --- T03 submit ---------------------------------------------------------------------------------
@@ -608,6 +673,7 @@ def publish(actor: User, opportunity_id: uuid.UUID | str, *, expected_row_versio
                     "deadline_in_past", "The deadline has passed; a new revision is needed.", fields=errors
                 )
             raise ValidationFailed(errors)
+        _guard_published_identifier(version)
         before = _apply_publication(actor, opportunity, version)
         _record(ctx, actor, opportunity, version, before, extra={"approved_by": str(version.approved_by_id)})
         return opportunity
@@ -652,7 +718,7 @@ def publish_direct(
                 employer_owned=EmployerListing.objects.filter(opportunity=opportunity).exists(),
             )
         )
-        duplicates = _validate_for_submission(version, duplicate_acknowledgement)
+        duplicates = _validate_for_submission(version, duplicate_acknowledgement, direct=True)
         if fee_lint_triggers(version) and checklist.get("applicant_payment_reviewed") is not True:
             raise ValidationFailed(
                 {
@@ -919,6 +985,148 @@ def expire_due(now: datetime | None = None) -> int:
             _record(ctx, system, opportunity, live, before, "deadline passed", actor_type="system")  # type: ignore[arg-type]
             count += 1
     return count
+
+
+# --- T16 merge a duplicate (D-79) -------------------------------------------------------------------------
+MERGEABLE = (ListingStatus.PUBLISHED, ListingStatus.EXPIRED, ListingStatus.WITHDRAWN)
+
+
+@dataclass(frozen=True)
+class MergeResult:
+    duplicate: Opportunity
+    canonical: Opportunity
+    redirect: OpportunityRedirect
+    created: bool  # False when this exact merge had already been applied (a rerun changes nothing)
+    saved_moved: int = 0
+    saved_already_on_canonical: int = 0
+
+
+def merge_conflicts(duplicate: Opportunity, canonical: Opportunity) -> list[str]:
+    """Why these two listings cannot be merged now (empty when they can). Read-only: the dry run shows the
+    same list the merge enforces under its locks."""
+    problems: list[str] = []
+    if duplicate.pk == canonical.pk:
+        return ["The duplicate and the listing to keep are the same listing."]
+    existing = OpportunityRedirect.objects.filter(from_opportunity=duplicate).first()
+    if existing is not None and existing.to_opportunity_id != canonical.pk:
+        problems.append(
+            f"The duplicate was already merged into another listing ({existing.to_opportunity_id})."
+        )
+    if existing is None and duplicate.status not in MERGEABLE:
+        problems.append(f"The duplicate is {duplicate.status}, not a public listing.")
+    if canonical.status not in MERGEABLE:
+        problems.append(f"The listing to keep is {canonical.status}, not a public listing.")
+    if OpportunityRedirect.objects.filter(from_opportunity=canonical).exists():
+        problems.append("The listing to keep has itself been merged into another listing.")
+    if duplicate.category_id != canonical.category_id:
+        problems.append("The two listings are in different categories; an editor must choose deliberately.")
+    if existing is None and duplicate.pending_version_id is not None:
+        pending = OpportunityVersion.objects.filter(pk=duplicate.pending_version_id).values_list(
+            "state", flat=True
+        )
+        problems.append(
+            f"The duplicate has an unpublished revision ({next(iter(pending), 'unknown')}); discard, "
+            f"reject or "
+            "publish it first so no one's work is lost."
+        )
+    if (
+        existing is None
+        and duplicate.slug
+        and OpportunityRedirect.objects.filter(from_slug=duplicate.slug)
+        .exclude(from_opportunity=duplicate)
+        .exists()
+    ):
+        problems.append("Another redirect already uses the duplicate's address.")
+    return problems
+
+
+def merge_duplicate(
+    actor: User,
+    duplicate_id: uuid.UUID | str,
+    *,
+    into_id: uuid.UUID | str,
+    expected_row_version: int | None,
+    reason: str,
+    review_notes: list[str] | None = None,
+) -> MergeResult:
+    """T16: retire a public listing that advertises the same vacancy as another, and move its address to it.
+
+    One transaction, both listing rows locked in a fixed order. The duplicate is archived (`merged`) with its
+    revisions, sources, verification records, review decisions and history untouched; an append-only
+    `OpportunityRedirect` sends its address to the listing kept; saved copies move to the kept listing (a
+    person who saved both keeps one). Like a takedown (T09) it is a one-person action that removes content and
+    adds none, under the same permission. The kept listing's content and verification are not changed: facts
+    the two disagreed on go in `review_notes` for an editor. Rerunning the same merge returns the existing
+    result."""
+    ctx = Context("T16", "opportunity.merge", Permission.OPP_TAKEDOWN)
+    why = _reason(reason, maximum=1000)
+    notes = [str(n).strip()[:500] for n in (review_notes or []) if str(n).strip()][:20]
+
+    def body() -> MergeResult:
+        _require(actor, ctx.permission)
+        ids = sorted({str(duplicate_id), str(into_id)})
+        locked = {
+            str(o.pk): o for o in Opportunity.objects.select_for_update().filter(pk__in=ids).order_by("pk")
+        }
+        duplicate, canonical = locked.get(str(duplicate_id)), locked.get(str(into_id))
+        if duplicate is None or canonical is None:
+            raise NotFoundError()
+        existing = OpportunityRedirect.objects.filter(from_opportunity=duplicate).first()
+        if existing is not None and existing.to_opportunity_id == canonical.pk:
+            return MergeResult(duplicate, canonical, existing, created=False)
+        if expected_row_version is not None and duplicate.row_version != expected_row_version:
+            raise StateConflict()
+        problems = merge_conflicts(duplicate, canonical)
+        if problems:
+            raise WorkflowError("merge_conflict", " ".join(problems))
+        assert duplicate.slug is not None
+        assert canonical.slug is not None
+        before = duplicate.status
+        duplicate.status = ListingStatus.ARCHIVED
+        duplicate.archive_reason = ArchiveReason.MERGED
+        duplicate.closed_at = duplicate.closed_at or timezone.now()
+        _bump(duplicate)
+        redirect = OpportunityRedirect.objects.create(
+            from_slug=duplicate.slug,
+            from_opportunity=duplicate,
+            to_opportunity=canonical,
+            reason=why,
+            review_notes=notes,
+            created_by=actor,
+        )
+        both = set(SavedOpportunity.objects.filter(opportunity=canonical).values_list("user_id", flat=True))
+        dupes = SavedOpportunity.objects.filter(opportunity=duplicate)
+        already = dupes.filter(user_id__in=both)
+        already_count = already.count()
+        already.delete()  # these people saved the kept listing too: one saved copy remains
+        moved = dupes.update(opportunity=canonical)
+        _record(
+            ctx,
+            actor,
+            duplicate,
+            duplicate.live_version,
+            before,
+            why,
+            extra={
+                "merged_into": str(canonical.pk),
+                "from_slug": duplicate.slug,
+                "to_slug": canonical.slug,
+                "redirect_id": str(redirect.pk),
+                "review_notes": notes,
+                "saved_moved": moved,
+                "saved_already_on_canonical": already_count,
+            },
+        )
+        audit.record(
+            action="opportunity.merge_received",
+            object_type="opportunity",
+            object_id=canonical.pk,
+            actor_id=actor.pk,
+            changes={"merged_from": str(duplicate.pk), "from_slug": duplicate.slug, "review_notes": notes},
+        )
+        return MergeResult(duplicate, canonical, redirect, True, moved, already_count)
+
+    return _run(ctx, actor, duplicate_id, body)
 
 
 class _SystemActor:

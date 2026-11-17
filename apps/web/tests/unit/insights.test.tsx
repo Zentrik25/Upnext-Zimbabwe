@@ -36,6 +36,7 @@ import ArticlePage, { generateMetadata as articleMeta } from "@/app/insights/[sl
 import CategoryPage, { generateMetadata as categoryMeta } from "@/app/insights/category/[slug]/page";
 import sitemap from "@/app/sitemap";
 import { ArticleHtml, safeHref, safeSrc } from "@/lib/article-html";
+import { GUIDES } from "@/lib/guides";
 import type { ArticleCard, ArticleDetail } from "@/lib/insights-types";
 import { serverHtml } from "./helpers";
 
@@ -214,12 +215,36 @@ describe("Career Insights home and lists", () => {
   });
   const params = (q: Record<string, string> = {}) => ({ searchParams: Promise.resolve(q) });
 
-  it("is not indexed while no article is published, and still links the guides", async () => {
+  it("while no article is published, the guides are the main content: no placeholder, no search (D-79)", async () => {
     catalog.getInsightsHome.mockResolvedValue(home(false));
+    // Still not indexed: it shows the /guides list and must not compete with it.
     expect((await homeMeta(params())).robots).toEqual({ index: false, follow: true });
     const root = await serverHtml(await InsightsHomePage(params()));
-    expect(root.querySelector('[data-testid="insights-empty"]')).not.toBeNull();
-    expect(root.querySelector('a[href="/guides/how-to-prepare-a-cv"]')).not.toBeNull();
+    const main = root.querySelector('[data-testid="insights-guides"]');
+    expect(main).not.toBeNull();
+    // Every published guide, linked at its own address (never copied to an /insights address).
+    for (const g of GUIDES) expect(main!.querySelector(`a[href="${g.path}"]`), g.path).not.toBeNull();
+    expect(root.querySelectorAll('a[href^="/insights/"]')).toHaveLength(0);
+    expect(root.querySelector('form[role="search"]')).toBeNull();
+    expect(root.textContent).not.toMatch(/being written|first Career Insights articles/i);
+    expect(root.textContent).not.toContain("Featured guides"); // the guides are listed once, as the main content
+  });
+
+  it("a search while nothing is published shows the guides, not an empty result", async () => {
+    catalog.getInsightsHome.mockResolvedValue(home(false));
+    catalog.listInsightsArticles.mockResolvedValue(page([]));
+    const root = await serverHtml(await InsightsHomePage(params({ q: "cv" })));
+    expect(root.querySelector('[data-testid="insights-guides"]')).not.toBeNull();
+    expect(root.querySelector('form[role="search"]')).toBeNull();
+    expect(root.textContent).not.toContain("No published article matches");
+  });
+
+  it("with articles the search is offered and the guides are featured once", async () => {
+    catalog.getInsightsHome.mockResolvedValue(home(true));
+    const root = await serverHtml(await InsightsHomePage(params()));
+    expect(root.querySelector('form[role="search"][action="/insights"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="insights-guides"]')).toBeNull();
+    expect(root.textContent).toContain("Featured guides");
   });
 
   it("is indexed with articles, and lists them as plain links", async () => {

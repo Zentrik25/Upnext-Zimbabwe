@@ -33,6 +33,7 @@ from .models import (
     EmploymentType,
     ExperienceLevel,
     ListingStatus,
+    OpportunityRedirect,
     OpportunityVersion,
     VersionState,
     WorkMode,
@@ -421,6 +422,38 @@ def get_detail(slug: str) -> OpportunityVersion | None:
         .prefetch_related("locations__location", "skills__skill", "sectors__sector", "sources")
         .first()
     )
+
+
+MAX_REDIRECT_HOPS = 5
+
+
+def redirect_target(slug: str) -> OpportunityVersion | None:
+    """The public listing a retired address now belongs to (D-79), or None.
+
+    Follows `OpportunityRedirect` rows, and a chain of merges (A merged into B, later B into C), to the first
+    listing the detail page may show, so the visitor is moved once, straight to the final address. Gives up
+    (None, a 404) after `MAX_REDIRECT_HOPS` or on a loop, and when the listing at the end is not public: a
+    redirect never makes an archived or taken-down listing reachable."""
+    current = slug.lower()
+    seen: set[str] = set()
+    for _ in range(MAX_REDIRECT_HOPS):
+        if current in seen:
+            return None
+        seen.add(current)
+        row = (
+            OpportunityRedirect.objects.filter(from_slug=current)
+            .select_related("to_opportunity")
+            .only("to_opportunity__slug")
+            .first()
+        )
+        if row is None or not row.to_opportunity.slug:
+            return None
+        target = row.to_opportunity.slug
+        found = get_detail(target)
+        if found is not None:
+            return found
+        current = target
+    return None
 
 
 def render_html(markdown_source: str | None) -> str | None:

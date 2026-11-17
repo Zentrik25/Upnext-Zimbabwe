@@ -56,7 +56,7 @@ QUOTA_ZONE = ZoneInfo("America/Los_Angeles")  # Google's quotas reset at midnigh
 BACKOFF_SECONDS = [60, 300, 1800, 7200, 21600, 86400]
 MAX_ATTEMPTS = 8
 STALE_CLAIM = timedelta(minutes=15)
-CLOSING = {"T09", "T10", "T11", "T12"}  # takedown, withdraw, expire, archive
+CLOSING = {"T09", "T10", "T11", "T12", "T16"}  # takedown, withdraw, expire, archive, merge (D-79)
 MODES = ("off", "record", "live")
 
 
