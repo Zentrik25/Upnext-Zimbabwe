@@ -105,3 +105,31 @@ def test_taxonomies_are_managed_by_administrators_and_audited(people: dict[str, 
     assert editor.get(f"{S}/lookup/locations?q=har").status_code == 200
     assert signed_in(people["author"]).get(f"{S}/lookup/organisations?q=a").status_code == 200
     assert signed_in(people["seeker"]).get(f"{S}/lookup/organisations").status_code == 403
+
+
+def test_an_employer_cannot_be_added_twice_under_the_same_name(
+    people: dict[str, User], world: object
+) -> None:
+    """Three records named "National Foods Limited" were found on the live site (2026-11-16); same-named records
+    hide duplicate listings from the duplicate check."""
+    author = signed_in(people["author"])
+    first = send(author, "post", f"{C}/organisations", {"name": "National Foods Limited"})
+    assert first.status_code == 201, first.content
+    again = send(author, "post", f"{C}/organisations", {"name": "  national  foods LIMITED "})
+    assert again.status_code == 400, again.content
+    assert "already exists" in again.content.decode()
+    assert Organisation.objects.filter(name_normalized="national foods limited").count() == 1
+    # Renaming a record to itself, or to a free name, still works; to a taken name it does not.
+    editor = signed_in(people["editor"])
+    other = send(author, "post", f"{C}/organisations", {"name": "National Tyre Services"}).json()["id"]
+    same = send(
+        editor,
+        "patch",
+        f"{C}/organisations/{first.json()['id']}",
+        {"name": "National Foods Limited", "row_version": 0},
+    )
+    assert same.status_code == 200, same.content
+    taken = send(
+        editor, "patch", f"{C}/organisations/{other}", {"name": "National Foods Limited", "row_version": 0}
+    )
+    assert taken.status_code == 400

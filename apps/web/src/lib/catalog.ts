@@ -135,6 +135,14 @@ export async function listLocations(): Promise<Location[]> {
   return result.ok ? result.data.data : [];
 }
 
+/** Whether the place catalogue holds a place at all. Asked on every public page (lib/site-sections.ts), so it is kept
+ *  like the sitemap feed and not counted against the visitor; `true` when the answer could not be read. */
+export async function hasPlaces(): Promise<boolean> {
+  const seconds = Number(process.env.UPNEXT_SITEMAP_CACHE_SECONDS ?? 300);
+  const result = await json<{ data: Location[] }>("locations", undefined, seconds > 0 ? seconds : undefined);
+  return !result.ok || result.data.data.length > 0;
+}
+
 export async function listSectors(): Promise<Sector[]> {
   const result = await json<{ data: Sector[] }>("sectors");
   return result.ok ? result.data.data : [];

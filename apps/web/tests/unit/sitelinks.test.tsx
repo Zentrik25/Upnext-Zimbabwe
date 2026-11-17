@@ -26,6 +26,7 @@ const catalog = vi.hoisted(() => ({
     data: { articles: [], categories: [], authors: [], updated_at: null },
   })),
   getSitemapEntries: vi.fn(),
+  hasPlaces: vi.fn(async () => true),
   listCategories: vi.fn(async () => []),
   listLocations: vi.fn(async () => []),
   listOpportunities: vi.fn(),
@@ -77,8 +78,16 @@ describe("the eight priority destinations (D-69)", () => {
     expect(new Set(PRIORITY_DESTINATIONS.map((d) => d.href)).size).toBe(8);
   });
 
-  it("are all linked from the footer with their descriptive names", () => {
-    render(<SiteFooter />);
+  it("are all linked from the footer with their descriptive names", async () => {
+    // Every category holds an open listing here; an empty one is left out (D-79, tests/unit/site-sections.test.tsx).
+    catalog.getSitemapEntries.mockResolvedValue({
+      ok: true,
+      data: {
+        data: [],
+        categories: Object.keys(CATEGORY_SEO).map((code) => ({ code, count: 1, updated_at: null })),
+      },
+    });
+    render(await SiteFooter());
     const footer = screen.getByRole("navigation", { name: "Footer" });
     for (const d of PRIORITY_DESTINATIONS) {
       const link = within(footer).getByRole("link", { name: d.label });

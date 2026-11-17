@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/session";
 import { adsenseAccountMeta, adsenseClient, adsenseMode, adsenseScriptSrc } from "@/lib/adsense";
 import { BRAND, openGraphFor } from "@/lib/brand";
 import { siteUrl } from "@/lib/site";
+import { ALL_SECTIONS, siteSections } from "@/lib/site-sections";
 import "@/styles/globals.css";
 import { PendingMain, PendingNavigationProvider } from "@/components/navigation/pending-navigation";
 
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Signed-in people reach their own dashboard from the Home tab; the public front page stays one tap away in the menu.
   const signedIn = workspace || auth ? null : await getCurrentUser();
   // Only a jobseeker's dashboard shares the public frame; staff and employers reach theirs from the header.
+  const sections = workspace || auth ? ALL_SECTIONS : await siteSections();
   const home = signedIn && homeOf(signedIn.home_path) === "/dashboard" ? "/dashboard" : "/";
   // AdSense site-verification snippet: only in `verify` mode (owner-set UPNEXT_ADSENSE_MODE), on public pages only
   // (never the staff workspace or the sign-in forms). In `live` mode Google's script is NOT in the page: it is added
@@ -118,7 +120,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <PendingMain>{children}</PendingMain>
             </main>
             <SiteFooter />
-            <BottomNav home={home} signedIn={Boolean(signedIn)} />
+            <BottomNav home={home} signedIn={Boolean(signedIn)} insights={sections.insights} />
           </PendingNavigationProvider>
         )}
       </body>

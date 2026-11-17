@@ -13,7 +13,7 @@ from django.utils import timezone
 from accounts.models import User
 from catalog.models import Organisation
 from opportunities import workflow
-from opportunities.duplicates import find_duplicates, normalise_title
+from opportunities.duplicates import find_duplicates, normalise_title, organisation_key
 from opportunities.errors import WorkflowError
 from opportunities.models import ListingStatus, Opportunity
 from tests.factories import CHECKLIST, World, new_draft
@@ -247,6 +247,37 @@ def test_a_different_job_title_shows_no_warning_in_the_staff_api(
     other = draft(world, editor, delta, "Accounting Officer")
     detail = signed_in(editor).get(f"{S}/opportunities/{other.pk}").json()
     assert detail["duplicates"] == [] and not any("already open" in w for w in detail["warnings"])
+
+
+def test_one_employer_under_two_organisation_records_is_still_one_employer(
+    world: World, people: dict[str, User]
+) -> None:
+    """Live site, 2026-11-16: "Supply Assistant" was public twice, once under "TotalEnergies Marketing Zimbabwe" and
+    once under "TotalEnergies Marketing Zimbabwe (Private) Limited", two records of one employer."""
+    editor = people["editor"]
+    short = Organisation.objects.create(name="TotalEnergies Marketing Zimbabwe", created_by=people["admin"])
+    long = Organisation.objects.create(
+        name="TotalEnergies Marketing Zimbabwe (Private) Limited", created_by=people["admin"]
+    )
+    other = Organisation.objects.create(name="TotalEnergies Foundation", created_by=people["admin"])
+    publish(editor, draft(world, editor, short, "Supply Assistant", location_text="Harare"))
+    publish(editor, draft(world, editor, other, "Supply Assistant", location_text="Harare"))
+    # The country alone names no place, so it does not tell the two copies apart.
+    again = draft(world, editor, long, "Supply Assistant", location_text="Zimbabwe")
+    found = duplicates_of(again)
+    assert [d.level for d in found] == ["hard"]  # the Foundation is another employer
+    assert organisation_key(long.name) == organisation_key(short.name) != organisation_key(other.name)
+
+
+@pytest.mark.parametrize("place", ["Harare, Zimbabwe", "Eastlea, Harare", "harare"])
+def test_a_place_written_more_or_less_precisely_is_the_same_place(
+    world: World, people: dict[str, User], delta: Organisation, place: str
+) -> None:
+    """Live site, 2026-11-16: "Transport and Office Associate" was public twice, "Harare" and "Harare, Zimbabwe"."""
+    editor = people["editor"]
+    publish(editor, draft(world, editor, delta, "Transport and Office Associate", location_text="Harare"))
+    again = draft(world, editor, delta, "Transport and Office Associate", location_text=place)
+    assert [d.level for d in duplicates_of(again)] == ["hard"]
 
 
 def test_one_place_written_two_ways_is_not_a_difference(
